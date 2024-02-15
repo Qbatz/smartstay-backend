@@ -128,7 +128,7 @@ app.post('/otp-send/send-mail', function (request, response) {
     console.log("request.body", request.body)
     if (request.body.email) {
         connection.query(`SELECT * FROM createaccount WHERE email_id= \'${request.body.email}\'`, function (error, data) {
-           
+
             if (data && data.length > 0) {
                 const otp = Math.floor(100000 + Math.random() * 900000).toString();
                 console.log("otp is ", otp);
@@ -136,11 +136,11 @@ app.post('/otp-send/send-mail', function (request, response) {
                     if (data) {
                         const transporter = nodemailer.createTransport({
                             service: 'gmail',
-                                auth: {
+                            auth: {
                                 user: 'premathujasvi5706@gmail.com',
                                 pass: 'nuwe ecrt iciu lgrr',
                             },
-                           
+
                         });
                         const mailOptions = {
                             from: 'premathujasvi5706@gmail.com',
@@ -155,28 +155,28 @@ app.post('/otp-send/send-mail', function (request, response) {
                             } else {
                                 console.log('Email sent: ' + otpData.response);
                                 response.status(200).json({ message: "Otp send  Successfully" });
-                                                                        }
+                            }
                         });
                     } else {
                         response.status(201).json({ message: "No User Found" });
                     }
                 });
             } else {
-                response.status(201).json({ message: "Enter the Valid Email_id" ,statusCode:201 });
+                response.status(201).json({ message: "Enter the Valid Email_id", statusCode: 201 });
             }
         });
     } else {
-        response.status(203).json({ message: "Missing parameter",statusCode:203 });
+        response.status(203).json({ message: "Missing parameter", statusCode: 203 });
     }
 });
 
 
 app.post('/forget/select-list', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*')
-    console.log("request.body",request.body)
+    console.log("request.body", request.body)
     if (request.body.email) {
         connection.query(`SELECT * FROM createaccount WHERE email_id= \'${request.body.email}\'`, function (error, data) {
-            console.log("data for reset",data[0].Otp)
+            console.log("data for reset", data[0].Otp)
             if (data[0].Otp === Number(request.body.otp)) {
                 connection.query(`UPDATE createaccount SET password= \'${request.body.NewPassword}\' WHERE email_id=\'${request.body.email}\' `, function (error, data) {
                     if ((data)) {
@@ -189,12 +189,12 @@ app.post('/forget/select-list', function (request, response) {
                         })
                     }
                     else {
-                        response.status(201).json({ message: "Cannot Update NewPassowrd",statusCode:201 })
+                        response.status(201).json({ message: "Cannot Update NewPassowrd", statusCode: 201 })
                     }
                 })
             }
             else {
-                response.status(201).json({ message: "Enter Valid Otp",statusCode:201 })
+                response.status(201).json({ message: "Enter Valid Otp", statusCode: 201 })
             }
         })
     }
@@ -363,13 +363,13 @@ app.post('/list/numberOf-Rooms', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*');
     const reqFloorID = request.body
     let Room_Id, errorMessage;
+    let responseData = []
 
     if (reqFloorID) {
         connection.query(`select * from hostelrooms where Floor_Id= \'${reqFloorID.floor_Id}\' and Hostel_Id =  \'${reqFloorID.hostel_Id}\'`, function (error, RoomsData) {
+            console.log("error", error);
             if (RoomsData.length > 0) {
                 console.log("data for rooms", RoomsData)
-                let queryCount = 0;
-                let responseData = []
 
                 for (let i = 0; i < RoomsData.length; i++) {
                     Room_Id = RoomsData[i].Room_Id
@@ -377,31 +377,33 @@ app.post('/list/numberOf-Rooms', function (request, response) {
                     const query = `select count('Bed') as bookedBedCount ,hos.Hostel_Id as hostel_Id, hos.Floor, hos.Rooms from hostel hos where  Floor= \'${reqFloorID.floor_Id}\' and Hostel_Id = \'${reqFloorID.hostel_Id}\' and Rooms = \'${Room_Id}\'`
                     connection.query(query, function (error, hostelData) {
                         console.log("data for hostel", hostelData)
+                        console.log("query", query);
+                        console.log("error", error);
                         if (error) {
                             errorMessage = error
                         }
-
-                        const objectFormation = {
-                            bookedBedCount: hostelData[0].bookedBedCount,
-                            Hostel_Id: RoomsData[i].Hostel_Id,
-                            Floor_Id: RoomsData[i].Floor_Id,
-                            Room_Id: RoomsData[i].Room_Id,
-                            Number_Of_Beds: RoomsData[i].Number_Of_Beds
-                        }
-
-                        responseData.push(objectFormation);
-                        if (responseData.length === RoomsData.length) {
+                        else {
+                            const objectFormation = {
+                                bookedBedCount: hostelData[0].bookedBedCount,
+                                Hostel_Id: RoomsData[i].Hostel_Id,
+                                Floor_Id: RoomsData[i].Floor_Id,
+                                Room_Id: RoomsData[i].Room_Id,
+                                Number_Of_Beds: RoomsData[i].Number_Of_Beds
+                            }
+                            responseData.push(objectFormation);
                             if (errorMessage) {
                                 response.status(201).json({ message: "No Data Found" });
                             } else {
-                                response.status(200).json(responseData);
+                                if (responseData.length === RoomsData.length) {
+                                    response.status(200).json(responseData);
+                                }
                             }
                         }
+
                     })
 
 
                 }
-
             }
             else {
                 response.status(201).json({ message: "No Data Found" })
@@ -737,6 +739,6 @@ app.post('/check/room-full', function (request, response) {
 })
 
 
-app.listen('2000', function () {
-    console.log("node is started at 2000")
+app.listen('2001', function () {
+    console.log("node is started at 2001")
 })
