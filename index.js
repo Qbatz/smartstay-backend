@@ -123,53 +123,6 @@ app.get('/login/login', function (request, response) {
     }
 });
 
-app.post('/otp-send/send-mail', function (request, response) {
-    response.set('Access-Control-Allow-Origin', '*');
-    console.log("request.body", request.body)
-    if (request.body.email) {
-        connection.query(`SELECT * FROM createaccount WHERE email_id= \'${request.body.email}\'`, function (error, data) {
-
-            if (data && data.length > 0) {
-                const otp = Math.floor(100000 + Math.random() * 900000).toString();
-                console.log("otp is ", otp);
-                connection.query(`UPDATE createaccount SET Otp= \'${otp}\' WHERE email_id=\'${request.body.email}\' `, function (error, data) {
-                    if (data) {
-                        const transporter = nodemailer.createTransport({
-                            service: 'gmail',
-                            auth: {
-                                user: 'premathujasvi5706@gmail.com',
-                                pass: 'nuwe ecrt iciu lgrr',
-                            },
-
-                        });
-                        const mailOptions = {
-                            from: 'premathujasvi5706@gmail.com',
-                            to: 'premathujasvi5706@gmail.com',
-                            subject: 'OTP for Password Reset',
-                            text: `Your OTP for password reset is: ${otp}`
-                        };
-                        transporter.sendMail(mailOptions, function (err, otpData) {
-                            console.log("otp send error", err);
-                            if (err) {
-                                response.status(500).json({ message: "Failed to send OTP to email" });
-                            } else {
-                                console.log('Email sent: ' + otpData.response);
-                                response.status(200).json({ message: "Otp send  Successfully" });
-                            }
-                        });
-                    } else {
-                        response.status(201).json({ message: "No User Found" });
-                    }
-                });
-            } else {
-                response.status(201).json({ message: "Enter the Valid Email_id", statusCode: 201 });
-            }
-        });
-    } else {
-        response.status(203).json({ message: "Missing parameter", statusCode: 203 });
-    }
-});
-
 
 app.post('/forget/select-list', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*')
@@ -391,19 +344,26 @@ app.post('/list/numberOf-Rooms', function (request, response) {
                                 Number_Of_Beds: RoomsData[i].Number_Of_Beds
                             }
                             responseData.push(objectFormation);
-                            if (errorMessage) {
-                                response.status(201).json({ message: "No Data Found" });
-                            } else {
-                                if (responseData.length === RoomsData.length) {
-                                    response.status(200).json(responseData);
-                                }
+                            // if (errorMessage) {
+                            //     response.status(201).json({ message: "No Data Found" });
+                            // } else {
+                            //     if (responseData.length === RoomsData.length) {
+                            //         response.status(200).json(responseData);
+                            //     }
+                            // }
+                        }
+                        if (errorMessage) {
+                            response.status(201).json({ message: "No Data Found" });
+                        } else {
+                            if (responseData.length === RoomsData.length) {
+                                response.status(200).json(responseData);
                             }
                         }
-
                     })
 
 
                 }
+                
             }
             else {
                 response.status(201).json({ message: "No Data Found" })
@@ -414,6 +374,7 @@ app.post('/list/numberOf-Rooms', function (request, response) {
         response.status(201).json({ message: "Missing Parameter" })
     }
 })
+
 
 app.post('/add/invoice-add', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*');
@@ -738,6 +699,53 @@ app.post('/check/room-full', function (request, response) {
     }
 })
 
+app.post('/otp-send/send-mail', function (request, response) {
+    response.set('Access-Control-Allow-Origin', '*');
+    console.log("request.body", request.body)
+    if (request.body.email) {
+        connection.query(`SELECT * FROM createaccount WHERE email_id= \'${request.body.email}\'`, function (error, data) {
+
+            if (data && data.length > 0) {
+                const otp = Math.floor(100000 + Math.random() * 900000).toString();
+                console.log("otp is ", otp);
+                connection.query(`UPDATE createaccount SET Otp= \'${otp}\' WHERE email_id=\'${request.body.email}\' `, function (error, data) {
+                    if (data) {
+                        const transporter = nodemailer.createTransport({
+                            service: 'gmail',
+                            auth: {
+                                user: 'premathujasvi5706@gmail.com',
+                                pass: 'nuwe ecrt iciu lgrr',
+                            },
+
+                        });
+                        const mailOptions = {
+                            from: request.body.email,
+                            to: 'premathujasvi5706@gmail.com',
+                            subject: 'OTP for Password Reset',
+                            text: `Your OTP for password reset is: ${otp}`
+                        };
+                        transporter.sendMail(mailOptions, function (err, otpData) {
+                            console.log(" otpData*",  otpData);
+                            console.log("otp send error", err);
+                            if (err) {
+                                response.status(500).json({ message: "Failed to send OTP to email" });
+                            } else {
+                                console.log('Email sent: ' + otp);
+                                response.status(200).json({ message: "Otp send  Successfully", otp: otp });
+                            }
+                        });
+                    } else {
+                        response.status(201).json({ message: "No User Found" });
+                    }
+                });
+            } else {
+                response.status(201).json({ message: "Enter the Valid Email_id", statusCode: 201 });
+            }
+        });
+    } else {
+        response.status(203).json({ message: "Missing parameter", statusCode: 203 });
+    }
+});
 
 app.listen('2001', function () {
     console.log("node is started at 2001")
