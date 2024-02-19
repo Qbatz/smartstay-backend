@@ -277,62 +277,134 @@ app.post('/list/bed-list', function (request, response) {
     }
 })
 
+// app.post('/list/numberOf-Rooms', function (request, response) {
+//     response.set('Access-Control-Allow-Origin', '*');
+//     const reqFloorID = request.body
+//     let responseData = [];
+//     let Room_Id;
+//     let errorMessage;
+//     // var Room_Id, errorMessage = '';
+//     // var responseData = []
+
+//     if (reqFloorID) {
+//         connection.query(`select * from hostelrooms where Floor_Id= \'${reqFloorID.floor_Id}\' and Hostel_Id =  \'${reqFloorID.hostel_Id}\'`, function (error, RoomsData) {
+//             // console.log("error", error);
+//             if (RoomsData.length > 0) {
+//                 for (let i = 0; i < RoomsData.length; i++) {
+//                     Room_Id = RoomsData[i].Room_Id
+//                     // const query = `select count('Bed') as bookedBedCount ,hos.Hostel_Id as hostel_Id, hos.Floor, hos.Rooms from hostel hos where  Floor= \'${reqFloorID.floor_Id}\' and Hostel_Id = \'${reqFloorID.hostel_Id}\' and Rooms = \'${Room_Id}\'`
+//                     connection.query(`select count('Bed') as bookedBedCount ,hos.Hostel_Id as hostel_Id, hos.Floor, hos.Rooms from hostel hos where  Floor= \'${reqFloorID.floor_Id}\' and Hostel_Id = \'${reqFloorID.hostel_Id}\' and Rooms = \'${Room_Id}\'`, function (error, hostelData) {
+//                         console.log("error", error);
+//                         if (hostelData) {
+//                             const objectFormation = {
+//                                 bookedBedCount: hostelData[0].bookedBedCount,
+//                                 Hostel_Id: RoomsData[i].Hostel_Id,
+//                                 Floor_Id: RoomsData[i].Floor_Id,
+//                                 Room_Id: RoomsData[i].Room_Id,
+//                                 Number_Of_Beds: RoomsData[i].Number_Of_Beds
+//                             }
+//                             // responseData.push(objectFormation);
+//                             responseData = [...responseData, objectFormation]
+//                             console.log("for", responseData);
+//                         }
+//                         else {
+//                             errorMessage = error;
+//                         }
+
+//                     })
+
+//                 }
+//                 // console.log("errorMessage", errorMessage);
+//                 if (responseData) {
+//                     console.log("else", responseData.length);
+
+//                     console.log("if", responseData);
+//                     if (responseData.length === RoomsData.length) {
+//                         response.status(200).json(responseData);
+
+//                     }
+//                 }
+//                 else {
+//                     response.status(201).json({ message: "No Data Found" });
+
+//                 }
+//                 //     console.log("errorMessage",errorMessage);
+//                 //     if (errorMessage) {
+//                 //         response.status(201).json({ message: "No Data Found" });
+//                 //     }
+//                 //     else{
+//                 //     console.log("else", responseData.length);
+
+//                 //         console.log("if", responseData);
+//                 //     if (responseData.length === RoomsData.length) { 
+//                 //             response.status(200).json(responseData);
+
+//                 //     }
+//                 // }
+//             }
+//             else {
+//                 response.status(201).json({ message: "No Data Found" })
+//             }
+//         })
+//     }
+//     else {
+//         response.status(201).json({ message: "Missing Parameter" })
+//     }
+// })
+
 app.post('/list/numberOf-Rooms', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*');
-    const reqFloorID = request.body
-    let Room_Id, errorMessage;
-    let responseData = []
+    const reqFloorID = request.body;
+    let responseData = [];
+    let errorMessage;
 
     if (reqFloorID) {
-        connection.query(`select * from hostelrooms where Floor_Id= \'${reqFloorID.floor_Id}\' and Hostel_Id =  \'${reqFloorID.hostel_Id}\'`, function (error, RoomsData) {
-            console.log("error", error);
+        connection.query(`SELECT * FROM hostelrooms WHERE Floor_Id = '${reqFloorID.floor_Id}' AND Hostel_Id = '${reqFloorID.hostel_Id}'`, function (error, RoomsData) {
+            if (error) {
+                response.status(500).json({ message: "Error occurred while fetching data" });
+                return;
+            }
+
             if (RoomsData.length > 0) {
-                console.log("data for rooms", RoomsData)
+                let completedRequests = 0;
 
                 for (let i = 0; i < RoomsData.length; i++) {
-                    Room_Id = RoomsData[i].Room_Id
-                    console.log("Room_Id", Room_Id)
-                    const query = `select count('Bed') as bookedBedCount ,hos.Hostel_Id as hostel_Id, hos.Floor, hos.Rooms from hostel hos where  Floor= \'${reqFloorID.floor_Id}\' and Hostel_Id = \'${reqFloorID.hostel_Id}\' and Rooms = \'${Room_Id}\'`
-                    connection.query(query, function (error, hostelData) {
-                        console.log("data for hostel", hostelData)
-                        console.log("query", query);
-                        console.log("error", error);
+                    const Room_Id = RoomsData[i].Room_Id;
+
+                    connection.query(`SELECT COUNT('Bed') AS bookedBedCount, hos.Hostel_Id AS hostel_Id, hos.Floor, hos.Rooms FROM hostel hos WHERE Floor = '${reqFloorID.floor_Id}' AND Hostel_Id = '${reqFloorID.hostel_Id}' AND Rooms = '${Room_Id}'`, function (error, hostelData) {
                         if (error) {
-                            errorMessage = error
-                        }
-                        else {
+                            errorMessage = error;
+                        } else {
                             const objectFormation = {
                                 bookedBedCount: hostelData[0].bookedBedCount,
                                 Hostel_Id: RoomsData[i].Hostel_Id,
                                 Floor_Id: RoomsData[i].Floor_Id,
                                 Room_Id: RoomsData[i].Room_Id,
                                 Number_Of_Beds: RoomsData[i].Number_Of_Beds
-                            }
+                            };
                             responseData.push(objectFormation);
                         }
-                        if (errorMessage) {
-                            response.status(201).json({ message: "No Data Found" });
-                        } else {
-                            if (responseData.length === RoomsData.length) {
+
+                        completedRequests++;
+
+                        if (responseData.length === RoomsData.length) {
+                            if (errorMessage) {
+                                response.status(202).json({ message: "Error occurred while fetching data" });
+                            } else {
+                                console.log("responseData",responseData);
                                 response.status(200).json(responseData);
                             }
                         }
-                    })
-
-
+                    });
                 }
-                
+            } else {
+                response.status(201).json({ message: "No Data Found" });
             }
-            else {
-                response.status(201).json({ message: "No Data Found" })
-            }
-        })
+        });
+    } else {
+        response.status(201).json({ message: "Missing Parameter" });
     }
-    else {
-        response.status(201).json({ message: "Missing Parameter" })
-    }
-})
-
+});
 
 app.post('/add/invoice-add', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*');
@@ -409,6 +481,39 @@ app.get('/hostel/list-details', function (request, response) {
     })
 })
 
+// app.post('/compliance/add-details', function (request, response) {
+//     response.set('Access-Control-Allow-Origin', '*');
+//     console.log(request.body);
+//     var atten = request.body;
+//     console.log(atten);
+
+//     if (atten.id) {
+//         connection.query(`UPDATE compliance set date=\'${atten.date}\', Name=\'${atten.Name}\',Phone=\'${atten.Phone}\', Requestid=\'${atten.Requestid}\',Roomdetail=\'${atten.Roomdetail}\', Complainttype=\'${atten.Complainttype}\' , Assign=\'${atten.Assign}\' , Status=\'${atten.Status}\' , Hostel_id=\'${atten.Hostel_id}\' , Floor_id=\'${atten.Floor_id}\' , Room=\'${atten.Room}\',hostelname=\'${atten.hostelname}\',Description=\'${atten.Description}\'  where  id= \'${atten.id}\'`, function (error, data) {
+//             if (error) {
+//                 response.status(201).json({ message: "No User Found" })
+//             }
+//             else {
+//                 response.status(200).json({ message: "Update Successfully" })
+//             }
+//         })
+//     }
+//     else {
+//         connection.query(`INSERT INTO compliance(date, Name, Phone,Requestid, Roomdetail, Complainttype ,Assign,Status,Hostel_id ,Floor_id ,Room,hostelname,Description) VALUES  
+//     (\'${atten.date}\',\'${atten.Name}\',\'${atten.Phone}\',\'${atten.Requestid}\' ,\'${atten.Roomdetail}\' ,\'${atten.Complainttype}\',\'${atten.Assign}\',\'${atten.Status}\' ,\'${atten.Hostel_id}\' ,\'${atten.Floor_id}\' ,\'${atten.Room}\',\'${atten.hostelname}\',\'${atten.Description}\')`, function (error, data) {
+
+//             if (error) {
+//                 console.log(error);
+//                 response.status(201).json({ message: "No User Found", statusCode: 201 })
+
+//             }
+//             else {
+//                 response.status(200).json({ message: "Save Successfully", statusCode: 200 })
+//             }
+
+
+//         })
+//     }
+// })
 app.post('/compliance/add-details', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*');
     console.log(request.body);
@@ -416,32 +521,43 @@ app.post('/compliance/add-details', function (request, response) {
     console.log(atten);
 
     if (atten.id) {
-        connection.query(`UPDATE compliance set date=\'${atten.date}\', Name=\'${atten.Name}\',Phone=\'${atten.Phone}\', Requestid=\'${atten.Requestid}\',Roomdetail=\'${atten.Roomdetail}\', Complainttype=\'${atten.Complainttype}\' , Assign=\'${atten.Assign}\' , Status=\'${atten.Status}\' , Hostel_id=\'${atten.Hostel_id}\' , Floor_id=\'${atten.Floor_id}\' , Room=\'${atten.Room}\',hostelname=\'${atten.hostelname}\',Description=\'${atten.Description}\'  where  id= \'${atten.id}\'`, function (error, data) {
+        connection.query(`UPDATE compliance SET date='${atten.date}', Name='${atten.Name}', Phone='${atten.Phone}', Roomdetail='${atten.Roomdetail}', Complainttype='${atten.Complainttype}', Assign='${atten.Assign}', Status='${atten.Status}', Hostel_id='${atten.Hostel_id}', Floor_id='${atten.Floor_id}', Room='${atten.Room}', hostelname='${atten.hostelname}', Description='${atten.Description}' WHERE ID='${atten.id}'`, function (error, data) {
             if (error) {
-                response.status(201).json({ message: "No User Found" })
+                response.status(201).json({ message: "No User Found" });
+            } else {
+                response.status(200).json({ message: "Update Successfully" });
             }
-            else {
-                response.status(200).json({ message: "Update Successfully" })
-            }
-        })
-    }
-    else {
-        connection.query(`INSERT INTO compliance(date, Name, Phone,Requestid, Roomdetail, Complainttype ,Assign,Status,Hostel_id ,Floor_id ,Room,hostelname,Description) VALUES  
-    (\'${atten.date}\',\'${atten.Name}\',\'${atten.Phone}\',\'${atten.Requestid}\' ,\'${atten.Roomdetail}\' ,\'${atten.Complainttype}\',\'${atten.Assign}\',\'${atten.Status}\' ,\'${atten.Hostel_id}\' ,\'${atten.Floor_id}\' ,\'${atten.Room}\',\'${atten.hostelname}\',\'${atten.Description}\')`, function (error, data) {
+        });
 
+
+    } else {
+
+        connection.query(`SELECT MAX(Requestid) AS maxRequestId FROM compliance`, function (error, result) {
             if (error) {
                 console.log(error);
-                response.status(201).json({ message: "No User Found", statusCode: 201 })
+                response.status(201).json({ message: "Error fetching last Requestid", statusCode: 201 });
+            } else {
+                let maxRequestId = result[0].maxRequestId || "#100"
+                let numericPart = parseInt(maxRequestId.substring(1));
+                numericPart++;
+                const nextRequestId = ` #${numericPart.toString().padStart(2, '0')}`;
 
+
+                connection.query(`INSERT INTO compliance(date, Name, Phone, Requestid, Roomdetail, Complainttype, Assign, Status, Hostel_id, Floor_id, Room, hostelname, Description) VALUES  
+            ('${atten.date}', '${atten.Name}', '${atten.Phone}', '${nextRequestId}', '${atten.Roomdetail}', '${atten.Complainttype}', '${atten.Assign}', '${atten.Status}', '${atten.Hostel_id}', '${atten.Floor_id}', '${atten.Room}', '${atten.hostelname}', '${atten.Description}')`, function (error, data) {
+                    if (error) {
+                        console.log(error);
+                        response.status(201).json({ message: "Error inserting record", statusCode: 201 });
+                    } else {
+                        response.status(200).json({ message: "Save Successfully", statusCode: 200 });
+                    }
+                });
             }
-            else {
-                response.status(200).json({ message: "Save Successfully", statusCode: 200 })
-            }
+        });
 
 
-        })
     }
-})
+});
 
 app.post('/floor_list', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*')
@@ -671,10 +787,10 @@ app.post('/otp-send/send-mail', function (request, response) {
                             service: 'gmail',
                             auth: {
                                 user: request.body.email,
-                                pass :'afki rrvo jcke zjdt', 
+                                pass: 'afki rrvo jcke zjdt',
                             },
 
-                        }); 
+                        });
                         const mailOptions = {
                             from: request.body.email,
                             to: request.body.email,
@@ -682,10 +798,10 @@ app.post('/otp-send/send-mail', function (request, response) {
                             text: `Your OTP for password reset is: ${otp}`
                         };
                         transporter.sendMail(mailOptions, function (err, otpData) {
-                            console.log(" otpData*",  otpData);
+                            console.log(" otpData*", otpData);
                             console.log("otp send error", err);
                             if (err) {
-                                response.status(203).json({ message: "Failed to send OTP to email" ,statusCode:203});
+                                response.status(203).json({ message: "Failed to send OTP to email", statusCode: 203 });
                             } else {
                                 console.log('Email sent: ' + otp);
                                 response.status(200).json({ message: "Otp send  Successfully", otp: otp });
@@ -704,6 +820,6 @@ app.post('/otp-send/send-mail', function (request, response) {
     }
 });
 
-app.listen('2001', function () {
-    console.log("node is started at 2001")
+app.listen('2000', function () {
+    console.log("node is started at 2000")
 })
