@@ -19,12 +19,6 @@ app.use(function (req, res, next) {
     next();
 })
 
-// const connection = mysql.createConnection({
-//     host: 'localhost',
-//     database: 'smartstay',
-//     user: 'root',
-//     password: ''
-// })
 const connection = mysql.createConnection({
     host: 'ls-f4c1514e53cc8c27ec23a4ce119af8c49d7b1ce7.crocoq6qec8l.ap-south-1.rds.amazonaws.com',
     database: 'smart_stay',
@@ -123,7 +117,6 @@ app.get('/login/login', function (request, response) {
     }
 });
 
-
 app.post('/forget/select-list', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*')
     console.log("request.body", request.body)
@@ -145,42 +138,14 @@ app.post('/forget/select-list', function (request, response) {
                         response.status(201).json({ message: "Cannot Update NewPassowrd", statusCode: 201 })
                     }
                 })
-            }
-            else {
+            } else {
                 response.status(201).json({ message: "Enter Valid Otp", statusCode: 201 })
             }
         })
-    }
-    else {
+    } else {
         response.status(203).json({ message: "Missing Parameter" })
     }
-
 })
-
-// app.post('/forget/select-list', function (request, response) {
-//     response.set('Access-Control-Allow-Origin', '*')
-//     if (request.body.email) {
-//         connection.query(` SELECT * FROM createaccount WHERE email_id= \'${request.body.email}\'`, function (error, data) {
-//             if (data != "") {
-//                 connection.query(`UPDATE createaccount SET password= \'${request.body.NewPassword}\' WHERE email_id=\'${request.body.email}\' `, function (error, data) {
-//                     if ((data)) {
-//                         response.status(200).json({ message: "Update Successfully" })
-//                     }
-//                     else {
-//                         response.status(201).json({ message: "No User Found" })
-//                     }
-//                 })
-//             }
-//             else {
-//                 response.status(404).json({ message: "No User Found" })
-//             }
-//         })
-//     }
-//     else {
-//         response.status(201).json({ message: "Missing Parameter" })
-//     }
-
-// })
 
 app.post('/add/new-hostel', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*');
@@ -344,13 +309,6 @@ app.post('/list/numberOf-Rooms', function (request, response) {
                                 Number_Of_Beds: RoomsData[i].Number_Of_Beds
                             }
                             responseData.push(objectFormation);
-                            // if (errorMessage) {
-                            //     response.status(201).json({ message: "No Data Found" });
-                            // } else {
-                            //     if (responseData.length === RoomsData.length) {
-                            //         response.status(200).json(responseData);
-                            //     }
-                            // }
                         }
                         if (errorMessage) {
                             response.status(201).json({ message: "No Data Found" });
@@ -704,7 +662,6 @@ app.post('/otp-send/send-mail', function (request, response) {
     console.log("request.body", request.body)
     if (request.body.email) {
         connection.query(`SELECT * FROM createaccount WHERE email_id= \'${request.body.email}\'`, function (error, data) {
-
             if (data && data.length > 0) {
                 const otp = Math.floor(100000 + Math.random() * 900000).toString();
                 console.log("otp is ", otp);
@@ -713,14 +670,14 @@ app.post('/otp-send/send-mail', function (request, response) {
                         const transporter = nodemailer.createTransport({
                             service: 'gmail',
                             auth: {
-                                user: 'premathujasvi5706@gmail.com',
-                                pass: 'nuwe ecrt iciu lgrr',
+                                user: request.body.email,
+                                pass :'afki rrvo jcke zjdt', 
                             },
 
-                        });
+                        }); 
                         const mailOptions = {
                             from: request.body.email,
-                            to: 'premathujasvi5706@gmail.com',
+                            to: request.body.email,
                             subject: 'OTP for Password Reset',
                             text: `Your OTP for password reset is: ${otp}`
                         };
@@ -728,7 +685,7 @@ app.post('/otp-send/send-mail', function (request, response) {
                             console.log(" otpData*",  otpData);
                             console.log("otp send error", err);
                             if (err) {
-                                response.status(500).json({ message: "Failed to send OTP to email" });
+                                response.status(203).json({ message: "Failed to send OTP to email" ,statusCode:203});
                             } else {
                                 console.log('Email sent: ' + otp);
                                 response.status(200).json({ message: "Otp send  Successfully", otp: otp });
