@@ -366,7 +366,6 @@ app.post('/list/numberOf-Rooms', function (request, response) {
             }
 
             if (RoomsData.length > 0) {
-                let completedRequests = 0;
 
                 for (let i = 0; i < RoomsData.length; i++) {
                     const Room_Id = RoomsData[i].Room_Id;
@@ -384,8 +383,6 @@ app.post('/list/numberOf-Rooms', function (request, response) {
                             };
                             responseData.push(objectFormation);
                         }
-
-                        completedRequests++;
 
                         if (responseData.length === RoomsData.length) {
                             if (errorMessage) {
@@ -481,39 +478,6 @@ app.get('/hostel/list-details', function (request, response) {
     })
 })
 
-// app.post('/compliance/add-details', function (request, response) {
-//     response.set('Access-Control-Allow-Origin', '*');
-//     console.log(request.body);
-//     var atten = request.body;
-//     console.log(atten);
-
-//     if (atten.id) {
-//         connection.query(`UPDATE compliance set date=\'${atten.date}\', Name=\'${atten.Name}\',Phone=\'${atten.Phone}\', Requestid=\'${atten.Requestid}\',Roomdetail=\'${atten.Roomdetail}\', Complainttype=\'${atten.Complainttype}\' , Assign=\'${atten.Assign}\' , Status=\'${atten.Status}\' , Hostel_id=\'${atten.Hostel_id}\' , Floor_id=\'${atten.Floor_id}\' , Room=\'${atten.Room}\',hostelname=\'${atten.hostelname}\',Description=\'${atten.Description}\'  where  id= \'${atten.id}\'`, function (error, data) {
-//             if (error) {
-//                 response.status(201).json({ message: "No User Found" })
-//             }
-//             else {
-//                 response.status(200).json({ message: "Update Successfully" })
-//             }
-//         })
-//     }
-//     else {
-//         connection.query(`INSERT INTO compliance(date, Name, Phone,Requestid, Roomdetail, Complainttype ,Assign,Status,Hostel_id ,Floor_id ,Room,hostelname,Description) VALUES  
-//     (\'${atten.date}\',\'${atten.Name}\',\'${atten.Phone}\',\'${atten.Requestid}\' ,\'${atten.Roomdetail}\' ,\'${atten.Complainttype}\',\'${atten.Assign}\',\'${atten.Status}\' ,\'${atten.Hostel_id}\' ,\'${atten.Floor_id}\' ,\'${atten.Room}\',\'${atten.hostelname}\',\'${atten.Description}\')`, function (error, data) {
-
-//             if (error) {
-//                 console.log(error);
-//                 response.status(201).json({ message: "No User Found", statusCode: 201 })
-
-//             }
-//             else {
-//                 response.status(200).json({ message: "Save Successfully", statusCode: 200 })
-//             }
-
-
-//         })
-//     }
-// })
 app.post('/compliance/add-details', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*');
     console.log(request.body);
