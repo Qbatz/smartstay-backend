@@ -655,7 +655,7 @@ app.post('/room/create-room', function (request, response) {
                     response.status(200).json({ message: message && message.length > 0 ? message : 'Create Room Details successfully' })
                 }
             } else {
-                response.status(201).json({ message: 'Phone number not Registered' });
+                response.status(201).json({ message: 'No Data Found' });
             }
         });
     } else {
