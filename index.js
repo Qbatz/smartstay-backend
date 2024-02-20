@@ -784,6 +784,6 @@ app.post('/otp-send/send-mail', function (request, response) {
     }
 });
 
-app.listen('2000', function () {
-    console.log("node is started at 2000")
+app.listen('2001', function () {
+    console.log("node is started at 2001")
 })
