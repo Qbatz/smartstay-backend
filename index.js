@@ -776,7 +776,7 @@ app.post('/otp-send/send-mail', function (request, response) {
                     }
                 });
             } else {
-                response.status(201).json({ message: "Enter the Valid Email_id", statusCode: 201 });
+                response.status(201).json({ message: `${request.body.email} is doesn't exist`, statusCode: 201 });
             }
         });
     } else {
