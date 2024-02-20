@@ -528,7 +528,7 @@ app.post('/room/create-room', function (request, response) {
     let hostelId, errorMessage, message;
 
     if (reqsData) {
-        const query1 = `SELECT * FROM hosteldetails WHERE hostel_PhoneNo='${reqsData.phoneNo}'`;
+        const query1 = `SELECT * FROM hosteldetails WHERE hostel_PhoneNo='${reqsData.id}'`;
         connection.query(query1, function (error, data) {
 
             if (data && data.length > 0) {
