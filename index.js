@@ -103,7 +103,7 @@ app.get('/login/login', function (request, response) {
                     const storedPassword = data[0].password;
                     const providedPassword = password;
                     if (storedPassword === providedPassword) {
-                        response.status(200).json({ message: "Login Successfully", statusCode: 200 });
+                        response.status(200).json({ message: "Login Successfully", statusCode: 200,Data:data });
                     } else {
                         response.status(201).json({ message: "Please Enter valid Password", statusCode: 201 });
                     }
