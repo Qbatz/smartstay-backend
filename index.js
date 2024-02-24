@@ -103,7 +103,7 @@ app.get('/login/login', function (request, response) {
                     const storedPassword = data[0].password;
                     const providedPassword = password;
                     if (storedPassword === providedPassword) {
-                        response.status(200).json({ message: "Login Successfully", statusCode: 200,Data:data });
+                        response.status(200).json({ message: "Login Successfully", statusCode: 200, Data: data });
                     } else {
                         response.status(201).json({ message: "Please Enter valid Password", statusCode: 201 });
                     }
@@ -388,7 +388,7 @@ app.post('/list/numberOf-Rooms', function (request, response) {
                             if (errorMessage) {
                                 response.status(202).json({ message: "Error occurred while fetching data" });
                             } else {
-                                console.log("responseData",responseData);
+                                console.log("responseData", responseData);
                                 response.status(200).json(responseData);
                             }
                         }
@@ -590,7 +590,7 @@ app.post('/add/adduser-list', function (request, response) {
 
 app.get('/user-list/bill-payment', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*')
-    connection.query(`SELECT hos.Name ,hos.Phone,hos.Email,hos.Address,hos.AdvanceAmount,hos.BalanceDue,hos.Status,hos.createdAt,inv.Name as invoiceName, inv.phoneNo as invoicePhone ,inv.Date as invDate, inv.Amount as invAmount,inv.BalanceDue as invBalance ,inv.Status as invStatus  FROM hostel hos INNER JOIN invoicedetails inv on inv.phoneNo= hos.Phone`, function (error, data) {
+    connection.query(`SELECT hos.Name ,hos.Phone,hos.Email,hos.Address,hos.AdvanceAmount,hos.BalanceDue,hos.Status,hos.createdAt,inv.Name as invoiceName, inv.phoneNo as invoicePhone ,inv.Date as invDate, inv.Amount as invAmount,inv.BalanceDue as invBalance ,inv.Status as invStatus inv.Invoices as InvoiceNo FROM hostel hos INNER JOIN invoicedetails inv on inv.phoneNo= hos.Phone`, function (error, data) {
         console.log(error);
         if (error) {
             response.status(201).json({ message: 'No Data Found', statusCode: 201 })
@@ -784,23 +784,41 @@ app.post('/otp-send/send-mail', function (request, response) {
     }
 });
 
-app.post('/bed/bed-details', function (request,response){
+// app.post('/bed/bed-details', function (request,response){
+//     response.set('Access-Control-Allow-Origin', '*');
+//     console.log("requestBody is bed", request.body);
+//     const reqBedDetails = request.body;
+// if(reqBedDetails){
+//     const query = `select * from hostel where Hostel_Id = \'${reqBedDetails.hostel_Id}\' and Floor = \'${reqBedDetails.floor_Id}\' and Rooms= \'${reqBedDetails.room_Id}\' and Bed=\'${reqBedDetails.bed_Id}\'  `
+// connection.query(query,function(error,bedData){
+//     console.log("bedData",bedData)
+//     if(error){
+//         response.status(201).json({ message: 'No data found' ,statusCode:201})
+//     }else{
+//         response.status(200).json({ data: bedData, statusCode: 200 })
+//     }
+// })
+// }else{
+//     response.status(201).json({ message: 'Missing Parameter' })
+// }
+// })
+app.post('/bed/bed-details', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*');
     console.log("requestBody is bed", request.body);
     const reqBedDetails = request.body;
-if(reqBedDetails){
-    const query = `select * from hostel where Hostel_Id = \'${reqBedDetails.hostel_Id}\' and Floor = \'${reqBedDetails.floor_Id}\' and Rooms= \'${reqBedDetails.room_Id}\' and Bed=\'${reqBedDetails.bed_Id}\'  `
-connection.query(query,function(error,bedData){
-    console.log("bedData",bedData)
-    if(error){
-        response.status(201).json({ message: 'No data found' ,statusCode:201})
-    }else{
-        response.status(200).json({ data: bedData, statusCode: 200 })
+    if (reqBedDetails) {
+        const query = `select * from hostel where Hostel_Id = \'${reqBedDetails.hostel_Id}\' and Floor = \'${reqBedDetails.floor_Id}\' and Rooms= \'${reqBedDetails.room_Id}\' and Bed=\'${reqBedDetails.bed_Id}\'  `
+        connection.query(query, function (error, bedData) {
+            console.log("bedData", bedData.length)
+            if (bedData.length > 0) {
+                response.status(200).json({ data: bedData })
+            } else {
+                response.status(201).json({ message: 'No data found' })
+            }
+        })
+    } else {
+        response.status(201).json({ message: 'Missing Parameter' })
     }
-})
-}else{
-    response.status(201).json({ message: 'Missing Parameter' })
-}
 })
 
 app.listen('2001', function () {
