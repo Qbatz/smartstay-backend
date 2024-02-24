@@ -590,7 +590,7 @@ app.post('/add/adduser-list', function (request, response) {
 
 app.get('/user-list/bill-payment', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*')
-    connection.query(`SELECT hos.Name ,hos.Phone,hos.Email,hos.Address,hos.AdvanceAmount,hos.BalanceDue,hos.Status,hos.createdAt,inv.Name as invoiceName, inv.phoneNo as invoicePhone ,inv.Date as invDate, inv.Amount as invAmount,inv.BalanceDue as invBalance ,inv.Status as invStatus inv.Invoices as InvoiceNo FROM hostel hos INNER JOIN invoicedetails inv on inv.phoneNo= hos.Phone`, function (error, data) {
+    connection.query(`SELECT hos.Name ,hos.Phone,hos.Email,hos.Address,hos.AdvanceAmount,hos.BalanceDue,hos.Status,hos.createdAt,inv.Name as invoiceName, inv.phoneNo as invoicePhone ,inv.Date as invDate, inv.Amount as invAmount,inv.BalanceDue as invBalance ,inv.Status as invStatus, inv.Invoices as InvoiceNo FROM hostel hos INNER JOIN invoicedetails inv on inv.phoneNo= hos.Phone`, function (error, data) {
         console.log(error);
         if (error) {
             response.status(201).json({ message: 'No Data Found', statusCode: 201 })
