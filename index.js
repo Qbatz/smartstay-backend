@@ -1,4 +1,5 @@
 const express = require('express')
+const nodemailer = require('nodemailer');
 const mysql = require('mysql');
 var cors = require('cors');
 
