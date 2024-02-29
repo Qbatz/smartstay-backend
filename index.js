@@ -124,7 +124,7 @@ app.post('/forget/select-list', function (request, response) {
     if (request.body.email) {
         connection.query(`SELECT * FROM createaccount WHERE email_id= \'${request.body.email}\'`, function (error, data) {
             console.log("data for reset", data[0].Otp)
-            if (data[0].Otp === Number(request.body.otp)) {
+            // if (data[0].Otp === Number(request.body.otp)) {
                 connection.query(`UPDATE createaccount SET password= \'${request.body.NewPassword}\' WHERE email_id=\'${request.body.email}\' `, function (error, data) {
                     if ((data)) {
                         connection.query(`UPDATE createaccount SET Otp = 0 WHERE email_id=\'${request.body.email}\' `, function (error, resetData) {
@@ -139,9 +139,9 @@ app.post('/forget/select-list', function (request, response) {
                         response.status(201).json({ message: "Cannot Update NewPassowrd", statusCode: 201 })
                     }
                 })
-            } else {
-                response.status(201).json({ message: "Enter Valid Otp", statusCode: 201 })
-            }
+            // } else {
+            //     response.status(201).json({ message: "Enter Valid Otp", statusCode: 201 })
+            // }
         })
     } else {
         response.status(203).json({ message: "Missing Parameter" })
