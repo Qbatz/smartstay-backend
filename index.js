@@ -95,56 +95,7 @@ app.post('/create/create-account', function (request, response) {
 });
 
 
-// app.post('/create/create-account', function (request, response) {
-//     response.set('Access-Control-Allow-Origin', '*');
-//     console.log("request", request.body);
-//     let reqBodyData = request.body;
 
-
-//     if (reqBodyData.id) {
-//         connection.query(`UPDATE createaccount SET Name= '${reqBodyData.name}'  mobileNo='${reqBodyData.mobileNo}', email_Id='${reqBodyData.emailId}', password='${reqBodyData.password}', Address='${reqBodyData.Address}', Country='${reqBodyData.Country}', City='${reqBodyData.City}', State='${reqBodyData.State}' WHERE id='${reqBodyData.id}'`, function (error, data) {
-//             if (error) {
-//                 response.status(201).json({ message: "No User Found" });
-//             } else {
-//                 response.status(200).json({ message: "Update Successfully" });
-//             }
-//         });
-//     } 
-
-//     if (reqBodyData.mobileNo && reqBodyData.emailId) {
-//         connection.query(`SELECT * FROM createaccount WHERE mobileNo=${reqBodyData.mobileNo} OR email_Id='${reqBodyData.emailId}'`, function (error, data) {
-//             console.log("data for", data);
-
-
-//             if (data.length === 0) {
-//                 connection.query(`INSERT INTO createaccount(Name, mobileNo, email_Id, password) VALUES ('${reqBodyData.name}', '${reqBodyData.mobileNo}', '${reqBodyData.emailId}', '${reqBodyData.password}')`, function (error, data) {
-//                     if (error) {
-//                         console.log("error", error);
-//                         response.status(500).json({ message: 'Database error' });
-//                     } else {
-//                         response.status(200).json({ message: 'Created Successfully', statusCode: 200 });
-//                     }
-//                 });
-//             } else {
-//                 const mobileExists = data.some(record => record.mobileNo === reqBodyData.mobileNo);
-//                 const emailExists = data.some(record => record.email_Id === reqBodyData.emailId);
-
-//                 if (mobileExists && emailExists) {
-//                     response.status(203).json({ message: 'Mobile Number and Email ID is already exist', statusCode: 203 });
-//                 } else if (emailExists) {
-//                     response.status(201).json({ message: 'Email ID already exists', statusCode: 201 });
-//                 } else if (mobileExists) {
-//                     response.status(202).json({ message: 'Mobile Number already exists', statusCode: 202 });
-//                 }
-//             }
-//         });
-//     } 
-
-
-//     else {
-//         response.status(201).json({ message: 'Missing Parameter' });
-//     }
-// });
 
 app.get('/login/login', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*');
