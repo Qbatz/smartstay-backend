@@ -796,42 +796,25 @@ app.post('/otp-send/send-mail', function (request, response) {
     }
 });
 
-// app.post('/bed/bed-details', function (request,response){
+
+// app.post('/bed/bed-details', function (request, response) {
 //     response.set('Access-Control-Allow-Origin', '*');
 //     console.log("requestBody is bed", request.body);
 //     const reqBedDetails = request.body;
-// if(reqBedDetails){
-//     const query = `select * from hostel where Hostel_Id = \'${reqBedDetails.hostel_Id}\' and Floor = \'${reqBedDetails.floor_Id}\' and Rooms= \'${reqBedDetails.room_Id}\' and Bed=\'${reqBedDetails.bed_Id}\'  `
-// connection.query(query,function(error,bedData){
-//     console.log("bedData",bedData)
-//     if(error){
-//         response.status(201).json({ message: 'No data found' ,statusCode:201})
-//     }else{
-//         response.status(200).json({ data: bedData, statusCode: 200 })
+//     if (reqBedDetails) {
+//         const query = `select * from hostel where Hostel_Id = \'${reqBedDetails.hostel_Id}\' and Floor = \'${reqBedDetails.floor_Id}\' and Rooms= \'${reqBedDetails.room_Id}\' and Bed=\'${reqBedDetails.bed_Id}\'  `
+//         connection.query(query, function (error, bedData) {
+//             console.log("bedData", bedData.length)
+//             if (bedData.length > 0) {
+//                 response.status(200).json({ data: bedData })
+//             } else {
+//                 response.status(201).json({ message: 'No data found' })
+//             }
+//         })
+//     } else {
+//         response.status(201).json({ message: 'Missing Parameter' })
 //     }
 // })
-// }else{
-//     response.status(201).json({ message: 'Missing Parameter' })
-// }
-// })
-app.post('/bed/bed-details', function (request, response) {
-    response.set('Access-Control-Allow-Origin', '*');
-    console.log("requestBody is bed", request.body);
-    const reqBedDetails = request.body;
-    if (reqBedDetails) {
-        const query = `select * from hostel where Hostel_Id = \'${reqBedDetails.hostel_Id}\' and Floor = \'${reqBedDetails.floor_Id}\' and Rooms= \'${reqBedDetails.room_Id}\' and Bed=\'${reqBedDetails.bed_Id}\'  `
-        connection.query(query, function (error, bedData) {
-            console.log("bedData", bedData.length)
-            if (bedData.length > 0) {
-                response.status(200).json({ data: bedData })
-            } else {
-                response.status(201).json({ message: 'No data found' })
-            }
-        })
-    } else {
-        response.status(201).json({ message: 'Missing Parameter' })
-    }
-})
 
 app.listen('2001', function () {
     console.log("node is started at 2001")
