@@ -422,10 +422,10 @@ app.post('/add/invoice-add', function (request, response) {
     if (reqdatum.Phone) {
         connection.query(`select * from invoicedetails where phoneNo=\'${reqdatum.Phone}\' and EmailID = \'${reqdatum.Email}\'`, function (err, datum) {
             if (reqdatum.id) {
-                query = `UPDATE invoicedetails SET Name=\'${reqdatum.Name}\',phoneNo=\'${reqdatum.Phone}\',EmailID=\'${reqdatum.Email}\',Hostel_Name= \'${reqdatum.hostel_Name}\',Hostel_Id=\'${reqdatum.hostel_Id}\',Floor_Id=\'${reqdatum.Floor_Id}\',Room_No=\'${reqdatum.RoomNo}\',Amount=\'${reqdatum.Amount}\',BalanceDue=\'${reqdatum.BalanceDue}\',DueDate=\'${reqdatum.DueDate}\',Status=\'${reqdatum.Status}\' WHERE id=\'${reqdatum.id}\'`
+                query = `UPDATE invoicedetails SET Name=\'${reqdatum.Name}\',phoneNo=\'${reqdatum.Phone}\',EmailID=\'${reqdatum.Email}\',Hostel_Name= \'${reqdatum.hostel_Name}\',Hostel_Id=\'${reqdatum.hostel_Id}\',Floor_Id=\'${reqdatum.Floor_Id}\',Room_No=\'${reqdatum.RoomNo}\',Amount=\'${reqdatum.Amount}\',BalanceDue=\'${reqdatum.BalanceDue}\',Date=\'${reqdatum.Date}\',DueDate=\'${reqdatum.DueDate}\',Status=\'${reqdatum.Status}\' WHERE id=\'${reqdatum.id}\'`
             }
             else {
-                query = `INSERT INTO invoicedetails ( Name, phoneNo, EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No, Amount, BalanceDue, DueDate,Invoices, Status) VALUES (\'${reqdatum.Name}\',\'${reqdatum.Phone}\',\'${reqdatum.Email}\',\'${reqdatum.hostel_Name}\',\'${reqdatum.hostel_Id}\',\'${reqdatum.Floor_Id}\',\'${reqdatum.RoomNo}\',\'${reqdatum.Amount}\',\'${reqdatum.BalanceDue}\',\'${reqdatum.DueDate}\',\'${reqdatum.invoiceNo}\',\'${reqdatum.Status}\')`
+                query = `INSERT INTO invoicedetails ( Name, phoneNo, EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No, Amount, BalanceDue,Date, DueDate,Invoices, Status) VALUES (\'${reqdatum.Name}\',\'${reqdatum.Phone}\',\'${reqdatum.Email}\',\'${reqdatum.hostel_Name}\',\'${reqdatum.hostel_Id}\',\'${reqdatum.Floor_Id}\',\'${reqdatum.RoomNo}\',\'${reqdatum.Amount}\',\'${reqdatum.BalanceDue}\',\'${reqdatum.Date}\',\'${reqdatum.DueDate}\',\'${reqdatum.invoiceNo}\',\'${reqdatum.Status}\')`
             }
 
             connection.query(query, function (error, data) {
@@ -443,6 +443,38 @@ app.post('/add/invoice-add', function (request, response) {
         response.status(201).json({ message: "Missing Parameter" })
     }
 })
+
+
+
+// app.post('/add/invoice-add', function (request, response) {
+//     response.set('Access-Control-Allow-Origin', '*');
+//     const reqdatum = request.body;
+//     var query;
+//     console.log("reqdatum", reqdatum);
+//     if (reqdatum.invoiceNo) {
+//         connection.query(`select * from invoicedetails where Invoices=\'${reqdatum.invoiceNo}\'`, function (err, datum) {
+//             if (datum) {
+//                 query = `UPDATE invoicedetails SET Name=\'${reqdatum.Name}\',phoneNo=\'${reqdatum.Phone}\',EmailID=\'${reqdatum.Email}\',Hostel_Name= \'${reqdatum.hostel_Name}\',Hostel_Id=\'${reqdatum.hostel_Id}\',Floor_Id=\'${reqdatum.Floor_Id}\',Room_No=\'${reqdatum.RoomNo}\',Amount=\'${reqdatum.Amount}\',BalanceDue=\'${reqdatum.BalanceDue}\',DueDate=\'${reqdatum.DueDate}\',Status=\'${reqdatum.Status}\' WHERE Invoices=\'${reqdatum.invoiceNo}\'`
+//             }
+//             else {
+//                 query = `INSERT INTO invoicedetails ( Name, phoneNo, EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No, Amount, BalanceDue, DueDate,Invoices, Status) VALUES (\'${reqdatum.Name}\',\'${reqdatum.Phone}\',\'${reqdatum.Email}\',\'${reqdatum.hostel_Name}\',\'${reqdatum.hostel_Id}\',\'${reqdatum.Floor_Id}\',\'${reqdatum.RoomNo}\',\'${reqdatum.Amount}\',\'${reqdatum.BalanceDue}\',\'${reqdatum.DueDate}\',\'${reqdatum.invoiceNo}\',\'${reqdatum.Status}\')`
+//             }
+
+//             connection.query(query, function (error, data) {
+//                 if (error) {
+//                     response.status(201).json({ message: "No Data Found" })
+//                 }
+//                 else {
+//                     response.status(200).json({ message: "Data Inserted SuccessFully" })
+//                 }
+//             })
+//         })
+
+//     }
+//     else {
+//         response.status(201).json({ message: "Missing Parameter" })
+//     }
+// })
 
 app.get('/list/invoice-list', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*')
@@ -575,6 +607,14 @@ app.post('/add/adduser-list', function (request, response) {
             }
         });
     } else {
+        function generateUserId(firstName) {
+            const userIdPrefix = firstName.substring(0, 4).toUpperCase();
+            const randomNum = Math.floor(100 + Math.random() * 900); // Generates a random 3-digit number
+            const userId = userIdPrefix + randomNum;
+            return userId;
+        }
+        const User_Id = generateUserId(atten.firstname);
+        console.log(" User_Id", User_Id)
         connection.query(`SELECT * FROM hostel WHERE Phone='${atten.Phone}'`, function (error, data) {
             if (data.length > 0) {
                 response.status(202).json({ message: "Phone Number Already Exists", statusCode: 202 });
@@ -583,7 +623,7 @@ app.post('/add/adduser-list', function (request, response) {
                     if (data.length > 0) {
                         response.status(203).json({ message: "Email Already Exists", statusCode: 203 });
                     } else {
-                        connection.query(`INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status) VALUES ('${Circle}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}')`, function (insertError, insertData) {
+                        connection.query(`INSERT INTO hostel (Circle,User_Id, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status) VALUES ('${Circle}','${User_Id}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}')`, function (insertError, insertData) {
                             if (insertError) {
                                 console.log(insertError);
                                 response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
@@ -595,10 +635,10 @@ app.post('/add/adduser-list', function (request, response) {
                 });
             }
         });
-
-
     }
 });
+
+
 
 app.get('/user-list/bill-payment', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*')
