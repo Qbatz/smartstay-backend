@@ -415,6 +415,7 @@ app.post('/list/numberOf-Rooms', function (request, response) {
 });
 
 
+
 app.post('/add/invoice-add', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*');
     const reqdatum = request.body;
@@ -437,21 +438,39 @@ app.post('/add/invoice-add', function (request, response) {
 
         if (hostelData.length > 0) {
             const UserID = hostelData[0].User_Id;
-
-            let query;
-            if (UserID) {
-                query = `UPDATE invoicedetails SET Name=\'${reqdatum.Name}\',phoneNo=\'${reqdatum.Phone}\',EmailID=\'${reqdatum.Email}\',Hostel_Name= \'${reqdatum.hostel_Name}\',Hostel_Id=\'${reqdatum.hostel_Id}\',Floor_Id=\'${reqdatum.Floor_Id}\',Room_No=\'${reqdatum.RoomNo}\',Amount=\'${reqdatum.Amount}\',BalanceDue=\'${reqdatum.BalanceDue}\',Date=\'${reqdatum.Date}\',DueDate=\'${reqdatum.DueDate}\',Status=\'${reqdatum.Status}\' WHERE User_Id=\'${UserID}\'`;
-            } else {
-                query = `INSERT INTO invoicedetails ( Name, phoneNo, EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No, Amount, BalanceDue,Date, DueDate,Invoices, Status,User_Id) VALUES (\'${reqdatum.Name}\',\'${reqdatum.Phone}\',\'${reqdatum.Email}\',\'${reqdatum.hostel_Name}\',\'${reqdatum.hostel_Id}\',\'${reqdatum.Floor_Id}\',\'${reqdatum.RoomNo}\',\'${reqdatum.Amount}\',\'${reqdatum.BalanceDue}\',\'${reqdatum.Date}\',\'${reqdatum.DueDate}\',\'${reqdatum.invoiceNo}\',\'${reqdatum.Status}\',\'${UserID}\')`;
-            }
-
-            connection.query(query, [reqdatum.Name, reqdatum.Phone, reqdatum.Email, reqdatum.hostel_Name, reqdatum.hostel_Id, reqdatum.Floor_Id, reqdatum.RoomNo, reqdatum.Amount, reqdatum.BalanceDue, reqdatum.Date, reqdatum.DueDate, reqdatum.invoiceNo, reqdatum.Status, UserID], function (error, data) {
-                if (error) {
-                    console.error("Error executing query:", error);
+          
+            connection.query(`SELECT * FROM invoicedetails WHERE Date = \'${reqdatum.Date}\' AND User_Id = \'${UserID}\'`, function (err, existingData) {
+                if (err) {
+                    console.error("Error querying existing invoice data:", err);
                     response.status(500).json({ message: "Internal Server Error" });
                     return;
                 }
-                response.status(200).json({ message: "Data Inserted Successfully" });
+
+                if (existingData.length > 0) {
+                    // Data exists for the provided date and user ID, perform update
+                    let query = `UPDATE invoicedetails SET Name='${reqdatum.Name}', phoneNo='${reqdatum.Phone}', EmailID='${reqdatum.Email}', Hostel_Name='${reqdatum.hostel_Name}', Hostel_Id='${reqdatum.hostel_Id}', Floor_Id='${reqdatum.Floor_Id}', Room_No='${reqdatum.RoomNo}', Amount='${reqdatum.Amount}', BalanceDue='${reqdatum.BalanceDue}', DueDate='${reqdatum.DueDate}', Status='${reqdatum.Status}' WHERE User_Id='${UserID}' AND Date='${reqdatum.Date}'`;
+                    
+                    connection.query(query, function (error, data) {
+                        if (error) {
+                            console.error("Error updating invoice data:", error);
+                            response.status(500).json({ message: "Internal Server Error" });
+                            return;
+                        }
+                        response.status(200).json({ message: "Data Updated Successfully" });
+                    });
+                } else {
+                    // No existing data for the provided date and user ID, perform insert
+                    let query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${reqdatum.Name}', '${reqdatum.Phone}', '${reqdatum.Email}', '${reqdatum.hostel_Name}', '${reqdatum.hostel_Id}', '${reqdatum.Floor_Id}', '${reqdatum.RoomNo}', '${reqdatum.Amount}', '${reqdatum.BalanceDue}', '${reqdatum.Date}', '${reqdatum.DueDate}', '${reqdatum.invoiceNo}', '${reqdatum.Status}', '${UserID}')`;
+
+                    connection.query(query, function (error, data) {
+                        if (error) {
+                            console.error("Error inserting invoice data:", error);
+                            response.status(500).json({ message: "Internal Server Error" });
+                            return;
+                        }
+                        response.status(200).json({ message: "Data Inserted Successfully" });
+                    });
+                }
             });
         } else {
             response.status(404).json({ message: "User not found" });
@@ -460,39 +479,52 @@ app.post('/add/invoice-add', function (request, response) {
 });
 
 
-
-
 // app.post('/add/invoice-add', function (request, response) {
 //     response.set('Access-Control-Allow-Origin', '*');
 //     const reqdatum = request.body;
-//     var query;
+    
 //     console.log("reqdatum", reqdatum);
-//     if (reqdatum.Phone) {
-//         connection.query(`select * from hostel where User_Id= \'${reqdatum.User_Id}\'`, function (err, datum) {
-//             console.log("datum......???",datum)
-//             const userID =datum
-//             if (reqdatum.id) {
-//                 query = `UPDATE invoicedetails SET Name=\'${reqdatum.Name}\',phoneNo=\'${reqdatum.Phone}\',EmailID=\'${reqdatum.Email}\',Hostel_Name= \'${reqdatum.hostel_Name}\',Hostel_Id=\'${reqdatum.hostel_Id}\',Floor_Id=\'${reqdatum.Floor_Id}\',Room_No=\'${reqdatum.RoomNo}\',Amount=\'${reqdatum.Amount}\',BalanceDue=\'${reqdatum.BalanceDue}\',Date=\'${reqdatum.Date}\',DueDate=\'${reqdatum.DueDate}\',Status=\'${reqdatum.Status}\',User_id=\'${userID}\' WHERE id=\'${reqdatum.id}\'`
-//             }
-//             else {
-//                 query = `INSERT INTO invoicedetails ( Name, phoneNo, EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No, Amount, BalanceDue,Date, DueDate,Invoices, Status,User_id) VALUES (\'${reqdatum.Name}\',\'${reqdatum.Phone}\',\'${reqdatum.Email}\',\'${reqdatum.hostel_Name}\',\'${reqdatum.hostel_Id}\',\'${reqdatum.Floor_Id}\',\'${reqdatum.RoomNo}\',\'${reqdatum.Amount}\',\'${reqdatum.BalanceDue}\',\'${reqdatum.Date}\',\'${reqdatum.DueDate}\',\'${reqdatum.invoiceNo}\',\'${reqdatum.Status}\',\'${userID}\')`
+
+//     if (!reqdatum.User_Id) {
+//         response.status(400).json({ message: "Missing Parameter: User_Id" });
+//         return;
+//     }
+
+//     connection.query(`SELECT * FROM hostel WHERE User_Id = \'${reqdatum.User_Id}\'`, function (err, hostelData) {
+//         if (err) {
+//             console.error("Error querying hostel data:", err);
+//             response.status(500).json({ message: "Internal Server Error" });
+//             return;
+//         }
+//         console.log("hostelData", hostelData);
+//         if (hostelData.length > 0) {
+//             const UserID = hostelData[0].User_Id;
+
+//             let query;
+//             if (UserID) {
+//                 query = `UPDATE invoicedetails SET Name=\'${reqdatum.Name}\',phoneNo=\'${reqdatum.Phone}\',EmailID=\'${reqdatum.Email}\',Hostel_Name= \'${reqdatum.hostel_Name}\',Hostel_Id=\'${reqdatum.hostel_Id}\',Floor_Id=\'${reqdatum.Floor_Id}\',Room_No=\'${reqdatum.RoomNo}\',Amount=\'${reqdatum.Amount}\',BalanceDue=\'${reqdatum.BalanceDue}\',Date=\'${reqdatum.Date}\',DueDate=\'${reqdatum.DueDate}\',Status=\'${reqdatum.Status}\' WHERE User_Id=\'${UserID}\'`;
+//             } else {
+//                 query = `INSERT INTO invoicedetails ( Name, phoneNo, EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No, Amount, BalanceDue,Date, DueDate,Invoices, Status,User_Id) VALUES (\'${reqdatum.Name}\',\'${reqdatum.Phone}\',\'${reqdatum.Email}\',\'${reqdatum.hostel_Name}\',\'${reqdatum.hostel_Id}\',\'${reqdatum.Floor_Id}\',\'${reqdatum.RoomNo}\',\'${reqdatum.Amount}\',\'${reqdatum.BalanceDue}\',\'${reqdatum.Date}\',\'${reqdatum.DueDate}\',\'${reqdatum.invoiceNo}\',\'${reqdatum.Status}\',\'${UserID}\')`;
 //             }
 
-//             connection.query(query, function (error, data) {
+//             connection.query(query, [reqdatum.Name, reqdatum.Phone, reqdatum.Email, reqdatum.hostel_Name, reqdatum.hostel_Id, reqdatum.Floor_Id, reqdatum.RoomNo, reqdatum.Amount, reqdatum.BalanceDue, reqdatum.Date, reqdatum.DueDate, reqdatum.invoiceNo, reqdatum.Status, UserID], function (error, data) {
 //                 if (error) {
-//                     response.status(201).json({ message: "No Data Found" })
+//                     console.error("Error executing query:", error);
+//                     response.status(500).json({ message: "Internal Server Error" });
+//                     return;
 //                 }
-//                 else {
-//                     response.status(200).json({ message: "Data Inserted SuccessFully" })
-//                 }
-//             })
-//         })
+//                 response.status(200).json({ message: "Data Inserted Successfully" });
+//             });
+//         } else {
+//             response.status(404).json({ message: "User not found" });
+//         }
+//     });
+// });
 
-//     }
-//     else {
-//         response.status(201).json({ message: "Missing Parameter" })
-//     }
-// })
+
+
+
+
 
 // app.post('/add/invoice-add', function (request, response) {
 //     response.set('Access-Control-Allow-Origin', '*');
