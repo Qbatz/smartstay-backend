@@ -439,7 +439,7 @@ app.post('/add/invoice-add', function (request, response) {
         if (hostelData.length > 0) {
             const UserID = hostelData[0].User_Id;
           
-            connection.query(`SELECT * FROM invoicedetails WHERE Date = \'${reqdatum.Date}\' AND User_Id = \'${UserID}\'`, function (err, existingData) {
+            connection.query(`SELECT * FROM invoicedetails WHERE Date = \'${reqdatum.Date}\'`, function (err, existingData) {
                 if (err) {
                     console.error("Error querying existing invoice data:", err);
                     response.status(500).json({ message: "Internal Server Error" });
