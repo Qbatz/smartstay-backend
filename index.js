@@ -414,35 +414,115 @@ app.post('/list/numberOf-Rooms', function (request, response) {
     }
 });
 
+
 app.post('/add/invoice-add', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*');
     const reqdatum = request.body;
-    var query;
+    
     console.log("reqdatum", reqdatum);
-    if (reqdatum.Phone) {
-        connection.query(`select * from invoicedetails where phoneNo=\'${reqdatum.Phone}\' and EmailID = \'${reqdatum.Email}\'`, function (err, datum) {
-            if (reqdatum.id) {
-                query = `UPDATE invoicedetails SET Name=\'${reqdatum.Name}\',phoneNo=\'${reqdatum.Phone}\',EmailID=\'${reqdatum.Email}\',Hostel_Name= \'${reqdatum.hostel_Name}\',Hostel_Id=\'${reqdatum.hostel_Id}\',Floor_Id=\'${reqdatum.Floor_Id}\',Room_No=\'${reqdatum.RoomNo}\',Amount=\'${reqdatum.Amount}\',BalanceDue=\'${reqdatum.BalanceDue}\',Date=\'${reqdatum.Date}\',DueDate=\'${reqdatum.DueDate}\',Status=\'${reqdatum.Status}\' WHERE id=\'${reqdatum.id}\'`
-            }
-            else {
-                query = `INSERT INTO invoicedetails ( Name, phoneNo, EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No, Amount, BalanceDue,Date, DueDate,Invoices, Status) VALUES (\'${reqdatum.Name}\',\'${reqdatum.Phone}\',\'${reqdatum.Email}\',\'${reqdatum.hostel_Name}\',\'${reqdatum.hostel_Id}\',\'${reqdatum.Floor_Id}\',\'${reqdatum.RoomNo}\',\'${reqdatum.Amount}\',\'${reqdatum.BalanceDue}\',\'${reqdatum.Date}\',\'${reqdatum.DueDate}\',\'${reqdatum.invoiceNo}\',\'${reqdatum.Status}\')`
+
+    if (!reqdatum.User_Id) {
+        response.status(400).json({ message: "Missing Parameter: User_Id" });
+        return;
+    }
+
+    connection.query(`SELECT * FROM hostel WHERE User_Id = \'${reqdatum.User_Id}\'`, function (err, hostelData) {
+        if (err) {
+            console.error("Error querying hostel data:", err);
+            response.status(500).json({ message: "Internal Server Error" });
+            return;
+        }
+
+        console.log("hostelData", hostelData);
+
+        if (hostelData.length > 0) {
+            const UserID = hostelData[0].User_Id;
+
+            let query;
+            if (UserID) {
+                query = `UPDATE invoicedetails SET Name=\'${reqdatum.Name}\',phoneNo=\'${reqdatum.Phone}\',EmailID=\'${reqdatum.Email}\',Hostel_Name= \'${reqdatum.hostel_Name}\',Hostel_Id=\'${reqdatum.hostel_Id}\',Floor_Id=\'${reqdatum.Floor_Id}\',Room_No=\'${reqdatum.RoomNo}\',Amount=\'${reqdatum.Amount}\',BalanceDue=\'${reqdatum.BalanceDue}\',Date=\'${reqdatum.Date}\',DueDate=\'${reqdatum.DueDate}\',Status=\'${reqdatum.Status}\' WHERE User_Id=\'${UserID}\'`;
+            } else {
+                query = `INSERT INTO invoicedetails ( Name, phoneNo, EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No, Amount, BalanceDue,Date, DueDate,Invoices, Status,User_Id) VALUES (\'${reqdatum.Name}\',\'${reqdatum.Phone}\',\'${reqdatum.Email}\',\'${reqdatum.hostel_Name}\',\'${reqdatum.hostel_Id}\',\'${reqdatum.Floor_Id}\',\'${reqdatum.RoomNo}\',\'${reqdatum.Amount}\',\'${reqdatum.BalanceDue}\',\'${reqdatum.Date}\',\'${reqdatum.DueDate}\',\'${reqdatum.invoiceNo}\',\'${reqdatum.Status}\',\'${UserID}\')`;
             }
 
-            connection.query(query, function (error, data) {
+            connection.query(query, [reqdatum.Name, reqdatum.Phone, reqdatum.Email, reqdatum.hostel_Name, reqdatum.hostel_Id, reqdatum.Floor_Id, reqdatum.RoomNo, reqdatum.Amount, reqdatum.BalanceDue, reqdatum.Date, reqdatum.DueDate, reqdatum.invoiceNo, reqdatum.Status, UserID], function (error, data) {
                 if (error) {
-                    response.status(201).json({ message: "No Data Found" })
+                    console.error("Error executing query:", error);
+                    response.status(500).json({ message: "Internal Server Error" });
+                    return;
                 }
-                else {
-                    response.status(200).json({ message: "Data Inserted SuccessFully" })
-                }
-            })
-        })
+                response.status(200).json({ message: "Data Inserted Successfully" });
+            });
+        } else {
+            response.status(404).json({ message: "User not found" });
+        }
+    });
+});
 
-    }
-    else {
-        response.status(201).json({ message: "Missing Parameter" })
-    }
-})
+
+
+
+// app.post('/add/invoice-add', function (request, response) {
+//     response.set('Access-Control-Allow-Origin', '*');
+//     const reqdatum = request.body;
+//     var query;
+//     console.log("reqdatum", reqdatum);
+//     if (reqdatum.Phone) {
+//         connection.query(`select * from hostel where User_Id= \'${reqdatum.User_Id}\'`, function (err, datum) {
+//             console.log("datum......???",datum)
+//             const userID =datum
+//             if (reqdatum.id) {
+//                 query = `UPDATE invoicedetails SET Name=\'${reqdatum.Name}\',phoneNo=\'${reqdatum.Phone}\',EmailID=\'${reqdatum.Email}\',Hostel_Name= \'${reqdatum.hostel_Name}\',Hostel_Id=\'${reqdatum.hostel_Id}\',Floor_Id=\'${reqdatum.Floor_Id}\',Room_No=\'${reqdatum.RoomNo}\',Amount=\'${reqdatum.Amount}\',BalanceDue=\'${reqdatum.BalanceDue}\',Date=\'${reqdatum.Date}\',DueDate=\'${reqdatum.DueDate}\',Status=\'${reqdatum.Status}\',User_id=\'${userID}\' WHERE id=\'${reqdatum.id}\'`
+//             }
+//             else {
+//                 query = `INSERT INTO invoicedetails ( Name, phoneNo, EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No, Amount, BalanceDue,Date, DueDate,Invoices, Status,User_id) VALUES (\'${reqdatum.Name}\',\'${reqdatum.Phone}\',\'${reqdatum.Email}\',\'${reqdatum.hostel_Name}\',\'${reqdatum.hostel_Id}\',\'${reqdatum.Floor_Id}\',\'${reqdatum.RoomNo}\',\'${reqdatum.Amount}\',\'${reqdatum.BalanceDue}\',\'${reqdatum.Date}\',\'${reqdatum.DueDate}\',\'${reqdatum.invoiceNo}\',\'${reqdatum.Status}\',\'${userID}\')`
+//             }
+
+//             connection.query(query, function (error, data) {
+//                 if (error) {
+//                     response.status(201).json({ message: "No Data Found" })
+//                 }
+//                 else {
+//                     response.status(200).json({ message: "Data Inserted SuccessFully" })
+//                 }
+//             })
+//         })
+
+//     }
+//     else {
+//         response.status(201).json({ message: "Missing Parameter" })
+//     }
+// })
+
+// app.post('/add/invoice-add', function (request, response) {
+//     response.set('Access-Control-Allow-Origin', '*');
+//     const reqdatum = request.body;
+//     var query;
+//     console.log("reqdatum", reqdatum);
+//     if (reqdatum.Phone) {
+//         connection.query(`select * from invoicedetails where phoneNo=\'${reqdatum.Phone}\' and EmailID = \'${reqdatum.Email}\'`, function (err, datum) {
+//             if (reqdatum.id) {
+//                 query = `UPDATE invoicedetails SET Name=\'${reqdatum.Name}\',phoneNo=\'${reqdatum.Phone}\',EmailID=\'${reqdatum.Email}\',Hostel_Name= \'${reqdatum.hostel_Name}\',Hostel_Id=\'${reqdatum.hostel_Id}\',Floor_Id=\'${reqdatum.Floor_Id}\',Room_No=\'${reqdatum.RoomNo}\',Amount=\'${reqdatum.Amount}\',BalanceDue=\'${reqdatum.BalanceDue}\',Date=\'${reqdatum.Date}\',DueDate=\'${reqdatum.DueDate}\',Status=\'${reqdatum.Status}\',User_id=\'${reqdatum.User_id}\' WHERE id=\'${reqdatum.id}\'`
+//             }
+//             else {
+//                 query = `INSERT INTO invoicedetails ( Name, phoneNo, EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No, Amount, BalanceDue,Date, DueDate,Invoices, Status,User_id) VALUES (\'${reqdatum.Name}\',\'${reqdatum.Phone}\',\'${reqdatum.Email}\',\'${reqdatum.hostel_Name}\',\'${reqdatum.hostel_Id}\',\'${reqdatum.Floor_Id}\',\'${reqdatum.RoomNo}\',\'${reqdatum.Amount}\',\'${reqdatum.BalanceDue}\',\'${reqdatum.Date}\',\'${reqdatum.DueDate}\',\'${reqdatum.invoiceNo}\',\'${reqdatum.Status}\',\'${reqdatum.User_id}\')`
+//             }
+
+//             connection.query(query, function (error, data) {
+//                 if (error) {
+//                     response.status(201).json({ message: "No Data Found" })
+//                 }
+//                 else {
+//                     response.status(200).json({ message: "Data Inserted SuccessFully" })
+//                 }
+//             })
+//         })
+
+//     }
+//     else {
+//         response.status(201).json({ message: "Missing Parameter" })
+//     }
+// })
 
 
 
