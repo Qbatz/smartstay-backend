@@ -439,7 +439,7 @@ app.post('/add/invoice-add', function (request, response) {
         if (hostelData.length > 0) {
             const UserID = hostelData[0].User_Id;
           
-            connection.query(`SELECT * FROM invoicedetails WHERE Date = \'${reqdatum.Date}\'`, function (err, existingData) {
+            connection.query(`SELECT * FROM invoicedetails WHERE Date = \'${reqdatum.Date}\' and User_Id=\'${UserID}\'`, function (err, existingData) {
                 if (err) {
                     console.error("Error querying existing invoice data:", err);
                     response.status(500).json({ message: "Internal Server Error" });
@@ -657,11 +657,14 @@ app.post('/floor_list', function (request, response) {
 
 })
 
+
+
+
 app.post('/add/adduser-list', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*');
     console.log(request.body);
     var atten = request.body;
-    console.log(atten);
+    console.log(atten);``
     const FirstNameInitial = atten.firstname.charAt(0).toUpperCase();
     const LastNameInitial = atten.lastname.charAt(0).toUpperCase();
     const Circle = FirstNameInitial + LastNameInitial;
@@ -679,7 +682,7 @@ app.post('/add/adduser-list', function (request, response) {
     } else {
         function generateUserId(firstName) {
             const userIdPrefix = firstName.substring(0, 4).toUpperCase();
-            const randomNum = Math.floor(100 + Math.random() * 900); // Generates a random 3-digit number
+            const randomNum = Math.floor(100 + Math.random() * 900);
             const userId = userIdPrefix + randomNum;
             return userId;
         }
