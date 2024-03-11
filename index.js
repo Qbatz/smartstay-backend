@@ -134,7 +134,7 @@ app.post('/forget/select-list', function (request, response) {
     if (request.body.email) {
         connection.query(`SELECT * FROM createaccount WHERE email_id= \'${request.body.email}\'`, function (error, data) {
             console.log("data for reset", data[0].Otp)
-            // if (data[0].Otp === Number(request.body.otp)) {
+           
             connection.query(`UPDATE createaccount SET password= \'${request.body.NewPassword}\' WHERE email_id=\'${request.body.email}\' `, function (error, data) {
                 if ((data)) {
                     connection.query(`UPDATE createaccount SET Otp = 0 WHERE email_id=\'${request.body.email}\' `, function (error, resetData) {
@@ -149,9 +149,7 @@ app.post('/forget/select-list', function (request, response) {
                     response.status(201).json({ message: "Cannot Update NewPassowrd", statusCode: 201 })
                 }
             })
-            // } else {
-            //     response.status(201).json({ message: "Enter Valid Otp", statusCode: 201 })
-            // }
+           
         })
     } else {
         response.status(203).json({ message: "Missing Parameter" })
@@ -288,80 +286,7 @@ app.post('/list/bed-list', function (request, response) {
     }
 })
 
-// app.post('/list/numberOf-Rooms', function (request, response) {
-//     response.set('Access-Control-Allow-Origin', '*');
-//     const reqFloorID = request.body
-//     let responseData = [];
-//     let Room_Id;
-//     let errorMessage;
-//     // var Room_Id, errorMessage = '';
-//     // var responseData = []
 
-//     if (reqFloorID) {
-//         connection.query(`select * from hostelrooms where Floor_Id= \'${reqFloorID.floor_Id}\' and Hostel_Id =  \'${reqFloorID.hostel_Id}\'`, function (error, RoomsData) {
-//             // console.log("error", error);
-//             if (RoomsData.length > 0) {
-//                 for (let i = 0; i < RoomsData.length; i++) {
-//                     Room_Id = RoomsData[i].Room_Id
-//                     // const query = `select count('Bed') as bookedBedCount ,hos.Hostel_Id as hostel_Id, hos.Floor, hos.Rooms from hostel hos where  Floor= \'${reqFloorID.floor_Id}\' and Hostel_Id = \'${reqFloorID.hostel_Id}\' and Rooms = \'${Room_Id}\'`
-//                     connection.query(`select count('Bed') as bookedBedCount ,hos.Hostel_Id as hostel_Id, hos.Floor, hos.Rooms from hostel hos where  Floor= \'${reqFloorID.floor_Id}\' and Hostel_Id = \'${reqFloorID.hostel_Id}\' and Rooms = \'${Room_Id}\'`, function (error, hostelData) {
-//                         console.log("error", error);
-//                         if (hostelData) {
-//                             const objectFormation = {
-//                                 bookedBedCount: hostelData[0].bookedBedCount,
-//                                 Hostel_Id: RoomsData[i].Hostel_Id,
-//                                 Floor_Id: RoomsData[i].Floor_Id,
-//                                 Room_Id: RoomsData[i].Room_Id,
-//                                 Number_Of_Beds: RoomsData[i].Number_Of_Beds
-//                             }
-//                             // responseData.push(objectFormation);
-//                             responseData = [...responseData, objectFormation]
-//                             console.log("for", responseData);
-//                         }
-//                         else {
-//                             errorMessage = error;
-//                         }
-
-//                     })
-
-//                 }
-//                 // console.log("errorMessage", errorMessage);
-//                 if (responseData) {
-//                     console.log("else", responseData.length);
-
-//                     console.log("if", responseData);
-//                     if (responseData.length === RoomsData.length) {
-//                         response.status(200).json(responseData);
-
-//                     }
-//                 }
-//                 else {
-//                     response.status(201).json({ message: "No Data Found" });
-
-//                 }
-//                 //     console.log("errorMessage",errorMessage);
-//                 //     if (errorMessage) {
-//                 //         response.status(201).json({ message: "No Data Found" });
-//                 //     }
-//                 //     else{
-//                 //     console.log("else", responseData.length);
-
-//                 //         console.log("if", responseData);
-//                 //     if (responseData.length === RoomsData.length) { 
-//                 //             response.status(200).json(responseData);
-
-//                 //     }
-//                 // }
-//             }
-//             else {
-//                 response.status(201).json({ message: "No Data Found" })
-//             }
-//         })
-//     }
-//     else {
-//         response.status(201).json({ message: "Missing Parameter" })
-//     }
-// })
 
 app.post('/list/numberOf-Rooms', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*');
@@ -419,7 +344,7 @@ app.post('/list/numberOf-Rooms', function (request, response) {
 app.post('/add/invoice-add', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*');
     const reqdatum = request.body;
-    
+
     console.log("reqdatum", reqdatum);
 
     if (!reqdatum.User_Id) {
@@ -438,7 +363,7 @@ app.post('/add/invoice-add', function (request, response) {
 
         if (hostelData.length > 0) {
             const UserID = hostelData[0].User_Id;
-          
+
             connection.query(`SELECT * FROM invoicedetails WHERE Date = \'${reqdatum.Date}\' and User_Id=\'${UserID}\'`, function (err, existingData) {
                 if (err) {
                     console.error("Error querying existing invoice data:", err);
@@ -449,7 +374,7 @@ app.post('/add/invoice-add', function (request, response) {
                 if (existingData.length > 0) {
 
                     let query = `UPDATE invoicedetails SET Name='${reqdatum.Name}', phoneNo='${reqdatum.Phone}', EmailID='${reqdatum.Email}', Hostel_Name='${reqdatum.hostel_Name}', Hostel_Id='${reqdatum.hostel_Id}', Floor_Id='${reqdatum.Floor_Id}', Room_No='${reqdatum.RoomNo}', Amount='${reqdatum.Amount}', BalanceDue='${reqdatum.BalanceDue}', DueDate='${reqdatum.DueDate}', Status='${reqdatum.Status}' WHERE User_Id='${UserID}' AND Date='${reqdatum.Date}'`;
-                    
+
                     connection.query(query, function (error, data) {
                         if (error) {
                             console.error("Error updating invoice data:", error);
@@ -479,72 +404,6 @@ app.post('/add/invoice-add', function (request, response) {
 
 
 
-
-
-
-
-
-// app.post('/add/invoice-add', function (request, response) {
-//     response.set('Access-Control-Allow-Origin', '*');
-//     const reqdatum = request.body;
-//     var query;
-//     console.log("reqdatum", reqdatum);
-//     if (reqdatum.Phone) {
-//         connection.query(`select * from invoicedetails where phoneNo=\'${reqdatum.Phone}\' and EmailID = \'${reqdatum.Email}\'`, function (err, datum) {
-//             if (reqdatum.id) {
-//                 query = `UPDATE invoicedetails SET Name=\'${reqdatum.Name}\',phoneNo=\'${reqdatum.Phone}\',EmailID=\'${reqdatum.Email}\',Hostel_Name= \'${reqdatum.hostel_Name}\',Hostel_Id=\'${reqdatum.hostel_Id}\',Floor_Id=\'${reqdatum.Floor_Id}\',Room_No=\'${reqdatum.RoomNo}\',Amount=\'${reqdatum.Amount}\',BalanceDue=\'${reqdatum.BalanceDue}\',Date=\'${reqdatum.Date}\',DueDate=\'${reqdatum.DueDate}\',Status=\'${reqdatum.Status}\',User_id=\'${reqdatum.User_id}\' WHERE id=\'${reqdatum.id}\'`
-//             }
-//             else {
-//                 query = `INSERT INTO invoicedetails ( Name, phoneNo, EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No, Amount, BalanceDue,Date, DueDate,Invoices, Status,User_id) VALUES (\'${reqdatum.Name}\',\'${reqdatum.Phone}\',\'${reqdatum.Email}\',\'${reqdatum.hostel_Name}\',\'${reqdatum.hostel_Id}\',\'${reqdatum.Floor_Id}\',\'${reqdatum.RoomNo}\',\'${reqdatum.Amount}\',\'${reqdatum.BalanceDue}\',\'${reqdatum.Date}\',\'${reqdatum.DueDate}\',\'${reqdatum.invoiceNo}\',\'${reqdatum.Status}\',\'${reqdatum.User_id}\')`
-//             }
-
-//             connection.query(query, function (error, data) {
-//                 if (error) {
-//                     response.status(201).json({ message: "No Data Found" })
-//                 }
-//                 else {
-//                     response.status(200).json({ message: "Data Inserted SuccessFully" })
-//                 }
-//             })
-//         })
-
-//     }
-//     else {
-//         response.status(201).json({ message: "Missing Parameter" })
-//     }
-// })
-
-
-
-// app.post('/add/invoice-add', function (request, response) {
-//     response.set('Access-Control-Allow-Origin', '*');
-//     const reqdatum = request.body;
-//     var query;
-//     console.log("reqdatum", reqdatum);
-//     if (reqdatum.invoiceNo) {
-//         connection.query(`select * from invoicedetails where Invoices=\'${reqdatum.invoiceNo}\'`, function (err, datum) {
-//             if (datum) {
-//                 query = `UPDATE invoicedetails SET Name=\'${reqdatum.Name}\',phoneNo=\'${reqdatum.Phone}\',EmailID=\'${reqdatum.Email}\',Hostel_Name= \'${reqdatum.hostel_Name}\',Hostel_Id=\'${reqdatum.hostel_Id}\',Floor_Id=\'${reqdatum.Floor_Id}\',Room_No=\'${reqdatum.RoomNo}\',Amount=\'${reqdatum.Amount}\',BalanceDue=\'${reqdatum.BalanceDue}\',DueDate=\'${reqdatum.DueDate}\',Status=\'${reqdatum.Status}\' WHERE Invoices=\'${reqdatum.invoiceNo}\'`
-//             }
-//             else {
-//                 query = `INSERT INTO invoicedetails ( Name, phoneNo, EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No, Amount, BalanceDue, DueDate,Invoices, Status) VALUES (\'${reqdatum.Name}\',\'${reqdatum.Phone}\',\'${reqdatum.Email}\',\'${reqdatum.hostel_Name}\',\'${reqdatum.hostel_Id}\',\'${reqdatum.Floor_Id}\',\'${reqdatum.RoomNo}\',\'${reqdatum.Amount}\',\'${reqdatum.BalanceDue}\',\'${reqdatum.DueDate}\',\'${reqdatum.invoiceNo}\',\'${reqdatum.Status}\')`
-//             }
-
-//             connection.query(query, function (error, data) {
-//                 if (error) {
-//                     response.status(201).json({ message: "No Data Found" })
-//                 }
-//                 else {
-//                     response.status(200).json({ message: "Data Inserted SuccessFully" })
-//                 }
-//             })
-//         })
-
-//     }
-//     else {
-//         response.status(201).json({ message: "Missing Parameter" })
-//     }
-// })
 
 app.get('/list/invoice-list', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*')
@@ -662,7 +521,7 @@ app.post('/floor_list', function (request, response) {
 
 app.post('/add/adduser-list', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*');
-    console.log(request.body);
+    console.log("request.body......?",request.body);
     var atten = request.body;
     console.log(atten);``
     const FirstNameInitial = atten.firstname.charAt(0).toUpperCase();
@@ -688,7 +547,15 @@ app.post('/add/adduser-list', function (request, response) {
         }
         const User_Id = generateUserId(atten.firstname);
         console.log(" User_Id", User_Id)
-        connection.query(`SELECT * FROM hostel WHERE Phone='${atten.Phone}'`, function (error, data) {
+        let userID ;
+        connection.query(`SELECT * FROM hostel WHERE User_Id='${User_Id}'`, function (error, data) {
+         if(data.length>0){
+            userID = generateUserId(firstName)
+         }
+         else{
+            userID = User_Id
+         }
+         connection.query(`SELECT * FROM hostel WHERE Phone='${atten.Phone}'`, function (error, data) {
             if (data.length > 0) {
                 response.status(202).json({ message: "Phone Number Already Exists", statusCode: 202 });
             } else {
@@ -696,7 +563,7 @@ app.post('/add/adduser-list', function (request, response) {
                     if (data.length > 0) {
                         response.status(203).json({ message: "Email Already Exists", statusCode: 203 });
                     } else {
-                        connection.query(`INSERT INTO hostel (Circle,User_Id, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status) VALUES ('${Circle}','${User_Id}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}')`, function (insertError, insertData) {
+                        connection.query(`INSERT INTO hostel (Circle,User_Id, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status) VALUES ('${Circle}','${userID}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}')`, function (insertError, insertData) {
                             if (insertError) {
                                 console.log(insertError);
                                 response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
@@ -708,6 +575,9 @@ app.post('/add/adduser-list', function (request, response) {
                 });
             }
         });
+        })
+            
+        
     }
 });
 
@@ -910,24 +780,7 @@ app.post('/otp-send/send-mail', function (request, response) {
 });
 
 
-// app.post('/bed/bed-details', function (request, response) {
-//     response.set('Access-Control-Allow-Origin', '*');
-//     console.log("requestBody is bed", request.body);
-//     const reqBedDetails = request.body;
-//     if (reqBedDetails) {
-//         const query = `select * from hostel where Hostel_Id = \'${reqBedDetails.hostel_Id}\' and Floor = \'${reqBedDetails.floor_Id}\' and Rooms= \'${reqBedDetails.room_Id}\' and Bed=\'${reqBedDetails.bed_Id}\'  `
-//         connection.query(query, function (error, bedData) {
-//             console.log("bedData", bedData.length)
-//             if (bedData.length > 0) {
-//                 response.status(200).json({ data: bedData })
-//             } else {
-//                 response.status(201).json({ message: 'No data found' })
-//             }
-//         })
-//     } else {
-//         response.status(201).json({ message: 'Missing Parameter' })
-//     }
-// })
+
 
 app.listen('2001', function () {
     console.log("node is started at 2001")
