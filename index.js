@@ -373,7 +373,7 @@ app.post('/add/invoice-add', function (request, response) {
 
                 if (existingData.length > 0) {
 
-                    let query = `UPDATE invoicedetails SET Name='${reqdatum.Name}', phoneNo='${reqdatum.Phone}', EmailID='${reqdatum.Email}', Hostel_Name='${reqdatum.hostel_Name}', Hostel_Id='${reqdatum.hostel_Id}', Floor_Id='${reqdatum.Floor_Id}', Room_No='${reqdatum.RoomNo}', Amount='${reqdatum.Amount}', BalanceDue='${reqdatum.BalanceDue}', DueDate='${reqdatum.DueDate}', Status='${reqdatum.Status}',Date='${reqdatum.Date}' WHERE User_Id='${UserID}'`;
+                    let query = `UPDATE invoicedetails SET Name='${reqdatum.Name}', phoneNo='${reqdatum.Phone}', EmailID='${reqdatum.Email}', Hostel_Name='${reqdatum.hostel_Name}', Hostel_Id='${reqdatum.hostel_Id}', Floor_Id='${reqdatum.Floor_Id}', Room_No='${reqdatum.RoomNo}', Amount='${reqdatum.Amount}', BalanceDue='${reqdatum.BalanceDue}', DueDate='${reqdatum.DueDate}', Status='${reqdatum.Status}' WHERE User_Id='${UserID}' AND Date='${reqdatum.Date}'`;
 
                     connection.query(query, function (error, data) {
                         if (error) {
