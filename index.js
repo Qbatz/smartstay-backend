@@ -56,14 +56,18 @@ app.post('/create/create-account', function (request, response) {
     let reqBodyData = request.body;
 
     if (reqBodyData.id) {
-        connection.query(`UPDATE createaccount SET Name='${reqBodyData.name}', mobileNo='${reqBodyData.mobileNo}', email_Id='${reqBodyData.emailId}', Address='${reqBodyData.Address}', Country='${reqBodyData.Country}', City='${reqBodyData.City}', State='${reqBodyData.State}',isEnable='${reqBodyData.isEnable}' WHERE id='${reqBodyData.id}'`, function (error, data) {
+        // const isEnable = reqBodyData.isEnable ? reqBodyData.isEnable : false
+        connection.query(`UPDATE createaccount SET Name='${reqBodyData.name}', mobileNo='${reqBodyData.mobileNo}', email_Id='${reqBodyData.emailId}', Address='${reqBodyData.Address}', Country='${reqBodyData.Country}', City='${reqBodyData.City}', State='${reqBodyData.State}' WHERE id='${reqBodyData.id}'`, function (error, data) {
             if (error) {
+                console.log("error",error);
                 response.status(201).json({ message: "No User Found" });
             } else {
                 response.status(200).json({ message: "Update Successfully" });
+                console.log("Success")
             }
         });
-    } else if (reqBodyData.mobileNo && reqBodyData.emailId) {
+    } 
+    else if (reqBodyData.mobileNo && reqBodyData.emailId) {
         connection.query(`SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`, function (error, data) {
             console.log("data for", data);
 
@@ -89,11 +93,64 @@ app.post('/create/create-account', function (request, response) {
                 }
             }
         });
-    } else {
+    } 
+
+    else {
+        response.status(201).json({ message: 'Missing Parameter' });
+    }
+});
+app.post('/create/isEnable', function (request, response) {
+    response.set('Access-Control-Allow-Origin', '*');
+    console.log("request", request.body);
+    let reqBodyData = request.body;
+
+     if (reqBodyData.id) {
+        connection.query(`SELECT * FROM createaccount WHERE id='${reqBodyData.id}'`, function (error, data) {
+            console.log("data for", data);
+
+            if (data.length === 0) {
+                connection.query(`UPDATE createaccount SET  isEnable=${isEnable} WHERE id='${reqBodyData.id}'`, function (error, data) {
+                    if (error) {
+                        console.log("error", error);
+                        response.status(201).json({ message: 'Database error' });
+                    } else {
+                        response.status(200).json({ message: 'updated Successfully', statusCode: 200 });
+                    }
+                });
+            } 
+           
+        });
+    } 
+   
+
+    else {
         response.status(201).json({ message: 'Missing Parameter' });
     }
 });
 
+
+app.post('/create/enable', function (request, response) {
+    response.set('Access-Control-Allow-Origin', '*');
+    console.log("request", request.body);
+    let reqBodyData = request.body;
+
+    if (reqBodyData.id) {
+        console.log("isEnble")
+        const isEnable = reqBodyData.isEnable ? reqBodyData.isEnable : false
+        connection.query(`UPDATE createaccount SET Name='${reqBodyData.name}', mobileNo='${reqBodyData.mobileNo}', email_Id='${reqBodyData.emailId}', Address='${reqBodyData.Address}', Country='${reqBodyData.Country}', City='${reqBodyData.City}', State='${reqBodyData.State}',isEnable=${isEnable} WHERE id='${reqBodyData.id}'`, function (error, data) {
+            if (error) {
+                console.log("error",error);
+                response.status(201).json({ message: "No User Found" });
+            } else {
+                response.status(200).json({ message: "Update Successfully" });
+                console.log("Success")
+            }
+        });
+    } 
+    else {
+        response.status(201).json({ message: 'Missing Parameter' });
+    }
+});
 
 
 
@@ -112,7 +169,11 @@ app.get('/login/login', function (request, response) {
             } else {
                 if (data.length > 0) {
                     const storedPassword = data[0].password;
+                    const isEnable = data[0].isEnable
                     const providedPassword = password;
+                    if (isEnable == true){
+
+                    }
                     if (storedPassword === providedPassword) {
                         response.status(200).json({ message: "Login Successfully", statusCode: 200, Data: data });
                     } else {
