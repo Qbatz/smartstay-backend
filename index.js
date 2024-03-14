@@ -104,20 +104,20 @@ app.post('/create/isEnable', function (request, response) {
     console.log("request.......", request.body);
     let reqBodyData = request.body;
 
-    if (reqBodyData.id && reqBodyData.isEnable !== undefined) {
-        connection.query(`SELECT * FROM createaccount WHERE id='${reqBodyData.id}'`, function (error, data) {
+    if (reqBodyData.emailId && reqBodyData.isEnable !== undefined) {
+        let isEnable = reqBodyData.isEnable ? 1 : 0; 
+        connection.query(`SELECT * FROM createaccount WHERE email_Id='${reqBodyData.emailId}'`, function (error, data) {
             if (error) {
                 console.log("error", error);
-                response.status(201).json({ message: 'Database error' });
+                response.status(202).json({ message: 'Database error' });
             } else {
                 if (data.length === 0) {
-                    response.status(404).json({ message: 'Record not found' });
+                    response.status(201).json({ message: 'Record not found' });
                 } else {
-                    let isEnable = reqBodyData.isEnable ? 1 : 0; 
-                    connection.query(`UPDATE createaccount SET isEnable=${isEnable} WHERE id='${reqBodyData.id}'`, function (error, result) {
+                    connection.query(`UPDATE createaccount SET isEnable=${isEnable} WHERE email_Id='${reqBodyData.emailId}'`, function (error, result) {
                         if (error) {
                             console.log("error", error);
-                            response.status(201).json({ message: 'Database error' });
+                            response.status(202).json({ message: 'Database error' });
                         } else {
                             response.status(200).json({ message: 'Updated successfully', statusCode: 200 });
                         }
@@ -125,41 +125,10 @@ app.post('/create/isEnable', function (request, response) {
                 }
             }
         });
-    } 
-    else {
-        response.status(400).json({ message: 'Bad request: Missing Parameter or Invalid isEnable value' });
+    } else {
+        response.status(201).json({ message: 'Bad request: Missing Parameter or Invalid isEnable value' });
     }
 });
-
-// app.post('/create/isEnable', function (request, response) {
-//     response.set('Access-Control-Allow-Origin', '*');
-//     console.log("request.......", request.body);
-//     let reqBodyData = request.body;
-
-//      if (reqBodyData.id) {
-//         connection.query(`SELECT * FROM createaccount WHERE id='${reqBodyData.id}'`, function (error, data) {
-//             console.log("data for", data);
-
-//             if (data.length < 0) {
-//                 connection.query(`UPDATE createaccount SET  isEnable=${isEnable} WHERE id='${reqBodyData.id}'`, function (error, data) {
-//                     if (error) {
-//                         console.log("error", error);
-//                         response.status(201).json({ message: 'Database error' });
-//                     } else {
-//                         response.status(200).json({ message: 'updated Successfully', statusCode: 200 });
-//                     }
-//                 });
-//             } 
-           
-//         });
-//     } 
-   
-
-//     else {
-//         response.status(201).json({ message: 'Missing Parameter' });
-//     }
-// });
-
 
 
 
