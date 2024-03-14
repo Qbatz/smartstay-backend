@@ -101,56 +101,67 @@ app.post('/create/create-account', function (request, response) {
 });
 app.post('/create/isEnable', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*');
-    console.log("request", request.body);
+    console.log("request.......", request.body);
     let reqBodyData = request.body;
 
-     if (reqBodyData.id) {
+    if (reqBodyData.id && reqBodyData.isEnable !== undefined) {
         connection.query(`SELECT * FROM createaccount WHERE id='${reqBodyData.id}'`, function (error, data) {
-            console.log("data for", data);
-
-            if (data.length === 0) {
-                connection.query(`UPDATE createaccount SET  isEnable=${isEnable} WHERE id='${reqBodyData.id}'`, function (error, data) {
-                    if (error) {
-                        console.log("error", error);
-                        response.status(201).json({ message: 'Database error' });
-                    } else {
-                        response.status(200).json({ message: 'updated Successfully', statusCode: 200 });
-                    }
-                });
-            } 
-           
-        });
-    } 
-   
-
-    else {
-        response.status(201).json({ message: 'Missing Parameter' });
-    }
-});
-
-
-app.post('/create/enable', function (request, response) {
-    response.set('Access-Control-Allow-Origin', '*');
-    console.log("request", request.body);
-    let reqBodyData = request.body;
-
-    if (reqBodyData.id) {
-        console.log("isEnble")
-        const isEnable = reqBodyData.isEnable ? reqBodyData.isEnable : false
-        connection.query(`UPDATE createaccount SET Name='${reqBodyData.name}', mobileNo='${reqBodyData.mobileNo}', email_Id='${reqBodyData.emailId}', Address='${reqBodyData.Address}', Country='${reqBodyData.Country}', City='${reqBodyData.City}', State='${reqBodyData.State}',isEnable=${isEnable} WHERE id='${reqBodyData.id}'`, function (error, data) {
             if (error) {
-                console.log("error",error);
-                response.status(201).json({ message: "No User Found" });
+                console.log("error", error);
+                response.status(201).json({ message: 'Database error' });
             } else {
-                response.status(200).json({ message: "Update Successfully" });
-                console.log("Success")
+                if (data.length === 0) {
+                    response.status(404).json({ message: 'Record not found' });
+                } else {
+                    let isEnable = reqBodyData.isEnable ? 1 : 0; 
+                    connection.query(`UPDATE createaccount SET isEnable=${isEnable} WHERE id='${reqBodyData.id}'`, function (error, result) {
+                        if (error) {
+                            console.log("error", error);
+                            response.status(201).json({ message: 'Database error' });
+                        } else {
+                            response.status(200).json({ message: 'Updated successfully', statusCode: 200 });
+                        }
+                    });
+                }
             }
         });
     } 
     else {
-        response.status(201).json({ message: 'Missing Parameter' });
+        response.status(400).json({ message: 'Bad request: Missing Parameter or Invalid isEnable value' });
     }
 });
+
+// app.post('/create/isEnable', function (request, response) {
+//     response.set('Access-Control-Allow-Origin', '*');
+//     console.log("request.......", request.body);
+//     let reqBodyData = request.body;
+
+//      if (reqBodyData.id) {
+//         connection.query(`SELECT * FROM createaccount WHERE id='${reqBodyData.id}'`, function (error, data) {
+//             console.log("data for", data);
+
+//             if (data.length < 0) {
+//                 connection.query(`UPDATE createaccount SET  isEnable=${isEnable} WHERE id='${reqBodyData.id}'`, function (error, data) {
+//                     if (error) {
+//                         console.log("error", error);
+//                         response.status(201).json({ message: 'Database error' });
+//                     } else {
+//                         response.status(200).json({ message: 'updated Successfully', statusCode: 200 });
+//                     }
+//                 });
+//             } 
+           
+//         });
+//     } 
+   
+
+//     else {
+//         response.status(201).json({ message: 'Missing Parameter' });
+//     }
+// });
+
+
+
 
 
 
