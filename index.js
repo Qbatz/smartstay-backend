@@ -2,6 +2,7 @@ const express = require('express')
 const nodemailer = require('nodemailer');
 const mysql = require('mysql');
 var cors = require('cors');
+const cron = require('node-cron');
 
 const app = express()
 
@@ -10,7 +11,21 @@ var corsOptions = {
     credentials: true,
     optionSuccessStatus: 200,
 };
-
+cron.schedule("0 0 * * *", function () {
+    console.log("This task runs every day");
+});
+cron.schedule("0 0 1 * *", function () {
+    console.log("This task runs every month ");
+});
+cron.schedule("0 0 1 1 *", function () {
+    console.log("This task runs on the 1st day of January every year");
+});
+// cron.schedule("* * * * * *", function () {
+//     console.log("This task runs every second");
+// });
+cron.schedule("* * * * *", function () {
+    console.log("This task runs every minute");
+});
 app.use(cors(corsOptions));
 app.options('*', cors());
 app.use(express.json())
@@ -59,14 +74,14 @@ app.post('/create/create-account', function (request, response) {
         // const isEnable = reqBodyData.isEnable ? reqBodyData.isEnable : false
         connection.query(`UPDATE createaccount SET Name='${reqBodyData.name}', mobileNo='${reqBodyData.mobileNo}', email_Id='${reqBodyData.emailId}', Address='${reqBodyData.Address}', Country='${reqBodyData.Country}', City='${reqBodyData.City}', State='${reqBodyData.State}' WHERE id='${reqBodyData.id}'`, function (error, data) {
             if (error) {
-                console.log("error",error);
+                console.log("error", error);
                 response.status(201).json({ message: "No User Found" });
             } else {
                 response.status(200).json({ message: "Update Successfully" });
                 console.log("Success")
             }
         });
-    } 
+    }
     else if (reqBodyData.mobileNo && reqBodyData.emailId) {
         connection.query(`SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`, function (error, data) {
             console.log("data for", data);
@@ -93,7 +108,7 @@ app.post('/create/create-account', function (request, response) {
                 }
             }
         });
-    } 
+    }
 
     else {
         response.status(201).json({ message: 'Missing Parameter' });
@@ -105,7 +120,7 @@ app.post('/create/isEnable', function (request, response) {
     let reqBodyData = request.body;
 
     if (reqBodyData.emailId && reqBodyData.isEnable !== undefined) {
-        let isEnable = reqBodyData.isEnable ? 1 : 0; 
+        let isEnable = reqBodyData.isEnable ? 1 : 0;
         connection.query(`SELECT * FROM createaccount WHERE email_Id='${reqBodyData.emailId}'`, function (error, data) {
             if (error) {
                 console.log("error", error);
@@ -151,7 +166,7 @@ app.get('/login/login', function (request, response) {
                     const storedPassword = data[0].password;
                     const isEnable = data[0].isEnable
                     const providedPassword = password;
-                    if (isEnable == true){
+                    if (isEnable == true) {
 
                     }
                     if (storedPassword === providedPassword) {
@@ -175,7 +190,7 @@ app.post('/forget/select-list', function (request, response) {
     if (request.body.email) {
         connection.query(`SELECT * FROM createaccount WHERE email_id= \'${request.body.email}\'`, function (error, data) {
             console.log("data for reset", data[0].Otp)
-           
+
             connection.query(`UPDATE createaccount SET password= \'${request.body.NewPassword}\' WHERE email_id=\'${request.body.email}\' `, function (error, data) {
                 if ((data)) {
                     connection.query(`UPDATE createaccount SET Otp = 0 WHERE email_id=\'${request.body.email}\' `, function (error, resetData) {
@@ -190,7 +205,7 @@ app.post('/forget/select-list', function (request, response) {
                     response.status(201).json({ message: "Cannot Update NewPassowrd", statusCode: 201 })
                 }
             })
-           
+
         })
     } else {
         response.status(203).json({ message: "Missing Parameter" })
@@ -562,9 +577,9 @@ app.post('/floor_list', function (request, response) {
 
 app.post('/add/adduser-list', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*');
-    console.log("request.body......?",request.body);
+    console.log("request.body......?", request.body);
     var atten = request.body;
-    console.log(atten);``
+    console.log(atten); ``
     const FirstNameInitial = atten.firstname.charAt(0).toUpperCase();
     const LastNameInitial = atten.lastname.charAt(0).toUpperCase();
     const Circle = FirstNameInitial + LastNameInitial;
@@ -588,37 +603,37 @@ app.post('/add/adduser-list', function (request, response) {
         }
         const User_Id = generateUserId(atten.firstname);
         console.log(" User_Id", User_Id)
-        let userID ;
+        let userID;
         connection.query(`SELECT * FROM hostel WHERE User_Id='${User_Id}'`, function (error, data) {
-         if(data.length>0){
-            userID = generateUserId(firstName)
-         }
-         else{
-            userID = User_Id
-         }
-         connection.query(`SELECT * FROM hostel WHERE Phone='${atten.Phone}'`, function (error, data) {
             if (data.length > 0) {
-                response.status(202).json({ message: "Phone Number Already Exists", statusCode: 202 });
-            } else {
-                connection.query(`SELECT * FROM hostel WHERE Email='${atten.Email}'`, function (error, data) {
-                    if (data.length > 0) {
-                        response.status(203).json({ message: "Email Already Exists", statusCode: 203 });
-                    } else {
-                        connection.query(`INSERT INTO hostel (Circle,User_Id, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status) VALUES ('${Circle}','${userID}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}')`, function (insertError, insertData) {
-                            if (insertError) {
-                                console.log(insertError);
-                                response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
-                            } else {
-                                response.status(200).json({ message: "Save Successfully", statusCode: 200 });
-                            }
-                        });
-                    }
-                });
+                userID = generateUserId(firstName)
             }
-        });
+            else {
+                userID = User_Id
+            }
+            connection.query(`SELECT * FROM hostel WHERE Phone='${atten.Phone}'`, function (error, data) {
+                if (data.length > 0) {
+                    response.status(202).json({ message: "Phone Number Already Exists", statusCode: 202 });
+                } else {
+                    connection.query(`SELECT * FROM hostel WHERE Email='${atten.Email}'`, function (error, data) {
+                        if (data.length > 0) {
+                            response.status(203).json({ message: "Email Already Exists", statusCode: 203 });
+                        } else {
+                            connection.query(`INSERT INTO hostel (Circle,User_Id, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status) VALUES ('${Circle}','${userID}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}')`, function (insertError, insertData) {
+                                if (insertError) {
+                                    console.log(insertError);
+                                    response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
+                                } else {
+                                    response.status(200).json({ message: "Save Successfully", statusCode: 200 });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
         })
-            
-        
+
+
     }
 });
 
