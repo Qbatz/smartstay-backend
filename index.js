@@ -26,36 +26,47 @@ cron.schedule("0 0 1 1 *", function () {
 // cron.schedule("* * * * *", function () {
 //     console.log("This task runs every minute");
 // });
-const cronFunction = cron.schedule("* * * * *", function () {
+const cronFunction = cron.schedule("* * * * * ", function () {
     console.log("This task runs every minute");
-    const reqdatum = request.body;
-    connection.query(`SELECT * FROM invoicedetails `, function (err, hostelData) {
-       if(hostelData.length >0){
-
-        let query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${reqdatum.Name}', '${reqdatum.Phone}', '${reqdatum.Email}', '${reqdatum.hostel_Name}', '${reqdatum.hostel_Id}', '${reqdatum.Floor_Id}', '${reqdatum.RoomNo}', '${reqdatum.Amount}', '${reqdatum.BalanceDue}', '${reqdatum.Date}', '${reqdatum.DueDate}', '${reqdatum.invoiceNo}', '${reqdatum.Status}', '${UserID}')`;
-
-        connection.query(query, function (error, data) {
-            if (error) {
-                console.error("Error inserting invoice data:", error);
-                response.status(203).json({ message: "Internal Server Error" });
-                return;
-            }
-        
-            if (data.length > 0) {
-                console.log("Data Inserted Successfully");
-                response.status(200).json({ message: "Data Inserted Successfully" });
-            } else {
-                console.log("No data inserted");
-                response.status(201).json({ message: "No data found", statusCode: 201 });
-            }
+    connection.query(`SELECT * FROM hostel`, function (err, users) {
+        console.log(" users", users)
+        if (err) {
+            console.error("Error fetching users:", err);
+            return;
+        }
+             users.forEach(user => {
+            const userID = user.User_Id;
+            console.log(" userID", userID)
+                     calculateAndInsertInvoice(userID, users);
         });
-    }
-    else {
-        response.status(201).json({ message: "No data found", statusCode: 201 });
-    }
-    })
-    
+    });
 });
+
+function calculateAndInsertInvoice(userID, reqdatum) {
+       console.log("reqdatum *********", reqdatum)
+    for (let i = 0; i < reqdatum.length; i++) {
+    connection.query(`SELECT * FROM invoicedetails WHERE User_Id = '${userID}'`, function (err, existingData) {
+        if (err) {
+            console.error("Error querying existing invoice data for user:", userID, err);
+            return;
+        }
+        // if (existingData.length > 0) {
+        //     console.log("Invoice already exists for user:", userID);
+        //     return;
+        // }
+            const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${reqdatum[i].Name}', '${reqdatum[i].Phone}', '${reqdatum[i].Email}', '${reqdatum[i].HostelName}', '${reqdatum[i].Hostel_Id}', '${reqdatum[i].Floor}', '${reqdatum[i].Rooms}', '${reqdatum[i].AdvanceAmount}', '${reqdatum[i].BalanceDue}', '${reqdatum[i].createdAt}', '${reqdatum[i].DueDate}', '${reqdatum[i].invoiceNo}', '${reqdatum[i].Status}', '${reqdatum[i].User_Id}')`
+            connection.query(query, function (error, data) {
+                console.log("data ****", data)
+                if (error) {
+                    console.error("Error inserting invoice data for user:", userID, error);
+                    return;
+                }
+                console.log("Invoice inserted successfully for user:", userID);
+            });
+            });
+}
+}
+
 
 
 
@@ -489,7 +500,7 @@ app.post('/add/invoice-add', function (request, response) {
                         //     }
                         //     response.status(200).json({ message: "Data Inserted Successfully" });
                         // });
-                        cronFunction()
+                        // cronFunction()
                     
                   
                 }
