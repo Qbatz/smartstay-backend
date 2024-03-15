@@ -23,9 +23,46 @@ cron.schedule("0 0 1 1 *", function () {
 // cron.schedule("* * * * * *", function () {
 //     console.log("This task runs every second");
 // });
-cron.schedule("* * * * *", function () {
+// cron.schedule("* * * * *", function () {
+//     console.log("This task runs every minute");
+// });
+const cronFunction = cron.schedule("* * * * *", function () {
     console.log("This task runs every minute");
+    const reqdatum = request.body;
+    connection.query(`SELECT * FROM invoicedetails `, function (err, hostelData) {
+       if(hostelData.length >0){
+
+        let query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${reqdatum.Name}', '${reqdatum.Phone}', '${reqdatum.Email}', '${reqdatum.hostel_Name}', '${reqdatum.hostel_Id}', '${reqdatum.Floor_Id}', '${reqdatum.RoomNo}', '${reqdatum.Amount}', '${reqdatum.BalanceDue}', '${reqdatum.Date}', '${reqdatum.DueDate}', '${reqdatum.invoiceNo}', '${reqdatum.Status}', '${UserID}')`;
+
+        connection.query(query, function (error, data) {
+            if (error) {
+                console.error("Error inserting invoice data:", error);
+                response.status(203).json({ message: "Internal Server Error" });
+                return;
+            }
+        
+            if (data.length > 0) {
+                console.log("Data Inserted Successfully");
+                response.status(200).json({ message: "Data Inserted Successfully" });
+            } else {
+                console.log("No data inserted");
+                response.status(201).json({ message: "No data found", statusCode: 201 });
+            }
+        });
+    }
+    else {
+        response.status(201).json({ message: "No data found", statusCode: 201 });
+    }
+    })
+    
 });
+
+
+
+// cron.schedule("* * * * * ", function () {
+//     console.log("This task runs every minute");
+   
+// });
 app.use(cors(corsOptions));
 app.options('*', cors());
 app.use(express.json())
@@ -439,21 +476,26 @@ app.post('/add/invoice-add', function (request, response) {
                         }
                         response.status(200).json({ message: "Data Updated Successfully" });
                     });
-                } else {
-                    let query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${reqdatum.Name}', '${reqdatum.Phone}', '${reqdatum.Email}', '${reqdatum.hostel_Name}', '${reqdatum.hostel_Id}', '${reqdatum.Floor_Id}', '${reqdatum.RoomNo}', '${reqdatum.Amount}', '${reqdatum.BalanceDue}', '${reqdatum.Date}', '${reqdatum.DueDate}', '${reqdatum.invoiceNo}', '${reqdatum.Status}', '${UserID}')`;
+                } 
+                else {
+                  
+                        // let query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${reqdatum.Name}', '${reqdatum.Phone}', '${reqdatum.Email}', '${reqdatum.hostel_Name}', '${reqdatum.hostel_Id}', '${reqdatum.Floor_Id}', '${reqdatum.RoomNo}', '${reqdatum.Amount}', '${reqdatum.BalanceDue}', '${reqdatum.Date}', '${reqdatum.DueDate}', '${reqdatum.invoiceNo}', '${reqdatum.Status}', '${UserID}')`;
 
-                    connection.query(query, function (error, data) {
-                        if (error) {
-                            console.error("Error inserting invoice data:", error);
-                            response.status(500).json({ message: "Internal Server Error" });
-                            return;
-                        }
-                        response.status(200).json({ message: "Data Inserted Successfully" });
-                    });
+                        // connection.query(query, function (error, data) {
+                        //     if (error) {
+                        //         console.error("Error inserting invoice data:", error);
+                        //         response.status(500).json({ message: "Internal Server Error" });
+                        //         return;
+                        //     }
+                        //     response.status(200).json({ message: "Data Inserted Successfully" });
+                        // });
+                        cronFunction()
+                    
+                  
                 }
             });
         } else {
-            response.status(404).json({ message: "User not found" });
+            response.status(204).json({ message: "User not found" });
         }
     });
 });
