@@ -3,6 +3,7 @@ const nodemailer = require('nodemailer');
 const mysql = require('mysql');
 var cors = require('cors');
 const cron = require('node-cron');
+const moment = require('moment');
 
 const app = express()
 
@@ -26,6 +27,7 @@ cron.schedule("0 0 1 1 *", function () {
 // cron.schedule("* * * * *", function () {
 //     console.log("This task runs every minute");
 // });
+
 const cronFunction = cron.schedule("* * * * * ", function () {
     console.log("This task runs every minute");
     connection.query(`SELECT * FROM hostel`, function (err, users) {
@@ -34,27 +36,39 @@ const cronFunction = cron.schedule("* * * * * ", function () {
             console.error("Error fetching users:", err);
             return;
         }
-             users.forEach(user => {
+        users.forEach(user => {
             const userID = user.User_Id;
             console.log(" userID", userID)
-                     calculateAndInsertInvoice(userID, users);
+            calculateAndInsertInvoice(userID, users);
         });
     });
 });
 
 function calculateAndInsertInvoice(userID, reqdatum) {
-       console.log("reqdatum *********", reqdatum)
+    console.log("reqdatum *********", reqdatum)
+
     for (let i = 0; i < reqdatum.length; i++) {
-    connection.query(`SELECT * FROM invoicedetails WHERE User_Id = '${userID}'`, function (err, existingData) {
-        if (err) {
-            console.error("Error querying existing invoice data for user:", userID, err);
-            return;
-        }
-        // if (existingData.length > 0) {
-        //     console.log("Invoice already exists for user:", userID);
-        //     return;
-        // }
-            const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${reqdatum[i].Name}', '${reqdatum[i].Phone}', '${reqdatum[i].Email}', '${reqdatum[i].HostelName}', '${reqdatum[i].Hostel_Id}', '${reqdatum[i].Floor}', '${reqdatum[i].Rooms}', '${reqdatum[i].AdvanceAmount}', '${reqdatum[i].BalanceDue}', '${reqdatum[i].createdAt}', '${reqdatum[i].DueDate}', '${reqdatum[i].invoiceNo}', '${reqdatum[i].Status}', '${reqdatum[i].User_Id}')`
+        connection.query(`SELECT * FROM invoicedetails WHERE User_Id = '${userID}'`, function (err, existingData) {
+            if (err) {
+                console.error("Error querying existing invoice data for user:", userID, err);
+                return;
+            }
+            const Today = new Date()
+            console.log("today", Today)
+            
+            const joinDate = new Date(reqdatum[i].createdAt);
+
+            const JoiningDate = joinDate.toLocaleDateString('en-GB')
+            //    const userJoining= moment(JoiningDate,'yyyy-mm-dd');
+            // const formattedDate = moment(JoiningDate).format('YYYY-MM-DD');
+            const formattedDate = moment(JoiningDate, 'DD/MM/YYYY').format('YYYY-MM-DD')
+            console.log("userJoining", formattedDate)
+            const lastDayOfMonth = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 0);
+            const dueDate = lastDayOfMonth.toLocaleDateString('en-GB');
+            const formattedDue = moment(dueDate).format('YYYY-MM-DD');
+            console.log("Due date for user:", userID, "is", dueDate);
+            console.log("joinDate", JoiningDate)
+            const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${reqdatum[i].Name}', '${reqdatum[i].Phone}', '${reqdatum[i].Email}', '${reqdatum[i].HostelName}', '${reqdatum[i].Hostel_Id}', '${reqdatum[i].Floor}', '${reqdatum[i].Rooms}', '${reqdatum[i].AdvanceAmount}', '${reqdatum[i].BalanceDue}', '${formattedDate}', '${formattedDue}', '${reqdatum[i].invoiceNo}', '${reqdatum[i].Status}', '${reqdatum[i].User_Id}')`
             connection.query(query, function (error, data) {
                 console.log("data ****", data)
                 if (error) {
@@ -63,8 +77,8 @@ function calculateAndInsertInvoice(userID, reqdatum) {
                 }
                 console.log("Invoice inserted successfully for user:", userID);
             });
-            });
-}
+        });
+    }
 }
 
 
@@ -72,7 +86,7 @@ function calculateAndInsertInvoice(userID, reqdatum) {
 
 // cron.schedule("* * * * * ", function () {
 //     console.log("This task runs every minute");
-   
+
 // });
 app.use(cors(corsOptions));
 app.options('*', cors());
@@ -119,7 +133,6 @@ app.post('/create/create-account', function (request, response) {
     let reqBodyData = request.body;
 
     if (reqBodyData.id) {
-        // const isEnable = reqBodyData.isEnable ? reqBodyData.isEnable : false
         connection.query(`UPDATE createaccount SET Name='${reqBodyData.name}', mobileNo='${reqBodyData.mobileNo}', email_Id='${reqBodyData.emailId}', Address='${reqBodyData.Address}', Country='${reqBodyData.Country}', City='${reqBodyData.City}', State='${reqBodyData.State}' WHERE id='${reqBodyData.id}'`, function (error, data) {
             if (error) {
                 console.log("error", error);
@@ -487,22 +500,22 @@ app.post('/add/invoice-add', function (request, response) {
                         }
                         response.status(200).json({ message: "Data Updated Successfully" });
                     });
-                } 
+                }
                 else {
-                  
-                        // let query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${reqdatum.Name}', '${reqdatum.Phone}', '${reqdatum.Email}', '${reqdatum.hostel_Name}', '${reqdatum.hostel_Id}', '${reqdatum.Floor_Id}', '${reqdatum.RoomNo}', '${reqdatum.Amount}', '${reqdatum.BalanceDue}', '${reqdatum.Date}', '${reqdatum.DueDate}', '${reqdatum.invoiceNo}', '${reqdatum.Status}', '${UserID}')`;
 
-                        // connection.query(query, function (error, data) {
-                        //     if (error) {
-                        //         console.error("Error inserting invoice data:", error);
-                        //         response.status(500).json({ message: "Internal Server Error" });
-                        //         return;
-                        //     }
-                        //     response.status(200).json({ message: "Data Inserted Successfully" });
-                        // });
-                        // cronFunction()
-                    
-                  
+                    // let query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${reqdatum.Name}', '${reqdatum.Phone}', '${reqdatum.Email}', '${reqdatum.hostel_Name}', '${reqdatum.hostel_Id}', '${reqdatum.Floor_Id}', '${reqdatum.RoomNo}', '${reqdatum.Amount}', '${reqdatum.BalanceDue}', '${reqdatum.Date}', '${reqdatum.DueDate}', '${reqdatum.invoiceNo}', '${reqdatum.Status}', '${UserID}')`;
+
+                    // connection.query(query, function (error, data) {
+                    //     if (error) {
+                    //         console.error("Error inserting invoice data:", error);
+                    //         response.status(500).json({ message: "Internal Server Error" });
+                    //         return;
+                    //     }
+                    //     response.status(200).json({ message: "Data Inserted Successfully" });
+                    // });
+                    // cronFunction()
+
+
                 }
             });
         } else {
@@ -888,7 +901,20 @@ app.post('/otp-send/send-mail', function (request, response) {
     }
 });
 
+app.get('/get/userAccount',function(request,response){
+    response.set('Access-Control-Allow-Origin', '*')
+    connection.query('select * from createaccount', function (error, data) {
+        console.log(error);
+        console.log(data);
 
+        if (error) {
+            response.status(403).json({ message: 'not connected' })
+        }
+        else {
+            response.status(200).json(data)
+        }
+    })
+})
 
 
 app.listen('2001', function () {
