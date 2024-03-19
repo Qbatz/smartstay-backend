@@ -69,15 +69,28 @@ function calculateAndInsertInvoice(user) {
 
 
         let dueDate;
-        if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
-            const lastDayOfMonth = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 0);
-            dueDate = lastDayOfMonth.toLocaleDateString('en-GB');
-        } else {
-            const firstDayOfMonth = new Date(currentYear, currentMonth - 1, 1);
-            const lastDayOfMonth = new Date(currentYear, currentMonth, 0);
+        const dueDateObj = new Date(formatteddueDate);
+        const nextMonthStartingDate = new Date(dueDateObj.getFullYear(), dueDateObj.getMonth() + 1, 1);
+        const formattedNextMonthStartingDate = moment(nextMonthStartingDate).format('YYYY-MM-DD');
+        console.log("Next Month's Starting Date:", formattedNextMonthStartingDate);
 
-            dueDate = `${firstDayOfMonth.toLocaleDateString('en-GB')} - ${lastDayOfMonth.toLocaleDateString('en-GB')}`;
-        }
+        const NextMonthDueDate = new Date(nextMonthStartingDate.getFullYear(), nextMonthStartingDate.getMonth() + 1, 0)
+
+        const NextMonthDueDateForInvoice = NextMonthDueDate.toLocaleDateString('en-GB');
+
+        const formattedDueDateForNextMonth = moment(NextMonthDueDateForInvoice, 'DD/MM/YYYY').format('YYYY-MM-DD')
+
+
+        console.log("formattedDueDateForNextMonth", formattedDueDateForNextMonth)
+        // if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+        //     const lastDayOfMonth = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 0);
+        //     dueDate = lastDayOfMonth.toLocaleDateString('en-GB');
+        // } else {
+        //     const firstDayOfMonth = new Date(currentYear, currentMonth - 1, 1);
+        //     const lastDayOfMonth = new Date(currentYear, currentMonth, 0);
+
+        //     dueDate = `${firstDayOfMonth.toLocaleDateString('en-GB')} - ${lastDayOfMonth.toLocaleDateString('en-GB')}`;
+        // }
 
         const formatteddueDate = moment(dueDate, 'DD/MM/YYYY').format('YYYY-MM-DD')
         console.log("Due date for user:", user.User_Id, "is", dueDate);
