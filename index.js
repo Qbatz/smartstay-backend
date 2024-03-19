@@ -39,62 +39,50 @@ const cronFunction = cron.schedule("* * * * * ", function () {
         users.forEach(user => {
             const userID = user.User_Id;
             console.log(" userID", userID)
-            calculateAndInsertInvoice(userID, users);
+            calculateAndInsertInvoice(user);
         });
     });
 });
 
+function calculateAndInsertInvoice(user) {
+    console.log("reqdatum *********", user)
 
-function calculateAndInsertInvoice(userID, reqdatum) {
-    console.log("reqdatum *********", reqdatum)
-
-    for (let i = 0; i < reqdatum.length; i++) {
-        connection.query(`SELECT * FROM invoicedetails WHERE User_Id = '${userID}'`, function (err, existingData) {
+   
+        connection.query(`SELECT * FROM invoicedetails WHERE User_Id = '${user.User_Id}'`, function (err, existingData) {
             if (err) {
-                console.error("Error querying existing invoice data for user:", userID, err);
+                console.error("Error querying existing invoice data for user:", user.User_Id, err);
                 return;
             }
             const Today = new Date()
             console.log("today", Today)
 
-            const joinDate = new Date(reqdatum[i].createdAt);
+            const joinDate = new Date(user.createdAt);
 
             const JoiningDate = joinDate.toLocaleDateString('en-GB')
             const formattedDate = moment(JoiningDate, 'DD/MM/YYYY').format('YYYY-MM-DD')
             console.log("userJoining", formattedDate)
-
-            let dueDate;
-            const joinMonth = joinDate.getMonth() + 1;
-            const joinYear = joinDate.getFullYear();
-            const createMonth = Today.getMonth() + 1;
-            const createYear = Today.getFullYear();
-            
-            if (joinMonth === createMonth && joinYear === createYear) {
-               
-                const lastDayOfMonth = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 0);
-                dueDate = lastDayOfMonth.toLocaleDateString('en-GB');
-            } else {
-                
-                const firstDayOfMonth = new Date(joinDate.getFullYear(), joinDate.getMonth(), 1);
-                const lastDayOfMonth = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 0);
-                dueDate = firstDayOfMonth.toLocaleDateString('en-GB') + " - " + lastDayOfMonth.toLocaleDateString('en-GB');
-            }
+            const lastDayOfMonth = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 0);
+            const dueDate = lastDayOfMonth.toLocaleDateString('en-GB');
             const formatteddueDate = moment(dueDate, 'DD/MM/YYYY').format('YYYY-MM-DD')
-            console.log("Due date for user:", userID, "is", dueDate);
+            console.log("Due date for user:", user.User_Id, "is", dueDate);
             console.log("joinDate", JoiningDate)
 
-            const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${reqdatum[i].Name}', '${reqdatum[i].Phone}', '${reqdatum[i].Email}', '${reqdatum[i].HostelName}', '${reqdatum[i].Hostel_Id}', '${reqdatum[i].Floor}', '${reqdatum[i].Rooms}', '${reqdatum[i].AdvanceAmount}', '${reqdatum[i].BalanceDue}', '${formattedDate}', '${formatteddueDate}', '${reqdatum[i].invoiceNo}', '${reqdatum[i].Status}', '${reqdatum[i].User_Id}')`
+            const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', '${user.Phone}', '${user.Email}', '${user.HostelName}', '${user.Hostel_Id}', '${user.Floor}', '${user.Rooms}', '${user.AdvanceAmount}', '${user.BalanceDue}', '${formattedDate}', '${formatteddueDate}', '${user.invoiceNo}', '${user.Status}', '${user.User_Id}')`
             connection.query(query, function (error, data) {
                 console.log("data ****", data)
                 if (error) {
-                    console.error("Error inserting invoice data for user:", userID, error);
+                    console.error("Error inserting invoice data for user:", user.User_Id, error);
                     return;
                 }
-                console.log("Invoice inserted successfully for user:", userID);
+                console.log("Invoice inserted successfully for user:", user.User_Id);
             });
         });
-    }
+    
 }
+
+
+
+
 
 
 
@@ -115,8 +103,23 @@ function calculateAndInsertInvoice(userID, reqdatum) {
 //             const JoiningDate = joinDate.toLocaleDateString('en-GB')
 //             const formattedDate = moment(JoiningDate, 'DD/MM/YYYY').format('YYYY-MM-DD')
 //             console.log("userJoining", formattedDate)
-//             const lastDayOfMonth = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 0);
-//             const dueDate = lastDayOfMonth.toLocaleDateString('en-GB');
+
+//             let dueDate;
+//             const joinMonth = joinDate.getMonth() + 1;
+//             const joinYear = joinDate.getFullYear();
+//             const createMonth = Today.getMonth() + 1;
+//             const createYear = Today.getFullYear();
+            
+//             if (joinMonth === createMonth && joinYear === createYear) {
+               
+//                 const lastDayOfMonth = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 0);
+//                 dueDate = lastDayOfMonth;
+//             }else {
+                
+//                 const firstDayOfMonth = new Date(joinDate.getFullYear(), joinDate.getMonth(), 1);
+//                 const lastDayOfMonth = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 0);
+//                 dueDate = firstDayOfMonth.toLocaleDateString('en-GB') + " - " + lastDayOfMonth.toLocaleDateString('en-GB');
+//             }
 //             const formatteddueDate = moment(dueDate, 'DD/MM/YYYY').format('YYYY-MM-DD')
 //             console.log("Due date for user:", userID, "is", dueDate);
 //             console.log("joinDate", JoiningDate)
@@ -133,7 +136,6 @@ function calculateAndInsertInvoice(userID, reqdatum) {
 //         });
 //     }
 // }
-
 
 
 
@@ -738,7 +740,7 @@ app.post('/add/adduser-list', function (request, response) {
                         if (data.length > 0) {
                             response.status(203).json({ message: "Email Already Exists", statusCode: 203 });
                         } else {
-                            connection.query(`INSERT INTO hostel (Circle,User_Id, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,isActive) VALUES ('${Circle}','${userID}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}','${atten.isActive}')`, function (insertError, insertData) {
+                            connection.query(`INSERT INTO hostel (Circle,User_Id, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,isActive) VALUES ('${Circle}','${userID}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}')`, function (insertError, insertData) {
                                 if (insertError) {
                                     console.log(insertError);
                                     response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
