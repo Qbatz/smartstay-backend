@@ -43,62 +43,52 @@ const cronFunction = cron.schedule("* * * * * ", function () {
         });
     });
 });
+
 function calculateAndInsertInvoice(user) {
-    console.log("reqdatum *********", user)
+    console.log("reqdatum *********", user);
 
     connection.query(`SELECT * FROM invoicedetails WHERE User_Id = '${user.User_Id}'`, function (err, existingData) {
         if (err) {
             console.error("Error querying existing invoice data for user:", user.User_Id, err);
             return;
         }
-        const Today = new Date()
-        console.log("today", Today)
 
-        const joinDate = new Date(user.createdAt);
+        let d = new Date();
+        const currentDate = moment(d).format('YYYY-MM-DD');
+        console.log("Current Date:", currentDate);
+        let invoiceDate
 
-        const JoiningDate = joinDate.toLocaleDateString('en-GB')
-        const formattedDate = moment(JoiningDate, 'DD/MM/YYYY').format('YYYY-MM-DD')
-        console.log("userJoining", formattedDate)
+        let joinDate = moment(user.createdAt).format('YYYY-MM-DD');
+        console.log("Join Date:", joinDate);
 
-        // Check if createdAt month and year match the current month and year
-        const currentMonth = Today.getMonth() + 1;
-        const currentYear = Today.getFullYear();
-        const createdAtMonth = joinDate.getMonth() + 1;
-        const createdAtYear = joinDate.getFullYear();
+        const currentMonth = moment(currentDate).month() + 1;
+        console.log("currentMonth",currentMonth)
+        const currentYear = moment(currentDate).year();
+        console.log("currentYear",currentYear)
 
-
+        const createdAtMonth = moment(joinDate).month() + 1;
+        const createdAtYear = moment(joinDate).year();
 
         let dueDate;
-        const dueDateObj = new Date(formatteddueDate);
-        const nextMonthStartingDate = new Date(dueDateObj.getFullYear(), dueDateObj.getMonth() + 1, 1);
-        const formattedNextMonthStartingDate = moment(nextMonthStartingDate).format('YYYY-MM-DD');
-        console.log("Next Month's Starting Date:", formattedNextMonthStartingDate);
 
-        const NextMonthDueDate = new Date(nextMonthStartingDate.getFullYear(), nextMonthStartingDate.getMonth() + 1, 0)
+        if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+            dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+        } else {
+            dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+            invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
+            console.log("invoiceDate",invoiceDate)
+            
+        }
 
-        const NextMonthDueDateForInvoice = NextMonthDueDate.toLocaleDateString('en-GB');
+        console.log("Due Date:", dueDate);
 
-        const formattedDueDateForNextMonth = moment(NextMonthDueDateForInvoice, 'DD/MM/YYYY').format('YYYY-MM-DD')
+        const formattedJoinDate = joinDate ?  moment(joinDate).format('YYYY-MM-DD') : moment(invoiceDate).format('YYYY-MM-DD') ;
+        const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
 
+        const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', '${user.Phone}', '${user.Email}', '${user.HostelName}', '${user.Hostel_Id}', '${user.Floor}', '${user.Rooms}', '${user.AdvanceAmount}', '${user.BalanceDue}', '${formattedJoinDate}', '${formattedDueDate}', '${user.invoiceNo}', '${user.Status}', '${user.User_Id}')`;
 
-        console.log("formattedDueDateForNextMonth", formattedDueDateForNextMonth)
-        // if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
-        //     const lastDayOfMonth = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 0);
-        //     dueDate = lastDayOfMonth.toLocaleDateString('en-GB');
-        // } else {
-        //     const firstDayOfMonth = new Date(currentYear, currentMonth - 1, 1);
-        //     const lastDayOfMonth = new Date(currentYear, currentMonth, 0);
-
-        //     dueDate = `${firstDayOfMonth.toLocaleDateString('en-GB')} - ${lastDayOfMonth.toLocaleDateString('en-GB')}`;
-        // }
-
-        const formatteddueDate = moment(dueDate, 'DD/MM/YYYY').format('YYYY-MM-DD')
-        console.log("Due date for user:", user.User_Id, "is", dueDate);
-        console.log("joinDate", JoiningDate)
-
-        const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', '${user.Phone}', '${user.Email}', '${user.HostelName}', '${user.Hostel_Id}', '${user.Floor}', '${user.Rooms}', '${user.AdvanceAmount}', '${user.BalanceDue}', '${formattedDate}', '${formatteddueDate}', '${user.invoiceNo}', '${user.Status}', '${user.User_Id}')`
         connection.query(query, function (error, data) {
-            console.log("data ****", data)
+            console.log("data ****", data);
             if (error) {
                 console.error("Error inserting invoice data for user:", user.User_Id, error);
                 return;
@@ -106,13 +96,61 @@ function calculateAndInsertInvoice(user) {
             console.log("Invoice inserted successfully for user:", user.User_Id);
         });
     });
-
 }
 
 
 // function calculateAndInsertInvoice(user) {
-//     console.log("reqdatum *********", user)
+//     console.log("reqdatum *********", user);
 
+//     connection.query(`SELECT * FROM invoicedetails WHERE User_Id = '${user.User_Id}'`, function (err, existingData) {
+//         if (err) {
+//             console.error("Error querying existing invoice data for user:", user.User_Id, err);
+//             return;
+//         }
+// let d = new Date()
+//         const currentDate = moment(d).format('DD/MM/YYYY')
+//         console.log("Current Date:", currentDate);
+
+//         const joinDate = moment(user.createdAt).format('DD/MM/YYYY') 
+//         console.log("Join Date:", joinDate);
+
+//         const currentMonth = currentDate.getmonth() + 1; 
+//         const currentYear = currentDate.getyear(); 
+
+//         const createdAtMonth = joinDate.getmonth() + 1; 
+//         const createdAtYear = joinDate.getyear(); 
+
+//         let dueDate;
+
+//         if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+//             dueDate = joinDate.endOf('month').format('YYYY-MM-DD');
+//             // dueDate = currentDate.endOf('month').format('DD/MM/YYYY');
+//         } else {
+//             dueDate = currentDate.endOf('month').format('YYYY-MM-DD');
+//             // dueDate = `${currentDate.startOf('month').format('DD/MM/YYYY')} - ${currentDate.endOf('month').format('DD/MM/YYYY')}`;
+//         }
+
+//         console.log("Due Date:", dueDate);
+
+//         const formattedJoinDate = joinDate.format('YYYY-MM-DD');
+//         const formattedDueDate = currentDate.endOf('month').format('YYYY-MM-DD');
+
+//         const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', '${user.Phone}', '${user.Email}', '${user.HostelName}', '${user.Hostel_Id}', '${user.Floor}', '${user.Rooms}', '${user.AdvanceAmount}', '${user.BalanceDue}', '${formattedJoinDate}', '${formattedDueDate}', '${user.invoiceNo}', '${user.Status}', '${user.User_Id}')`;
+
+//         connection.query(query, function (error, data) {
+//             console.log("data ****", data)
+//             if (error) {
+//                 console.error("Error inserting invoice data for user:", user.User_Id, error);
+//                 return;
+//             }
+//             console.log("Invoice inserted successfully for user:", user.User_Id);
+//         });
+//     });
+// }
+
+
+// function calculateAndInsertInvoice(user) {
+//     console.log("reqdatum *********", user)
 
 //     connection.query(`SELECT * FROM invoicedetails WHERE User_Id = '${user.User_Id}'`, function (err, existingData) {
 //         if (err) {
@@ -127,27 +165,31 @@ function calculateAndInsertInvoice(user) {
 //         const JoiningDate = joinDate.toLocaleDateString('en-GB')
 //         const formattedDate = moment(JoiningDate, 'DD/MM/YYYY').format('YYYY-MM-DD')
 //         console.log("userJoining", formattedDate)
-//         const lastDayOfMonth = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 0);
-//         const dueDate = lastDayOfMonth.toLocaleDateString('en-GB');
+
+//         // Check if createdAt month and year match the current month and year
+//         const currentMonth = Today.getMonth() + 1;
+//         const currentYear = Today.getFullYear();
+//         const createdAtMonth = joinDate.getMonth() + 1;
+//         const createdAtYear = joinDate.getFullYear();
+// console.log("currentMonth",currentMonth)
+// console.log("currentYear",currentYear)
+// console.log("createdAtMonth",createdAtMonth)
+// console.log("createdAtYear",createdAtYear)
+//         let dueDate;
+//         if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+//             const lastDayOfMonth = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 0);
+//             dueDate = lastDayOfMonth.toLocaleDateString('en-GB');
+//         } else {
+            
+//             const firstDayOfMonth = new Date(currentYear, currentMonth - 1, 1);
+//             const lastDayOfMonth = new Date(currentYear, currentMonth, 0);
+//             dueDate = `${firstDayOfMonth.toLocaleDateString('en-GB')} - ${lastDayOfMonth.toLocaleDateString('en-GB')}`;
+        
+//         }
+
 //         const formatteddueDate = moment(dueDate, 'DD/MM/YYYY').format('YYYY-MM-DD')
 //         console.log("Due date for user:", user.User_Id, "is", dueDate);
 //         console.log("joinDate", JoiningDate)
-
-
-
-//         const dueDateObj = new Date(formatteddueDate);
-//         const nextMonthStartingDate = new Date(dueDateObj.getFullYear(), dueDateObj.getMonth() + 1, 1);
-//         const formattedNextMonthStartingDate = moment(nextMonthStartingDate).format('YYYY-MM-DD');
-//         console.log("Next Month's Starting Date:", formattedNextMonthStartingDate);
-
-//         const NextMonthDueDate = new Date(nextMonthStartingDate.getFullYear(), nextMonthStartingDate.getMonth() + 1, 0)
-
-//         const NextMonthDueDateForInvoice = NextMonthDueDate.toLocaleDateString('en-GB');
-
-//         const formattedDueDateForNextMonth = moment(NextMonthDueDateForInvoice, 'DD/MM/YYYY').format('YYYY-MM-DD')
-
-
-//         console.log("formattedDueDateForNextMonth", formattedDueDateForNextMonth)
 
 //         const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', '${user.Phone}', '${user.Email}', '${user.HostelName}', '${user.Hostel_Id}', '${user.Floor}', '${user.Rooms}', '${user.AdvanceAmount}', '${user.BalanceDue}', '${formattedDate}', '${formatteddueDate}', '${user.invoiceNo}', '${user.Status}', '${user.User_Id}')`
 //         connection.query(query, function (error, data) {
@@ -161,10 +203,6 @@ function calculateAndInsertInvoice(user) {
 //     });
 
 // }
-
-
-
-
 
 
 
@@ -191,13 +229,13 @@ function calculateAndInsertInvoice(user) {
 //             const joinYear = joinDate.getFullYear();
 //             const createMonth = Today.getMonth() + 1;
 //             const createYear = Today.getFullYear();
-
+            
 //             if (joinMonth === createMonth && joinYear === createYear) {
-
+               
 //                 const lastDayOfMonth = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 0);
 //                 dueDate = lastDayOfMonth;
 //             }else {
-
+                
 //                 const firstDayOfMonth = new Date(joinDate.getFullYear(), joinDate.getMonth(), 1);
 //                 const lastDayOfMonth = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 0);
 //                 dueDate = firstDayOfMonth.toLocaleDateString('en-GB') + " - " + lastDayOfMonth.toLocaleDateString('en-GB');
@@ -822,7 +860,7 @@ app.post('/add/adduser-list', function (request, response) {
                         if (data.length > 0) {
                             response.status(203).json({ message: "Email Already Exists", statusCode: 203 });
                         } else {
-                            connection.query(`INSERT INTO hostel (Circle,User_Id, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status) VALUES ('${Circle}','${userID}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}')`, function (insertError, insertData) {
+                            connection.query(`INSERT INTO hostel (Circle,User_Id, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,isActive) VALUES ('${Circle}','${userID}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}')`, function (insertError, insertData) {
                                 if (insertError) {
                                     console.log(insertError);
                                     response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
