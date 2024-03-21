@@ -28,7 +28,8 @@ cron.schedule("0 0 1 1 *", function () {
 //     console.log("This task runs every minute");
 // });
 
-
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
 app.use(cors(corsOptions));
 app.options('*', cors());
 app.use(express.json())
@@ -68,80 +69,160 @@ const cronFunction = cron.schedule(" * * * * *   ", function () {
         });
     });
 });
-
 function calculateAndInsertInvoice(user) {
     console.log("reqdatum *********", user);
 
-    connection.query(`SELECT * FROM hosteldetails `, function (err, existingData) {
-        if(existingData && existingData.length > 0){
-            console.log("existingData",existingData);
-            let prefix = '';
-            let suffix = '';
-            if(existingData[0].Hostel_Id && existingData[0].Hostel_Id.length >= 2){
+    connection.query(`SELECT * FROM hosteldetails`, function (err, existingData) {
+        let prefix = '';
+        let suffix = '';
+
+        if (existingData && existingData.length > 0) {
+            console.log("existingData", existingData);
+            if (existingData[0].Hostel_Id && existingData[0].Hostel_Id.length >= 2) {
                 prefix = existingData[0].Hostel_Id.substring(0, 2);
                 suffix = existingData[0].Hostel_Id.substring(0, 2);
             }
-            let d = new Date();
-            const currentDate = moment(d).format('YYYY-MM-DD');
-            console.log("Current Date:", currentDate);
-            let invoiceDate;
-
-            let joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-            console.log("Join Date:", joinDate);
-
-            const currentMonth = moment(currentDate).month() + 1;
-            console.log("currentMonth", currentMonth);
-            const currentYear = moment(currentDate).year();
-            console.log("currentYear", currentYear);
-
-            const createdAtMonth = moment(joinDate).month() + 1;
-            console.log("createdAtMonth", createdAtMonth);
-            const createdAtYear = moment(joinDate).year();
-            console.log("createdAtYear",createdAtYear);
-
-            let dueDate;   
-            console.log('currentMonth',currentMonth ,createdAtMonth); 
-            if (currentMonth === createdAtMonth && currentYear === createdAtYear) {              
-                console.log('if',currentMonth ,createdAtMonth); 
-                dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
-                invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-            } 
-            else {
-                dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
-                invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
-                console.log("invoiceDate", invoiceDate);
-            }
-
-            console.log("Due Date:", dueDate);
-
-            const formattedJoinDate =  moment(invoiceDate).format('YYYY-MM-DD');
-            console.log("formattedJoinDate", formattedJoinDate);
-            const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-
-            let invoiceNoPrefix = '';
-            let invoiceNoSuffix = '';
-            if (prefix && suffix) {
-                invoiceNoPrefix = prefix;
-                invoiceNoSuffix = suffix;
-            }
-            
-            const invoiceNo = `${invoiceNoPrefix}${invoiceNoSuffix}INVC${moment().format('MMYYYY')}`;
-
-            const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', '${user.Phone}', '${user.Email}', '${user.HostelName}', '${user.Hostel_Id}', '${user.Floor}', '${user.Rooms}', '${user.AdvanceAmount}', '${user.BalanceDue}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
-            console.log(query);
-            connection.query(query, function (error, data) {
-                console.log("data ****", data);
-                if (error) {
-                    console.error("Error inserting invoice data for user:", user.User_Id, error);
-                    return;
-                }
-                console.log("Invoice inserted successfully for user:", user.User_Id);
-            });
-        } else {
-            console.log("No existing data found for Hostel_Id:", user.Hostel_Id, "and current month.");
         }
+
+        let d = new Date();
+        const currentDate = moment(d).format('YYYY-MM-DD');
+        console.log("Current Date:", currentDate);
+        let invoiceDate;
+
+        let joinDate = moment(user.createdAt).format('YYYY-MM-DD');
+        console.log("Join Date:", joinDate);
+
+        const currentMonth = moment(currentDate).month() + 1;
+        console.log("currentMonth", currentMonth);
+        const currentYear = moment(currentDate).year();
+        console.log("currentYear", currentYear);
+
+        const createdAtMonth = moment(joinDate).month() + 1;
+        console.log("createdAtMonth", createdAtMonth);
+        const createdAtYear = moment(joinDate).year();
+        console.log("createdAtYear", createdAtYear);
+
+        let dueDate;
+        console.log('currentMonth', currentMonth, createdAtMonth);
+        if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+            console.log('if', currentMonth, createdAtMonth);
+            dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+            invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+        } else {
+            dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+            invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
+            console.log("invoiceDate", invoiceDate);
+        }
+
+        console.log("Due Date:", dueDate);
+
+        const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+        console.log("formattedJoinDate", formattedJoinDate);
+        const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+
+        let invoiceNoPrefix = '';
+        let invoiceNoSuffix = '';
+        if (prefix && suffix) {
+            invoiceNoPrefix = prefix;
+            invoiceNoSuffix = suffix;
+        } else {
+            invoiceNoPrefix = 'INVC';
+        }
+
+        let userIdPrefix = '';
+        if (user.User_Id) {
+            userIdPrefix = user.User_Id.toString().slice(-4); // Take last 4 digits of user ID
+        }
+
+        const invoiceNo = `${invoiceNoPrefix}${invoiceNoSuffix}INVC${moment().format('MMYYYY')}${userIdPrefix}`;
+
+        const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', '${user.Phone}', '${user.Email}', '${user.HostelName}', '${user.Hostel_Id}', '${user.Floor}', '${user.Rooms}', '${user.AdvanceAmount}', '${user.BalanceDue}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
+        console.log(query);
+        connection.query(query, function (error, data) {
+            console.log("data ****", data);
+            if (error) {
+                console.error("Error inserting invoice data for user:", user.User_Id, error);
+                return;
+            }
+            console.log("Invoice inserted successfully for user:", user.User_Id);
+        });
     });
 }
+
+
+// function calculateAndInsertInvoice(user) {
+//     console.log("reqdatum *********", user);
+
+//     connection.query(`SELECT * FROM hosteldetails `, function (err, existingData) {
+//         if(existingData && existingData.length > 0){
+//             console.log("existingData",existingData);
+//             let prefix = '';
+//             let suffix = '';
+//             if(existingData[0].Hostel_Id && existingData[0].Hostel_Id.length >= 2){
+//                 prefix = existingData[0].Hostel_Id.substring(0, 2);
+//                 suffix = existingData[0].Hostel_Id.substring(0, 2);
+//             }
+//             let d = new Date();
+//             const currentDate = moment(d).format('YYYY-MM-DD');
+//             console.log("Current Date:", currentDate);
+//             let invoiceDate;
+
+//             let joinDate = moment(user.createdAt).format('YYYY-MM-DD');
+//             console.log("Join Date:", joinDate);
+
+//             const currentMonth = moment(currentDate).month() + 1;
+//             console.log("currentMonth", currentMonth);
+//             const currentYear = moment(currentDate).year();
+//             console.log("currentYear", currentYear);
+
+//             const createdAtMonth = moment(joinDate).month() + 1;
+//             console.log("createdAtMonth", createdAtMonth);
+//             const createdAtYear = moment(joinDate).year();
+//             console.log("createdAtYear",createdAtYear);
+
+//             let dueDate;   
+//             console.log('currentMonth',currentMonth ,createdAtMonth); 
+//             if (currentMonth === createdAtMonth && currentYear === createdAtYear) {              
+//                 console.log('if',currentMonth ,createdAtMonth); 
+//                 dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+//                 invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+//             } 
+//             else {
+//                 dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+//                 invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
+//                 console.log("invoiceDate", invoiceDate);
+//             }
+
+//             console.log("Due Date:", dueDate);
+
+//             const formattedJoinDate =  moment(invoiceDate).format('YYYY-MM-DD');
+//             console.log("formattedJoinDate", formattedJoinDate);
+//             const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+
+//             let invoiceNoPrefix = '';
+//             let invoiceNoSuffix = '';
+//             if (prefix && suffix) {
+//                 invoiceNoPrefix = prefix;
+//                 invoiceNoSuffix = suffix;
+//             }
+            
+//             const invoiceNo = `${invoiceNoPrefix}${invoiceNoSuffix}INVC${moment().format('MMYYYY')}`;
+
+//             const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', '${user.Phone}', '${user.Email}', '${user.HostelName}', '${user.Hostel_Id}', '${user.Floor}', '${user.Rooms}', '${user.AdvanceAmount}', '${user.BalanceDue}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
+//             console.log(query);
+//             connection.query(query, function (error, data) {
+//                 console.log("data ****", data);
+//                 if (error) {
+//                     console.error("Error inserting invoice data for user:", user.User_Id, error);
+//                     return;
+//                 }
+//                 console.log("Invoice inserted successfully for user:", user.User_Id);
+//             });
+//         } else {
+//             console.log("No existing data found for Hostel_Id:", user.Hostel_Id, "and current month.");
+//         }
+//     });
+// }
 
 
 
@@ -1079,7 +1160,33 @@ app.get('/get/userAccount', function (request, response) {
         }
     })
 })
+app.get('/users/user-list-pdf', function (request, response) {
+    connection.query('SELECT * FROM hostel', function (error, data) {
+        if (error) {
+            console.log(error);
+            response.status(500).json({ message: 'Internal server error' });
+        } else {
+            const doc = new PDFDocument();
+            const filename = 'hostel_list.pdf';
+            doc.pipe(fs.createWriteStream(filename));
 
+            doc.fontSize(16).text('Hostel List', { align: 'center' }).moveDown(0.5);
+
+            data.forEach((hostel, index) => {
+                console.log("data", data);
+                doc.fontSize(18)
+                    .text(`Hostel Name: ${hostel.HostelName}`, { continued: true })  
+                    .moveDown(2)  
+                    .text(`User Name: ${hostel.Name}`)  
+                    .moveDown(1);  });
+            
+
+            doc.end();
+            console.log('PDF generated successfully');
+            response.status(200).download(filename);
+        }
+    });
+})
 
 app.listen('2001', function () {
     console.log("node is started at 2001")
