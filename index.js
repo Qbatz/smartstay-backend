@@ -53,7 +53,7 @@ connection.connect(function (error) {
         console.log("connection success")
     }
 })
-const cronFunction = cron.schedule("* * * * * ", function () {
+const cronFunction = cron.schedule(" 0 0 1 * *", function () {
     console.log("This task runs every minute");
     connection.query(`SELECT * FROM hostel`, function (err, users) {
         console.log(" users", users)
@@ -73,11 +73,11 @@ const cronFunction = cron.schedule("* * * * * ", function () {
 function calculateAndInsertInvoice(user) {
     console.log("reqdatum *********", user);
 
-    connection.query(`SELECT * FROM invoicedetails WHERE User_Id = '${user.User_Id}'`, function (err, existingData) {
-        if (err) {
-            console.error("Error querying existing invoice data for user:", user.User_Id, err);
-            return;
-        }
+    // connection.query(`SELECT * FROM invoicedetails WHERE User_Id = '${user.User_Id}'`, function (err, existingData) {
+    //     if (err) {
+    //         console.error("Error querying existing invoice data for user:", user.User_Id, err);
+    //         return;
+    //     }
 
         let d = new Date();
         const currentDate = moment(d).format('YYYY-MM-DD');
@@ -126,8 +126,9 @@ console.log(query)
             }
             console.log("Invoice inserted successfully for user:", user.User_Id);
         });
-    });
-}
+    }
+    // );
+// }
 // function calculateAndInsertInvoice(user) {
 //     console.log("Generating or updating invoice for user:", user.User_Id);
 
@@ -363,7 +364,7 @@ app.post('/add/new-hostel', function (request, response) {
     console.log("reqData", reqData);
     let hostelID, errorMessage
     if (reqData) {
-        const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) values (\'${reqData.name}\',\'${reqData.phoneNo}\',\'${reqData.number_of_floors}\',\'${reqData.email_Id}\',\'${reqData.location}\',\'${reqData.created_by}\')`
+        const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By,prefix,suffix) values (\'${reqData.name}\',\'${reqData.phoneNo}\',\'${reqData.number_of_floors}\',\'${reqData.email_Id}\',\'${reqData.location}\',\'${reqData.created_by}\',\'${reqData.prefix}\',\'${reqData.suffix}\')`
         connection.query(query, function (error, data) {
             if (error) {
                 console.log("error", error);
