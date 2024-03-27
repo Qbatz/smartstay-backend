@@ -999,7 +999,7 @@ app.get('/invoice/invoice-list-pdf', function (request, response) {
                 const marginLeft = 30;
                 const marginRight = doc.page.width / 2;
 
-                doc.addPage();
+            
 
                 const logoPath = './Asset/Logo.jpeg';
                 doc.image(logoPath, {
