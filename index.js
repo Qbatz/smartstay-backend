@@ -54,7 +54,7 @@ connection.connect(function (error) {
         console.log("connection success")
     }
 })
-const cronFunction = cron.schedule(" * * * * *   ", function () {
+const cronFunction = cron.schedule(" 0 0 1 * * ", function () {
     console.log("This task runs every minute");
     connection.query(`SELECT * FROM hostel`, function (err, users) {
         console.log(" users", users)
@@ -64,225 +64,76 @@ const cronFunction = cron.schedule(" * * * * *   ", function () {
         }
         users.forEach(user => {
             const userID = user.User_Id;
-            console.log(" userID", userID)
+           
             calculateAndInsertInvoice(user);
         });
     });
 });
-function calculateAndInsertInvoice(user) {
-    console.log("reqdatum *********", user);
 
-    connection.query(`SELECT * FROM hosteldetails`, function (err, existingData) {
+
+function calculateAndInsertInvoice(user) {
+    connection.query(`SELECT * FROM hosteldetails where id = ${user.Hostel_Id}`, function (err, existingData) {
+
+        if(existingData.length > 0){
         let prefix = '';
         let suffix = '';
+        let invoiceNo = '';
 
-        if (existingData && existingData.length > 0) {
-            console.log("existingData", existingData);
-            if (existingData[0].Hostel_Id && existingData[0].Hostel_Id.length >= 2) {
-                prefix = existingData[0].Hostel_Id.substring(0, 2);
-                suffix = existingData[0].Hostel_Id.substring(0, 2);
-            }
-        }
-
-        let d = new Date();
-        const currentDate = moment(d).format('YYYY-MM-DD');
-        console.log("Current Date:", currentDate);
+        const currentDate = moment( new Date()).format('YYYY-MM-DD');
         let invoiceDate;
-
         let joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-        console.log("Join Date:", joinDate);
-
         const currentMonth = moment(currentDate).month() + 1;
-        console.log("currentMonth", currentMonth);
         const currentYear = moment(currentDate).year();
-        console.log("currentYear", currentYear);
-
         const createdAtMonth = moment(joinDate).month() + 1;
-        console.log("createdAtMonth", createdAtMonth);
         const createdAtYear = moment(joinDate).year();
-        console.log("createdAtYear", createdAtYear);
-
         let dueDate;
-        console.log('currentMonth', currentMonth, createdAtMonth);
+
         if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
-            console.log('if', currentMonth, createdAtMonth);
             dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
             invoiceDate = moment(joinDate).format('YYYY-MM-DD');
         } else {
             dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
             invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
-            console.log("invoiceDate", invoiceDate);
+           
         }
-
-        console.log("Due Date:", dueDate);
-
         const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-        console.log("formattedJoinDate", formattedJoinDate);
         const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
 
-        let invoiceNoPrefix = '';
-        let invoiceNoSuffix = '';
-        if (prefix && suffix) {
-            invoiceNoPrefix = prefix;
-            invoiceNoSuffix = suffix;
-        } else {
-            invoiceNoPrefix = 'INVC';
-        }
+                prefix = existingData[0].prefix;
+                suffix = existingData[0].suffix;
+                let invoiceNoPrefix = '';
+                let invoiceNoSuffix = '';
 
-        let userIdPrefix = '';
-        if (user.User_Id) {
-            userIdPrefix = user.User_Id.toString().slice(-4); // Take last 4 digits of user ID
-        }
-
-        const invoiceNo = `${invoiceNoPrefix}${invoiceNoSuffix}INVC${moment().format('MMYYYY')}${userIdPrefix}`;
-
-        const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', '${user.Phone}', '${user.Email}', '${user.HostelName}', '${user.Hostel_Id}', '${user.Floor}', '${user.Rooms}', '${user.AdvanceAmount}', '${user.BalanceDue}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
-        console.log(query);
-        connection.query(query, function (error, data) {
-            console.log("data ****", data);
-            if (error) {
-                console.error("Error inserting invoice data for user:", user.User_Id, error);
-                return;
-            }
-            console.log("Invoice inserted successfully for user:", user.User_Id);
-        });
+                if (existingData[0].prefix == null && existingData[0].suffix == null) {
+                    invoiceNoPrefix = 'INVC';
+                    const userID = user.User_Id.toString().slice(0, 4)
+                    invoiceNoSuffix = `${userID}${currentMonth}${currentYear}`;
+                    invoiceNo = `${invoiceNoPrefix}${invoiceNoSuffix}`
+                } else {
+                    invoiceNo = `${existingData[0].prefix}${existingData[0].suffix}${currentMonth}${currentYear}`;
+                }
+                console.log("Generated Invoice Number:", invoiceNo);
+                const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', '${user.Phone}', '${user.Email}', '${user.HostelName}', '${user.Hostel_Id}', '${user.Floor}', '${user.Rooms}', '${user.AdvanceAmount}', '${user.BalanceDue}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
+             
+                connection.query(query, function (error, data) {
+                    if (error) {
+                        console.error("Error inserting invoice data for user:", user.User_Id, error);
+                        return;
+                    }
+                    // console.log("Invoice inserted successfully for user:", user.User_Id);
+                });
+           
+    }
+    else{
+        console.log("err",err);
+    }
     });
 }
 
 
-// function calculateAndInsertInvoice(user) {
-//     console.log("reqdatum *********", user);
-
-//     connection.query(`SELECT * FROM hosteldetails `, function (err, existingData) {
-//         if(existingData && existingData.length > 0){
-//             console.log("existingData",existingData);
-//             let prefix = '';
-//             let suffix = '';
-//             if(existingData[0].Hostel_Id && existingData[0].Hostel_Id.length >= 2){
-//                 prefix = existingData[0].Hostel_Id.substring(0, 2);
-//                 suffix = existingData[0].Hostel_Id.substring(0, 2);
-//             }
-//             let d = new Date();
-//             const currentDate = moment(d).format('YYYY-MM-DD');
-//             console.log("Current Date:", currentDate);
-//             let invoiceDate;
-
-//             let joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-//             console.log("Join Date:", joinDate);
-
-//             const currentMonth = moment(currentDate).month() + 1;
-//             console.log("currentMonth", currentMonth);
-//             const currentYear = moment(currentDate).year();
-//             console.log("currentYear", currentYear);
-
-//             const createdAtMonth = moment(joinDate).month() + 1;
-//             console.log("createdAtMonth", createdAtMonth);
-//             const createdAtYear = moment(joinDate).year();
-//             console.log("createdAtYear",createdAtYear);
-
-//             let dueDate;   
-//             console.log('currentMonth',currentMonth ,createdAtMonth); 
-//             if (currentMonth === createdAtMonth && currentYear === createdAtYear) {              
-//                 console.log('if',currentMonth ,createdAtMonth); 
-//                 dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
-//                 invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-//             } 
-//             else {
-//                 dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
-//                 invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
-//                 console.log("invoiceDate", invoiceDate);
-//             }
-
-//             console.log("Due Date:", dueDate);
-
-//             const formattedJoinDate =  moment(invoiceDate).format('YYYY-MM-DD');
-//             console.log("formattedJoinDate", formattedJoinDate);
-//             const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-
-//             let invoiceNoPrefix = '';
-//             let invoiceNoSuffix = '';
-//             if (prefix && suffix) {
-//                 invoiceNoPrefix = prefix;
-//                 invoiceNoSuffix = suffix;
-//             }
-            
-//             const invoiceNo = `${invoiceNoPrefix}${invoiceNoSuffix}INVC${moment().format('MMYYYY')}`;
-
-//             const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', '${user.Phone}', '${user.Email}', '${user.HostelName}', '${user.Hostel_Id}', '${user.Floor}', '${user.Rooms}', '${user.AdvanceAmount}', '${user.BalanceDue}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
-//             console.log(query);
-//             connection.query(query, function (error, data) {
-//                 console.log("data ****", data);
-//                 if (error) {
-//                     console.error("Error inserting invoice data for user:", user.User_Id, error);
-//                     return;
-//                 }
-//                 console.log("Invoice inserted successfully for user:", user.User_Id);
-//             });
-//         } else {
-//             console.log("No existing data found for Hostel_Id:", user.Hostel_Id, "and current month.");
-//         }
-//     });
-// }
 
 
 
-// function calculateAndInsertInvoice(user) {
-//     console.log("reqdatum *********", user);
-
-//     connection.query(`SELECT * FROM hosteldetails `, function (err, existingData) {
-//        if(existingData){
-//         console.log("existingData",existingData)
-//        }
-//         let d = new Date();
-//         const currentDate = moment(d).format('YYYY-MM-DD');
-//         console.log("Current Date:", currentDate);
-//         let invoiceDate;
-
-//         let joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-//         console.log("Join Date:", joinDate);
-
-//         const currentMonth = moment(currentDate).month() + 1;
-//         console.log("currentMonth", currentMonth)
-//         const currentYear = moment(currentDate).year();
-//         console.log("currentYear", currentYear)
-
-//         const createdAtMonth = moment(joinDate).month() + 1;
-//         console.log("createdAtMonth", createdAtMonth)
-//         const createdAtYear = moment(joinDate).year();
-//         console.log("createdAtYear",createdAtYear)
-
-//         let dueDate;   
-//         console.log('currentMonth',currentMonth ,createdAtMonth) 
-//         if (currentMonth === createdAtMonth && currentYear === createdAtYear) {              
-//         console.log('if',currentMonth ,createdAtMonth) 
-//             dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
-//             invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-//         } 
-//         else {
-//             dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
-//             invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
-//             console.log("invoiceDate", invoiceDate)
-//         }
-
-//         console.log("Due Date:", dueDate);
-
-//         const formattedJoinDate =  moment(invoiceDate).format('YYYY-MM-DD');
-//         console.log("formattedJoinDate", formattedJoinDate)
-//         const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-
-//         const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', '${user.Phone}', '${user.Email}', '${user.HostelName}', '${user.Hostel_Id}', '${user.Floor}', '${user.Rooms}', '${user.AdvanceAmount}', '${user.BalanceDue}', '${formattedJoinDate}', '${formattedDueDate}', '${user.invoiceNo}', '${user.Status}', '${user.User_Id}')`;
-// console.log(query)
-//         connection.query(query, function (error, data) {
-//             console.log("data ****", data);
-//             if (error) {
-//                 console.error("Error inserting invoice data for user:", user.User_Id, error);
-//                 return;
-//             }
-//             console.log("Invoice inserted successfully for user:", user.User_Id);
-//         });
-//     }
-//     );
-// }
 
 
 
@@ -468,7 +319,7 @@ app.post('/add/new-hostel', function (request, response) {
                             for (let j = 0; j < reqData.floorDetails[i].length; j++) {
                                 const bed = Number(reqData.floorDetails[i][j].number_Of_Bed)
                                 const room = Number(reqData.floorDetails[i][j].roomName)
-                                const query3 = `insert into hostelrooms(Hostel_Id,Floor_Id,Room_Id,Number_Of_Beds,Created_By,Price) values(\'${hostelID}\',\'${i + 1}\',\'${room}\',\'${bed}\',\'${reqData.created_by}\',0)`
+                                const query3 = `insert into hostelrooms(Hostel_Id,Floor_Id,Room_Id,Number_Of_Beds,Created_By,Price) values(\'${hostelID}\',\'${i + 1}\',\'${room}\',\'${bed}\',\'${reqData.created_by}\',\'${reqData.price}\')`
                                 connection.query(query3, function (error, data) {
                                     console.log(error);
                                     if (error) {
@@ -817,51 +668,8 @@ app.post('/compliance/add-details', function (request, response) {
     });
 })
 
-// app.post('/compliance/add-details', function (request, response) {
-//     response.set('Access-Control-Allow-Origin', '*');
-//     console.log(request.body);
-//     var atten = request.body;
-//     console.log(atten);
-
-//     if (atten.id) {
-//         connection.query(`UPDATE compliance SET date='${atten.date}', Name='${atten.Name}', Phone='${atten.Phone}', Roomdetail='${atten.Roomdetail}', Complainttype='${atten.Complainttype}', Assign='${atten.Assign}', Status='${atten.Status}', Hostel_id='${atten.Hostel_id}', Floor_id='${atten.Floor_id}', Room='${atten.Room}', hostelname='${atten.hostelname}', Description='${atten.Description}' WHERE ID='${atten.id}'`, function (error, data) {
-//             if (error) {
-//                 response.status(201).json({ message: "No User Found" });
-//             } else {
-//                 response.status(200).json({ message: "Update Successfully" });
-//             }
-//         });
 
 
-//     }
-//     else {
-
-//         connection.query(`SELECT MAX(Requestid) AS maxRequestId FROM compliance`, function (error, result) {
-//             if (error) {
-//                 console.log(error);
-//                 response.status(201).json({ message: "Error fetching last Requestid", statusCode: 201 });
-//             } else {
-//                 let maxRequestId = result[0].maxRequestId || "#100"
-//                 let numericPart = parseInt(maxRequestId.substring(1));
-//                 numericPart++;
-//                 const nextRequestId = ` #${numericPart.toString().padStart(2, '0')}`;
-
-
-//                 connection.query(`INSERT INTO compliance(date, Name, Phone, Requestid, Roomdetail, Complainttype, Assign, Status, Hostel_id, Floor_id, Room, hostelname, Description) VALUES  
-//             ('${atten.date}', '${atten.Name}', '${atten.Phone}', '${nextRequestId}', '${atten.Roomdetail}', '${atten.Complainttype}', '${atten.Assign}', '${atten.Status}', '${atten.Hostel_id}', '${atten.Floor_id}', '${atten.Room}', '${atten.hostelname}', '${atten.Description}')`, function (error, data) {
-//                     if (error) {
-//                         console.log(error);
-//                         response.status(201).json({ message: "Error inserting record", statusCode: 201 });
-//                     } else {
-//                         response.status(200).json({ message: "Save Successfully", statusCode: 200 });
-//                     }
-//                 });
-//             }
-//         });
-
-
-//     }
-// });
 
 app.post('/floor_list', function (request, response) {
     response.set('Access-Control-Allow-Origin', '*')
@@ -1160,33 +968,182 @@ app.get('/get/userAccount', function (request, response) {
         }
     })
 })
-app.get('/users/user-list-pdf', function (request, response) {
-    connection.query('SELECT * FROM hostel', function (error, data) {
+
+app.get('/invoice/invoice-list-pdf', function (request, response) {
+    connection.query(`SELECT invoice.Name as UserName, invoice.Invoices,invoice.DueDate,hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id `, function (error, data) {
         if (error) {
             console.log(error);
             response.status(500).json({ message: 'Internal server error' });
-        } else {
-            const doc = new PDFDocument();
-            const filename = 'hostel_list.pdf';
-            doc.pipe(fs.createWriteStream(filename));
-
-            doc.fontSize(16).text('Hostel List', { align: 'center' }).moveDown(0.5);
+        } else if (data.length > 0) {
+            const filename = 'invoice.pdf';
+            const doc = new PDFDocument({ font: 'Times-Roman' });
+            const stream = doc.pipe(fs.createWriteStream(filename));
+            let totalUsers = data.length;
+            let usersProcessed = 0;
 
             data.forEach((hostel, index) => {
-                console.log("data", data);
-                doc.fontSize(18)
-                    .text(`Hostel Name: ${hostel.HostelName}`, { continued: true })  
-                    .moveDown(2)  
-                    .text(`User Name: ${hostel.Name}`)  
-                    .moveDown(1);  });
-            
+                console.log("hostelData **", hostel);
 
-            doc.end();
-            console.log('PDF generated successfully');
-            response.status(200).download(filename);
+                const hostelNameWidth = doc.widthOfString(hostel.Hostel_Name);
+                const leftMargin = doc.page.width - hostelNameWidth - 1000;
+                const textWidth = doc.widthOfString('Invoice Receipt');
+                const textX = doc.page.width - textWidth - 500;
+                const invoiceNoWidth = doc.widthOfString('Invoice No');
+                const invoiceDateWidth = doc.widthOfString('Invoice Date');
+                const rightMargin = doc.page.width - invoiceNoWidth - 50;
+                const marginLeft = 30;
+                const marginRight = doc.page.width/2;
+
+                doc.addPage();
+
+                const logoPath = './Asset/Logo.jpeg';
+                doc.image(logoPath, {
+                    fit: [180, 150],
+                    align: 'center',
+                    valign: 'top',
+                    margin: 50
+                });
+
+
+                doc.fontSize(10).font('Times-Roman')
+                    .text(hostel.Hostel_Name.toUpperCase(), leftMargin, doc.y, { align: 'right' })
+                    .moveDown(0.1);
+                doc.fontSize(10).font('Times-Roman')
+                    .text(hostel.HostelAddress, leftMargin, doc.y, { align: 'right' })
+                    .text(hostel.hostel_PhoneNo, leftMargin, doc.y, { align: 'right' })
+                    .text(`Email : ${hostel.HostelEmail_Id}`, leftMargin, doc.y, { align: 'right' })
+                    .text('Website: example@smartstay.ae', leftMargin, doc.y, { align: 'right' })
+                    .text('GSTIN:', leftMargin, doc.y, { align: 'right' })
+                    .moveDown(0.9);
+
+
+
+                doc.fontSize(14).font('Helvetica')
+                    .text('Invoice Receipt', textX, doc.y, { align: 'center' })
+                    .moveDown(0.5);
+
+                const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
+
+                doc.fontSize(10).font('Times-Roman')
+                    .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
+                    .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
+                    .moveDown(0.5);
+
+                doc.fontSize(10).font('Times-Roman')
+                    .text(`Address: ${hostel.Address}`, { align: 'left', continued: true, indent: marginLeft, })
+                    .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight });
+
+
+
+                const tableTop = 280;
+                const startX = 50;
+                const startY = tableTop;
+                const cellPadding = 30;
+                const tableWidth = 500;
+                const columnWidth = tableWidth / 4;
+                const marginTop = 80;
+
+                doc.rect(startX, startY, tableWidth, cellPadding).fillColor('#b2b5b8').fill().stroke();
+                doc.rect(startX, startY, tableWidth, cellPadding * 2).stroke();
+
+
+                doc.moveTo(startX + columnWidth, startY).lineTo(startX + columnWidth, startY + cellPadding * 2).stroke();
+                doc.moveTo(startX + columnWidth * 2, startY).lineTo(startX + columnWidth * 2, startY + cellPadding * 2).stroke();
+                doc.moveTo(startX + columnWidth * 3, startY).lineTo(startX + columnWidth * 3, startY + cellPadding * 2).stroke();
+
+                doc.moveTo(startX, startY + cellPadding).lineTo(startX + tableWidth, startY + cellPadding).stroke();
+
+                doc.fontSize(12).font('Times-Roman').fillColor('#000000');
+
+                let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+
+                const sNoX = startX + (columnWidth - doc.widthOfString('S.No')) / 2;
+                const paymentModeX = startX + columnWidth + (columnWidth - doc.widthOfString('Payment Mode')) / 2;
+                const descriptionX = startX + columnWidth * 2 + (columnWidth - doc.widthOfString('Description')) / 2;
+                const amountX = startX + columnWidth * 3 + (columnWidth - doc.widthOfString('Amount')) / 2;
+
+                doc.fontSize(10).text('S.No', sNoX, headerY + 5);
+                doc.fontSize(10).text('Payment Mode', paymentModeX, headerY + 5);
+                doc.fontSize(10).text('Description', descriptionX, headerY + 5);
+                doc.fontSize(10).text('Amount', amountX, headerY + 5);
+
+                const formattedAmount = `$${hostel.Amount.toFixed(2)}`;
+                const paymentMode = 'Online';
+                const sNo = index + 1;
+
+                // Adjust startYText for the next row
+                headerY += cellPadding;
+
+                let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+                doc.fontSize(10).text(sNo.toString(), sNoX, dataY + 5);
+                doc.fontSize(10).text(paymentMode, paymentModeX, dataY + 5);
+                doc.fontSize(10).text('Null', descriptionX, dataY + 5);
+                doc.fontSize(10).text(formattedAmount, amountX, dataY + 5);
+
+                dataY += cellPadding;
+
+
+                doc.fontSize(10).text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, startY + cellPadding * 2 + 20, { align: 'left',wordSpacing:1.5}).moveDown(10);
+
+                doc.fontSize(9).text('This is a system generated receipt and no signature is required.', startX, startY + cellPadding * 2 + 20 + marginTop, { align: 'center',wordSpacing:1,characterSpacing: 0.5 });
+
+                usersProcessed++;
+
+                if (usersProcessed === totalUsers) {
+                    doc.end();
+                    stream.on('finish', function () {
+                        console.log('All PDFs generated successfully');
+                        response.status(200).download(filename);
+                    });
+                }
+            });
         }
     });
-})
+});
+
+
+
+
+
+
+function convertAmountToWords(amount) {
+    const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+    const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+    let words = '';
+
+    let num = parseInt(amount);
+
+    if (num === 0) {
+        return 'Zero';
+    }
+
+    if (num >= 1000) {
+        words += convertAmountToWords(Math.floor(num / 1000)) + ' Thousand ';
+        num %= 1000;
+    }
+
+    if (num >= 100) {
+        words += convertAmountToWords(Math.floor(num / 100)) + ' Hundred ';
+        num %= 100;
+    }
+
+    if (num >= 10 && num <= 19) {
+        words += teens[num - 10] + ' ';
+        num = 0;
+    } else if (num >= 20) {
+        words += tens[Math.floor(num / 10)] + ' ';
+        num %= 10;
+    }
+
+    if (num > 0) {
+        words += units[num] + ' ';
+    }
+
+
+    return words.trim();
+}
 
 app.listen('2001', function () {
     console.log("node is started at 2001")
