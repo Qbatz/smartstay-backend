@@ -64,7 +64,7 @@ const cronFunction = cron.schedule(" 0 0 1 * * ", function () {
         }
         users.forEach(user => {
             const userID = user.User_Id;
-           
+
             calculateAndInsertInvoice(user);
         });
     });
@@ -74,59 +74,59 @@ const cronFunction = cron.schedule(" 0 0 1 * * ", function () {
 function calculateAndInsertInvoice(user) {
     connection.query(`SELECT * FROM hosteldetails where id = ${user.Hostel_Id}`, function (err, existingData) {
 
-        if(existingData.length > 0){
-        let prefix = '';
-        let suffix = '';
-        let invoiceNo = '';
+        if (existingData.length > 0) {
+            let prefix = '';
+            let suffix = '';
+            let invoiceNo = '';
 
-        const currentDate = moment( new Date()).format('YYYY-MM-DD');
-        let invoiceDate;
-        let joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-        const currentMonth = moment(currentDate).month() + 1;
-        const currentYear = moment(currentDate).year();
-        const createdAtMonth = moment(joinDate).month() + 1;
-        const createdAtYear = moment(joinDate).year();
-        let dueDate;
+            const currentDate = moment(new Date()).format('YYYY-MM-DD');
+            let invoiceDate;
+            let joinDate = moment(user.createdAt).format('YYYY-MM-DD');
+            const currentMonth = moment(currentDate).month() + 1;
+            const currentYear = moment(currentDate).year();
+            const createdAtMonth = moment(joinDate).month() + 1;
+            const createdAtYear = moment(joinDate).year();
+            let dueDate;
 
-        if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
-            dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
-            invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-        } else {
-            dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
-            invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
-           
-        }
-        const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-        const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+            if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+                dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+                invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+            } else {
+                dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+                invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
 
-                prefix = existingData[0].prefix;
-                suffix = existingData[0].suffix;
-                let invoiceNoPrefix = '';
-                let invoiceNoSuffix = '';
+            }
+            const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+            const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
 
-                if (existingData[0].prefix == null && existingData[0].suffix == null) {
-                    invoiceNoPrefix = 'INVC';
-                    const userID = user.User_Id.toString().slice(0, 4)
-                    invoiceNoSuffix = `${userID}${currentMonth}${currentYear}`;
-                    invoiceNo = `${invoiceNoPrefix}${invoiceNoSuffix}`
-                } else {
-                    invoiceNo = `${existingData[0].prefix}${existingData[0].suffix}${currentMonth}${currentYear}`;
+            prefix = existingData[0].prefix;
+            suffix = existingData[0].suffix;
+            let invoiceNoPrefix = '';
+            let invoiceNoSuffix = '';
+
+            if (existingData[0].prefix == null && existingData[0].suffix == null) {
+                invoiceNoPrefix = 'INVC';
+                const userID = user.User_Id.toString().slice(0, 4)
+                invoiceNoSuffix = `${userID}${currentMonth}${currentYear}`;
+                invoiceNo = `${invoiceNoPrefix}${invoiceNoSuffix}`
+            } else {
+                invoiceNo = `${existingData[0].prefix}${existingData[0].suffix}${currentMonth}${currentYear}`;
+            }
+            console.log("Generated Invoice Number:", invoiceNo);
+            const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', '${user.Phone}', '${user.Email}', '${user.HostelName}', '${user.Hostel_Id}', '${user.Floor}', '${user.Rooms}', '${user.AdvanceAmount}', '${user.BalanceDue}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
+
+            connection.query(query, function (error, data) {
+                if (error) {
+                    console.error("Error inserting invoice data for user:", user.User_Id, error);
+                    return;
                 }
-                console.log("Generated Invoice Number:", invoiceNo);
-                const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', '${user.Phone}', '${user.Email}', '${user.HostelName}', '${user.Hostel_Id}', '${user.Floor}', '${user.Rooms}', '${user.AdvanceAmount}', '${user.BalanceDue}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
-             
-                connection.query(query, function (error, data) {
-                    if (error) {
-                        console.error("Error inserting invoice data for user:", user.User_Id, error);
-                        return;
-                    }
-                    // console.log("Invoice inserted successfully for user:", user.User_Id);
-                });
-           
-    }
-    else{
-        console.log("err",err);
-    }
+                // console.log("Invoice inserted successfully for user:", user.User_Id);
+            });
+
+        }
+        else {
+            console.log("err", err);
+        }
     });
 }
 
@@ -980,10 +980,15 @@ app.get('/invoice/invoice-list-pdf', function (request, response) {
             const stream = doc.pipe(fs.createWriteStream(filename));
             let totalUsers = data.length;
             let usersProcessed = 0;
+            let isFirstPage = true;
 
             data.forEach((hostel, index) => {
                 console.log("hostelData **", hostel);
-
+                if (!isFirstPage) {
+                    doc.addPage();
+                } else {
+                    isFirstPage = false;
+                }
                 const hostelNameWidth = doc.widthOfString(hostel.Hostel_Name);
                 const leftMargin = doc.page.width - hostelNameWidth - 1000;
                 const textWidth = doc.widthOfString('Invoice Receipt');
@@ -992,7 +997,7 @@ app.get('/invoice/invoice-list-pdf', function (request, response) {
                 const invoiceDateWidth = doc.widthOfString('Invoice Date');
                 const rightMargin = doc.page.width - invoiceNoWidth - 50;
                 const marginLeft = 30;
-                const marginRight = doc.page.width/2;
+                const marginRight = doc.page.width / 2;
 
                 doc.addPage();
 
@@ -1083,9 +1088,9 @@ app.get('/invoice/invoice-list-pdf', function (request, response) {
                 dataY += cellPadding;
 
 
-                doc.fontSize(10).text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, startY + cellPadding * 2 + 20, { align: 'left',wordSpacing:1.5}).moveDown(10);
+                doc.fontSize(10).text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, startY + cellPadding * 2 + 20, { align: 'left', wordSpacing: 1.5 }).moveDown(10);
 
-                doc.fontSize(9).text('This is a system generated receipt and no signature is required.', startX, startY + cellPadding * 2 + 20 + marginTop, { align: 'center',wordSpacing:1,characterSpacing: 0.5 });
+                doc.fontSize(9).text('This is a system generated receipt and no signature is required.', startX, startY + cellPadding * 2 + 20 + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
 
                 usersProcessed++;
 
