@@ -88,31 +88,207 @@ function getInvoiceList(connection, response) {
     })
 }
 
+
+
+
+// function InvoicePDf(connection, response) {
+//     connection.query(`SELECT invoice.Name as UserName, invoice.Invoices,invoice.DueDate,hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id `, function (error, data) {
+//         if (error) {
+//             console.log(error);
+//             response.status(500).json({ message: 'Internal server error' });
+//         } else if (data.length > 0) {
+//             console.log("Data for Invoie Table", data)
+//             const currentDate = new Date();
+//             const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+//             const year = currentDate.getFullYear().toString();
+//             const timestamp = currentDate.getTime().toString();
+//             console.log("timestamp", timestamp)
+//             const folderName = 'Invoices';
+//             // const folderPath = path.join('D:/SMARTSTAY 05.02.2024/smartstay_backend_latest/Smartstay_Backend', folderName);
+
+
+//             const filename = `Invoice${month}${year}${timestamp}.pdf`;
+//             const doc = new PDFDocument({ font: 'Times-Roman' });
+//             const stream = doc.pipe(fs.createWriteStream(filename));
+//             let totalUsers = data.length;
+//             let usersProcessed = 0;
+//             let isFirstPage = true;
+
+//             data.forEach((hostel, index) => {
+//                 console.log("hostelData **", hostel);
+//                 if (!isFirstPage) {
+//                     doc.addPage();
+//                 } else {
+//                     isFirstPage = false;
+//                 }
+//                 const hostelNameWidth = doc.widthOfString(hostel.Hostel_Name);
+//                 const leftMargin = doc.page.width - hostelNameWidth - 1000;
+//                 const textWidth = doc.widthOfString('Invoice Receipt');
+//                 const textX = doc.page.width - textWidth - 500;
+//                 const invoiceNoWidth = doc.widthOfString('Invoice No');
+//                 const invoiceDateWidth = doc.widthOfString('Invoice Date');
+//                 const rightMargin = doc.page.width - invoiceNoWidth - 50;
+//                 const marginLeft = 30;
+//                 const marginRight = doc.page.width / 2;
+
+
+
+//                 const logoPath = './Asset/Logo.jpeg';
+//                 doc.image(logoPath, {
+//                     fit: [180, 150],
+//                     align: 'center',
+//                     valign: 'top',
+//                     margin: 50
+//                 });
+
+
+//                 doc.fontSize(10).font('Times-Roman')
+//                     .text(hostel.Hostel_Name.toUpperCase(), leftMargin, doc.y, { align: 'right' })
+//                     .moveDown(0.1);
+//                 doc.fontSize(10).font('Times-Roman')
+//                     .text(hostel.HostelAddress, leftMargin, doc.y, { align: 'right' })
+//                     .text(hostel.hostel_PhoneNo, leftMargin, doc.y, { align: 'right' })
+//                     .text(`Email : ${hostel.HostelEmail_Id}`, leftMargin, doc.y, { align: 'right' })
+//                     .text('Website: example@smartstay.ae', leftMargin, doc.y, { align: 'right' })
+//                     .text('GSTIN:', leftMargin, doc.y, { align: 'right' })
+//                     .moveDown(0.9);
+
+
+
+//                 doc.fontSize(14).font('Helvetica')
+//                     .text('Invoice Receipt', textX, doc.y, { align: 'center' })
+//                     .moveDown(0.5);
+
+//                 const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
+
+//                 doc.fontSize(10).font('Times-Roman')
+//                     .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
+//                     .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
+//                     .moveDown(0.5);
+
+//                 doc.fontSize(10).font('Times-Roman')
+//                     .text(`Address: ${hostel.Address}`, { align: 'left', continued: true, indent: marginLeft, })
+//                     .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight });
+
+
+
+//                 const tableTop = 280;
+//                 const startX = 50;
+//                 const startY = tableTop;
+//                 const cellPadding = 30;
+//                 const tableWidth = 500;
+//                 const columnWidth = tableWidth / 4;
+//                 const marginTop = 80;
+
+//                 doc.rect(startX, startY, tableWidth, cellPadding).fillColor('#b2b5b8').fill().stroke();
+//                 doc.rect(startX, startY, tableWidth, cellPadding * 2).stroke();
+
+
+//                 doc.moveTo(startX + columnWidth, startY).lineTo(startX + columnWidth, startY + cellPadding * 2).stroke();
+//                 doc.moveTo(startX + columnWidth * 2, startY).lineTo(startX + columnWidth * 2, startY + cellPadding * 2).stroke();
+//                 doc.moveTo(startX + columnWidth * 3, startY).lineTo(startX + columnWidth * 3, startY + cellPadding * 2).stroke();
+
+//                 doc.moveTo(startX, startY + cellPadding).lineTo(startX + tableWidth, startY + cellPadding).stroke();
+
+//                 doc.fontSize(12).font('Times-Roman').fillColor('#000000');
+
+//                 let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+
+//                 const sNoX = startX + (columnWidth - doc.widthOfString('S.No')) / 2;
+//                 const paymentModeX = startX + columnWidth + (columnWidth - doc.widthOfString('Payment Mode')) / 2;
+//                 const descriptionX = startX + columnWidth * 2 + (columnWidth - doc.widthOfString('Description')) / 2;
+//                 const amountX = startX + columnWidth * 3 + (columnWidth - doc.widthOfString('Amount')) / 2;
+
+//                 doc.fontSize(10).text('S.No', sNoX, headerY + 5);
+//                 doc.fontSize(10).text('Payment Mode', paymentModeX, headerY + 5);
+//                 doc.fontSize(10).text('Description', descriptionX, headerY + 5);
+//                 doc.fontSize(10).text('Amount', amountX, headerY + 5);
+
+//                 const formattedAmount = `${hostel.Amount.toFixed(2)}`;
+//                 const paymentMode = 'Online';
+//                 const sNo = index + 1;
+
+
+//                 headerY += cellPadding;
+
+//                 let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+//                 doc.fontSize(10).text(sNo.toString(), sNoX, dataY + 5);
+//                 doc.fontSize(10).text(paymentMode, paymentModeX, dataY + 5);
+//                 doc.fontSize(10).text('Null', descriptionX, dataY + 5);
+//                 doc.fontSize(10).text(formattedAmount, amountX, dataY + 5);
+
+//                 dataY += cellPadding;
+
+
+//                 doc.fontSize(10).text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, startY + cellPadding * 2 + 20, { align: 'left', wordSpacing: 1.5 }).moveDown(10);
+
+//                 doc.fontSize(9).text('This is a system generated receipt and no signature is required.', startX, startY + cellPadding * 2 + 20 + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
+
+//                 usersProcessed++;
+
+//                 if (usersProcessed === totalUsers) {
+//                     doc.end();
+//                     stream.on('finish', function () {
+//                         console.log('All PDFs generated successfully');
+//                         const fileContent = fs.readFileSync(filename);
+//                         const BucketName = 'smartstaydevs';
+
+//                         const params = {
+//                             Bucket: BucketName,
+//                             Key: 'AKIAW3MEBCZQRO3I7LF3',
+//                             Body: fileContent
+//                         };
+//                         // response.status(200).download(filename);
+//                         s3.upload(params, function (err, data) {
+//                             if (err) {
+//                                 console.error("Error uploading PDF", err);
+//                                 response.status(500).json({ message: 'Error uploading PDF to S3' });
+//                             } else {
+//                                 console.log("PDF uploaded successfully");
+//                                 response.status(200).json({ message: 'PDF uploaded s3 bucket successfully', location: data.Location });
+//                                 // console.log("filePath", filePath)
+//                             }
+//                         });
+
+//                     });
+//                 }
+//             });
+//         }
+//     });
+// }
+
+
+
 function InvoicePDf(connection, response) {
-    connection.query(`SELECT invoice.Name as UserName, invoice.Invoices,invoice.DueDate,hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id `, function (error, data) {
+    connection.query(`SELECT invoice.Name as UserName,invoice.User_Id, invoice.Invoices,invoice.DueDate,hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id `, function (error, data) {
         if (error) {
             console.log(error);
             response.status(500).json({ message: 'Internal server error' });
         } else if (data.length > 0) {
-            console.log("Data for Invoie Table", data)
-            const currentDate = new Date();
-            const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-            const year = currentDate.getFullYear().toString();
-            const timestamp = currentDate.getTime().toString();
-            console.log("timestamp", timestamp)
-            const folderName = 'Invoices';
-            // const folderPath = path.join('D:/SMARTSTAY 05.02.2024/smartstay_backend_latest/Smartstay_Backend', folderName);
 
-            
-            const filename = `Invoice${month}${year}${timestamp}.pdf`;
-            const doc = new PDFDocument({ font: 'Times-Roman' });
-            const stream = doc.pipe(fs.createWriteStream(filename));
-            let totalUsers = data.length;
-            let usersProcessed = 0;
-            let isFirstPage = true;
-
+            let totalPDFs = data.length;
+            let uploadedPDFs = 0;
+            let filenames = [];
+            let pdfDetails = [];
             data.forEach((hostel, index) => {
                 console.log("hostelData **", hostel);
+
+                const currentDate = new Date();
+                const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+                const year = currentDate.getFullYear().toString();
+
+                const filename = `Invoice${month}${year}${hostel.User_Id}.pdf`;
+                filenames.push(filename);
+
+                
+
+
+                const doc = new PDFDocument({ font: 'Times-Roman' });
+                const stream = doc.pipe(fs.createWriteStream(filename));
+               
+                let isFirstPage = true;
+
+
                 if (!isFirstPage) {
                     doc.addPage();
                 } else {
@@ -127,8 +303,7 @@ function InvoicePDf(connection, response) {
                 const rightMargin = doc.page.width - invoiceNoWidth - 50;
                 const marginLeft = 30;
                 const marginRight = doc.page.width / 2;
-
-
+               
 
                 const logoPath = './Asset/Logo.jpeg';
                 doc.image(logoPath, {
@@ -221,38 +396,111 @@ function InvoicePDf(connection, response) {
 
                 doc.fontSize(9).text('This is a system generated receipt and no signature is required.', startX, startY + cellPadding * 2 + 20 + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
 
-                usersProcessed++;
 
-                if (usersProcessed === totalUsers) {
-                    doc.end();
-                    stream.on('finish', function () {
-                        console.log('All PDFs generated successfully');
-                        const fileContent = fs.readFileSync(filename);
-                        const BucketName = 'smartstaydevs';
-
-                        const params = {
-                            Bucket: BucketName,
-                            Key: 'AKIAW3MEBCZQRO3I7LF3',
-                            Body: fileContent
-                        };
-                        // response.status(200).download(filename);
-                        s3.upload(params, function (err, data) {
-                            if (err) {
-                                console.error("Error uploading PDF", err);
-                                response.status(500).json({ message: 'Error uploading PDF to S3' });
-                            } else {
-                                console.log("PDF uploaded successfully");
-                                response.status(200).json({ message: 'PDF uploaded s3 bucket successfully', location: data.Location });
-                                // console.log("filePath", filePath)
-                            }
-                        });
-
+                doc.end();
+                stream.on('finish', function () {
+                    console.log(`PDF generated successfully for ${hostel.UserName}`);
+                    const fileContent = fs.readFileSync(filename);
+                    pdfDetails.push({
+                        filename: filename,
+                        fileContent: fs.readFileSync(filename),
+                        user: hostel.User_Id 
                     });
-                }
+    
+                    uploadedPDFs++;
+                    if (uploadedPDFs === totalPDFs) {
+                        deletePDfs(filenames)
+                 uploadToS3(filenames, response, pdfDetails);
+                    }
+
+
+                });
+                
             });
+        }
+        else {
+            response.status(404).json({ message: 'No data found' });
         }
     });
 }
+
+function uploadToS3(filenames, response, pdfDetails) {
+    let totalPDFs = filenames.length;
+    let uploadedPDFs = 0;
+    let pdfInfo = [];
+    // let pdfURLs = [];
+
+
+    // filenames.forEach(filename=> {
+    //     const fileContent = fs.readFileSync(filename);
+    //     // const { filename, fileContent, user } = pdf;
+    //     const key = `${filename}`;
+    //     const BucketName = 'smartstaydevs';
+    //     const params = {
+    //         Bucket: BucketName,
+    //         Key: key,
+    //         Body: fileContent,
+    //         ContentType: 'application/pdf'
+    //     };
+
+    pdfDetails.forEach(pdf=> {
+        
+        const { filename, fileContent, user } = pdf;
+        const key = `${user}/${filename}`;
+        const BucketName = 'smartstaydevs';
+        const params = {
+            Bucket: BucketName,
+            Key: key,
+            Body: fileContent,
+            ContentType: 'application/pdf'
+        };
+
+        s3.upload(params, function (err, uploadData) {
+            if (err) {
+                console.error("Error uploading PDF", err);
+                response.status(500).json({ message: 'Error uploading PDF to S3' });
+            } else {
+                console.log("PDF uploaded successfully");
+                uploadedPDFs++;
+
+                const pdfInfoItem = {
+                    user: user,
+                    url: uploadData.Location
+                };
+                pdfInfo.push(pdfInfoItem);
+
+
+                // pdfURLs.push(uploadData.Location);
+                if (uploadedPDFs === totalPDFs) {
+                    response.status(200).json({
+                        message: 'All PDFs uploaded to S3 bucket successfully',
+                        // location: uploadData.Location
+                        // pdfURLs: pdfURLs
+                        pdfInfo: pdfInfo
+                    });
+                }
+            }
+        });
+    });
+}
+
+ 
+function deletePDfs(filenames) {
+    filenames.forEach(filename => {
+        fs.unlink(filename, function(err) {
+            if (err) {
+                console.error("delete pdf error", err);
+            } else {
+                console.log("PDF file deleted successfully");
+            }
+        });
+    });
+}
+
+
+
+
+
 
 function convertAmountToWords(amount) {
     const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
