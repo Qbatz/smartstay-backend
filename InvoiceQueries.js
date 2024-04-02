@@ -564,8 +564,47 @@ function convertAmountToWords(amount) {
 
     return words.trim();
 }
+function InvoiceSettings(connection, reqInvoice, response) {
+    console.log("reqInvoice",reqInvoice)
+    if (reqInvoice) {
+        const query = `UPDATE hosteldetails SET prefix='${reqInvoice.prefix}' , suffix ='${reqInvoice.suffix}'  WHERE id='${reqInvoice.hostel_Id}'`
+        connection.query(query, function (error, invoiceData) {
+            console.log("invoiceData",invoiceData)
+            console.log("error invoice",error)
+            if (error) {
+                response.status(202).json({ message: 'Database error' });
+            } else {
+                response.status(200).json({ message: 'Updated successfully', statusCode: 200 });
+            }
+        })
+    }
+    else {
+        response.status(201).json({ message: 'missing parameter' });
+    }
+}
+
+
+function AmeniesSetting (connection, reqData, response) { 
+    console.log("reqData", reqData);
+        connection.query(`INSERT INTO Amenities(AmenitiesName,Amount,setAsDefault) VALUES (\'${reqData.AmenitiesName}\',\'${reqData.Amount}\', ${reqData.setAsDefault})`, function (error, data) {
+           
+            if (error) {
+                response.status(202).json({ message: 'Database error' });
+            }
+             else {
+                response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
+            }
+            
+        })
+      
+      
+    }
+
+
+    
 
 
 
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf };
+
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf,AmeniesSetting,InvoiceSettings };

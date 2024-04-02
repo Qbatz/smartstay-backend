@@ -111,7 +111,7 @@ app.post('/otp-send/send-mail',(request, response) => {
 
 
 
-cron.schedule("0 0 1 * * ", function () {
+cron.schedule("0 0 3 * * ", function () {
     console.log("This task runs every minute");
     connection.query(`SELECT * FROM hostel`, function (err, users) {
         console.log(" users", users)
@@ -267,6 +267,14 @@ app.post('/invoice/settings',(request, response) =>{
     response.set('Access-Control-Allow-Origin', '*');
     const reqInvoice = request.body
     profileQueries.InvoiceSettings(connection, reqInvoice, response)
+})
+
+app.post ('/amenities/setting',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    const reqData = request.body
+    invoiceQueries.AmeniesSetting(connection, reqData, response)
+
+
 })
 
 
