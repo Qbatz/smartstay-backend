@@ -15,63 +15,87 @@ AWS.config.update({
 });
 const s3 = new AWS.S3();
 
+
 function calculateAndInsertInvoice(connection, user) {
-    connection.query(`SELECT * FROM hosteldetails where id = ${user.Hostel_Id}`, function (err, existingData) {
+    connection.query(`SELECT * FROM hosteldetails WHERE id = ${user.Hostel_Id}`, function (err, existingData) {
+        if (err) {
+            console.error("Error fetching hosteldetails:", err);
+            return;
+        }
 
         if (existingData.length > 0) {
-            let prefix = '';
-            let suffix = '';
-            let invoiceNo = '';
-
-            const currentDate = moment(new Date()).format('YYYY-MM-DD');
-            let invoiceDate;
-            let joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-            const currentMonth = moment(currentDate).month() + 1;
-            const currentYear = moment(currentDate).year();
-            const createdAtMonth = moment(joinDate).month() + 1;
-            const createdAtYear = moment(joinDate).year();
-            let dueDate;
-
-            if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
-                dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
-                invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-            } else {
-                dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
-                invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
-
-            }
-            const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-            const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-
-            prefix = existingData[0].prefix;
-            suffix = existingData[0].suffix;
-            let invoiceNoPrefix = '';
-            let invoiceNoSuffix = '';
-
-            if (existingData[0].prefix == null && existingData[0].suffix == null) {
-                invoiceNoPrefix = 'INVC';
-                const userID = user.User_Id.toString().slice(0, 4)
-                invoiceNoSuffix = `${userID}${currentMonth}${currentYear}`;
-                invoiceNo = `${invoiceNoPrefix}${invoiceNoSuffix}`
-            } else {
-                invoiceNo = `${existingData[0].prefix}${existingData[0].suffix}${currentMonth}${currentYear}`;
-            }
-            console.log("Generated Invoice Number:", invoiceNo);
-            const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', '${user.Phone}', '${user.Email}', '${user.HostelName}', '${user.Hostel_Id}', '${user.Floor}', '${user.Rooms}', '${user.AdvanceAmount}', '${user.BalanceDue}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
-
-            connection.query(query, function (error, data) {
-                if (error) {
-                    console.error("Error inserting invoice data for user:", user.User_Id, error);
+            connection.query(`SELECT price FROM hostelrooms WHERE Hostel_Id = ${user.Hostel_Id} AND Floor_Id = ${user.Floor} AND Room_Id = ${user.Rooms}`, function (err, roomData) {
+                if (err) {
+                    console.error("Error fetching room data:", err);
                     return;
                 }
-            });
 
-        }
-        else {
-            console.log("err", err);
+                if (roomData.length > 0) {
+                    const currentDate = moment(new Date()).format('YYYY-MM-DD');
+                    const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
+                    let dueDate, invoiceDate;
+
+                    const currentMonth = moment(currentDate).month() + 1;
+                    const currentYear = moment(currentDate).year();
+                    const createdAtMonth = moment(joinDate).month() + 1;
+                    const createdAtYear = moment(joinDate).year();
+
+                    let roomPrice = roomData[0].price;
+                   
+                   
+                    console.log("roomPrice", roomPrice);
+
+                    if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+                        dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+                        invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+                    } else {
+                        dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+                        invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
+                    }
+
+                    const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+                    const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+                    
+                    const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') +1;
+                    console.log("numberOfDays",numberOfDays)
+                    
+                    const AdvanceAmount=  (roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays;
+
+                    let prefix = existingData[0].prefix || 'INVC';
+                    let suffix = existingData[0].suffix || '';
+
+                    let invoiceNo = '';
+                    if (!prefix && !suffix) {
+                        const userID = user.User_Id.toString().slice(0, 4);
+                        suffix = `${userID}${currentMonth}${currentYear}`;
+                        invoiceNo = `${prefix}${suffix}`;
+                    } else {
+                        invoiceNo = `${prefix}${suffix}${currentMonth}${currentYear}`;
+                    }
+
+                    console.log("Generated Invoice Number:", invoiceNo);
+
+                    const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, BalanceDue, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', '${user.Phone}', '${user.Email}', '${user.HostelName}', '${user.Hostel_Id}', '${user.Floor}', '${user.Rooms}', '${AdvanceAmount}', '${user.BalanceDue}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
+
+                    connection.query(query, function (error, data) {
+                        if (error) {
+                            console.error("Error inserting invoice data for user:", user.User_Id, error);
+                            return;
+                        }
+                    });
+                } else {
+                    console.error("Room data not found for Hostel_Id:", user.Hostel_Id, "Floor_Id:", user.Floor, "Room_Id:", user.Rooms);
+                }
+            });
+        } else {
+            console.log("Hostel details not found for Hostel_Id:", user.Hostel_Id);
         }
     });
 }
+
+
+
+
 
 
 function getInvoiceList(connection, response) {

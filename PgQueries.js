@@ -40,7 +40,7 @@ function hostelListDetails(connection, response) {
 function createPG(connection, reqData, response) {
     let hostelID, errorMessage
     if (reqData) {
-        const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By,prefix,suffix) values (\'${reqData.name}\',\'${reqData.phoneNo}\',\'${reqData.number_of_floors}\',\'${reqData.email_Id}\',\'${reqData.location}\',\'${reqData.created_by}\',\'${reqData.prefix}\',\'${reqData.suffix}\')`
+        const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By,prefix,startingNumber) values (\'${reqData.name}\',\'${reqData.phoneNo}\',\'${reqData.number_of_floors}\',\'${reqData.email_Id}\',\'${reqData.location}\',\'${reqData.created_by}\',\'${reqData.prefix}\',\'${reqData.startingNumber}\')`
         connection.query(query, function (error, data) {
             if (error) {
                 console.log("error", error);
@@ -56,7 +56,8 @@ function createPG(connection, reqData, response) {
                             for (let j = 0; j < reqData.floorDetails[i].length; j++) {
                                 const bed = Number(reqData.floorDetails[i][j].number_Of_Bed)
                                 const room = Number(reqData.floorDetails[i][j].roomName)
-                                const query3 = `insert into hostelrooms(Hostel_Id,Floor_Id,Room_Id,Number_Of_Beds,Created_By,Price) values(\'${hostelID}\',\'${i + 1}\',\'${room}\',\'${bed}\',\'${reqData.created_by}\',\'${reqData.price}\')`
+                                const price = Number(reqData.floorDetails[i][j].price)
+                                const query3 = `insert into hostelrooms(Hostel_Id,Floor_Id,Room_Id,Number_Of_Beds,Created_By,Price) values(\'${hostelID}\',\'${i + 1}\',\'${room}\',\'${bed}\',\'${reqData.created_by}\',\'${price}\')`
                                 connection.query(query3, function (error, data) {
                                     console.log(error);
                                     if (error) {

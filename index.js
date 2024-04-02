@@ -263,6 +263,11 @@ app.post('/check/room-full', (request, response)=>  {
     pgQueries.RoomFull(connection, reqFloorID, response)
 })
 
+app.post('/invoice/settings',(request, response) =>{
+    response.set('Access-Control-Allow-Origin', '*');
+    const reqInvoice = request.body
+    profileQueries.InvoiceSettings(connection, reqInvoice, response)
+})
 
 
 

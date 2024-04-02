@@ -38,6 +38,23 @@ function getAccount(connection, response) {
         }
     })
 }
+function InvoiceSettings(connection, reqInvoice, response) {
+    console.log("reqInvoice",reqInvoice)
+    if (reqInvoice) {
+        const query = `UPDATE hosteldetails SET prefix='${reqInvoice.prefix}' and startingNumber ='${reqInvoice.startNumber}'  WHERE id='${reqInvoice.hostel_Id}'`
+        connection.query(query, function (error, invoiceData) {
+            console.log("invoiceData",invoiceData)
+            console.log("error invoice",error)
+            if (error) {
+                response.status(202).json({ message: 'Database error' });
+            } else {
+                response.status(200).json({ message: 'Updated successfully', statusCode: 200 });
+            }
+        })
+    }
+    else {
+        response.status(201).json({ message: 'missing parameter' });
+    }
+}
 
-
-module.exports = { IsEnableCheck, getAccount };
+module.exports = { IsEnableCheck, getAccount,InvoiceSettings };
