@@ -41,7 +41,7 @@ function getAccount(connection, response) {
 function InvoiceSettings(connection, reqInvoice, response) {
     console.log("reqInvoice",reqInvoice)
     if (reqInvoice) {
-        const query = `UPDATE hosteldetails SET prefix='${reqInvoice.prefix}' and startingNumber ='${reqInvoice.startNumber}'  WHERE id='${reqInvoice.hostel_Id}'`
+        const query = `UPDATE hosteldetails SET prefix='${reqInvoice.prefix}' , startingNumber ='${reqInvoice.startNumber}'  WHERE id='${reqInvoice.hostel_Id}'`
         connection.query(query, function (error, invoiceData) {
             console.log("invoiceData",invoiceData)
             console.log("error invoice",error)
