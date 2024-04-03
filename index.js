@@ -111,9 +111,9 @@ app.post('/otp-send/send-mail',(request, response) => {
 
 
 
-cron.schedule("0 0 3 * * ", function () {
+cron.schedule("0 0 1 * * ", function () {
     console.log("This task runs every minute");
-    connection.query(`SELECT * FROM hostel`, function (err, users) {
+    connection.query(`SELECT * FROM hostel where isActive = true`, function (err, users) {
         console.log(" users", users)
         if (err) {
             console.error("Error fetching users:", err);
@@ -276,8 +276,17 @@ app.post ('/amenities/setting',(request,response)=>{
 
 
 })
+app.get('/list/amenities-list', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*')
+    invoiceQueries.getAmenitiesList(connection,response)
+})
 
-
+app.post('/EB/Hostel_Room_based',(request, response) => { 
+    response.set('Access-Control-Allow-Origin', '*');
+    var atten = request.body;
+    pgQueries.UpdateEB(connection,atten,response)
+    
+})
 
 
 
