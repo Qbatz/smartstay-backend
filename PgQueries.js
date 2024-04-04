@@ -40,7 +40,7 @@ function hostelListDetails(connection, response) {
 function createPG(connection, reqData, response) {
     let hostelID, errorMessage
     if (reqData) {
-        const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By,prefix,startingNumber) values (\'${reqData.name}\',\'${reqData.phoneNo}\',\'${reqData.number_of_floors}\',\'${reqData.email_Id}\',\'${reqData.location}\',\'${reqData.created_by}\',\'${reqData.prefix}\',\'${reqData.startingNumber}\')`
+        const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) values (\'${reqData.name}\',\'${reqData.phoneNo}\',\'${reqData.number_of_floors}\',\'${reqData.email_Id}\',\'${reqData.location}\',\'${reqData.created_by}\')`
         connection.query(query, function (error, data) {
             if (error) {
                 console.log("error", error);
