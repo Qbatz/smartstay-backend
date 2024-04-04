@@ -11,6 +11,9 @@ const profileQueries = require('./ProfileQueries')
 const complianceQueries = require('./ComplianceQueries')
 const pgQueries = require('./PgQueries')
 
+const multer = require('multer');
+const upload = multer();
+
 
 var corsOptions = {
     origin: '*',
@@ -113,7 +116,7 @@ app.post('/otp-send/send-mail',(request, response) => {
 
 cron.schedule("0 0 1 * * ", function () {
     console.log("This task runs every minute");
-    connection.query(`SELECT * FROM hostel`, function (err, users) {
+    connection.query(`SELECT * FROM hostel where isActive=true`, function (err, users) {
         console.log(" users", users)
         if (err) {
             console.error("Error fetching users:", err);
@@ -159,7 +162,11 @@ app.get('/get/userAccount',(request, response) => {
     profileQueries.getAccount(connection, response)
 })
 
-
+app.post ('/amenities/settings',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    const reqData = request.body
+    invoiceQueries.AmenitiesSetting(connection, reqData, response)
+})
 
 //  compliance Queries
 
@@ -263,13 +270,30 @@ app.post('/check/room-full', (request, response)=>  {
     pgQueries.RoomFull(connection, reqFloorID, response)
 })
 
-app.post('/invoice/settings',(request, response) =>{
+app.post('/invoice/settings',upload.single('profile'),(request, response) =>{
     response.set('Access-Control-Allow-Origin', '*');
-    const reqInvoice = request.body
+        // const reqInvoice = request.file;
+        const reqInvoice = {
+            profile: request.file,
+            hostel_Id: request.body.hostel_Id, 
+            prefix: request.body.prefix,
+            suffix: request.body.suffix 
+        };
+    console.log("reqInvoice **",reqInvoice)
     profileQueries.InvoiceSettings(connection, reqInvoice, response)
 })
 
 
+app.get('/list/amenities-list', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*')
+    invoiceQueries.getAmenitiesList(connection,response)
+})
 
+app.post('/EB/Hostel_Room_based',(request, response) => { 
+    response.set('Access-Control-Allow-Origin', '*');
+    var atten = request.body;
+    profileQueries.UpdateEB(connection,atten,response)
+    
+})
 
 

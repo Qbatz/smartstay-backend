@@ -7,6 +7,8 @@ const path = require('path');
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 const AWS_REGION = process.env.AWS_REGION;
+const request = require('request');
+
 
 AWS.config.update({
     accessKeyId: AWS_ACCESS_KEY_ID,
@@ -15,15 +17,20 @@ AWS.config.update({
 });
 const s3 = new AWS.S3();
 
+const https = require('https');
+
 
 function calculateAndInsertInvoice(connection, user) {
-    connection.query(`SELECT * FROM hosteldetails WHERE id = ${user.Hostel_Id}`, function (err, existingData) {
+    connection.query(` SELECT hos.id as Hosteldetails_Id,hos.prefix,hos.suffix,hos.Name,amen.AmenitiesName,amen.Amount,amen.setAsDefault,amen.Hostel_Id,amen.Status  FROM hosteldetails hos INNER JOIN Amenities amen ON hos.id = amen.Hostel_Id`, function (err, existingData) {
         if (err) {
             console.error("Error fetching hosteldetails:", err);
             return;
         }
 
-        if (existingData.length > 0) {
+        else {
+            console.log("existingData", existingData)
+
+
             connection.query(`SELECT price FROM hostelrooms WHERE Hostel_Id = ${user.Hostel_Id} AND Floor_Id = ${user.Floor} AND Room_Id = ${user.Rooms}`, function (err, roomData) {
                 if (err) {
                     console.error("Error fetching room data:", err);
@@ -41,8 +48,8 @@ function calculateAndInsertInvoice(connection, user) {
                     const createdAtYear = moment(joinDate).year();
 
                     let roomPrice = roomData[0].price;
-                   
-                   
+
+
                     console.log("roomPrice", roomPrice);
 
                     if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
@@ -55,11 +62,33 @@ function calculateAndInsertInvoice(connection, user) {
 
                     const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
                     const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+
+                    const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+                    console.log("numberOfDays", numberOfDays) 
+                    let AdvanceAmount; 
+
+                    if (existingData.length > 0) {
+                        for (let i = 0; i < existingData.length; i++) {
+                            console.log("error", user.Hostel_Id == existingData[i].Hosteldetails_Id && existingData[i].setAsDefault == 0 && existingData[i].Status == 1);
+                            if (user.Hostel_Id == existingData[i].Hosteldetails_Id && existingData[i].setAsDefault == 0 && existingData[i].Status == 1) {
+                                AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + existingData[i].Amount;
+                                break; 
+                            } else {
+                                AdvanceAmount = (roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays;
+                            }
+                        }
+                    } else {
+                       
+                        AdvanceAmount = 0; 
+                    }
+                 
                     
-                    const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') +1;
-                    console.log("numberOfDays",numberOfDays)
-                    
-                    const AdvanceAmount=  (roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays;
+                    console.log('AdvanceAmount',AdvanceAmount);
+                   
+                    // AdvanceAmount = AdvanceAmount + extraAmount;
+
+
+                    // AdvanceAmount = 
 
                     let prefix = existingData[0].prefix || 'INVC';
                     let suffix = existingData[0].suffix || '';
@@ -87,9 +116,8 @@ function calculateAndInsertInvoice(connection, user) {
                     console.error("Room data not found for Hostel_Id:", user.Hostel_Id, "Floor_Id:", user.Floor, "Room_Id:", user.Rooms);
                 }
             });
-        } else {
-            console.log("Hostel details not found for Hostel_Id:", user.Hostel_Id);
         }
+       
     });
 }
 
@@ -283,8 +311,43 @@ function getInvoiceList(connection, response) {
 
 
 
+function embedImage(doc, imageUrl, fallbackPath, callback) {
+    console.log(`Fetching image from URL: ${imageUrl}`);
+    request.get({ url: imageUrl, encoding: null }, (error, response, body) => {
+        if (error) {
+            console.error(`Error fetching image from ${imageUrl}: ${error.message}`);
+            doc.image(fallbackPath, {
+                fit: [180, 150],
+                align: 'center',
+                valign: 'top',
+                margin: 50
+            });
+            callback();
+        } else if (response && response.statusCode === 200) {
+            const imageData = Buffer.from(body, 'binary');
+            doc.image(imageData, {
+                width: 180,
+                height: 150,
+                align: 'center',
+                valign: 'top',
+                margin: 50
+            });
+            callback();
+        } else {
+            console.error(`Failed to fetch image from ${imageUrl}. Status code: ${response ? response.statusCode : 'Unknown'}`);
+            doc.image(fallbackPath, {
+                fit: [180, 150],
+                align: 'center',
+                valign: 'top',
+                margin: 50
+            });
+            callback();
+        }
+    });
+}
+
 function InvoicePDf(connection, response) {
-    connection.query(`SELECT invoice.Name as UserName,invoice.User_Id, invoice.Invoices,invoice.DueDate,hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id `, function (error, data) {
+    connection.query(`SELECT invoice.Name as UserName,invoice.User_Id, invoice.Invoices,invoice.DueDate,hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id `, function (error, data) {
         if (error) {
             console.log(error);
             response.status(500).json({ message: 'Internal server error' });
@@ -294,6 +357,7 @@ function InvoicePDf(connection, response) {
             let uploadedPDFs = 0;
             let filenames = [];
             let pdfDetails = [];
+                  
             data.forEach((hostel, index) => {
                 console.log("hostelData **", hostel);
 
@@ -304,12 +368,12 @@ function InvoicePDf(connection, response) {
                 const filename = `Invoice${month}${year}${hostel.User_Id}.pdf`;
                 filenames.push(filename);
 
-                
+
 
 
                 const doc = new PDFDocument({ font: 'Times-Roman' });
                 const stream = doc.pipe(fs.createWriteStream(filename));
-               
+
                 let isFirstPage = true;
 
 
@@ -327,16 +391,37 @@ function InvoicePDf(connection, response) {
                 const rightMargin = doc.page.width - invoiceNoWidth - 50;
                 const marginLeft = 30;
                 const marginRight = doc.page.width / 2;
-               
 
+                
                 const logoPath = './Asset/Logo.jpeg';
-                doc.image(logoPath, {
-                    fit: [180, 150],
-                    align: 'center',
-                    valign: 'top',
-                    margin: 50
-                });
+                // doc.image(hostel.Hostel_Logo ? hostel.Hostel_Logo : logoPath, {
+                //     fit: [180, 150],
+                //     align: 'center',
+                //     valign: 'top',
+                //     margin: 50
+                // });
+                
+                if (hostel.Hostel_Logo) {
+                    embedImage(doc, hostel.Hostel_Logo, './Asset/Logo.jpeg', () => {
+                        if (uploadedPDFs === totalPDFs) {
+                            doc.end();
+                        }
+                    });
+                } else {
+                    doc.image('./Asset/Logo.jpeg', {
+                        fit: [180, 150],
+                        align: 'center',
+                        valign: 'top',
+                        margin: 50
+                    });
+                    if (uploadedPDFs === totalPDFs) {
+                        doc.end();
+                    }
+                }
 
+
+
+                
 
                 doc.fontSize(10).font('Times-Roman')
                     .text(hostel.Hostel_Name.toUpperCase(), leftMargin, doc.y, { align: 'right' })
@@ -428,18 +513,18 @@ function InvoicePDf(connection, response) {
                     pdfDetails.push({
                         filename: filename,
                         fileContent: fs.readFileSync(filename),
-                        user: hostel.User_Id 
+                        user: hostel.User_Id
                     });
-    
+
                     uploadedPDFs++;
                     if (uploadedPDFs === totalPDFs) {
                         deletePDfs(filenames)
-                 uploadToS3(filenames, response, pdfDetails);
+                        uploadToS3(filenames, response, pdfDetails,connection);
                     }
 
 
                 });
-                
+
             });
         }
         else {
@@ -448,29 +533,21 @@ function InvoicePDf(connection, response) {
     });
 }
 
-function uploadToS3(filenames, response, pdfDetails) {
+
+
+
+
+function uploadToS3(filenames, response, pdfDetails,connection) {
     let totalPDFs = filenames.length;
     let uploadedPDFs = 0;
     let pdfInfo = [];
-    // let pdfURLs = [];
+let errorMessage;
 
 
-    // filenames.forEach(filename=> {
-    //     const fileContent = fs.readFileSync(filename);
-    //     // const { filename, fileContent, user } = pdf;
-    //     const key = `${filename}`;
-    //     const BucketName = 'smartstaydevs';
-    //     const params = {
-    //         Bucket: BucketName,
-    //         Key: key,
-    //         Body: fileContent,
-    //         ContentType: 'application/pdf'
-    //     };
+    pdfDetails.forEach(pdf => {
 
-    pdfDetails.forEach(pdf=> {
-        
         const { filename, fileContent, user } = pdf;
-        const key = `${user}/${filename}`;
+        const key = `Invoice/${filename}`;
         const BucketName = 'smartstaydevs';
         const params = {
             Bucket: BucketName,
@@ -492,26 +569,39 @@ function uploadToS3(filenames, response, pdfDetails) {
                     url: uploadData.Location
                 };
                 pdfInfo.push(pdfInfoItem);
-
-
-                // pdfURLs.push(uploadData.Location);
-                if (uploadedPDFs === totalPDFs) {
-                    response.status(200).json({
-                        message: 'All PDFs uploaded to S3 bucket successfully',
-                        // location: uploadData.Location
-                        // pdfURLs: pdfURLs
-                        pdfInfo: pdfInfo
+              
+                if(uploadedPDFs === totalPDFs) {
+                    // response.status(200).json({message: 'All PDFs uploaded to S3 bucket successfully', pdfInfoList: pdfInfo});
+                                                                                      
+                    pdfInfo.forEach(pdf => {
+                        console.log(pdf.url);
+                        const query = `UPDATE invoicedetails SET invoicePDF = '${pdf.url}' where User_Id = '${pdf.user}'`
+                        connection.query(query, function(error, pdfData){
+                            console.log("pdfData",pdfData)
+                            console.log("error pdfData",error)
+                            if(error){                               
+                                    errorMessage = error;
+                }
+                            
+                        })
                     });
+                    if(errorMessage) {
+                        response.status(201).json({ message: 'Cannot Insert Pdf to Database' })
+                    }
+                    else {
+                        response.status(200).json({ message: 'Insert PDf successfully' })
+                    }
+
                 }
             }
         });
     });
 }
 
- 
+
 function deletePDfs(filenames) {
     filenames.forEach(filename => {
-        fs.unlink(filename, function(err) {
+        fs.unlink(filename, function (err) {
             if (err) {
                 console.error("delete pdf error", err);
             } else {
@@ -566,6 +656,16 @@ function convertAmountToWords(amount) {
 }
 
 
+function getAmenitiesList(connection, response) {
+    connection.query(`select * from Amenities where isActive= true`, function (err, data) {
+        if (data) {
+            response.status(200).json(data)
+        }
+        else {
+            response.status(201).json({ message: 'No Data Found' })
+        }
+    })
+}
 
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf };
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf ,getAmenitiesList };
