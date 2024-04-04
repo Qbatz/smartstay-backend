@@ -155,7 +155,7 @@ function AmenitiesSetting(connection, reqData, response) {
     }
 }
 function getAmenitiesList(connection, response) {
-    connection.query(`select * from Amenities where isActive= true`, function (err, data) {
+    connection.query(`select * from Amenities `, function (err, data) {
         if (data) {
             response.status(200).json(data)
         }
