@@ -162,11 +162,8 @@ app.get('/get/userAccount',(request, response) => {
     profileQueries.getAccount(connection, response)
 })
 
-app.post ('/amenities/settings',(request,response)=>{
-    response.set('Access-Control-Allow-Origin', '*');
-    const reqData = request.body
-    invoiceQueries.AmenitiesSetting(connection, reqData, response)
-})
+
+
 
 //  compliance Queries
 
@@ -286,7 +283,7 @@ app.post('/invoice/settings',upload.single('profile'),(request, response) =>{
 
 app.get('/list/amenities-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-    invoiceQueries.getAmenitiesList(connection,response)
+    profileQueries.getAmenitiesList(connection,response)
 })
 
 app.post('/EB/Hostel_Room_based',(request, response) => { 
@@ -300,7 +297,7 @@ app.post('/EB/Hostel_Room_based',(request, response) => {
 app.post ('/amenities/setting',(request,response)=>{
     response.set('Access-Control-Allow-Origin', '*');
     const reqData = request.body
-   profileQueries.AmeniesSetting(connection, reqData, response)
+   profileQueries.AmenitiesSetting(connection, reqData, response)
 
 
 })

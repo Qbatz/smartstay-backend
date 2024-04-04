@@ -82,14 +82,8 @@ function calculateAndInsertInvoice(connection, user) {
                        
                         AdvanceAmount = 0; 
                     }
-                 
                     
                     console.log('AdvanceAmount',AdvanceAmount);
-                   
-                    // AdvanceAmount = AdvanceAmount + extraAmount;
-
-
-                    // AdvanceAmount = 
 
                     let prefix = existingData[0].prefix || 'INVC';
                     let suffix = existingData[0].suffix || '';
