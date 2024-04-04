@@ -116,7 +116,7 @@ app.post('/otp-send/send-mail',(request, response) => {
 
 cron.schedule("0 0 1 * * ", function () {
     console.log("This task runs every minute");
-    connection.query(`SELECT * FROM hostel where isActive=true`, function (err, users) {
+       connection.query(`SELECT * FROM hostel where isActive=true`, function (err, users) {
         console.log(" users", users)
         if (err) {
             console.error("Error fetching users:", err);
@@ -297,3 +297,10 @@ app.post('/EB/Hostel_Room_based',(request, response) => {
 })
 
 
+app.post ('/amenities/setting',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    const reqData = request.body
+   profileQueries.AmeniesSetting(connection, reqData, response)
+
+
+})

@@ -4,6 +4,7 @@ require('dotenv').config();
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
+const { Console } = require('console');
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 const AWS_REGION = process.env.AWS_REGION;

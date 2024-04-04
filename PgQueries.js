@@ -330,9 +330,21 @@ function RoomFull(connection, reqFloorID, response) {
     }
 }
 
+function UpdateEB(connection, atten, response) {
+  
+    if (atten) {
+        connection.query(`UPDATE hosteldetails SET isHostelBased= ${atten.Ishostelbased} WHERE id='${atten.Id}'`, function (error, data) {
+            if (error) {
+                response.status(201).json({ message: "doesn't update" });
+            } else {
+                response.status(200).json({ message: "Update Successfully" });
+            }
+        });
+    } 
+   
+};
 
 
 
 
-
-module.exports = { getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull }
+module.exports = { getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull,UpdateEB }

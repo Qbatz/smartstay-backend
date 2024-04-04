@@ -145,4 +145,26 @@ function UpdateEB(connection, atten, response) {
    
 };
 
-module.exports = { IsEnableCheck, getAccount, InvoiceSettings, AmenitiesSetting ,UpdateEB};
+
+function AmeniesSetting(connection, reqData, response) { 
+    console.log("reqData", reqData);
+    if(reqData){
+        connection.query(`INSERT INTO Amenities(AmenitiesName,Amount,setAsDefault,Hostel_Id,Status) VALUES (\'${reqData.AmenitiesName}\',\'${reqData.Amount}\', ${reqData.setAsDefault},\'${reqData.Hostel_Id}\',${reqData.Status})`, function (error, data) {
+           
+            if (error) {
+                response.status(202).json({ message: 'Database error' });
+            }
+             else {
+                response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
+            }
+            
+        })
+      
+    }else{
+        response.status(201).json({ message: 'Missing parameter' });
+    }
+        
+      
+    }
+
+module.exports = { IsEnableCheck, getAccount, InvoiceSettings, AmenitiesSetting ,UpdateEB,AmeniesSetting};
