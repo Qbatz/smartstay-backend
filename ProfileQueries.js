@@ -78,37 +78,75 @@ function uploadProfilePictureToS3(bucketName, folderName, fileName, fileData, ca
         }
     });
 }
+// function InvoiceSettings(connection, reqInvoice, response) {
+//     console.log("reqInvoice", reqInvoice)
+//     if (reqInvoice.hostel_Id) {
+
+//         uploadProfilePictureToS3('smartstaydevs', 'Logo/', 'Logo' + reqInvoice.hostel_Id + '.jpg', reqInvoice.profile, (err, s3Url) => {
+//             console.log("s3URL", s3Url)
+//             if (err) {
+//                 console.error('Error uploading profile picture:', err);
+//                 response.status(500).json({ message: 'Error uploading profile picture' });
+//             }
+//             else {
+//                 const query = `UPDATE hosteldetails SET prefix='${reqInvoice.prefix}' , suffix ='${reqInvoice.suffix}' ,Profile= '${s3Url}' WHERE id='${reqInvoice.hostel_Id}'`
+//                 connection.query(query, function (error, invoiceData) {
+//                     console.log("invoiceData", invoiceData)
+//                     console.log("error invoice", error)
+//                     if (error) {
+//                         response.status(202).json({ message: 'Database error' });
+//                     } else {
+//                         response.status(200).json({ message: 'Updated successfully', statusCode: 200 });
+//                     }
+//                 })
+//             }
+//         });
+
+//     }
+//     else {
+//         response.status(201).json({ message: 'missing parameter' });
+//     }
+// }
+
 function InvoiceSettings(connection, reqInvoice, response) {
-    console.log("reqInvoice", reqInvoice)
+    console.log("reqInvoice", reqInvoice);
     if (reqInvoice.hostel_Id) {
-
-        uploadProfilePictureToS3('smartstaydevs', 'Logo/', 'Logo' + reqInvoice.hostel_Id + '.jpg', reqInvoice.profile, (err, s3Url) => {
-            console.log("s3URL", s3Url)
-            if (err) {
-                console.error('Error uploading profile picture:', err);
-                response.status(500).json({ message: 'Error uploading profile picture' });
-            }
-            else {
-                const query = `UPDATE hosteldetails SET prefix='${reqInvoice.prefix}' , suffix ='${reqInvoice.suffix}' ,Profile= '${s3Url}' WHERE id='${reqInvoice.hostel_Id}'`
-                connection.query(query, function (error, invoiceData) {
-                    console.log("invoiceData", invoiceData)
-                    console.log("error invoice", error)
-                    if (error) {
-                        response.status(202).json({ message: 'Database error' });
-                    } else {
-                        response.status(200).json({ message: 'Updated successfully', statusCode: 200 });
-                    }
-                })
-            }
-        });
-
-    }
-    else {
-        response.status(201).json({ message: 'missing parameter' });
+        if (reqInvoice.profile) {
+            
+            uploadProfilePictureToS3('smartstaydevs', 'Logo/', 'Logo' + reqInvoice.hostel_Id + '.jpg', reqInvoice.profile, (err, s3Url) => {
+                console.log("s3URL", s3Url);
+                if (err) {
+                    console.error('Error uploading profile picture:', err);
+                    response.status(500).json({ message: 'Error uploading profile picture' });
+                } else {
+                    const query = `UPDATE hosteldetails SET Profile='${s3Url}' WHERE id='${reqInvoice.hostel_Id}'`;
+                    connection.query(query, function (error, invoiceData) {
+                        console.log("invoiceData", invoiceData);
+                        console.log("error invoice", error);
+                        if (error) {
+                            response.status(202).json({ message: 'Database error' });
+                        } else {
+                            response.status(200).json({ message: 'Updated successfully', statusCode: 200 });
+                        }
+                    });
+                }
+            });
+        } else {
+            const query = `UPDATE hosteldetails SET prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}' WHERE id='${reqInvoice.hostel_Id}'`;
+            connection.query(query, function (error, invoiceData) {
+                console.log("invoiceData", invoiceData);
+                console.log("error invoice", error);
+                if (error) {
+                    response.status(202).json({ message: 'Database error' });
+                } else {
+                    response.status(200).json({ message: 'Updated successfully', statusCode: 200 });
+                }
+            });
+        }
+    } else {
+        response.status(400).json({ message: 'Missing parameter' });
     }
 }
-
-
 
 
 
