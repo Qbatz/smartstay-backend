@@ -80,7 +80,7 @@ function uploadProfilePictureToS3(bucketName, folderName, fileName, fileData, ca
 }
 function InvoiceSettings(connection, reqInvoice, response) {
     console.log("reqInvoice", reqInvoice)
-    if (reqInvoice) {
+    if (reqInvoice.hostel_Id) {
 
         uploadProfilePictureToS3('smartstaydevs', 'Logo/', 'Logo' + reqInvoice.hostel_Id + '.jpg', reqInvoice.profile, (err, s3Url) => {
             console.log("s3URL", s3Url)
