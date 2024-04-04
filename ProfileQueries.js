@@ -131,18 +131,7 @@ function AmenitiesSetting(connection, reqData, response) {
         return; 
     }
 
-    if (!reqData.Hostel_Id) {
-       
-        connection.query(`INSERT INTO Amenities (AmenitiesName, Amount, setAsDefault, Hostel_Id, Status) VALUES (\'${reqData.AmenitiesName}\',\'${reqData.Amount}\', ${reqData.setAsDefault},\'${reqData.Hostel_Id}\',${reqData.Status})`, function (error, data) {
-            if (error) {
-                console.error(error); 
-                response.status(202).json({ message: 'Database error' });
-            } else {
-                response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
-            }
-        });
-    } else {
-        
+    if (reqData.id) {
         connection.query(`UPDATE Amenities SET Amount= ${reqData.Amount},setAsDefault= ${reqData.setAsDefault},Status= ${reqData.Status} WHERE Hostel_Id='${reqData.Hostel_Id}'`, function (error, data) {
             if (error) {
                 console.error(error); 
@@ -151,6 +140,18 @@ function AmenitiesSetting(connection, reqData, response) {
                 response.status(200).json({ message: "Update successful" });
             }
         });
+       
+       
+    } else {
+        connection.query(`INSERT INTO Amenities (AmenitiesName, Amount, setAsDefault, Hostel_Id, Status) VALUES (\'${reqData.AmenitiesName}\',\'${reqData.Amount}\', ${reqData.setAsDefault},\'${reqData.Hostel_Id}\',${reqData.Status})`, function (error, data) {
+            if (error) {
+                console.error(error); 
+                response.status(202).json({ message: 'Database error' });
+            } else {
+                response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
+            }
+        });
+       
     }
 }
 function getAmenitiesList(connection, response) {
