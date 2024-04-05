@@ -171,7 +171,7 @@ function AmenitiesSetting(connection, reqData, response) {
     
        connection.query(`select * from Amenities WHERE Hostel_Id = ${reqData.Hostel_Id}`, function(error, amenitiesData){
         console.log("amenitiesData",amenitiesData)
-        if (amenitiesData.length > 0) {
+        if(amenitiesData.Hostel_Id && amenitiesData.AmenitiesName.toLowercase() === reqData.AmenitiesName){
             connection.query(`UPDATE Amenities SET Amount= ${reqData.Amount},setAsDefault= ${reqData.setAsDefault},Status= ${reqData.Status} WHERE Hostel_Id='${reqData.Hostel_Id}'`, function (error, data) {
                 if (error) {
                     console.error(error); 
@@ -182,7 +182,9 @@ function AmenitiesSetting(connection, reqData, response) {
             });
            
            
-        } else {
+        }
+        
+         else {
             connection.query(`INSERT INTO Amenities (AmenitiesName, Amount, setAsDefault, Hostel_Id) VALUES (\'${reqData.AmenitiesName}\',\'${reqData.Amount}\', ${reqData.setAsDefault},\'${reqData.Hostel_Id}\')`, function (error, data) {
                 if (error) {
                     console.error(error); 
