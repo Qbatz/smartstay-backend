@@ -168,29 +168,33 @@ function AmenitiesSetting(connection, reqData, response) {
         response.status(201).json({ message: 'Missing parameter' });
         return; 
     }
-
-    if (reqData.id) {
-        connection.query(`UPDATE Amenities SET Amount= ${reqData.Amount},setAsDefault= ${reqData.setAsDefault},Status= ${reqData.Status} WHERE Hostel_Id='${reqData.Hostel_Id}'`, function (error, data) {
-            if (error) {
-                console.error(error); 
-                response.status(201).json({ message: "doesn't update" });
-            } else {
-                response.status(200).json({ message: "Update successful" });
-            }
-        });
-       
-       
-    } else {
-        connection.query(`INSERT INTO Amenities (AmenitiesName, Amount, setAsDefault, Hostel_Id, Status) VALUES (\'${reqData.AmenitiesName}\',\'${reqData.Amount}\', ${reqData.setAsDefault},\'${reqData.Hostel_Id}\',${reqData.Status})`, function (error, data) {
-            if (error) {
-                console.error(error); 
-                response.status(202).json({ message: 'Database error' });
-            } else {
-                response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
-            }
-        });
-       
-    }
+    
+       connection.query(`select * from Amenities WHERE Hostel_Id = ${reqData.Hostel_Id}`, function(error, amenitiesData){
+        console.log("amenitiesData",amenitiesData)
+        if (amenitiesData.length > 0) {
+            connection.query(`UPDATE Amenities SET Amount= ${reqData.Amount},setAsDefault= ${reqData.setAsDefault},Status= ${reqData.Status} WHERE Hostel_Id='${reqData.Hostel_Id}'`, function (error, data) {
+                if (error) {
+                    console.error(error); 
+                    response.status(201).json({ message: "doesn't update" });
+                } else {
+                    response.status(200).json({ message: "Update successful" });
+                }
+            });
+           
+           
+        } else {
+            connection.query(`INSERT INTO Amenities (AmenitiesName, Amount, setAsDefault, Hostel_Id) VALUES (\'${reqData.AmenitiesName}\',\'${reqData.Amount}\', ${reqData.setAsDefault},\'${reqData.Hostel_Id}\')`, function (error, data) {
+                if (error) {
+                    console.error(error); 
+                    response.status(202).json({ message: 'Database error' });
+                } else {
+                    response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
+                }
+            });
+           
+        }
+    })
+  
 }
 function getAmenitiesList(connection, response) {
     connection.query(`select * from Amenities `, function (err, data) {
@@ -204,34 +208,6 @@ function getAmenitiesList(connection, response) {
 }
 
 
-// function AmeniesSetting(connection, reqData, response) { 
-//     console.log("reqData", reqData);
-//     if(reqData){
-//         connection.query(`INSERT INTO Amenities(AmenitiesName,Amount,setAsDefault,Hostel_Id,Status) VALUES (\'${reqData.AmenitiesName}\',\'${reqData.Amount}\', ${reqData.setAsDefault},\'${reqData.Hostel_Id}\',${reqData.Status})`, function (error, data) {
-           
-//             if (error) {
-//                 response.status(202).json({ message: 'Database error' });
-//             }
-//              else {
-//                 response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
-//             }
-            
-//         })
-      
-//     }else{
-//         response.status(201).json({ message: 'Missing parameter' });
-//     }
-//     if (reqData.Hostel_Id) {
-//         connection.query(`UPDATE Amenities SET Amount= ${reqData.Amount},setAsDefault= ${reqData.setAsDefault},Status= ${reqData.Status} WHERE Hostel_Id='${reqData.Hostel_Id}'`, function (error, data) {
-//             if (error) {
-//                 response.status(201).json({ message: "doesn't update" });
-//             } else {
-//                 response.status(200).json({ message: "Update Successfully" });
-//             }
-//         });
-//     } 
-        
-      
-//     }
+
 
 module.exports = { IsEnableCheck, getAccount, InvoiceSettings, AmenitiesSetting ,UpdateEB,getAmenitiesList};
