@@ -171,7 +171,8 @@ function AmenitiesSetting(connection, reqData, response) {
     
        connection.query(`select * from Amenities WHERE Hostel_Id = ${reqData.Hostel_Id}`, function(error, amenitiesData){
         console.log("amenitiesData",amenitiesData)
-        if(amenitiesData.Hostel_Id && amenitiesData.AmenitiesName.toLowercase() === reqData.AmenitiesName){
+        if(amenitiesData[0]?.Hostel_Id == reqData.Hostel_Id &&
+            amenitiesData[0]?.AmenitiesName.toLowerCase() === reqData.AmenitiesName.toLowerCase()){
             connection.query(`UPDATE Amenities SET Amount= ${reqData.Amount},setAsDefault= ${reqData.setAsDefault},Status= ${reqData.Status} WHERE Hostel_Id='${reqData.Hostel_Id}'`, function (error, data) {
                 if (error) {
                     console.error(error); 
