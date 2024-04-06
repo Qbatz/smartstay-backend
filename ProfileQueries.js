@@ -173,7 +173,7 @@ function AmenitiesSetting(connection, reqData, response) {
         console.log("amenitiesData",amenitiesData)
         if(amenitiesData[0]?.Hostel_Id == reqData.Hostel_Id &&
             amenitiesData[0]?.AmenitiesName.toLowerCase() === reqData.AmenitiesName.toLowerCase()){
-            connection.query(`UPDATE Amenities SET Amount= ${reqData.Amount},setAsDefault= ${reqData.setAsDefault},Status= ${reqData.Status} WHERE Hostel_Id='${reqData.Hostel_Id}'`, function (error, data) {
+            connection.query(`UPDATE Amenities SET Amount= ${reqData.Amount},setAsDefault= ${reqData.setAsDefault},Status= ${reqData.Status} WHERE Hostel_Id='${reqData.Hostel_Id}' and AmenitiesName ='${reqData.AmenitiesName}'`, function (error, data) {
                 if (error) {
                     console.error(error); 
                     response.status(201).json({ message: "doesn't update" });
