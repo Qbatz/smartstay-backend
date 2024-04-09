@@ -58,26 +58,26 @@ function getAccount(connection, response) {
 
 
 
-function uploadProfilePictureToS3(bucketName, folderName, fileName, fileData, callback) {
-    const s3 = new AWS.S3();
+// function uploadProfilePictureToS3(bucketName, folderName, fileName, fileData, callback) {
+//     const s3 = new AWS.S3();
 
-    const params = {
-        Bucket: bucketName,
-        Key: folderName + fileName,
-        Body: fileData.buffer,
-        ACL: 'public-read'
-    };
+//     const params = {
+//         Bucket: bucketName,
+//         Key: folderName + fileName,
+//         Body: fileData.buffer,
+//         ACL: 'public-read'
+//     };
 
-    s3.upload(params, (err, data) => {
-        if (err) {
-            console.error('Error uploading file to S3:', err);
-            callback(err);
-        } else {
-            console.log('File uploaded successfully:', data.Location);
-            callback(null, data.Location);
-        }
-    });
-}
+//     s3.upload(params, (err, data) => {
+//         if (err) {
+//             console.error('Error uploading file to S3:', err);
+//             callback(err);
+//         } else {
+//             console.log('File uploaded successfully:', data.Location);
+//             callback(null, data.Location);
+//         }
+//     });
+// }
 // function InvoiceSettings(connection, reqInvoice, response) {
 //     console.log("reqInvoice", reqInvoice)
 //     if (reqInvoice.hostel_Id) {
@@ -162,6 +162,30 @@ function UpdateEB(connection, atten, response) {
     } 
    
 };
+// function UpdateEB(connection, attenArray, response) {
+//     if (attenArray && Array.isArray(attenArray)) {
+//         const numUpdates = attenArray.length;
+//         let numCompleted = 0;
+
+//         for (let i = 0; i < numUpdates; i++) {
+//             const atten = attenArray[i];
+//             connection.query(`UPDATE hosteldetails SET isHostelBased = ${atten.isHostelBased} WHERE id = '${atten.id}'`, function (error, data) {
+//                 if (error) {
+//                     console.error("Error updating hostel details:", error);
+//                     response.status(500).json({ message: "Error updating hostel details" });
+//                 } else {
+//                     numCompleted++;
+//                     if (numCompleted === numUpdates) {
+//                         response.status(200).json({ message: "Update Successfully" });
+//                     }
+//                 }
+//             });
+//         }
+//     } else {
+//         response.status(400).json({ message: "Invalid input" });
+//     }
+// }
+
 function AmenitiesSetting(connection, reqData, response) { 
     console.log("reqData", reqData);
     if (!reqData) {
