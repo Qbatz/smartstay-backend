@@ -150,41 +150,41 @@ function InvoiceSettings(connection, reqInvoice, response) {
 
 
 
-function UpdateEB(connection, atten, response) {
-      if (atten) {
-        connection.query(`UPDATE hosteldetails SET isHostelBased= ${atten.Ishostelbased} WHERE id='${atten.Id}'`, function (error, data) {
-            if (error) {
-                response.status(201).json({ message: "doesn't update" });
-            } else {
-                response.status(200).json({ message: "Update Successfully" });
-            }
-        });
-    } 
+// function UpdateEB(connection, atten, response) {
+//       if (atten) {
+//         connection.query(`UPDATE hosteldetails SET isHostelBased= ${atten.Ishostelbased} WHERE id='${atten.Id}'`, function (error, data) {
+//             if (error) {
+//                 response.status(201).json({ message: "doesn't update" });
+//             } else {
+//                 response.status(200).json({ message: "Update Successfully" });
+//             }
+//         });
+//     } 
    
-};
-// function UpdateEB(connection, attenArray, response) {
-//     if (attenArray && Array.isArray(attenArray)) {
-//         const numUpdates = attenArray.length;
-//         let numCompleted = 0;
+// };
+function UpdateEB(connection, attenArray, response) {
+    if (attenArray && Array.isArray(attenArray)) {
+        const numUpdates = attenArray.length;
+        let numCompleted = 0;
 
-//         for (let i = 0; i < numUpdates; i++) {
-//             const atten = attenArray[i];
-//             connection.query(`UPDATE hosteldetails SET isHostelBased = ${atten.isHostelBased} WHERE id = '${atten.id}'`, function (error, data) {
-//                 if (error) {
-//                     console.error("Error updating hostel details:", error);
-//                     response.status(500).json({ message: "Error updating hostel details" });
-//                 } else {
-//                     numCompleted++;
-//                     if (numCompleted === numUpdates) {
-//                         response.status(200).json({ message: "Update Successfully" });
-//                     }
-//                 }
-//             });
-//         }
-//     } else {
-//         response.status(400).json({ message: "Invalid input" });
-//     }
-// }
+        for (let i = 0; i < numUpdates; i++) {
+            const atten = attenArray[i];
+            connection.query(`UPDATE hosteldetails SET isHostelBased = ${atten.isHostelBased} WHERE id = '${atten.id}'`, function (error, data) {
+                if (error) {
+                    console.error("Error updating hostel details:", error);
+                    response.status(500).json({ message: "Error updating hostel details" });
+                } else {
+                    numCompleted++;
+                    if (numCompleted === numUpdates) {
+                        response.status(200).json({ message: "Update Successfully" });
+                    }
+                }
+            });
+        }
+    } else {
+        response.status(400).json({ message: "Invalid input" });
+    }
+}
 
 function AmenitiesSetting(connection, reqData, response) { 
     console.log("reqData", reqData);
