@@ -58,26 +58,26 @@ function getAccount(connection, response) {
 
 
 
-// function uploadProfilePictureToS3(bucketName, folderName, fileName, fileData, callback) {
-//     const s3 = new AWS.S3();
+function uploadProfilePictureToS3(bucketName, folderName, fileName, fileData, callback) {
+    const s3 = new AWS.S3();
 
-//     const params = {
-//         Bucket: bucketName,
-//         Key: folderName + fileName,
-//         Body: fileData.buffer,
-//         ACL: 'public-read'
-//     };
+    const params = {
+        Bucket: bucketName,
+        Key: folderName + fileName,
+        Body: fileData.buffer,
+        ACL: 'public-read'
+    };
 
-//     s3.upload(params, (err, data) => {
-//         if (err) {
-//             console.error('Error uploading file to S3:', err);
-//             callback(err);
-//         } else {
-//             console.log('File uploaded successfully:', data.Location);
-//             callback(null, data.Location);
-//         }
-//     });
-// }
+    s3.upload(params, (err, data) => {
+        if (err) {
+            console.error('Error uploading file to S3:', err);
+            callback(err);
+        } else {
+            console.log('File uploaded successfully:', data.Location);
+            callback(null, data.Location);
+        }
+    });
+}
 // function InvoiceSettings(connection, reqInvoice, response) {
 //     console.log("reqInvoice", reqInvoice)
 //     if (reqInvoice.hostel_Id) {
