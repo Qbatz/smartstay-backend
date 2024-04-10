@@ -21,14 +21,379 @@ const s3 = new AWS.S3();
 const https = require('https');
 
 
+// function calculateAndInsertInvoice(connection, user) {
+//     console.log("user.Hostel_Id", user);
+//     connection.query(`SELECT hos.id AS Hosteldetails_Id, hos.prefix, hos.suffix, hos.Name, hos.isHostelBased, amen.AmenitiesName, amen.Amount, amen.setAsDefault, amen.Hostel_Id, amen.Status, eb.Hostel_Id AS EbHostel_Id, eb.Floor, eb.Room, eb.EbAmount 
+//     FROM hosteldetails AS hos 
+//     INNER JOIN Amenities AS amen ON hos.id = amen.Hostel_Id 
+//     INNER JOIN EbAmount AS eb ON hos.id = eb.Hostel_Id AND amen.Hostel_Id = eb.Hostel_Id 
+//     WHERE hos.id = ${user.Hostel_Id};`, function (err, existingData) {
+
+//         console.log("existingData..?",existingData);
+//         if (err) {
+//             console.error("Error fetching hosteldetails:", err);
+//             return;
+//         }
+
+
+//         connection.query(`SELECT price FROM hostelrooms WHERE Hostel_Id = ${user.Hostel_Id} AND Floor_Id = ${user.Floor} AND Room_Id = ${user.Rooms}`, function (err, roomData) {
+//             if (err) {
+//                 console.error("Error fetching room data:", err);
+//                 return;
+//             }
+
+//             let roomPrice;
+//             const currentDate = moment(new Date()).format('YYYY-MM-DD');
+//             const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
+//             let dueDate, invoiceDate;
+//             let invoiceNo = '';
+
+//             const currentMonth = moment(currentDate).month() + 1;
+//             const currentYear = moment(currentDate).year();
+//             const createdAtMonth = moment(joinDate).month() + 1;
+//             const createdAtYear = moment(joinDate).year();
+
+//             roomPrice = roomData[0].price;
+
+//             if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+//                 dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+//                 invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+//             } else {
+//                 dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+//                 invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
+//             }
+
+//             const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+//             const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+
+//             const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+
+//             let AdvanceAmount;
+
+//             if (existingData.length > 0) {
+//                 let filteredArray = existingData.filter(item => item.Hostel_Id == user.Hostel_Id);
+
+//                 if (filteredArray[0].setAsDefault == 0 && filteredArray[0].Status == 1 ) {
+//                     AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + filteredArray[0].Amount;
+//                 } 
+//                 else if (user.Hostel_Id === existingData[0].EbHostel_Id){
+//                     let EbAmountCalculation = existingData.filter(()=>{
+
+//                     })
+//                 }
+//                 else {
+//                     AdvanceAmount = (roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays;
+//                 }
+
+//                 const userID = user.User_Id.toString().slice(0, 4);
+
+//                 if (filteredArray[0].prefix != '' && filteredArray[0].suffix != ''  && filteredArray[0].prefix != undefined && filteredArray[0].suffix != undefined  && filteredArray[0].prefix != '' && filteredArray[0].suffix != '') {
+//                     invoiceNo = filteredArray[0].prefix + filteredArray[0].suffix + user.Name + currentMonth + currentYear;
+//                 } else {
+//                     invoiceNo = 'INVC' + currentMonth + currentYear + userID; 
+//                 }
+//             } else {
+//                 AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays);
+//                 const userID = user.User_Id.toString().slice(0, 4);
+//                 invoiceNo = 'INVC' + currentMonth + currentYear + userID;
+//             }
+
+//             // const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
+
+//             // connection.query(query, function (error, data) {
+//             //     if (error) {
+//             //         console.error("Error inserting invoice data for user:", user.User_Id, error);
+//             //         return;
+//             //     }
+//             // });
+//         });
+//     });
+// }
+
+
+// function calculateAndInsertInvoice(connection, user) {
+//     console.log("user **", user);
+//     connection.query(`SELECT  hos.id AS Hosteldetails_Id, hos.prefix, hos.suffix,  hos.Name, hos.isHostelBased, amen.AmenitiesName, amen.Amount,amen.setAsDefault, amen.Hostel_Id, amen.Status, eb.Hostel_Id AS EbHostel_Id, eb.Floor,eb.Room, eb.EbAmount FROM  hosteldetails AS hos INNER JOIN  Amenities AS amen ON hos.id = amen.Hostel_Id  INNER JOIN  EbAmount AS eb ON hos.id = eb.Hostel_Id where  hos.id = ${user.Hostel_Id}`, function (err, existingData) {
+//         if (err) {
+//             console.error("Error fetching hosteldetails:", err);
+//             return;
+//         }
+
+//         console.log("existingData", existingData)
+//         connection.query(`SELECT price FROM hostelrooms WHERE Hostel_Id = ${user.Hostel_Id} AND Floor_Id = ${user.Floor} AND Room_Id = ${user.Rooms}`, function (err, roomData) {
+//             if (err) {
+//                 console.error("Error fetching room data:", err);
+//                 return;
+//             }
+
+//             let roomPrice;
+//             const currentDate = moment(new Date()).format('YYYY-MM-DD');
+//             const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
+//             let dueDate, invoiceDate;
+//             let invoiceNo = '';
+
+//             const currentMonth = moment(currentDate).month() + 1;
+//             const currentYear = moment(currentDate).year();
+//             const createdAtMonth = moment(joinDate).month() + 1;
+//             const createdAtYear = moment(joinDate).year();
+
+//             roomPrice = roomData[0].price;
+
+//             if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+//                 dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+//                 invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+//             } else {
+//                 dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+//                 invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
+//             }
+
+//             const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+//             const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+
+//             const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+
+//             let AdvanceAmount = 0
+//             let HostelBasedEb = 0
+
+//             if (existingData.length > 0) {
+//                 let filteredArray = existingData.filter(item => item.Hostel_Id == user.Hostel_Id);
+//                 // console.log("filteredArray", filteredArray)
+
+//                 let tempArray = [];
+
+//                 tempArray.push(user)
+
+//                 // console.log("tempArray", tempArray);
+
+//                 // if (filteredArray[0].isHostelBased == 1) {
+//                 //     HostelBasedEb = filteredArray[0].EbAmount / (5 + 1)
+//                 //     HostelBasedEb = Math.round(HostelBasedEb);
+//                 //     console.log(" HostelBasedEb", HostelBasedEb)
+//                 //     console.log("NumberOFUsers", 5)
+//                 // }
+//                 // if(filteredArray[0].isHostelBased == 1){
+//                 //     const filteredUserFortempArray = tempArray.filter((view=> view.Hostel_Id == user.Hostel_Id ))
+//                 //     // console.log("filteredUserFortempArray",filteredUserFortempArray)
+//                 //     HostelBasedEb = filteredArray[0].EbAmount / (filteredUserFortempArray.length)
+//                 //     console.log("filteredArray[0].EbAmount",filteredArray[0].EbAmount)
+//                 //     // HostelBasedEb = Math.round(HostelBasedEb);
+//                 //     console.log(" HostelBasedEb", HostelBasedEb)
+//                 //     console.log("NumberOFUsers")
+//                 // }
+//                 console.log("AdvanceAmount...????....",AdvanceAmount)
+//                 connection.query(`SELECT * from hostel WHERE Hostel_Id = ${user.Hostel_Id}`, function (error, result) {
+//                     console.log("result",result)
+//                     if (filteredArray[0].isHostelBased === 1) {
+//                         // console.log("filteredArray[0].EbAmount", filteredArray[0].EbAmount);
+//                         // const filteredUserFortempArray = tempArray.filter(view => view.Hostel_Id === user.Hostel_Id);
+                    
+//                         if (result.length > 0) {
+//                             HostelBasedEb = filteredArray[0].EbAmount / result.length;
+//                             console.log("filteredArray[0].EbAmount", filteredArray[0].EbAmount);
+//                             console.log("HostelBasedEb", HostelBasedEb);
+//                             console.log("NumberOFUsers:", result.length);
+                            
+//                         } else {
+//                             console.log("No users found for the given hostel ID");
+//                         }
+                    
+                    
+                    
+                   
+    
+//                     if (filteredArray[0].setAsDefault == 0 && filteredArray[0].Status == 1) {
+//                         AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + filteredArray[0].Amount + HostelBasedEb;
+//                         console.log("AdvanceAmount...?.....?",AdvanceAmount)
+//                     } else {
+//                         AdvanceAmount = (roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays + HostelBasedEb;
+//                         console.log("AdvanceAmount...????",AdvanceAmount)
+//                     }
+    
+//                     // if (filteredArray[0].isHostelBased == 1) {
+//                     //     AdvanceAmount += HostelBasedEb;
+//                     // }
+    
+    
+    
+//                     const userID = user.User_Id.toString().slice(0, 4);
+    
+//                     if (filteredArray[0].prefix != '' && filteredArray[0].suffix != '' && filteredArray[0].prefix != undefined && filteredArray[0].suffix != undefined && filteredArray[0].prefix != '' && filteredArray[0].suffix != '') {
+//                         invoiceNo = filteredArray[0].prefix + filteredArray[0].suffix + user.Name + currentMonth + currentYear;
+//                     } else {
+//                         invoiceNo = 'INVC' + currentMonth + currentYear + userID;
+//                     }
+//                 } else {
+//                     AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + HostelBasedEb;
+//                     console.log("AdvanceAmount...????1234",AdvanceAmount)
+//                     const userID = user.User_Id.toString().slice(0, 4);
+//                     invoiceNo = 'INVC' + currentMonth + currentYear + userID;
+//                 }
+//                     }
+//                 )}
+//                 AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + HostelBasedEb;
+//                 console.log("advance rupees",AdvanceAmount);
+
+            
+//             const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
+
+//             connection.query(query, function (error, data) {
+//                 if (error) {
+//                     console.error("Error inserting invoice data for user:", user.User_Id, error);
+//                     return;
+//                 }
+//             });
+//         });
+//     });
+// }
+
+
+
+// function calculateAndInsertInvoice(connection, user) {
+//     console.log("user **", user);
+//     connection.query(`SELECT  hos.id AS Hosteldetails_Id, hos.prefix, hos.suffix,  hos.Name, hos.isHostelBased, amen.AmenitiesName, amen.Amount,amen.setAsDefault, amen.Hostel_Id, amen.Status, eb.Hostel_Id AS EbHostel_Id, eb.Floor,eb.Room, eb.EbAmount FROM  hosteldetails AS hos INNER JOIN  Amenities AS amen ON hos.id = amen.Hostel_Id  INNER JOIN  EbAmount AS eb ON hos.id = eb.Hostel_Id where  hos.id = ${user.Hostel_Id}`, function (err, existingData) {
+//         if (err) {
+//             console.error("Error fetching hosteldetails:", err);
+//             return;
+//         }
+
+//         console.log("existingData", existingData)
+//         connection.query(`SELECT price FROM hostelrooms WHERE Hostel_Id = ${user.Hostel_Id} AND Floor_Id = ${user.Floor} AND Room_Id = ${user.Rooms}`, function (err, roomData) {
+//             if (err) {
+//                 console.error("Error fetching room data:", err);
+//                 return;
+//             }
+
+//             let roomPrice;
+//             const currentDate = moment(new Date()).format('YYYY-MM-DD');
+//             const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
+//             let dueDate, invoiceDate;
+//             let invoiceNo = '';
+
+//             const currentMonth = moment(currentDate).month() + 1;
+//             const currentYear = moment(currentDate).year();
+//             const createdAtMonth = moment(joinDate).month() + 1;
+//             const createdAtYear = moment(joinDate).year();
+
+//             roomPrice = roomData[0].price;
+
+//             if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+//                 dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+//                 invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+//             } else {
+//                 dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+//                 invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
+//             }
+
+//             const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+//             const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+
+//             const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+
+//             let AdvanceAmount = 0
+//             let HostelBasedEb = 0
+
+//             if (existingData.length > 0) {
+//                 let filteredArray = existingData.filter(item => item.Hostel_Id == user.Hostel_Id);
+//                 // console.log("filteredArray", filteredArray)
+
+//                 let tempArray = [];
+
+//                 tempArray.push(user)
+
+//                 // console.log("tempArray", tempArray);
+
+//                 // if (filteredArray[0].isHostelBased == 1) {
+//                 //     HostelBasedEb = filteredArray[0].EbAmount / (5 + 1)
+//                 //     HostelBasedEb = Math.round(HostelBasedEb);
+//                 //     console.log(" HostelBasedEb", HostelBasedEb)
+//                 //     console.log("NumberOFUsers", 5)
+//                 // }
+//                 // if(filteredArray[0].isHostelBased == 1){
+//                 //     const filteredUserFortempArray = tempArray.filter((view=> view.Hostel_Id == user.Hostel_Id ))
+//                 //     // console.log("filteredUserFortempArray",filteredUserFortempArray)
+//                 //     HostelBasedEb = filteredArray[0].EbAmount / (filteredUserFortempArray.length)
+//                 //     console.log("filteredArray[0].EbAmount",filteredArray[0].EbAmount)
+//                 //     // HostelBasedEb = Math.round(HostelBasedEb);
+//                 //     console.log(" HostelBasedEb", HostelBasedEb)
+//                 //     console.log("NumberOFUsers")
+//                 // }
+//                 console.log("AdvanceAmount...????....",AdvanceAmount)
+//                 connection.query(`SELECT * from hostel WHERE Hostel_Id = ${user.Hostel_Id}`, function (error, result) {
+//                     console.log("result",result)
+//                     if (filteredArray[0].isHostelBased === 1) {
+//                         // console.log("filteredArray[0].EbAmount", filteredArray[0].EbAmount);
+//                         // const filteredUserFortempArray = tempArray.filter(view => view.Hostel_Id === user.Hostel_Id);
+                    
+//                         if (result.length > 0) {
+//                             HostelBasedEb = filteredArray[0].EbAmount / result.length;
+//                             console.log("filteredArray[0].EbAmount", filteredArray[0].EbAmount);
+//                             console.log("HostelBasedEb", HostelBasedEb);
+//                             console.log("NumberOFUsers:", result.length);
+                            
+//                         } else {
+//                             console.log("No users found for the given hostel ID");
+//                         }
+                    
+                    
+                    
+                   
+    
+//                     if (filteredArray[0].setAsDefault == 0 && filteredArray[0].Status == 1) {
+//                         AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + filteredArray[0].Amount + HostelBasedEb;
+//                         console.log("AdvanceAmount...?.....?",AdvanceAmount)
+//                     } else {
+//                         AdvanceAmount = (roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays + HostelBasedEb;
+//                         console.log("AdvanceAmount...????",AdvanceAmount)
+//                     }
+    
+//                     if (filteredArray[0].isHostelBased == 1) {
+//                        const lastAmount= AdvanceAmount ;
+//                         console.log("lastAmount",lastAmount)
+//                     }
+    
+    
+    
+//                     const userID = user.User_Id.toString().slice(0, 4);
+    
+//                     if (filteredArray[0].prefix != '' && filteredArray[0].suffix != '' && filteredArray[0].prefix != undefined && filteredArray[0].suffix != undefined && filteredArray[0].prefix != '' && filteredArray[0].suffix != '') {
+//                         invoiceNo = filteredArray[0].prefix + filteredArray[0].suffix + user.Name + currentMonth + currentYear;
+//                     } else {
+//                         invoiceNo = 'INVC' + currentMonth + currentYear + userID;
+//                     }
+//                 } else {
+//                     AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + HostelBasedEb;
+//                     console.log("AdvanceAmount...????1234",AdvanceAmount)
+//                     const userID = user.User_Id.toString().slice(0, 4);
+//                     invoiceNo = 'INVC' + currentMonth + currentYear + userID;
+//                 }
+//                     }
+//                 )}
+                
+//                 AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + HostelBasedEb;
+//                 console.log("advance rupees",AdvanceAmount);
+
+            
+//             const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
+
+//             connection.query(query, function (error, data) {
+//                 if (error) {
+//                     console.error("Error inserting invoice data for user:", user.User_Id, error);
+//                     return;
+//                 }
+//             });
+//         });
+//     });
+// }
+
 function calculateAndInsertInvoice(connection, user) {
-    console.log("user.Hostel_Id", user);
-    connection.query(`SELECT  hos.id AS Hosteldetails_Id, hos.prefix, hos.suffix,  hos.Name, hos.isHostelBased, amen.AmenitiesName, amen.Amount,amen.setAsDefault, amen.Hostel_Id, amen.Status, eb.Hostel_Id AS EbHostel_Id, eb.Floor,eb.Room, eb.EbAmount FROM  hosteldetails AS hos INNER JOIN  Amenities AS amen ON hos.id = amen.Hostel_Id  INNER JOIN  EbAmount AS eb ON hos.id = eb.Hostel_Id where  hos.id = ${user.Hostel_Id}`, function (err, existingData) {
+    console.log("user **", user);
+    connection.query(`SELECT hos.id AS Hosteldetails_Id, hos.prefix, hos.suffix, hos.Name, hos.isHostelBased, amen.AmenitiesName, amen.Amount, amen.setAsDefault, amen.Hostel_Id, amen.Status, eb.Hostel_Id AS EbHostel_Id, eb.Floor, eb.Room, eb.EbAmount FROM hosteldetails AS hos INNER JOIN Amenities AS amen ON hos.id = amen.Hostel_Id INNER JOIN EbAmount AS eb ON hos.id = eb.Hostel_Id WHERE hos.id = ${user.Hostel_Id}`, function (err, existingData) {
         if (err) {
             console.error("Error fetching hosteldetails:", err);
             return;
         }
 
+        console.log("existingData", existingData)
         connection.query(`SELECT price FROM hostelrooms WHERE Hostel_Id = ${user.Hostel_Id} AND Floor_Id = ${user.Floor} AND Room_Id = ${user.Rooms}`, function (err, roomData) {
             if (err) {
                 console.error("Error fetching room data:", err);
@@ -61,203 +426,58 @@ function calculateAndInsertInvoice(connection, user) {
 
             const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
 
-            let AdvanceAmount;
+            let AdvanceAmount = 0;
+            let HostelBasedEb = 0;
 
             if (existingData.length > 0) {
                 let filteredArray = existingData.filter(item => item.Hostel_Id == user.Hostel_Id);
 
-                if (filteredArray[0].isHostelBased) {
-                    AdvanceAmount = filteredArray[0].EbAmount / existingData.length;
-                } else {
-                    let roomCount = existingData.filter(item => item.Hostel_Id == user.Hostel_Id && item.Floor == user.Floor && item.Room == user.Rooms).length;
-                    console.log("roomCount",roomCount)
-                    AdvanceAmount = filteredArray.reduce((total, item) => total + (item.EbAmount / existingData.length), 0) / roomCount;
-                }
+                console.log("AdvanceAmount...????....", AdvanceAmount);
+                connection.query(`SELECT * from hostel WHERE Hostel_Id = ${user.Hostel_Id}`, function (error, result) {
+                    console.log("result", result)
+                    if (filteredArray[0].isHostelBased === 1) {
+                        if (result.length > 0) {
+                            HostelBasedEb = filteredArray[0].EbAmount / result.length;
+                            console.log("filteredArray[0].EbAmount", filteredArray[0].EbAmount);
+                            console.log("HostelBasedEb", HostelBasedEb);
+                            console.log("NumberOFUsers:", result.length);
+                        } else {
+                            console.log("No users found for the given hostel ID");
+                        }
 
-                const userID = user.User_Id.toString().slice(0, 4);
+                        if (filteredArray[0].setAsDefault == 0 && filteredArray[0].Status == 1) {
+                            AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + filteredArray[0].Amount + HostelBasedEb;
+                            console.log("AdvanceAmount...?.....?", AdvanceAmount);
+                        } else {
+                            AdvanceAmount = (roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays + HostelBasedEb;
+                            console.log("AdvanceAmount...????", AdvanceAmount);
+                        }
+                    }
 
-                if (filteredArray[0].prefix && filteredArray[0].suffix) {
-                    invoiceNo = filteredArray[0].prefix + filteredArray[0].suffix + user.Name + currentMonth + currentYear;
-                } else {
-                    invoiceNo = 'INVC' + currentMonth + currentYear + userID; 
-                }
-            } else {
-                AdvanceAmount = roomPrice / moment(formattedDueDate).daysInMonth() * numberOfDays;
-                const userID = user.User_Id.toString().slice(0, 4);
-                invoiceNo = 'INVC' + currentMonth + currentYear + userID;
+                    const userID = user.User_Id.toString().slice(0, 4);
+
+                    if (filteredArray[0].prefix != '' && filteredArray[0].suffix != '' && filteredArray[0].prefix != undefined && filteredArray[0].suffix != undefined && filteredArray[0].prefix != '' && filteredArray[0].suffix != '') {
+                        invoiceNo = filteredArray[0].prefix + filteredArray[0].suffix + user.Name + currentMonth + currentYear;
+                    } else {
+                        invoiceNo = 'INVC' + currentMonth + currentYear + userID;
+                    }
+                });
             }
-const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, '${AdvanceAmount}','${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
+
+            AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + HostelBasedEb;
+            console.log("advance rupees", AdvanceAmount);
+
             // const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
 
-            connection.query(query, function (error, data) {
-                if (error) {
-                    console.error("Error inserting invoice data for user:", user.User_Id, error);
-                    return;
-                }
-            });
+            // connection.query(query, function (error, data) {
+            //     if (error) {
+            //         console.error("Error inserting invoice data for user:", user.User_Id, error);
+            //         return;
+            //     }
+            // });
         });
     });
 }
-
-
-
-
-
-// function calculateAndInsertInvoice(connection, user) {
-//     console.log("user.Hostel_Id", user);
-//     connection.query(`SELECT  hos.id AS Hosteldetails_Id, hos.prefix, hos.suffix,  hos.Name, hos.isHostelBased, amen.AmenitiesName, amen.Amount,amen.setAsDefault, amen.Hostel_Id, amen.Status, eb.Hostel_Id AS EbHostel_Id, eb.Floor,eb.Room, eb.EbAmount FROM  hosteldetails AS hos INNER JOIN  Amenities AS amen ON hos.id = amen.Hostel_Id  INNER JOIN  EbAmount AS eb ON hos.id = eb.Hostel_Id where  hos.id = ${user.Hostel_Id}`, function (err, existingData) {
-//         if (err) {
-//             console.error("Error fetching hosteldetails:", err);
-//             return;
-//         }
-
-//         connection.query(`SELECT price FROM hostelrooms WHERE Hostel_Id = ${user.Hostel_Id} AND Floor_Id = ${user.Floor} AND Room_Id = ${user.Rooms}`, function (err, roomData) {
-//             if (err) {
-//                 console.error("Error fetching room data:", err);
-//                 return;
-//             }
-
-//             let roomPrice;
-//             const currentDate = moment(new Date()).format('YYYY-MM-DD');
-//             const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-//             let dueDate, invoiceDate;
-//             let invoiceNo = '';
-
-//             const currentMonth = moment(currentDate).month() + 1;
-//             const currentYear = moment(currentDate).year();
-//             const createdAtMonth = moment(joinDate).month() + 1;
-//             const createdAtYear = moment(joinDate).year();
-
-//             roomPrice = roomData[0].price;
-
-//             if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
-//                 dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
-//                 invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-//             } else {
-//                 dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
-//                 invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
-//             }
-
-//             const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-//             const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-
-//             const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
-
-//             let AdvanceAmount;
-
-//             if (existingData.length > 0) {
-//                 let filteredArray = existingData.filter(item => item.Hostel_Id == user.Hostel_Id);
-
-//                 if (filteredArray[0].setAsDefault == 0 && filteredArray[0].Status == 1) {
-//                     AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + filteredArray[0].Amount;
-//                 } else {
-//                     AdvanceAmount = (roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays;
-//                 }
-
-//                 const userID = user.User_Id.toString().slice(0, 4);
-
-//                 if (filteredArray[0].prefix != '' && filteredArray[0].suffix != ''  && filteredArray[0].prefix != undefined && filteredArray[0].suffix != undefined  && filteredArray[0].prefix != '' && filteredArray[0].suffix != '') {
-//                     invoiceNo = filteredArray[0].prefix + filteredArray[0].suffix + user.Name + currentMonth + currentYear;
-//                 } else {
-//                     invoiceNo = 'INVC' + currentMonth + currentYear + userID; 
-//                 }
-//             } else {
-//                 AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays);
-//                 const userID = user.User_Id.toString().slice(0, 4);
-//                 invoiceNo = 'INVC' + currentMonth + currentYear + userID;
-//             }
-
-//             const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
-
-//             connection.query(query, function (error, data) {
-//                 if (error) {
-//                     console.error("Error inserting invoice data for user:", user.User_Id, error);
-//                     return;
-//                 }
-//             });
-//         });
-//     });
-// }
-
-
-
-// function calculateAndInsertInvoice(connection, user) {
-//     console.log("user.Hostel_Id", user);
-//     connection.query(`SELECT  hos.id AS Hosteldetails_Id, hos.prefix, hos.suffix,  hos.Name, hos.isHostelBased, amen.AmenitiesName, amen.Amount,amen.setAsDefault, amen.Hostel_Id, amen.Status, eb.Hostel_Id AS EbHostel_Id, eb.Floor,eb.Room, eb.EbAmount FROM  hosteldetails AS hos INNER JOIN  Amenities AS amen ON hos.id = amen.Hostel_Id  INNER JOIN  EbAmount AS eb ON hos.id = eb.Hostel_Id where  hos.id = ${user.Hostel_Id}`, function (err, existingData) {
-//         if (err) {
-//             console.error("Error fetching hosteldetails:", err);
-//             return;
-//         }
-
-//         connection.query(`SELECT price FROM hostelrooms WHERE Hostel_Id = ${user.Hostel_Id} AND Floor_Id = ${user.Floor} AND Room_Id = ${user.Rooms}`, function (err, roomData) {
-//             if (err) {
-//                 console.error("Error fetching room data:", err);
-//                 return;
-//             }
-
-//             let roomPrice;
-//             const currentDate = moment(new Date()).format('YYYY-MM-DD');
-//             const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-//             let dueDate, invoiceDate;
-//             let invoiceNo = '';
-
-//             const currentMonth = moment(currentDate).month() + 1;
-//             const currentYear = moment(currentDate).year();
-//             const createdAtMonth = moment(joinDate).month() + 1;
-//             const createdAtYear = moment(joinDate).year();
-
-//             roomPrice = roomData[0].price;
-
-//             if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
-//                 dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
-//                 invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-//             } else {
-//                 dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
-//                 invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
-//             }
-
-//             const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-//             const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-
-//             const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
-
-//             let AdvanceAmount;
-
-//             if (existingData.length > 0) {
-//                 let filteredArray = existingData.filter(item => item.Hostel_Id == user.Hostel_Id);
-
-//                 if (filteredArray[0].setAsDefault == 0 && filteredArray[0].Status == 1) {
-//                     AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + filteredArray[0].Amount;
-//                 } else {
-//                     AdvanceAmount = (roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays;
-//                 }
-
-//                 const userID = user.User_Id.toString().slice(0, 4);
-
-//                 if (filteredArray[0].prefix != '' && filteredArray[0].suffix != ''  && filteredArray[0].prefix != undefined && filteredArray[0].suffix != undefined  && filteredArray[0].prefix != '' && filteredArray[0].suffix != '') {
-//                     invoiceNo = filteredArray[0].prefix + filteredArray[0].suffix + user.Name + currentMonth + currentYear;
-//                 } else {
-//                     invoiceNo = 'INVC' + currentMonth + currentYear + userID; 
-//                 }
-//             } else {
-//                 AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays);
-//                 const userID = user.User_Id.toString().slice(0, 4);
-//                 invoiceNo = 'INVC' + currentMonth + currentYear + userID;
-//             }
-
-//             const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
-
-//             connection.query(query, function (error, data) {
-//                 if (error) {
-//                     console.error("Error inserting invoice data for user:", user.User_Id, error);
-//                     return;
-//                 }
-//             });
-//         });
-//     });
-// }
-
-
 
 
 
@@ -370,225 +590,225 @@ function InvoicePDf(connection, response) {
                 const textStartX = doc.page.width - rightMargin - textWidth;
                 const textStartY = doc.y;
                 const logoPath = './Asset/Logo.jpeg';
-if(hostel.Hostel_Logo){
-                embedImage(doc, hostel.Hostel_Logo, logoPath, (error, body) => {
-                    if (error) {
-                        console.error(error);
-                    } else {
+                if (hostel.Hostel_Logo) {
+                    embedImage(doc, hostel.Hostel_Logo, logoPath, (error, body) => {
+                        if (error) {
+                            console.error(error);
+                        } else {
 
-                        doc.fontSize(10).font('Times-Roman')
-                            .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
-                            .moveDown(0.1);
-                        doc.fontSize(10).font('Times-Roman')
-                            .text(hostel.HostelAddress, textStartX, doc.y, { align: 'right' })
-                            .text(hostel.hostel_PhoneNo, textStartX, doc.y, { align: 'right' })
-                            .text(`Email : ${hostel.HostelEmail_Id}`, textStartX, doc.y, { align: 'right' })
-                            .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
-                            .text('GSTIN:', textStartX, doc.y, { align: 'right' })
-                            .moveDown(2);
+                            doc.fontSize(10).font('Times-Roman')
+                                .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
+                                .moveDown(0.1);
+                            doc.fontSize(10).font('Times-Roman')
+                                .text(hostel.HostelAddress, textStartX, doc.y, { align: 'right' })
+                                .text(hostel.hostel_PhoneNo, textStartX, doc.y, { align: 'right' })
+                                .text(`Email : ${hostel.HostelEmail_Id}`, textStartX, doc.y, { align: 'right' })
+                                .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
+                                .text('GSTIN:', textStartX, doc.y, { align: 'right' })
+                                .moveDown(2);
 
 
-                        doc.fontSize(14).font('Helvetica')
-                            .text('Invoice Receipt', textX, doc.y, { align: 'center' })
-                            .moveDown(0.5);
+                            doc.fontSize(14).font('Helvetica')
+                                .text('Invoice Receipt', textX, doc.y, { align: 'center' })
+                                .moveDown(0.5);
 
-                        const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
+                            const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
 
-                        doc.fontSize(10).font('Times-Roman')
-                            .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
-                            .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
-                            .moveDown(0.5);
+                            doc.fontSize(10).font('Times-Roman')
+                                .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
+                                .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
+                                .moveDown(0.5);
 
-                        doc.fontSize(10).font('Times-Roman')
-                            .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
-                            .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
-                            .moveDown(0.5);
-                        const tableTop = 250;
-                        const startX = 50;
-                        const startY = tableTop;
-                        const cellPadding = 30;
-                        const tableWidth = 500;
-                        const columnWidth = tableWidth / 4;
-                        const marginTop = 80;
+                            doc.fontSize(10).font('Times-Roman')
+                                .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
+                                .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
+                                .moveDown(0.5);
+                            const tableTop = 250;
+                            const startX = 50;
+                            const startY = tableTop;
+                            const cellPadding = 30;
+                            const tableWidth = 500;
+                            const columnWidth = tableWidth / 4;
+                            const marginTop = 80;
 
-                        doc.rect(startX, startY, tableWidth, cellPadding).fillColor('#b2b5b8').fill().stroke();
-                        doc.rect(startX, startY, tableWidth, cellPadding * 2).stroke();
+                            doc.rect(startX, startY, tableWidth, cellPadding).fillColor('#b2b5b8').fill().stroke();
+                            doc.rect(startX, startY, tableWidth, cellPadding * 2).stroke();
 
-                        doc.moveTo(startX + columnWidth, startY).lineTo(startX + columnWidth, startY + cellPadding * 2).stroke();
-                        doc.moveTo(startX + columnWidth * 2, startY).lineTo(startX + columnWidth * 2, startY + cellPadding * 2).stroke();
-                        doc.moveTo(startX + columnWidth * 3, startY).lineTo(startX + columnWidth * 3, startY + cellPadding * 2).stroke();
+                            doc.moveTo(startX + columnWidth, startY).lineTo(startX + columnWidth, startY + cellPadding * 2).stroke();
+                            doc.moveTo(startX + columnWidth * 2, startY).lineTo(startX + columnWidth * 2, startY + cellPadding * 2).stroke();
+                            doc.moveTo(startX + columnWidth * 3, startY).lineTo(startX + columnWidth * 3, startY + cellPadding * 2).stroke();
 
-                        doc.moveTo(startX, startY + cellPadding).lineTo(startX + tableWidth, startY + cellPadding).stroke();
+                            doc.moveTo(startX, startY + cellPadding).lineTo(startX + tableWidth, startY + cellPadding).stroke();
 
-                        doc.fontSize(12).font('Times-Roman').fillColor('#000000');
+                            doc.fontSize(12).font('Times-Roman').fillColor('#000000');
 
-                        let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+                            let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
 
-                        const sNoX = startX + (columnWidth - doc.widthOfString('S.No')) / 2;
-                        const paymentModeX = startX + columnWidth + (columnWidth - doc.widthOfString('Payment Mode')) / 2;
-                        const descriptionX = startX + columnWidth * 2 + (columnWidth - doc.widthOfString('Description')) / 2;
-                        const amountX = startX + columnWidth * 3 + (columnWidth - doc.widthOfString('Amount')) / 2;
+                            const sNoX = startX + (columnWidth - doc.widthOfString('S.No')) / 2;
+                            const paymentModeX = startX + columnWidth + (columnWidth - doc.widthOfString('Payment Mode')) / 2;
+                            const descriptionX = startX + columnWidth * 2 + (columnWidth - doc.widthOfString('Description')) / 2;
+                            const amountX = startX + columnWidth * 3 + (columnWidth - doc.widthOfString('Amount')) / 2;
 
-                        doc.fontSize(10).text('S.No', sNoX, headerY + 5);
-                        doc.fontSize(10).text('Payment Mode', paymentModeX, headerY + 5);
-                        doc.fontSize(10).text('Description', descriptionX, headerY + 5);
-                        doc.fontSize(10).text('Amount', amountX, headerY + 5);
+                            doc.fontSize(10).text('S.No', sNoX, headerY + 5);
+                            doc.fontSize(10).text('Payment Mode', paymentModeX, headerY + 5);
+                            doc.fontSize(10).text('Description', descriptionX, headerY + 5);
+                            doc.fontSize(10).text('Amount', amountX, headerY + 5);
 
-                        const formattedAmount = `${hostel.Amount.toFixed(2)}`;
-                        const paymentMode = 'Online';
-                        const sNo = index + 1;
+                            const formattedAmount = `${hostel.Amount.toFixed(2)}`;
+                            const paymentMode = 'Online';
+                            const sNo = index + 1;
 
-                        headerY += cellPadding;
+                            headerY += cellPadding;
 
-                        let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
-                        doc.fontSize(10).text(sNo.toString(), sNoX, dataY + 5);
-                        doc.fontSize(10).text(paymentMode, paymentModeX, dataY + 5);
-                        doc.fontSize(10).text('Null', descriptionX, dataY + 5);
-                        doc.fontSize(10).text(formattedAmount, amountX, dataY + 5);
+                            let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+                            doc.fontSize(10).text(sNo.toString(), sNoX, dataY + 5);
+                            doc.fontSize(10).text(paymentMode, paymentModeX, dataY + 5);
+                            doc.fontSize(10).text('Null', descriptionX, dataY + 5);
+                            doc.fontSize(10).text(formattedAmount, amountX, dataY + 5);
 
-                        dataY += cellPadding;
+                            dataY += cellPadding;
 
-                        doc.fontSize(10).text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, startY + cellPadding * 2 + 20, { align: 'left', wordSpacing: 1.5 }).moveDown(10);
+                            doc.fontSize(10).text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, startY + cellPadding * 2 + 20, { align: 'left', wordSpacing: 1.5 }).moveDown(10);
 
-                        doc.fontSize(9).text('This is a system generated receipt and no signature is required.', startX, startY + cellPadding * 2 + 20 + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
-                        doc.end();
+                            doc.fontSize(9).text('This is a system generated receipt and no signature is required.', startX, startY + cellPadding * 2 + 20 + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
+                            doc.end();
 
-                        stream.on('finish', function () {
-                            console.log(`PDF generated successfully for ${hostel.UserName}`);
-                            const fileContent = fs.readFileSync(filename);
-                            pdfDetails.push({
-                                filename: filename,
-                                fileContent: fs.readFileSync(filename),
-                                user: hostel.User_Id
+                            stream.on('finish', function () {
+                                console.log(`PDF generated successfully for ${hostel.UserName}`);
+                                const fileContent = fs.readFileSync(filename);
+                                pdfDetails.push({
+                                    filename: filename,
+                                    fileContent: fs.readFileSync(filename),
+                                    user: hostel.User_Id
+                                });
+
+                                uploadedPDFs++;
+                                if (uploadedPDFs === totalPDFs) {
+                                    deletePDfs(filenames);
+                                    uploadToS3(filenames, response, pdfDetails, connection);
+                                }
                             });
 
-                            uploadedPDFs++;
-                            if (uploadedPDFs === totalPDFs) {
-                                deletePDfs(filenames);
-                                uploadToS3(filenames, response, pdfDetails, connection);
-                            }
+
+
+
+
+                        }
+                    });
+                } else {
+                    doc.image(logoPath, {
+                        fit: [80, 100],
+                        align: 'center',
+                        valign: 'top',
+                        margin: 50
+                    });
+
+                    doc.fontSize(10).font('Times-Roman')
+                        .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
+                        .moveDown(0.1);
+                    doc.fontSize(10).font('Times-Roman')
+                        .text(hostel.HostelAddress, textStartX, doc.y, { align: 'right' })
+                        .text(hostel.hostel_PhoneNo, textStartX, doc.y, { align: 'right' })
+                        .text(`Email : ${hostel.HostelEmail_Id}`, textStartX, doc.y, { align: 'right' })
+                        .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
+                        .text('GSTIN:', textStartX, doc.y, { align: 'right' })
+                        .moveDown(2);
+
+
+                    doc.fontSize(14).font('Helvetica')
+                        .text('Invoice Receipt', textX, doc.y, { align: 'center' })
+                        .moveDown(0.5);
+
+                    const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
+
+                    doc.fontSize(10).font('Times-Roman')
+                        .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
+                        .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
+                        .moveDown(0.5);
+
+                    doc.fontSize(10).font('Times-Roman')
+                        .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
+                        .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
+                        .moveDown(0.5);
+                    const tableTop = 250;
+                    const startX = 50;
+                    const startY = tableTop;
+                    const cellPadding = 30;
+                    const tableWidth = 500;
+                    const columnWidth = tableWidth / 4;
+                    const marginTop = 80;
+
+                    doc.rect(startX, startY, tableWidth, cellPadding).fillColor('#b2b5b8').fill().stroke();
+                    doc.rect(startX, startY, tableWidth, cellPadding * 2).stroke();
+
+                    doc.moveTo(startX + columnWidth, startY).lineTo(startX + columnWidth, startY + cellPadding * 2).stroke();
+                    doc.moveTo(startX + columnWidth * 2, startY).lineTo(startX + columnWidth * 2, startY + cellPadding * 2).stroke();
+                    doc.moveTo(startX + columnWidth * 3, startY).lineTo(startX + columnWidth * 3, startY + cellPadding * 2).stroke();
+
+                    doc.moveTo(startX, startY + cellPadding).lineTo(startX + tableWidth, startY + cellPadding).stroke();
+
+                    doc.fontSize(12).font('Times-Roman').fillColor('#000000');
+
+                    let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+
+                    const sNoX = startX + (columnWidth - doc.widthOfString('S.No')) / 2;
+                    const paymentModeX = startX + columnWidth + (columnWidth - doc.widthOfString('Payment Mode')) / 2;
+                    const descriptionX = startX + columnWidth * 2 + (columnWidth - doc.widthOfString('Description')) / 2;
+                    const amountX = startX + columnWidth * 3 + (columnWidth - doc.widthOfString('Amount')) / 2;
+
+                    doc.fontSize(10).text('S.No', sNoX, headerY + 5);
+                    doc.fontSize(10).text('Payment Mode', paymentModeX, headerY + 5);
+                    doc.fontSize(10).text('Description', descriptionX, headerY + 5);
+                    doc.fontSize(10).text('Amount', amountX, headerY + 5);
+
+                    const formattedAmount = `${hostel.Amount.toFixed(2)}`;
+                    const paymentMode = 'Online';
+                    const sNo = index + 1;
+
+                    headerY += cellPadding;
+
+                    let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+                    doc.fontSize(10).text(sNo.toString(), sNoX, dataY + 5);
+                    doc.fontSize(10).text(paymentMode, paymentModeX, dataY + 5);
+                    doc.fontSize(10).text('Null', descriptionX, dataY + 5);
+                    doc.fontSize(10).text(formattedAmount, amountX, dataY + 5);
+
+                    dataY += cellPadding;
+
+                    doc.fontSize(10).text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, startY + cellPadding * 2 + 20, { align: 'left', wordSpacing: 1.5 }).moveDown(10);
+
+                    doc.fontSize(9).text('This is a system generated receipt and no signature is required.', startX, startY + cellPadding * 2 + 20 + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
+                    doc.end();
+
+                    stream.on('finish', function () {
+                        console.log(`PDF generated successfully for ${hostel.UserName}`);
+                        const fileContent = fs.readFileSync(filename);
+                        pdfDetails.push({
+                            filename: filename,
+                            fileContent: fs.readFileSync(filename),
+                            user: hostel.User_Id
                         });
 
+                        uploadedPDFs++;
+                        if (uploadedPDFs === totalPDFs) {
+                            deletePDfs(filenames);
+                            uploadToS3(filenames, response, pdfDetails, connection);
+                        }
+                    });
 
 
-                    
-                    
-                    }
-                });
-            }else{
-                doc.image(logoPath, {
-                    fit: [80, 100],
-                    align: 'center',
-                    valign: 'top',
-                    margin: 50
-                });
-
-                doc.fontSize(10).font('Times-Roman')
-                .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
-                .moveDown(0.1);
-            doc.fontSize(10).font('Times-Roman')
-                .text(hostel.HostelAddress, textStartX, doc.y, { align: 'right' })
-                .text(hostel.hostel_PhoneNo, textStartX, doc.y, { align: 'right' })
-                .text(`Email : ${hostel.HostelEmail_Id}`, textStartX, doc.y, { align: 'right' })
-                .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
-                .text('GSTIN:', textStartX, doc.y, { align: 'right' })
-                .moveDown(2);
 
 
-            doc.fontSize(14).font('Helvetica')
-                .text('Invoice Receipt', textX, doc.y, { align: 'center' })
-                .moveDown(0.5);
 
-            const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
 
-            doc.fontSize(10).font('Times-Roman')
-                .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
-                .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
-                .moveDown(0.5);
 
-            doc.fontSize(10).font('Times-Roman')
-                .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
-                .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
-                .moveDown(0.5);
-            const tableTop = 250;
-            const startX = 50;
-            const startY = tableTop;
-            const cellPadding = 30;
-            const tableWidth = 500;
-            const columnWidth = tableWidth / 4;
-            const marginTop = 80;
 
-            doc.rect(startX, startY, tableWidth, cellPadding).fillColor('#b2b5b8').fill().stroke();
-            doc.rect(startX, startY, tableWidth, cellPadding * 2).stroke();
 
-            doc.moveTo(startX + columnWidth, startY).lineTo(startX + columnWidth, startY + cellPadding * 2).stroke();
-            doc.moveTo(startX + columnWidth * 2, startY).lineTo(startX + columnWidth * 2, startY + cellPadding * 2).stroke();
-            doc.moveTo(startX + columnWidth * 3, startY).lineTo(startX + columnWidth * 3, startY + cellPadding * 2).stroke();
 
-            doc.moveTo(startX, startY + cellPadding).lineTo(startX + tableWidth, startY + cellPadding).stroke();
 
-            doc.fontSize(12).font('Times-Roman').fillColor('#000000');
 
-            let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
 
-            const sNoX = startX + (columnWidth - doc.widthOfString('S.No')) / 2;
-            const paymentModeX = startX + columnWidth + (columnWidth - doc.widthOfString('Payment Mode')) / 2;
-            const descriptionX = startX + columnWidth * 2 + (columnWidth - doc.widthOfString('Description')) / 2;
-            const amountX = startX + columnWidth * 3 + (columnWidth - doc.widthOfString('Amount')) / 2;
-
-            doc.fontSize(10).text('S.No', sNoX, headerY + 5);
-            doc.fontSize(10).text('Payment Mode', paymentModeX, headerY + 5);
-            doc.fontSize(10).text('Description', descriptionX, headerY + 5);
-            doc.fontSize(10).text('Amount', amountX, headerY + 5);
-
-            const formattedAmount = `${hostel.Amount.toFixed(2)}`;
-            const paymentMode = 'Online';
-            const sNo = index + 1;
-
-            headerY += cellPadding;
-
-            let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
-            doc.fontSize(10).text(sNo.toString(), sNoX, dataY + 5);
-            doc.fontSize(10).text(paymentMode, paymentModeX, dataY + 5);
-            doc.fontSize(10).text('Null', descriptionX, dataY + 5);
-            doc.fontSize(10).text(formattedAmount, amountX, dataY + 5);
-
-            dataY += cellPadding;
-
-            doc.fontSize(10).text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, startY + cellPadding * 2 + 20, { align: 'left', wordSpacing: 1.5 }).moveDown(10);
-
-            doc.fontSize(9).text('This is a system generated receipt and no signature is required.', startX, startY + cellPadding * 2 + 20 + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
-            doc.end();
-
-            stream.on('finish', function () {
-                console.log(`PDF generated successfully for ${hostel.UserName}`);
-                const fileContent = fs.readFileSync(filename);
-                pdfDetails.push({
-                    filename: filename,
-                    fileContent: fs.readFileSync(filename),
-                    user: hostel.User_Id
-                });
-
-                uploadedPDFs++;
-                if (uploadedPDFs === totalPDFs) {
-                    deletePDfs(filenames);
-                    uploadToS3(filenames, response, pdfDetails, connection);
                 }
-            });
-
-
-
-
-
-
-
-
-
-
-
-
-
-            }
 
 
 
@@ -1116,16 +1336,16 @@ function EbAmount(connection, atten, response) {
     if (atten) {
         connection.query(`INSERT INTO EbAmount (hostel_Id, Floor, Room, EbAmount) VALUES (\'${atten.hostel_Id}\',\'${atten.Floor}\', ${atten.Room},\'${atten.EbAmount}\')`, function (error, data) {
             if (error) {
-                console.error(error); 
+                console.error(error);
                 response.status(202).json({ message: 'Database error' });
             } else {
                 response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
             }
         });
-  } 
- 
+    }
+
 };
 
 
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf,EbAmount };
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount };
