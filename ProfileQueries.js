@@ -295,6 +295,8 @@ function AmenitiesSetting(connection, reqData, response) {
                             return item.Amnities_Name.toLowerCase() === reqData.AmenitiesName.toLowerCase();
                            
                         });
+                       
+                        // console.log("AmnitiName_ID",AmnitiName_ID)
             
                         console.log("AmnitiName", AmnitiName);
                         if (AmnitiName.length>0) {

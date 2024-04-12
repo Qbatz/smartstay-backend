@@ -78,9 +78,7 @@ function calculateAndInsertInvoice(connection, user) {
             let roomBasedEb = 0;
 
             if (existingData.length > 0) {
-                let filteredArray = existingData.filter(item => item.Hostel_Id == user.Hostel_Id   );
-                
-
+                let filteredArray = existingData.filter(item => item.Hostel_Id == user.Hostel_Id   );   
                 console.log("AdvanceAmount...????....", AdvanceAmount);
                 connection.query(`SELECT * from hostel WHERE Hostel_Id = ${user.Hostel_Id} `, function (error, result) {
                     console.log("result", result);
@@ -100,10 +98,11 @@ function calculateAndInsertInvoice(connection, user) {
                     }
 
                     connection.query(`SELECT * from hostel WHERE Hostel_Id = ${user.Hostel_Id} AND Floor = ${user.Floor} AND Rooms = ${user.Rooms}`, function (error, result) {
+                        let filteredArrayOBj = result.filter(item => item.Hostel_Id == user.Hostel_Id && item.Floor == user.Floor &&   item.Room == user.Rooms); 
                         if (result.length > 0) {
                             if (filteredArray[0].isHostelBased === 0) {
                                 roomBasedEb = filteredArray[0].EbAmount  / result.length;
-                                console.log("filteredArray[0].EbAmount", filteredArray[0].EbAmount);
+                                console.log("filteredArray[0].EbAmount.....?", filteredArray[0].EbAmount);
                                 console.log("HostelBasedEb", HostelBasedEb);
                                 console.log("NumberOFUsers:", result.length);
                                 console.log("AdvanceAmount before", AdvanceAmount);
@@ -1024,7 +1023,7 @@ function EbAmount(connection, atten, response) {
 };
 function AmenitiesName(connection, atten, response) {
     if (atten) {
-        connection.query(`INSERT INTO AmnitiesName (id,Amnities_Name) VALUES (\'${atten.Amnities_Name}\',\'${atten.id}\')`, function (error, data) {
+        connection.query(`INSERT INTO AmnitiesName (id,Amnities_Name) VALUES (\'${atten.id}\',\'${atten.Amnities_Name}\')`, function (error, data) {
             if (error) {
                 console.error(error);
                 response.status(202).json({ message: 'Database error' });
