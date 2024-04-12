@@ -5,7 +5,7 @@ const nodemailer = require('nodemailer');
 
 function createAccountForLogin(connection, reqBodyData, response) {
     if (reqBodyData.id) {
-        connection.query(`UPDATE createaccount SET Name='${reqBodyData.name}', mobileNo='${reqBodyData.mobileNo}', email_Id='${reqBodyData.emailId}', Address='${reqBodyData.Address}', Country='${reqBodyData.Country}', City='${reqBodyData.City}', State='${reqBodyData.State}' WHERE id='${reqBodyData.id}'`, function (error, data) {
+        connection.query(`UPDATE createaccount SET Name='${reqBodyData.name}', mobileNo='${reqBodyData.mobileNo}', email_Id='${reqBodyData.emailId}', Address='${reqBodyData.Address}', Country='${reqBodyData.Country}', City='${reqBodyData.City}', State='${reqBodyData.State}',profile='${reqBodyData.profile}' WHERE id='${reqBodyData.id}'`, function (error, data) {
             if (error) {
                 console.log("error", error);
                 response.status(201).json({ message: "No User Found" });

@@ -78,7 +78,8 @@ function calculateAndInsertInvoice(connection, user) {
             let roomBasedEb = 0;
 
             if (existingData.length > 0) {
-                let filteredArray = existingData.filter(item => item.Hostel_Id == user.Hostel_Id);
+                let filteredArray = existingData.filter(item => item.Hostel_Id == user.Hostel_Id   );
+                
 
                 console.log("AdvanceAmount...????....", AdvanceAmount);
                 connection.query(`SELECT * from hostel WHERE Hostel_Id = ${user.Hostel_Id} `, function (error, result) {
@@ -101,7 +102,7 @@ function calculateAndInsertInvoice(connection, user) {
                     connection.query(`SELECT * from hostel WHERE Hostel_Id = ${user.Hostel_Id} AND Floor = ${user.Floor} AND Rooms = ${user.Rooms}`, function (error, result) {
                         if (result.length > 0) {
                             if (filteredArray[0].isHostelBased === 0) {
-                                roomBasedEb = filteredArray[0].EbAmount / result.length;
+                                roomBasedEb = filteredArray[0].EbAmount  / result.length;
                                 console.log("filteredArray[0].EbAmount", filteredArray[0].EbAmount);
                                 console.log("HostelBasedEb", HostelBasedEb);
                                 console.log("NumberOFUsers:", result.length);
@@ -1021,7 +1022,20 @@ function EbAmount(connection, atten, response) {
     }
 
 };
+function AmenitiesName(connection, atten, response) {
+    if (atten) {
+        connection.query(`INSERT INTO AmnitiesName (id,Amnities_Name) VALUES (\'${atten.Amnities_Name}\',\'${atten.id}\')`, function (error, data) {
+            if (error) {
+                console.error(error);
+                response.status(202).json({ message: 'Database error' });
+            } else {
+                response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
+            }
+        });
+    }
+
+};
 
 
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount };
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount,AmenitiesName };

@@ -186,43 +186,147 @@ function UpdateEB(connection, attenArray, response) {
     }
 }
 
-function AmenitiesSetting(connection, reqData, response) { 
-    console.log("reqData", reqData);
-    if (!reqData) {
-        response.status(201).json({ message: 'Missing parameter' });
-        return; 
-    }
+// function AmenitiesSetting(connection, reqData, response) { 
+//     console.log("reqData", reqData);
+//     if (!reqData) {
+//         response.status(201).json({ message: 'Missing parameter' });
+//         return; 
+//     }
     
-       connection.query(`select * from Amenities WHERE Hostel_Id = ${reqData.Hostel_Id}`, function(error, amenitiesData){
-        console.log("amenitiesData",amenitiesData)
-        if(amenitiesData[0]?.Hostel_Id == reqData.Hostel_Id &&
-            amenitiesData[0]?.AmenitiesName.toLowerCase() === reqData.AmenitiesName.toLowerCase()){
-            connection.query(`UPDATE Amenities SET Amount= ${reqData.Amount},setAsDefault= ${reqData.setAsDefault},Status= ${reqData.Status} WHERE Hostel_Id='${reqData.Hostel_Id}' and AmenitiesName ='${reqData.AmenitiesName}'`, function (error, data) {
-                if (error) {
-                    console.error(error); 
-                    response.status(201).json({ message: "doesn't update" });
-                } else {
-                    response.status(200).json({ message: "Update successful" });
-                }
-            });
+//        connection.query(`select * from Amenities WHERE Hostel_Id = ${reqData.Hostel_Id}`, function(error, amenitiesData){
+//         console.log("amenitiesData",amenitiesData)
+//         if(amenitiesData[0]?.Hostel_Id == reqData.Hostel_Id &&
+//             amenitiesData[0]?.AmenitiesName.toLowerCase() === reqData.AmenitiesName.toLowerCase()){
+//             connection.query(`UPDATE Amenities SET Amount= ${reqData.Amount},setAsDefault= ${reqData.setAsDefault},Status= ${reqData.Status} WHERE Hostel_Id='${reqData.Hostel_Id}' and AmenitiesName ='${reqData.AmenitiesName}'`, function (error, data) {
+//                 if (error) {
+//                     console.error(error); 
+//                     response.status(201).json({ message: "doesn't update" });
+//                 } else {
+//                     response.status(200).json({ message: "Update successful" });
+//                 }
+//             });
            
            
-        }
+//         }
         
-         else {
-            connection.query(`INSERT INTO Amenities (AmenitiesName, Amount, setAsDefault, Hostel_Id) VALUES (\'${reqData.AmenitiesName}\',\'${reqData.Amount}\', ${reqData.setAsDefault},\'${reqData.Hostel_Id}\')`, function (error, data) {
-                if (error) {
-                    console.error(error); 
-                    response.status(202).json({ message: 'Database error' });
-                } else {
-                    response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
-                }
-            });
+//          else {
+//             connection.query(`INSERT INTO Amenities (AmenitiesName, Amount, setAsDefault, Hostel_Id) VALUES (\'${reqData.AmenitiesName}\',\'${reqData.Amount}\', ${reqData.setAsDefault},\'${reqData.Hostel_Id}\')`, function (error, data) {
+//                 if (error) {
+//                     console.error(error); 
+//                     response.status(202).json({ message: 'Database error' });
+//                 } else {
+//                     response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
+//                 }
+//             });
            
-        }
-    })
+//         }
+//     })
   
+// }
+function AmenitiesSetting(connection, reqData, response) {
+    console.log("reqData", reqData);
+    if (!reqData  ) {
+        response.status(201).json({ message: 'Missing parameter' });
+        return;
+    }
+    else {
+        connection.query(`select * from Amenities WHERE Hostel_Id = ${reqData.Hostel_Id}`, function (error, amenitiesData) {
+            console.log("amenitiesData", amenitiesData)
+            if (reqData.id) {
+                connection.query(`UPDATE Amenities SET Amount= ${reqData.Amount},setAsDefault= ${reqData.setAsDefault},Status= ${reqData.Status} WHERE Hostel_Id='${reqData.Hostel_Id}' and AmenitiesName ='${reqData.AmenitiesName}'`, function (error, data) {
+                    if (error) {
+                        console.error(error);
+                        response.status(201).json({ message: "doesn't update" });
+                    } else {
+                        response.status(200).json({ message: "Update successful" });
+                    }
+                });
+
+
+            }
+
+            // else {
+            //     connection.query(`select * from AmnitiesName `, function (err, data) {
+            //         console.log("data...?", data)
+            //         if (data) {
+            //             const AmnitiName = data.filter((item) => {
+            //                 return item.Amnities_Name.toLowerCase() === reqData.AmenitiesName.toLowerCase() 
+
+                          
+            //             })
+
+            //             console.log("AmnitiName",AmnitiName)
+            //             if (AmnitiName.length>0) {
+            //                 connection.query(`INSERT INTO Amenities (AmenitiesName, Amount, setAsDefault, Hostel_Id,Amnities_Id) VALUES (\'${reqData.AmenitiesName}\',\'${reqData.Amount}\', ${reqData.setAsDefault},\'${reqData.Hostel_Id}\',\'${reqData.Amnities_Id}\' )`, function (error, data) {
+            //                     if (error) {
+            //                         console.error(error);
+            //                         response.status(202).json({ message: 'Database error' });
+            //                     } else {
+            //                         response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
+            //                     }
+            //                 });
+
+
+            //             }
+            //             else{
+            //                 response.status(201).json({ message: 'No Amnities_Name ' })
+            //             }
+
+            //         }
+            //         else {
+            //             response.status(201).json({ message: 'No Data Found' })
+            //         }
+            //     })
+            //     // connection.query(`INSERT INTO Amenities (AmenitiesName, Amount, setAsDefault, Hostel_Id,Amnities_Id) VALUES (\'${reqData.AmenitiesName}\',\'${reqData.Amount}\', ${reqData.setAsDefault},\'${reqData.Hostel_Id}\',\'${reqData.Hostel_Id}\' ,\'${reqData.Amnities_Id}\')`, function (error, data) {
+            //     //     if (error) {
+            //     //         console.error(error); 
+            //     //         response.status(202).json({ message: 'Database error' });
+            //     //     } else {
+            //     //         response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
+            //     //     }
+            //     // });
+
+            // }
+            else {
+                connection.query(`SELECT * FROM AmnitiesName`, function (err, data) {
+                    console.log("data...?", data)
+                    if (data) {
+                        const AmnitiName = data.filter((item) => {
+                            return item.Amnities_Name.toLowerCase() === reqData.AmenitiesName.toLowerCase();
+                           
+                        });
+            
+                        console.log("AmnitiName", AmnitiName);
+                        if (AmnitiName.length>0) {
+                            const Amnities_Id = AmnitiName[0].id; 
+                            
+                            connection.query(`INSERT INTO Amenities (AmenitiesName, Amount, setAsDefault, Hostel_Id,Status,Amnities_Id) VALUES (\'${reqData.AmenitiesName}\',\'${reqData.Amount}\', ${reqData.setAsDefault},\'${reqData.Hostel_Id}\',\'${reqData.Status}\',\'${Amnities_Id}\' )`, function (error, data) {
+                                if (error) {
+                                    console.error(error);
+                                    response.status(202).json({ message: 'Database error' });
+                                } else {
+                                    response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
+                                }
+                            });
+                        } else {
+                            response.status(201).json({ message: 'No Amnities_Name ' });
+                        }
+                    } else {
+                        response.status(201).json({ message: 'No Data Found' });
+                    }
+                });
+            }
+            
+            
+          
+            
+        })
+    }
+
 }
+
+
+
 function getAmenitiesList(connection, response) {
     connection.query(`select * from Amenities `, function (err, data) {
         if (data) {
