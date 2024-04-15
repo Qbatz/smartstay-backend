@@ -246,18 +246,15 @@ function calculateAndInsertInvoice(connection, user) {
                 let HostelBasedEb = 0;
                 let roomBasedEb = 0;
 
-                // Summing up amounts from amenitiesData for the same Hostel_Id
+                
                 let totalAmenitiesAmount = 0;
-                amenitiesData.forEach(item => {
-                    if (item.Hostel_Id === user.Hostel_Id) {
-                        totalAmenitiesAmount += item.Amount;
+                for (let i = 0; i < amenitiesData.length; i++) {
+                    if (amenitiesData[i].Hostel_Id === user.Hostel_Id && amenitiesData[i].setAsDefault === 0 && amenitiesData[i].Status === 1) {
+                        totalAmenitiesAmount += amenitiesData[i].Amount;
                     }
-                });
+                }
 
                 console.log("Total Amenities Amount:", totalAmenitiesAmount);
-
-
-                // Remaining code for calculating and inserting invoice details...
 
                 if (existingData.length > 0) {
                     let filteredArray = existingData.filter(item => item.Hostel_Id == user.Hostel_Id);
@@ -305,6 +302,7 @@ function calculateAndInsertInvoice(connection, user) {
 
                             const userID = user.User_Id.toString().slice(0, 4);
 
+
                             if (amenitiesData[0].setAsDefault == 0 && amenitiesData[0].Status == 1) {
                                 AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + totalAmenitiesAmount + HostelBasedEb + roomBasedEb;
                                 // AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + HostelBasedEb + roomBasedEb;
@@ -343,6 +341,7 @@ function calculateAndInsertInvoice(connection, user) {
         });
     });
 }
+
 
 
 

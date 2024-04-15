@@ -77,12 +77,29 @@ app.get('/user-list/bill-payment', (request, response) => {
 
 // Account Management queries 
 
-app.post('/create/create-account', (request, response) => {
-    response.set('Access-Control-Allow-Origin', '*')
-    let reqBodyData = request.body;
-    accountManagement.createAccountForLogin(connection, reqBodyData, response)
-})
+// app.post('/create/create-account', (request, response) => {
+//     response.set('Access-Control-Allow-Origin', '*')
+//     let reqBodyData = request.body;
+//     accountManagement.createAccountForLogin(connection, reqBodyData, response)
+// })
+app.post('/create/create-account',upload.single('profile'),(request, response) =>{
+    response.set('Access-Control-Allow-Origin', '*');
+      
+        const reqBodyData = {
+            profile: request.file,
+            id: request.body.id,
+            name: request.body.name, 
+            mobileNo: request.body.mobileNo,
+            emailId: request.body.emailId,
+            Address:request.body.Address,
+            Country:request.body.Country,
+            City:request.body.City,
+            State:request.body.State,
 
+        };
+    console.log("reqBodyData **",reqBodyData)
+    accountManagement.createAccountForLogin(connection,reqBodyData, response)
+})
 
 app.get('/login/login', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
@@ -114,7 +131,7 @@ app.post('/otp-send/send-mail', (request, response) => {
 
 
 
-cron.schedule("0 0 1 * * ", function () {
+cron.schedule("* * * * * ", function () {
     console.log("This task runs every minute");
     connection.query(`SELECT * FROM hostel where isActive=true`, function (err, users) {
         console.log(" users", users)
