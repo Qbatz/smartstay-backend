@@ -24,13 +24,19 @@ const https = require('https');
 
 
 
+
 function calculateAndInsertInvoice(connection, user) {
     console.log("user **", user);
-    connection.query(`SELECT hos.id AS Hosteldetails_Id, hos.prefix, hos.suffix, hos.Name, hos.isHostelBased, amen.AmenitiesName, SUM(amen.Amount) AS TotalAmount, amen.setAsDefault, amen.Hostel_Id, amen.Status, eb.Hostel_Id AS EbHostel_Id, eb.Floor, eb.Room, eb.EbAmount FROM hosteldetails AS hos INNER JOIN Amenities AS amen ON hos.id = amen.Hostel_Id INNER JOIN EbAmount AS eb ON hos.id = eb.Hostel_Id WHERE hos.id = ${user.Hostel_Id} GROUP BY amen.Hostel_Id`, function (err, existingData) {
+    connection.query(`SELECT hos.id AS Hosteldetails_Id, hos.prefix, hos.suffix, hos.Name, hos.isHostelBased, amen.AmenitiesName, SUM(amen.Amount)  AS TotalAmount, amen.setAsDefault, amen.Hostel_Id, amen.Status, eb.Hostel_Id AS EbHostel_Id, eb.Floor, eb.Room, eb.EbAmount FROM hosteldetails AS hos INNER JOIN Amenities AS amen ON hos.id = amen.Hostel_Id INNER JOIN EbAmount AS eb ON hos.id = eb.Hostel_Id WHERE hos.id = ${user.Hostel_Id} GROUP BY amen.Hostel_Id`, function (err, existingData) {
         if (err) {
             console.error("Error fetching hosteldetails:", err);
             return;
         }
+        connection.query (`SELECT * FROM  Amenities`,function(err, amnitiData){
+            console.log("amnitiData",amnitiData)
+
+          })
+       
 
         console.log("existingData", existingData);
         connection.query(`SELECT * FROM hostelrooms WHERE Hostel_Id = ${user.Hostel_Id} AND Floor_Id = ${user.Floor} AND Room_Id = ${user.Rooms}`, function (err, roomData) {
@@ -78,7 +84,9 @@ function calculateAndInsertInvoice(connection, user) {
             let roomBasedEb = 0;
 
             if (existingData.length > 0) {
-                let filteredArray = existingData.filter(item => item.Hostel_Id == user.Hostel_Id   );   
+                let filteredArray = existingData.filter(item => item.Hostel_Id == user.Hostel_Id);
+
+
                 console.log("AdvanceAmount...????....", AdvanceAmount);
                 connection.query(`SELECT * from hostel WHERE Hostel_Id = ${user.Hostel_Id} `, function (error, result) {
                     console.log("result", result);
@@ -97,14 +105,17 @@ function calculateAndInsertInvoice(connection, user) {
                         console.log("No users found for the given hostel ID");
                     }
 
-                    connection.query(`SELECT * from hostel WHERE Hostel_Id = ${user.Hostel_Id} AND Floor = ${user.Floor} AND Rooms = ${user.Rooms}`, function (error, result) {
-                        let filteredArrayOBj = result.filter(item => item.Hostel_Id == user.Hostel_Id && item.Floor == user.Floor &&   item.Room == user.Rooms); 
-                        if (result.length > 0) {
-                            if (filteredArray[0].isHostelBased === 0) {
-                                roomBasedEb = filteredArray[0].EbAmount  / result.length;
-                                console.log("filteredArray[0].EbAmount.....?", filteredArray[0].EbAmount);
-                                console.log("HostelBasedEb", HostelBasedEb);
-                                console.log("NumberOFUsers:", result.length);
+                    connection.query(`SELECT * from hostel WHERE Hostel_Id = ${user.Hostel_Id} AND Floor = ${user.Floor} AND Rooms = ${user.Rooms}`, function (error, resultData) {
+                        if (resultData.length > 0) {
+                            let tempArray = existingData.filter((item) => {
+                                return item.EbHostel_Id === resultData[0].Hostel_Id && item.Floor === resultData[0].Floor && item.Room === resultData[0].Rooms
+                            })
+                            console.log("tempArray", tempArray);
+                            if (tempArray.length > 0 && tempArray[0].isHostelBased === 0) {
+                                roomBasedEb = tempArray[0].EbAmount / resultData.length;
+                                console.log("filteredArray[0].EbAmount.....?", tempArray[0].EbAmount);
+                                console.log("roomBasedEb", roomBasedEb);
+                                console.log("NumberOFUsers:", resultData.length);
                                 console.log("AdvanceAmount before", AdvanceAmount);
                             }
                         } else {
@@ -121,31 +132,33 @@ function calculateAndInsertInvoice(connection, user) {
 
                         if (filteredArray[0].setAsDefault == 0 && filteredArray[0].Status == 1) {
                             AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + filteredArray[0].TotalAmount + HostelBasedEb + roomBasedEb;
+                            // AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + HostelBasedEb + roomBasedEb;
+
                             console.log("AdvanceAmount.for Amenities..?.....?", AdvanceAmount);
 
-                            if (!isNaN(AdvanceAmount) && isFinite(AdvanceAmount)) {
-                                const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
-                                console.log("Insertion query:", query);
-                                connection.query(query, function (error, data) {
-                                    if (error) {
-                                        console.error("Error inserting invoice data for user:", user.User_Id, error);
-                                        return;
-                                    }
-                                });
+                            if (!isNaN(AdvanceAmount)) {
+                                // const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
+                                // console.log("Insertion query:", query);
+                                // connection.query(query, function (error, data) {
+                                //     if (error) {
+                                //         console.error("Error inserting invoice data for user:", user.User_Id, error);
+                                //         return;
+                                //     }
+                                // });
                             }
                         } else {
                             AdvanceAmount = (roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays + HostelBasedEb + roomBasedEb;
                             console.log("AdvanceAmount...????", AdvanceAmount);
 
                             if (!isNaN(AdvanceAmount) && isFinite(AdvanceAmount)) {
-                                const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
-                                console.log("Insertion query:", query);
-                                connection.query(query, function (error, data) {
+                                // const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}')`;
+                                // console.log("Insertion query:", query);
+                                // connection.query(query, function (error, data) {
                                     if (error) {
                                         console.error("Error inserting invoice data for user:", user.User_Id, error);
                                         return;
                                     }
-                                });
+                                // });
                             }
                         }
                     });
@@ -154,6 +167,9 @@ function calculateAndInsertInvoice(connection, user) {
         });
     });
 }
+
+
+
 
 
 
@@ -215,285 +231,554 @@ function embedImage(doc, imageUrl, fallbackPath, callback) {
         }
     });
 }
+function InvoicePDf(connection, reqBodyData, response) {
+    console.log("reqBodyData", reqBodyData)
+    connection.query(`SELECT invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND DATE(invoice.Date) = ?`,
+        [reqBodyData.User_Id, reqBodyData.Date], function (error, data) {
+            if (error) {
+                console.log(error);
+                response.status(500).json({ message: 'Internal server error' });
+            } else if (data.length > 0) {
+                let totalPDFs = data.length;
+                let uploadedPDFs = 0;
+                let filenames = [];
+                let pdfDetails = [];
+
+                console.log("data ************", data)
+
+                data.forEach((hostel, index) => {
+                    console.log("hostelData **", hostel);
+
+                    const currentDate = new Date();
+                    const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+                    const year = currentDate.getFullYear().toString();
+
+                    const filename = `Invoice${month}${year}${hostel.User_Id}.pdf`;
+                    filenames.push(filename);
+
+                    const doc = new PDFDocument({ font: 'Times-Roman' });
+                    const stream = doc.pipe(fs.createWriteStream(filename));
+
+                    let isFirstPage = true;
+
+                    if (!isFirstPage) {
+                        doc.addPage();
+                    } else {
+                        isFirstPage = false;
+                    }
+
+                    const hostelNameWidth = doc.widthOfString(hostel.Hostel_Name);
+                    const leftMargin = doc.page.width - hostelNameWidth - 1000;
+                    const textWidth = doc.widthOfString('Invoice Receipt');
+                    const textX = doc.page.width - textWidth - 500;
+                    const invoiceNoWidth = doc.widthOfString('Invoice No');
+                    const invoiceDateWidth = doc.widthOfString('Invoice Date');
+
+                    const rightMargin = doc.page.width - invoiceNoWidth - 50;
+                    const marginLeft = 30;
+                    const marginRight = doc.page.width / 2;
+                    const logoWidth = 100;
+                    const logoHeight = 100;
+                    const logoStartX = marginLeft;
+                    const logoStartY = doc.y;
+                    const textStartX = doc.page.width - rightMargin - textWidth;
+                    const textStartY = doc.y;
+                    const logoPath = './Asset/Logo.jpeg';
+                    if (hostel.Hostel_Logo) {
+                        embedImage(doc, hostel.Hostel_Logo, logoPath, (error, body) => {
+                            if (error) {
+                                console.error(error);
+                            } else {
+
+                                doc.fontSize(10).font('Times-Roman')
+                                    .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
+                                    .moveDown(0.1);
+                                doc.fontSize(10).font('Times-Roman')
+                                    .text(hostel.HostelAddress, textStartX, doc.y, { align: 'right' })
+                                    .text(hostel.hostel_PhoneNo, textStartX, doc.y, { align: 'right' })
+                                    .text(`Email : ${hostel.HostelEmail_Id}`, textStartX, doc.y, { align: 'right' })
+                                    .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
+                                    .text('GSTIN:', textStartX, doc.y, { align: 'right' })
+                                    .moveDown(2);
 
 
-function InvoicePDf(connection, response) {
-    connection.query(`SELECT invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate,hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id `, function (error, data) {
-        if (error) {
-            console.log(error);
-            response.status(500).json({ message: 'Internal server error' });
-        } else if (data.length > 0) {
-            let totalPDFs = data.length;
-            let uploadedPDFs = 0;
-            let filenames = [];
-            let pdfDetails = [];
+                                doc.fontSize(14).font('Helvetica')
+                                    .text('Invoice Receipt', textX, doc.y, { align: 'center' })
+                                    .moveDown(0.5);
 
-            data.forEach((hostel, index) => {
-                console.log("hostelData **", hostel);
+                                const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
 
-                const currentDate = new Date();
-                const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-                const year = currentDate.getFullYear().toString();
+                                doc.fontSize(10).font('Times-Roman')
+                                    .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
+                                    .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
+                                    .moveDown(0.5);
 
-                const filename = `Invoice${month}${year}${hostel.User_Id}.pdf`;
-                filenames.push(filename);
+                                doc.fontSize(10).font('Times-Roman')
+                                    .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
+                                    .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
+                                    .moveDown(0.5);
+                                const tableTop = 250;
+                                const startX = 50;
+                                const startY = tableTop;
+                                const cellPadding = 30;
+                                const tableWidth = 500;
+                                const columnWidth = tableWidth / 4;
+                                const marginTop = 80;
 
-                const doc = new PDFDocument({ font: 'Times-Roman' });
-                const stream = doc.pipe(fs.createWriteStream(filename));
+                                doc.rect(startX, startY, tableWidth, cellPadding).fillColor('#b2b5b8').fill().stroke();
+                                doc.rect(startX, startY, tableWidth, cellPadding * 2).stroke();
 
-                let isFirstPage = true;
+                                doc.moveTo(startX + columnWidth, startY).lineTo(startX + columnWidth, startY + cellPadding * 2).stroke();
+                                doc.moveTo(startX + columnWidth * 2, startY).lineTo(startX + columnWidth * 2, startY + cellPadding * 2).stroke();
+                                doc.moveTo(startX + columnWidth * 3, startY).lineTo(startX + columnWidth * 3, startY + cellPadding * 2).stroke();
 
-                if (!isFirstPage) {
-                    doc.addPage();
-                } else {
-                    isFirstPage = false;
-                }
+                                doc.moveTo(startX, startY + cellPadding).lineTo(startX + tableWidth, startY + cellPadding).stroke();
 
-                const hostelNameWidth = doc.widthOfString(hostel.Hostel_Name);
-                const leftMargin = doc.page.width - hostelNameWidth - 1000;
-                const textWidth = doc.widthOfString('Invoice Receipt');
-                const textX = doc.page.width - textWidth - 500;
-                const invoiceNoWidth = doc.widthOfString('Invoice No');
-                const invoiceDateWidth = doc.widthOfString('Invoice Date');
+                                doc.fontSize(12).font('Times-Roman').fillColor('#000000');
 
-                const rightMargin = doc.page.width - invoiceNoWidth - 50;
-                const marginLeft = 30;
-                const marginRight = doc.page.width / 2;
-                const logoWidth = 100;
-                const logoHeight = 100;
-                const logoStartX = marginLeft;
-                const logoStartY = doc.y;
-                const textStartX = doc.page.width - rightMargin - textWidth;
-                const textStartY = doc.y;
-                const logoPath = './Asset/Logo.jpeg';
-                if (hostel.Hostel_Logo) {
-                    embedImage(doc, hostel.Hostel_Logo, logoPath, (error, body) => {
-                        if (error) {
-                            console.error(error);
-                        } else {
+                                let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
 
-                            doc.fontSize(10).font('Times-Roman')
-                                .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
-                                .moveDown(0.1);
-                            doc.fontSize(10).font('Times-Roman')
-                                .text(hostel.HostelAddress, textStartX, doc.y, { align: 'right' })
-                                .text(hostel.hostel_PhoneNo, textStartX, doc.y, { align: 'right' })
-                                .text(`Email : ${hostel.HostelEmail_Id}`, textStartX, doc.y, { align: 'right' })
-                                .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
-                                .text('GSTIN:', textStartX, doc.y, { align: 'right' })
-                                .moveDown(2);
+                                const sNoX = startX + (columnWidth - doc.widthOfString('S.No')) / 2;
+                                const paymentModeX = startX + columnWidth + (columnWidth - doc.widthOfString('Payment Mode')) / 2;
+                                const descriptionX = startX + columnWidth * 2 + (columnWidth - doc.widthOfString('Description')) / 2;
+                                const amountX = startX + columnWidth * 3 + (columnWidth - doc.widthOfString('Amount')) / 2;
 
+                                doc.fontSize(10).text('S.No', sNoX, headerY + 5);
+                                doc.fontSize(10).text('Payment Mode', paymentModeX, headerY + 5);
+                                doc.fontSize(10).text('Description', descriptionX, headerY + 5);
+                                doc.fontSize(10).text('Amount', amountX, headerY + 5);
 
-                            doc.fontSize(14).font('Helvetica')
-                                .text('Invoice Receipt', textX, doc.y, { align: 'center' })
-                                .moveDown(0.5);
+                                const formattedAmount = `${hostel.Amount.toFixed(2)}`;
+                                const paymentMode = 'Online';
+                                const sNo = index + 1;
 
-                            const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
+                                headerY += cellPadding;
 
-                            doc.fontSize(10).font('Times-Roman')
-                                .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
-                                .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
-                                .moveDown(0.5);
+                                let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+                                doc.fontSize(10).text(sNo.toString(), sNoX, dataY + 5);
+                                doc.fontSize(10).text(paymentMode, paymentModeX, dataY + 5);
+                                doc.fontSize(10).text('Null', descriptionX, dataY + 5);
+                                doc.fontSize(10).text(formattedAmount, amountX, dataY + 5);
 
-                            doc.fontSize(10).font('Times-Roman')
-                                .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
-                                .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
-                                .moveDown(0.5);
-                            const tableTop = 250;
-                            const startX = 50;
-                            const startY = tableTop;
-                            const cellPadding = 30;
-                            const tableWidth = 500;
-                            const columnWidth = tableWidth / 4;
-                            const marginTop = 80;
+                                dataY += cellPadding;
 
-                            doc.rect(startX, startY, tableWidth, cellPadding).fillColor('#b2b5b8').fill().stroke();
-                            doc.rect(startX, startY, tableWidth, cellPadding * 2).stroke();
+                                doc.fontSize(10).text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, startY + cellPadding * 2 + 20, { align: 'left', wordSpacing: 1.5 }).moveDown(10);
 
-                            doc.moveTo(startX + columnWidth, startY).lineTo(startX + columnWidth, startY + cellPadding * 2).stroke();
-                            doc.moveTo(startX + columnWidth * 2, startY).lineTo(startX + columnWidth * 2, startY + cellPadding * 2).stroke();
-                            doc.moveTo(startX + columnWidth * 3, startY).lineTo(startX + columnWidth * 3, startY + cellPadding * 2).stroke();
+                                doc.fontSize(9).text('This is a system generated receipt and no signature is required.', startX, startY + cellPadding * 2 + 20 + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
+                                doc.end();
 
-                            doc.moveTo(startX, startY + cellPadding).lineTo(startX + tableWidth, startY + cellPadding).stroke();
+                                stream.on('finish', function () {
+                                    console.log(`PDF generated successfully for ${hostel.UserName}`);
+                                    const fileContent = fs.readFileSync(filename);
+                                    pdfDetails.push({
+                                        filename: filename,
+                                        fileContent: fs.readFileSync(filename),
+                                        user: hostel.User_Id
+                                    });
 
-                            doc.fontSize(12).font('Times-Roman').fillColor('#000000');
-
-                            let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
-
-                            const sNoX = startX + (columnWidth - doc.widthOfString('S.No')) / 2;
-                            const paymentModeX = startX + columnWidth + (columnWidth - doc.widthOfString('Payment Mode')) / 2;
-                            const descriptionX = startX + columnWidth * 2 + (columnWidth - doc.widthOfString('Description')) / 2;
-                            const amountX = startX + columnWidth * 3 + (columnWidth - doc.widthOfString('Amount')) / 2;
-
-                            doc.fontSize(10).text('S.No', sNoX, headerY + 5);
-                            doc.fontSize(10).text('Payment Mode', paymentModeX, headerY + 5);
-                            doc.fontSize(10).text('Description', descriptionX, headerY + 5);
-                            doc.fontSize(10).text('Amount', amountX, headerY + 5);
-
-                            const formattedAmount = `${hostel.Amount.toFixed(2)}`;
-                            const paymentMode = 'Online';
-                            const sNo = index + 1;
-
-                            headerY += cellPadding;
-
-                            let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
-                            doc.fontSize(10).text(sNo.toString(), sNoX, dataY + 5);
-                            doc.fontSize(10).text(paymentMode, paymentModeX, dataY + 5);
-                            doc.fontSize(10).text('Null', descriptionX, dataY + 5);
-                            doc.fontSize(10).text(formattedAmount, amountX, dataY + 5);
-
-                            dataY += cellPadding;
-
-                            doc.fontSize(10).text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, startY + cellPadding * 2 + 20, { align: 'left', wordSpacing: 1.5 }).moveDown(10);
-
-                            doc.fontSize(9).text('This is a system generated receipt and no signature is required.', startX, startY + cellPadding * 2 + 20 + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
-                            doc.end();
-
-                            stream.on('finish', function () {
-                                console.log(`PDF generated successfully for ${hostel.UserName}`);
-                                const fileContent = fs.readFileSync(filename);
-                                pdfDetails.push({
-                                    filename: filename,
-                                    fileContent: fs.readFileSync(filename),
-                                    user: hostel.User_Id
+                                    uploadedPDFs++;
+                                    if (uploadedPDFs === totalPDFs) {
+                                        deletePDfs(filenames);
+                                        uploadToS3(filenames, response, pdfDetails, connection);
+                                    }
                                 });
 
-                                uploadedPDFs++;
-                                if (uploadedPDFs === totalPDFs) {
-                                    deletePDfs(filenames);
-                                    uploadToS3(filenames, response, pdfDetails, connection);
-                                }
-                            });
 
 
 
 
-
-                        }
-                    });
-                } else {
-                    doc.image(logoPath, {
-                        fit: [80, 100],
-                        align: 'center',
-                        valign: 'top',
-                        margin: 50
-                    });
-
-                    doc.fontSize(10).font('Times-Roman')
-                        .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
-                        .moveDown(0.1);
-                    doc.fontSize(10).font('Times-Roman')
-                        .text(hostel.HostelAddress, textStartX, doc.y, { align: 'right' })
-                        .text(hostel.hostel_PhoneNo, textStartX, doc.y, { align: 'right' })
-                        .text(`Email : ${hostel.HostelEmail_Id}`, textStartX, doc.y, { align: 'right' })
-                        .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
-                        .text('GSTIN:', textStartX, doc.y, { align: 'right' })
-                        .moveDown(2);
-
-
-                    doc.fontSize(14).font('Helvetica')
-                        .text('Invoice Receipt', textX, doc.y, { align: 'center' })
-                        .moveDown(0.5);
-
-                    const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
-
-                    doc.fontSize(10).font('Times-Roman')
-                        .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
-                        .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
-                        .moveDown(0.5);
-
-                    doc.fontSize(10).font('Times-Roman')
-                        .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
-                        .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
-                        .moveDown(0.5);
-                    const tableTop = 250;
-                    const startX = 50;
-                    const startY = tableTop;
-                    const cellPadding = 30;
-                    const tableWidth = 500;
-                    const columnWidth = tableWidth / 4;
-                    const marginTop = 80;
-
-                    doc.rect(startX, startY, tableWidth, cellPadding).fillColor('#b2b5b8').fill().stroke();
-                    doc.rect(startX, startY, tableWidth, cellPadding * 2).stroke();
-
-                    doc.moveTo(startX + columnWidth, startY).lineTo(startX + columnWidth, startY + cellPadding * 2).stroke();
-                    doc.moveTo(startX + columnWidth * 2, startY).lineTo(startX + columnWidth * 2, startY + cellPadding * 2).stroke();
-                    doc.moveTo(startX + columnWidth * 3, startY).lineTo(startX + columnWidth * 3, startY + cellPadding * 2).stroke();
-
-                    doc.moveTo(startX, startY + cellPadding).lineTo(startX + tableWidth, startY + cellPadding).stroke();
-
-                    doc.fontSize(12).font('Times-Roman').fillColor('#000000');
-
-                    let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
-
-                    const sNoX = startX + (columnWidth - doc.widthOfString('S.No')) / 2;
-                    const paymentModeX = startX + columnWidth + (columnWidth - doc.widthOfString('Payment Mode')) / 2;
-                    const descriptionX = startX + columnWidth * 2 + (columnWidth - doc.widthOfString('Description')) / 2;
-                    const amountX = startX + columnWidth * 3 + (columnWidth - doc.widthOfString('Amount')) / 2;
-
-                    doc.fontSize(10).text('S.No', sNoX, headerY + 5);
-                    doc.fontSize(10).text('Payment Mode', paymentModeX, headerY + 5);
-                    doc.fontSize(10).text('Description', descriptionX, headerY + 5);
-                    doc.fontSize(10).text('Amount', amountX, headerY + 5);
-
-                    const formattedAmount = `${hostel.Amount.toFixed(2)}`;
-                    const paymentMode = 'Online';
-                    const sNo = index + 1;
-
-                    headerY += cellPadding;
-
-                    let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
-                    doc.fontSize(10).text(sNo.toString(), sNoX, dataY + 5);
-                    doc.fontSize(10).text(paymentMode, paymentModeX, dataY + 5);
-                    doc.fontSize(10).text('Null', descriptionX, dataY + 5);
-                    doc.fontSize(10).text(formattedAmount, amountX, dataY + 5);
-
-                    dataY += cellPadding;
-
-                    doc.fontSize(10).text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, startY + cellPadding * 2 + 20, { align: 'left', wordSpacing: 1.5 }).moveDown(10);
-
-                    doc.fontSize(9).text('This is a system generated receipt and no signature is required.', startX, startY + cellPadding * 2 + 20 + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
-                    doc.end();
-
-                    stream.on('finish', function () {
-                        console.log(`PDF generated successfully for ${hostel.UserName}`);
-                        const fileContent = fs.readFileSync(filename);
-                        pdfDetails.push({
-                            filename: filename,
-                            fileContent: fs.readFileSync(filename),
-                            user: hostel.User_Id
+                            }
+                        });
+                    } else {
+                        doc.image(logoPath, {
+                            fit: [80, 100],
+                            align: 'center',
+                            valign: 'top',
+                            margin: 50
                         });
 
-                        uploadedPDFs++;
-                        if (uploadedPDFs === totalPDFs) {
-                            deletePDfs(filenames);
-                            uploadToS3(filenames, response, pdfDetails, connection);
-                        }
-                    });
+                        doc.fontSize(10).font('Times-Roman')
+                            .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
+                            .moveDown(0.1);
+                        doc.fontSize(10).font('Times-Roman')
+                            .text(hostel.HostelAddress, textStartX, doc.y, { align: 'right' })
+                            .text(hostel.hostel_PhoneNo, textStartX, doc.y, { align: 'right' })
+                            .text(`Email : ${hostel.HostelEmail_Id}`, textStartX, doc.y, { align: 'right' })
+                            .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
+                            .text('GSTIN:', textStartX, doc.y, { align: 'right' })
+                            .moveDown(2);
+
+
+                        doc.fontSize(14).font('Helvetica')
+                            .text('Invoice Receipt', textX, doc.y, { align: 'center' })
+                            .moveDown(0.5);
+
+                        const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
+
+                        doc.fontSize(10).font('Times-Roman')
+                            .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
+                            .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
+                            .moveDown(0.5);
+
+                        doc.fontSize(10).font('Times-Roman')
+                            .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
+                            .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
+                            .moveDown(0.5);
+                        const tableTop = 250;
+                        const startX = 50;
+                        const startY = tableTop;
+                        const cellPadding = 30;
+                        const tableWidth = 500;
+                        const columnWidth = tableWidth / 4;
+                        const marginTop = 80;
+
+                        doc.rect(startX, startY, tableWidth, cellPadding).fillColor('#b2b5b8').fill().stroke();
+                        doc.rect(startX, startY, tableWidth, cellPadding * 2).stroke();
+
+                        doc.moveTo(startX + columnWidth, startY).lineTo(startX + columnWidth, startY + cellPadding * 2).stroke();
+                        doc.moveTo(startX + columnWidth * 2, startY).lineTo(startX + columnWidth * 2, startY + cellPadding * 2).stroke();
+                        doc.moveTo(startX + columnWidth * 3, startY).lineTo(startX + columnWidth * 3, startY + cellPadding * 2).stroke();
+
+                        doc.moveTo(startX, startY + cellPadding).lineTo(startX + tableWidth, startY + cellPadding).stroke();
+
+                        doc.fontSize(12).font('Times-Roman').fillColor('#000000');
+
+                        let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+
+                        const sNoX = startX + (columnWidth - doc.widthOfString('S.No')) / 2;
+                        const paymentModeX = startX + columnWidth + (columnWidth - doc.widthOfString('Payment Mode')) / 2;
+                        const descriptionX = startX + columnWidth * 2 + (columnWidth - doc.widthOfString('Description')) / 2;
+                        const amountX = startX + columnWidth * 3 + (columnWidth - doc.widthOfString('Amount')) / 2;
+
+                        doc.fontSize(10).text('S.No', sNoX, headerY + 5);
+                        doc.fontSize(10).text('Payment Mode', paymentModeX, headerY + 5);
+                        doc.fontSize(10).text('Description', descriptionX, headerY + 5);
+                        doc.fontSize(10).text('Amount', amountX, headerY + 5);
+
+                        const formattedAmount = `${hostel.Amount.toFixed(2)}`;
+                        const paymentMode = 'Online';
+                        const sNo = index + 1;
+
+                        headerY += cellPadding;
+
+                        let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+                        doc.fontSize(10).text(sNo.toString(), sNoX, dataY + 5);
+                        doc.fontSize(10).text(paymentMode, paymentModeX, dataY + 5);
+                        doc.fontSize(10).text('Null', descriptionX, dataY + 5);
+                        doc.fontSize(10).text(formattedAmount, amountX, dataY + 5);
+
+                        dataY += cellPadding;
+
+                        doc.fontSize(10).text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, startY + cellPadding * 2 + 20, { align: 'left', wordSpacing: 1.5 }).moveDown(10);
+
+                        doc.fontSize(9).text('This is a system generated receipt and no signature is required.', startX, startY + cellPadding * 2 + 20 + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
+                        doc.end();
+
+                        stream.on('finish', function () {
+                            console.log(`PDF generated successfully for ${hostel.UserName}`);
+                            const fileContent = fs.readFileSync(filename);
+                            pdfDetails.push({
+                                filename: filename,
+                                fileContent: fs.readFileSync(filename),
+                                user: hostel.User_Id
+                            });
+
+                            uploadedPDFs++;
+                            if (uploadedPDFs === totalPDFs) {
+                                deletePDfs(filenames);
+                                uploadToS3(filenames, response, pdfDetails, connection);
+                            }
+                        });
+
+                    }
 
 
 
-
-
-
-
-
-
-
-
-
-
-                }
-
-
-
-            });
-        } else {
-            response.status(404).json({ message: 'No data found' });
-        }
-    });
+                });
+            } else {
+                response.status(404).json({ message: 'No data found' });
+            }
+        });
 }
+
+
+// function InvoicePDf(connection, response) {
+//     connection.query(`SELECT invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate,hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id `, function (error, data) {
+//         if (error) {
+//             console.log(error);
+//             response.status(500).json({ message: 'Internal server error' });
+//         } else if (data.length > 0) {
+//             let totalPDFs = data.length;
+//             let uploadedPDFs = 0;
+//             let filenames = [];
+//             let pdfDetails = [];
+
+//             data.forEach((hostel, index) => {
+//                 console.log("hostelData **", hostel);
+
+//                 const currentDate = new Date();
+//                 const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+//                 const year = currentDate.getFullYear().toString();
+
+//                 const filename = `Invoice${month}${year}${hostel.User_Id}.pdf`;
+//                 filenames.push(filename);
+
+//                 const doc = new PDFDocument({ font: 'Times-Roman' });
+//                 const stream = doc.pipe(fs.createWriteStream(filename));
+
+//                 let isFirstPage = true;
+
+//                 if (!isFirstPage) {
+//                     doc.addPage();
+//                 } else {
+//                     isFirstPage = false;
+//                 }
+
+//                 const hostelNameWidth = doc.widthOfString(hostel.Hostel_Name);
+//                 const leftMargin = doc.page.width - hostelNameWidth - 1000;
+//                 const textWidth = doc.widthOfString('Invoice Receipt');
+//                 const textX = doc.page.width - textWidth - 500;
+//                 const invoiceNoWidth = doc.widthOfString('Invoice No');
+//                 const invoiceDateWidth = doc.widthOfString('Invoice Date');
+
+//                 const rightMargin = doc.page.width - invoiceNoWidth - 50;
+//                 const marginLeft = 30;
+//                 const marginRight = doc.page.width / 2;
+//                 const logoWidth = 100;
+//                 const logoHeight = 100;
+//                 const logoStartX = marginLeft;
+//                 const logoStartY = doc.y;
+//                 const textStartX = doc.page.width - rightMargin - textWidth;
+//                 const textStartY = doc.y;
+//                 const logoPath = './Asset/Logo.jpeg';
+//                 if (hostel.Hostel_Logo) {
+//                     embedImage(doc, hostel.Hostel_Logo, logoPath, (error, body) => {
+//                         if (error) {
+//                             console.error(error);
+//                         } else {
+
+//                             doc.fontSize(10).font('Times-Roman')
+//                                 .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
+//                                 .moveDown(0.1);
+//                             doc.fontSize(10).font('Times-Roman')
+//                                 .text(hostel.HostelAddress, textStartX, doc.y, { align: 'right' })
+//                                 .text(hostel.hostel_PhoneNo, textStartX, doc.y, { align: 'right' })
+//                                 .text(`Email : ${hostel.HostelEmail_Id}`, textStartX, doc.y, { align: 'right' })
+//                                 .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
+//                                 .text('GSTIN:', textStartX, doc.y, { align: 'right' })
+//                                 .moveDown(2);
+
+
+//                             doc.fontSize(14).font('Helvetica')
+//                                 .text('Invoice Receipt', textX, doc.y, { align: 'center' })
+//                                 .moveDown(0.5);
+
+//                             const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
+
+//                             doc.fontSize(10).font('Times-Roman')
+//                                 .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
+//                                 .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
+//                                 .moveDown(0.5);
+
+//                             doc.fontSize(10).font('Times-Roman')
+//                                 .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
+//                                 .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
+//                                 .moveDown(0.5);
+//                             const tableTop = 250;
+//                             const startX = 50;
+//                             const startY = tableTop;
+//                             const cellPadding = 30;
+//                             const tableWidth = 500;
+//                             const columnWidth = tableWidth / 4;
+//                             const marginTop = 80;
+
+//                             doc.rect(startX, startY, tableWidth, cellPadding).fillColor('#b2b5b8').fill().stroke();
+//                             doc.rect(startX, startY, tableWidth, cellPadding * 2).stroke();
+
+//                             doc.moveTo(startX + columnWidth, startY).lineTo(startX + columnWidth, startY + cellPadding * 2).stroke();
+//                             doc.moveTo(startX + columnWidth * 2, startY).lineTo(startX + columnWidth * 2, startY + cellPadding * 2).stroke();
+//                             doc.moveTo(startX + columnWidth * 3, startY).lineTo(startX + columnWidth * 3, startY + cellPadding * 2).stroke();
+
+//                             doc.moveTo(startX, startY + cellPadding).lineTo(startX + tableWidth, startY + cellPadding).stroke();
+
+//                             doc.fontSize(12).font('Times-Roman').fillColor('#000000');
+
+//                             let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+
+//                             const sNoX = startX + (columnWidth - doc.widthOfString('S.No')) / 2;
+//                             const paymentModeX = startX + columnWidth + (columnWidth - doc.widthOfString('Payment Mode')) / 2;
+//                             const descriptionX = startX + columnWidth * 2 + (columnWidth - doc.widthOfString('Description')) / 2;
+//                             const amountX = startX + columnWidth * 3 + (columnWidth - doc.widthOfString('Amount')) / 2;
+
+//                             doc.fontSize(10).text('S.No', sNoX, headerY + 5);
+//                             doc.fontSize(10).text('Payment Mode', paymentModeX, headerY + 5);
+//                             doc.fontSize(10).text('Description', descriptionX, headerY + 5);
+//                             doc.fontSize(10).text('Amount', amountX, headerY + 5);
+
+//                             const formattedAmount = `${hostel.Amount.toFixed(2)}`;
+//                             const paymentMode = 'Online';
+//                             const sNo = index + 1;
+
+//                             headerY += cellPadding;
+
+//                             let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+//                             doc.fontSize(10).text(sNo.toString(), sNoX, dataY + 5);
+//                             doc.fontSize(10).text(paymentMode, paymentModeX, dataY + 5);
+//                             doc.fontSize(10).text('Null', descriptionX, dataY + 5);
+//                             doc.fontSize(10).text(formattedAmount, amountX, dataY + 5);
+
+//                             dataY += cellPadding;
+
+//                             doc.fontSize(10).text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, startY + cellPadding * 2 + 20, { align: 'left', wordSpacing: 1.5 }).moveDown(10);
+
+//                             doc.fontSize(9).text('This is a system generated receipt and no signature is required.', startX, startY + cellPadding * 2 + 20 + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
+//                             doc.end();
+
+//                             stream.on('finish', function () {
+//                                 console.log(`PDF generated successfully for ${hostel.UserName}`);
+//                                 const fileContent = fs.readFileSync(filename);
+//                                 pdfDetails.push({
+//                                     filename: filename,
+//                                     fileContent: fs.readFileSync(filename),
+//                                     user: hostel.User_Id
+//                                 });
+
+//                                 uploadedPDFs++;
+//                                 if (uploadedPDFs === totalPDFs) {
+//                                     deletePDfs(filenames);
+//                                     uploadToS3(filenames, response, pdfDetails, connection);
+//                                 }
+//                             });
+
+
+
+
+
+//                         }
+//                     });
+//                 } else {
+//                     doc.image(logoPath, {
+//                         fit: [80, 100],
+//                         align: 'center',
+//                         valign: 'top',
+//                         margin: 50
+//                     });
+
+//                     doc.fontSize(10).font('Times-Roman')
+//                         .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
+//                         .moveDown(0.1);
+//                     doc.fontSize(10).font('Times-Roman')
+//                         .text(hostel.HostelAddress, textStartX, doc.y, { align: 'right' })
+//                         .text(hostel.hostel_PhoneNo, textStartX, doc.y, { align: 'right' })
+//                         .text(`Email : ${hostel.HostelEmail_Id}`, textStartX, doc.y, { align: 'right' })
+//                         .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
+//                         .text('GSTIN:', textStartX, doc.y, { align: 'right' })
+//                         .moveDown(2);
+
+
+//                     doc.fontSize(14).font('Helvetica')
+//                         .text('Invoice Receipt', textX, doc.y, { align: 'center' })
+//                         .moveDown(0.5);
+
+//                     const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
+
+//                     doc.fontSize(10).font('Times-Roman')
+//                         .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
+//                         .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
+//                         .moveDown(0.5);
+
+//                     doc.fontSize(10).font('Times-Roman')
+//                         .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
+//                         .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
+//                         .moveDown(0.5);
+//                     const tableTop = 250;
+//                     const startX = 50;
+//                     const startY = tableTop;
+//                     const cellPadding = 30;
+//                     const tableWidth = 500;
+//                     const columnWidth = tableWidth / 4;
+//                     const marginTop = 80;
+
+//                     doc.rect(startX, startY, tableWidth, cellPadding).fillColor('#b2b5b8').fill().stroke();
+//                     doc.rect(startX, startY, tableWidth, cellPadding * 2).stroke();
+
+//                     doc.moveTo(startX + columnWidth, startY).lineTo(startX + columnWidth, startY + cellPadding * 2).stroke();
+//                     doc.moveTo(startX + columnWidth * 2, startY).lineTo(startX + columnWidth * 2, startY + cellPadding * 2).stroke();
+//                     doc.moveTo(startX + columnWidth * 3, startY).lineTo(startX + columnWidth * 3, startY + cellPadding * 2).stroke();
+
+//                     doc.moveTo(startX, startY + cellPadding).lineTo(startX + tableWidth, startY + cellPadding).stroke();
+
+//                     doc.fontSize(12).font('Times-Roman').fillColor('#000000');
+
+//                     let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+
+//                     const sNoX = startX + (columnWidth - doc.widthOfString('S.No')) / 2;
+//                     const paymentModeX = startX + columnWidth + (columnWidth - doc.widthOfString('Payment Mode')) / 2;
+//                     const descriptionX = startX + columnWidth * 2 + (columnWidth - doc.widthOfString('Description')) / 2;
+//                     const amountX = startX + columnWidth * 3 + (columnWidth - doc.widthOfString('Amount')) / 2;
+
+//                     doc.fontSize(10).text('S.No', sNoX, headerY + 5);
+//                     doc.fontSize(10).text('Payment Mode', paymentModeX, headerY + 5);
+//                     doc.fontSize(10).text('Description', descriptionX, headerY + 5);
+//                     doc.fontSize(10).text('Amount', amountX, headerY + 5);
+
+//                     const formattedAmount = `${hostel.Amount.toFixed(2)}`;
+//                     const paymentMode = 'Online';
+//                     const sNo = index + 1;
+
+//                     headerY += cellPadding;
+
+//                     let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+//                     doc.fontSize(10).text(sNo.toString(), sNoX, dataY + 5);
+//                     doc.fontSize(10).text(paymentMode, paymentModeX, dataY + 5);
+//                     doc.fontSize(10).text('Null', descriptionX, dataY + 5);
+//                     doc.fontSize(10).text(formattedAmount, amountX, dataY + 5);
+
+//                     dataY += cellPadding;
+
+//                     doc.fontSize(10).text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, startY + cellPadding * 2 + 20, { align: 'left', wordSpacing: 1.5 }).moveDown(10);
+
+//                     doc.fontSize(9).text('This is a system generated receipt and no signature is required.', startX, startY + cellPadding * 2 + 20 + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
+//                     doc.end();
+
+//                     stream.on('finish', function () {
+//                         console.log(`PDF generated successfully for ${hostel.UserName}`);
+//                         const fileContent = fs.readFileSync(filename);
+//                         pdfDetails.push({
+//                             filename: filename,
+//                             fileContent: fs.readFileSync(filename),
+//                             user: hostel.User_Id
+//                         });
+
+//                         uploadedPDFs++;
+//                         if (uploadedPDFs === totalPDFs) {
+//                             deletePDfs(filenames);
+//                             uploadToS3(filenames, response, pdfDetails, connection);
+//                         }
+//                     });
+
+
+
+
+
+
+
+
+
+
+
+
+
+//                 }
+
+
+
+//             });
+//         } else {
+//             response.status(404).json({ message: 'No data found' });
+//         }
+//     });
+// }
 
 
 // function InvoicePDf(connection, response) {
@@ -1021,20 +1306,7 @@ function EbAmount(connection, atten, response) {
     }
 
 };
-function AmenitiesName(connection, atten, response) {
-    if (atten) {
-        connection.query(`INSERT INTO AmnitiesName (id,Amnities_Name) VALUES (\'${atten.id}\',\'${atten.Amnities_Name}\')`, function (error, data) {
-            if (error) {
-                console.error(error);
-                response.status(202).json({ message: 'Database error' });
-            } else {
-                response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
-            }
-        });
-    }
-
-};
 
 
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount,AmenitiesName };
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount };

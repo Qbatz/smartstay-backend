@@ -62,14 +62,14 @@ app.get('/users/user-list', (request, response) => {
 });
 
 
-app.post('/add/adduser-list',(request, response) => {
+app.post('/add/adduser-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     var atten = request.body;
     userQueries.createUser(connection, atten, response)
 })
 
 
-app.get('/user-list/bill-payment',(request, response) => {
+app.get('/user-list/bill-payment', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     userQueries.getPaymentDetails(connection, response)
 })
@@ -77,14 +77,14 @@ app.get('/user-list/bill-payment',(request, response) => {
 
 // Account Management queries 
 
-app.post('/create/create-account',(request, response) => {
+app.post('/create/create-account', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     let reqBodyData = request.body;
-    accountManagement.createAccountForLogin(connection,reqBodyData,response)
+    accountManagement.createAccountForLogin(connection, reqBodyData, response)
 })
 
 
-app.get('/login/login',(request, response) => {
+app.get('/login/login', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const { email_Id, password } = request.query;
     accountManagement.loginAccount(connection, response, email_Id, password);
@@ -92,7 +92,7 @@ app.get('/login/login',(request, response) => {
 
 
 
-app.post('/forget/select-list',(request, response) => {
+app.post('/forget/select-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const reqData = request.body
     accountManagement.forgetPassword(connection, response, reqData);
@@ -100,7 +100,7 @@ app.post('/forget/select-list',(request, response) => {
 
 
 
-app.post('/otp-send/send-mail',(request, response) => {
+app.post('/otp-send/send-mail', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const requestData = request.body
     accountManagement.sendOtpForMail(connection, response, requestData)
@@ -114,9 +114,9 @@ app.post('/otp-send/send-mail',(request, response) => {
 
 
 
-cron.schedule("* * * * * ", function () {
+cron.schedule("0 0 1 * * ", function () {
     console.log("This task runs every minute");
-       connection.query(`SELECT * FROM hostel where isActive=true`, function (err, users) {
+    connection.query(`SELECT * FROM hostel where isActive=true`, function (err, users) {
         console.log(" users", users)
         if (err) {
             console.error("Error fetching users:", err);
@@ -124,7 +124,7 @@ cron.schedule("* * * * * ", function () {
         }
         users.forEach(user => {
             const userID = user.User_Id;
-            invoiceQueries.calculateAndInsertInvoice(connection,user);
+            invoiceQueries.calculateAndInsertInvoice(connection, user);
         });
     });
 });
@@ -133,31 +133,36 @@ cron.schedule("* * * * * ", function () {
 
 app.get('/list/invoice-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-    invoiceQueries.getInvoiceList(connection,response)
+    invoiceQueries.getInvoiceList(connection, response)
 })
 
 
-app.get('/invoice/invoice-list-pdf',(request, response) => {
+// app.get('/invoice/invoice-list-pdf',(request, response) => {
+//     response.set('Access-Control-Allow-Origin', '*')
+//     invoiceQueries.InvoicePDf(connection,response)
+// })
+
+
+app.post('/invoice/invoice-list-pdf', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-    invoiceQueries.InvoicePDf(connection,response)
+    let reqBodyData = request.body;
+    console.log("reqBodyData", reqBodyData)
+    invoiceQueries.InvoicePDf(connection, reqBodyData, response)
 })
-
-
-
 
 // Profile Queries
 
 
 
-app.post('/create/isEnable',(request, response) => {
+app.post('/create/isEnable', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     let reqBodyData = request.body;
-    profileQueries.IsEnableCheck(connection,reqBodyData,response)
+    profileQueries.IsEnableCheck(connection, reqBodyData, response)
 
 })
 
 
-app.get('/get/userAccount',(request, response) => {
+app.get('/get/userAccount', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     profileQueries.getAccount(connection, response)
 })
@@ -170,17 +175,17 @@ app.get('/get/userAccount',(request, response) => {
 
 
 
-app.post('/compliance/add-details',(request, response) => { 
+app.post('/compliance/add-details', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     var atten = request.body;
-    complianceQueries.AddCompliance(connection,atten,response)
-    
+    complianceQueries.AddCompliance(connection, atten, response)
+
 })
 
 
-app.get('/compliance/compliance-list',(request, response) => {
+app.get('/compliance/compliance-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-complianceQueries.GetComplianceList(connection,response)
+    complianceQueries.GetComplianceList(connection, response)
 
 })
 
@@ -189,20 +194,20 @@ complianceQueries.GetComplianceList(connection,response)
 
 
 
-app.get('/list/hostel-list',(request, response) => {
+app.get('/list/hostel-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     pgQueries.getHostelList(connection, response)
 })
 
 
 
-app.get('/room-id/check-room-id',(request, response) => {
+app.get('/room-id/check-room-id', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-   pgQueries.checkRoom(connection, response)
+    pgQueries.checkRoom(connection, response)
 })
 
 
-app.get('/hostel/list-details',(request, response) => {
+app.get('/hostel/list-details', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     pgQueries.hostelListDetails(connection, response)
 
@@ -210,108 +215,112 @@ app.get('/hostel/list-details',(request, response) => {
 
 
 
-app.post('/add/new-hostel',(request, response) => {
+app.post('/add/new-hostel', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const reqData = request.body;
-    pgQueries.createPG(connection,reqData, response)
+    pgQueries.createPG(connection, reqData, response)
 })
 
-app.post('/list/floor-list',(request, response) => {
+app.post('/list/floor-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const requestData = request.body
-    pgQueries.FloorList(connection,requestData, response)
+    pgQueries.FloorList(connection, requestData, response)
 })
 
-app.post('/list/rooms-list',(request, response) => {
+app.post('/list/rooms-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const reqData = request.body;
-    pgQueries.RoomList(connection,reqData, response)
+    pgQueries.RoomList(connection, reqData, response)
 })
 
-app.post('/list/bed-list',(request, response) =>  {
+app.post('/list/bed-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const requestBodyData = request.body;
-    pgQueries.BedList(connection,requestBodyData, response)
+    pgQueries.BedList(connection, requestBodyData, response)
 })
 
-app.post('/list/numberOf-Rooms',(request, response) => {
+app.post('/list/numberOf-Rooms', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const reqFloorID = request.body;
-    pgQueries.RoomCount(connection,reqFloorID, response)
+    pgQueries.RoomCount(connection, reqFloorID, response)
 })
 
-app.post('/floor_list',(request, response) => {
+app.post('/floor_list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     const reqData = request.body;
-    pgQueries.ListForFloor(connection,reqData, response)
+    pgQueries.ListForFloor(connection, reqData, response)
 })
 
 
-app.post('/room/create-room',(request, response) => {
+app.post('/room/create-room', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-        const reqsData = request.body;
-        pgQueries.CreateRoom(connection,reqsData, response)
+    const reqsData = request.body;
+    pgQueries.CreateRoom(connection, reqsData, response)
 })
 
-app.post('/floor/create-floor',(request, response) => {
+app.post('/floor/create-floor', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-        const reqDataFloor = request.body;
-        pgQueries.CreateFloor(connection, reqDataFloor, response)
+    const reqDataFloor = request.body;
+    pgQueries.CreateFloor(connection, reqDataFloor, response)
 
 })
 
 
-app.post('/check/room-full', (request, response)=>  {
+app.post('/check/room-full', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const reqFloorID = request.body
     pgQueries.RoomFull(connection, reqFloorID, response)
 })
 
-app.post('/invoice/settings',upload.single('profile'),(request, response) =>{
+app.post('/invoice/settings', upload.single('profile'), (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-        // const reqInvoice = request.file;
-        const reqInvoice = {
-            profile: request.file,
-            hostel_Id: request.body.hostel_Id, 
-            prefix: request.body.prefix,
-            suffix: request.body.suffix 
-        };
-    console.log("reqInvoice **",reqInvoice)
+    // const reqInvoice = request.file;
+    const reqInvoice = {
+        profile: request.file,
+        hostel_Id: request.body.hostel_Id,
+        prefix: request.body.prefix,
+        suffix: request.body.suffix
+    };
+    console.log("reqInvoice **", reqInvoice)
     profileQueries.InvoiceSettings(connection, reqInvoice, response)
 })
 
 
 app.get('/list/amenities-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-    profileQueries.getAmenitiesList(connection,response)
+    profileQueries.getAmenitiesList(connection, response)
 })
 
-app.post('/EB/Hostel_Room_based',(request, response) => { 
+app.post('/EB/Hostel_Room_based', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     var atten = request.body;
-    profileQueries.UpdateEB(connection,atten,response)
-    
+    profileQueries.UpdateEB(connection, atten, response)
+
 })
 
 
-app.post ('/amenities/setting',(request,response)=>{
+app.post('/amenities/setting', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const reqData = request.body
-   profileQueries.AmenitiesSetting(connection, reqData, response)
+    profileQueries.AmenitiesSetting(connection, reqData, response)
 
 
 })
-app.post ('/ebamount/setting',(request,response)=>{
+app.post('/ebamount/setting', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const atten = request.body
-   invoiceQueries.EbAmount(connection, atten, response)
+    invoiceQueries.EbAmount(connection, atten, response)
 
 
 })
-app.post ('/AmnitiesName_list',(request,response)=>{
+app.post('/AmnitiesName_list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const atten = request.body
-   invoiceQueries.AmenitiesName(connection, atten, response)
+    invoiceQueries.AmenitiesName(connection, atten, response)
 
 
+})
+app.get('/list/amenities-Name', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*')
+    profileQueries.getAmenitiesName(connection, response)
 })
