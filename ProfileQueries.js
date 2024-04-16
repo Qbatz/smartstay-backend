@@ -385,17 +385,17 @@ function EbReadingAmount(connection, atten, response) {
     }
 
     if (atten.id) {
-        // Update existing record
-        connection.query(`UPDATE EbReading SET Floor= ${atten.Floor},Room= ${atten.Room},start_Meter_Reading= ${atten.start_Meter_Reading} end_Meter_Reading='${atten.end_Meter_Reading}' where id ${atten.id}`, function (error, data) {
+       
+        connection.query(`UPDATE EbReading SET  Floor= ${atten.Floor},Room= ${atten.Room},start_Meter_Reading= ${atten.start_Meter_Reading} end_Meter_Reading='${atten.end_Meter_Reading}' where Hostel_Id ${atten.Hostel_Id}`, function (error, data) {
             if (error) {
                 console.error(error);
-                response.status(500).json({ message: "Update failed" });
+                response.status(201).json({ message: "Update failed" });
             } else {
                 response.status(200).json({ message: "Update successful" });
             }
         });
     } else {
-        // Insert new record
+        
         connection.query(`SELECT isHostelBased FROM hosteldetails `, function (err, datum) {
             console.log("datum", datum);
             if (err) {
@@ -406,10 +406,9 @@ function EbReadingAmount(connection, atten, response) {
             
             if (datum.length > 0) {
                 const isHostelBased = datum[0].isHostelBased;
-                const insertQuery = isHostelBased ? `INSERT INTO EbReading (start_Meter_Reading, end_Meter_Reading, EbTotAmount) VALUES (${atten.start_Meter_Reading},${atten.end_Meter_Reading},${atten.EbTotAmount})` : `INSERT INTO EbReading (Floor, Room, start_Meter_Reading, end_Meter_Reading, EbTotAmount) VALUES (\'${atten.Floor}\',\'${atten.Room}\', ${atten.start_Meter_Reading},\'${atten.end_Meter_Reading}\',\'${atten.EbTotAmount}\')`;
-                const values = isHostelBased ? [atten.start_Meter_Reading, atten.end_Meter_Reading, atten.EbTotAmount] : [atten.Floor, atten.Room, atten.start_Meter_Reading, atten.end_Meter_Reading, atten.EbTotAmount];
+                const insertQuery = isHostelBased ? `INSERT INTO EbReading (Hostel_Id,start_Meter_Reading, end_Meter_Reading, EbTotAmount) VALUES (${atten.Hostel_Id},${atten.start_Meter_Reading},${atten.end_Meter_Reading},${atten.EbTotAmount})` : `INSERT INTO EbReading (Hostel_Id,Floor, Room, start_Meter_Reading, end_Meter_Reading, EbTotAmount) VALUES (\'${atten.Hostel_Id}\',\'${atten.Floor}\',\'${atten.Room}\', ${atten.start_Meter_Reading},\'${atten.end_Meter_Reading}\',\'${atten.EbTotAmount}\')`;
 
-                connection.query(insertQuery, values, function (error, data) {
+                connection.query(insertQuery, function (error, data) {
                     if (error) {
                         console.error(error);
                         response.status(500).json({ message: 'Insertion failed' });
