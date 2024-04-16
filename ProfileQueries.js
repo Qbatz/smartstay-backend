@@ -380,35 +380,42 @@ function getEbReading(connection, response) {
 function EbReadingAmount(connection, atten, response) {
     console.log("atten", atten);
     if (!atten) {
-        response.status(201).json({ message: 'Missing parameter' });
+        response.status(400).json({ message: 'Missing parameter' });
         return;
     }
 
-    if (atten.id) {
-       
-        connection.query(`UPDATE EbReading SET  Floor= ${atten.Floor},Room= ${atten.Room},start_Meter_Reading= ${atten.start_Meter_Reading} end_Meter_Reading='${atten.end_Meter_Reading}' where Hostel_Id ${atten.Hostel_Id}`, function (error, data) {
-            if (error) {
-                console.error(error);
-                response.status(201).json({ message: "Update failed" });
-            } else {
-                response.status(200).json({ message: "Update successful" });
-            }
-        });
-    } else {
-        
-        connection.query(`SELECT isHostelBased FROM hosteldetails `, function (err, datum) {
-            console.log("datum", datum);
-            if (err) {
-                console.error(err);
-                response.status(500).json({ message: 'Database error' });
-                return;
-            }
-            
-            if (datum.length > 0) {
-                const isHostelBased = datum[0].isHostelBased;
-                const insertQuery = isHostelBased ? `INSERT INTO EbReading (Hostel_Id,start_Meter_Reading, end_Meter_Reading, EbTotAmount) VALUES (${atten.Hostel_Id},${atten.start_Meter_Reading},${atten.end_Meter_Reading},${atten.EbTotAmount})` : `INSERT INTO EbReading (Hostel_Id,Floor, Room, start_Meter_Reading, end_Meter_Reading, EbTotAmount) VALUES (\'${atten.Hostel_Id}\',\'${atten.Floor}\',\'${atten.Room}\', ${atten.start_Meter_Reading},\'${atten.end_Meter_Reading}\',\'${atten.EbTotAmount}\')`;
+    connection.query(`SELECT isHostelBased FROM hosteldetails`, function (err, datum) {
+        if (err) {
+            console.error(err);
+            response.status(500).json({ message: 'Database error' });
+            return;
+        }
 
-                connection.query(insertQuery, function (error, data) {
+        if (datum.length > 0) {
+            if (atten.id) {
+                const isHostelBasedUpdated = datum[0].isHostelBased;
+                const updateQuery = isHostelBasedUpdated ?
+                    `UPDATE EbReading SET start_Meter_Reading= ${atten.start_Meter_Reading},end_Meter_Reading=${atten.end_Meter_Reading}, EbTotAmount=${atten.EbTotAmount}  WHERE Hostel_Id= ${atten.Hostel_Id}` :
+                    `UPDATE EbReading SET  Floor= ${atten.Floor},Room= ${atten.Room},start_Meter_Reading= ${atten.start_Meter_Reading} ,end_Meter_Reading=${atten.end_Meter_Reading} where Hostel_Id = ${atten.Hostel_Id}`;
+
+                connection.query(updateQuery, function (error, data) {
+                    if (error) {
+                        console.error(error);
+                        response.status(500).json({ message: 'Update failed' });
+                    } else {
+                        response.status(200).json({ message: 'Update successful' });
+                    }
+                });
+            } else {
+                const isHostelBased = datum[0].isHostelBased;
+                const insertQuery = isHostelBased ?
+                    `INSERT INTO EbReading (Hostel_Id,start_Meter_Reading, end_Meter_Reading, EbTotAmount) VALUES (${atten.Hostel_Id},${atten.start_Meter_Reading},${atten.end_Meter_Reading},${atten.EbTotAmount})` :
+                    `INSERT INTO EbReading (Hostel_Id,Floor, Room, start_Meter_Reading, end_Meter_Reading, EbTotAmount) VALUES (\'${atten.Hostel_Id}\',\'${atten.Floor}\',\'${atten.Room}\', ${atten.start_Meter_Reading},\'${atten.end_Meter_Reading}\',\'${atten.EbTotAmount}\')`;
+                // const insertValues = isHostelBased ?
+                //     [atten.Hostel_Id, atten.start_Meter_Reading, atten.end_Meter_Reading, atten.EbTotAmount] :
+                //     [atten.Hostel_Id, atten.Floor, atten.Room, atten.start_Meter_Reading, atten.end_Meter_Reading, atten.EbTotAmount];
+
+                connection.query(insertQuery, insertValues, function (error, data) {
                     if (error) {
                         console.error(error);
                         response.status(500).json({ message: 'Insertion failed' });
@@ -416,11 +423,11 @@ function EbReadingAmount(connection, atten, response) {
                         response.status(200).json({ message: 'Inserted successfully' });
                     }
                 });
-            } else {
-                response.status(404).json({ message: 'No Data Found' });
             }
-        });
-    }
+        } else {
+            response.status(404).json({ message: 'No Data Found' });
+        }
+    });
 }
 
 

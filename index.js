@@ -131,7 +131,7 @@ app.post('/otp-send/send-mail', (request, response) => {
 
 
 
-cron.schedule("0 0 1 * * ", function () {
+cron.schedule("* * * * * ", function () {
     console.log("This task runs every minute");
     connection.query(`SELECT * FROM hostel where isActive=true`, function (err, users) {
         console.log(" users", users)
