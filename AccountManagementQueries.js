@@ -40,7 +40,10 @@ function createAccountForLogin(connection, reqBodyData, response) {
     console.log("")
     if (reqBodyData.id) {
 if(reqBodyData.profile){
-    uploadProfilePictureToS3Bucket('smartstaydevs', 'Profile/', 'Profile' + reqBodyData.id + '.jpg', reqBodyData.profile, (err, S3URL) => {
+    const timestamp = Date.now();
+console.log("timestamp",timestamp)
+
+    uploadProfilePictureToS3Bucket('smartstaydevs', 'Profile/', 'Profile' + reqBodyData.id + `${timestamp}`+ '.jpg', reqBodyData.profile, (err, S3URL) => {
         console.log("s3URL", S3URL);
         if (err) {
             console.error('Error uploading profile picture:', err);

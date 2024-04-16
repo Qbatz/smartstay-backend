@@ -131,7 +131,7 @@ app.post('/otp-send/send-mail', (request, response) => {
 
 
 
-cron.schedule("* * * * * ", function () {
+cron.schedule("0 0 1 * * ", function () {
     console.log("This task runs every minute");
     connection.query(`SELECT * FROM hostel where isActive=true`, function (err, users) {
         console.log(" users", users)
@@ -340,4 +340,15 @@ app.post('/AmnitiesName_list', (request, response) => {
 app.get('/list/amenities-Name', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     profileQueries.getAmenitiesName(connection, response)
+})
+app.get('/list/EbReading', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*')
+    profileQueries.getEbReading(connection, response)
+})
+app.post('/eb/EbReadind_list', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    const atten = request.body
+    profileQueries.EbReadingAmount(connection, atten, response)
+
+
 })

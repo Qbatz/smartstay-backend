@@ -112,8 +112,9 @@ function InvoiceSettings(connection, reqInvoice, response) {
     console.log("reqInvoice", reqInvoice);
     if (reqInvoice.hostel_Id) {
         if (reqInvoice.profile) {
-            
-            uploadProfilePictureToS3('smartstaydevs', 'Logo/', 'Logo' + reqInvoice.hostel_Id + '.jpg', reqInvoice.profile, (err, s3Url) => {
+            const timestamp = Date.now();
+console.log("timestamp",timestamp)
+            uploadProfilePictureToS3('smartstaydevs', 'Logo/', 'Logo' + reqInvoice.hostel_Id + `${timestamp}` + '.jpg', reqInvoice.profile, (err, s3Url) => {
                 console.log("s3URL", s3Url);
                 if (err) {
                     console.error('Error uploading profile picture:', err);
@@ -305,8 +306,125 @@ function getAmenitiesName(connection, response) {
         }
     })
 }
+function getEbReading(connection, response) {
+    connection.query(`select * from EbReading `, function (err, data) {
+        if (data) {
+            response.status(200).json(data)
+        }
+        else {
+            response.status(201).json({ message: 'No Data Found' })
+        }
+    })
+}
+
+// function EbReadingAmount(connection, atten, response) {
+//     console.log("atten", atten);
+//     if (!atten  ) {
+//         response.status(201).json({ message: 'Missing parameter' });
+//         return;
+//     }
+//     else {
+//         connection.query(`select * from EbReading `, function (error, data) {
+//             console.log("data", data)
+//             if (atten.id) {
+//                 connection.query(`UPDATE EbReading SET Floor= ${atten.Floor},Room= ${atten.Room},start_Meter_Reading= ${atten.start_Meter_Reading} end_Meter_Reading='${atten.end_Meter_Reading}' `, function (error, data) {
+//                     if (error) {
+//                         console.error(error);
+//                         response.status(201).json({ message: "doesn't update" });
+//                     } else {
+//                         response.status(200).json({ message: "Update successful" });
+//                     }
+//                 });
+
+
+//             }
+//             else {
+//                 connection.query(`SELECT * FROM hosteldetails `, function (err, datum) {
+//                     console.log("datum...?", datum)
+//                     if (datum.length>0) {                      
+//                         if (datum[0].isHostelBased ==1) {                                                      
+//                             connection.query(`INSERT INTO EbReading ( start_Meter_Reading, end_Meter_Reading,EbTotAmount) VALUES ( ${atten.start_Meter_Reading},${atten.end_Meter_Reading},${atten.EbTotAmount}`, function (error, data) {
+//                                 if (error) {
+//                                     console.error(error);
+//                                     response.status(202).json({ message: 'Database error' });
+//                                 } else {
+//                                     response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
+//                                 }
+//                             });
+//                         }
+//                         else{
+//                             connection.query(`INSERT INTO EbReading (Floor, Room, start_Meter_Reading, end_Meter_Reading,EbTotAmount) VALUES (\'${atten.Floor}\',\'${atten.Room}\', ${atten.start_Meter_Reading},\'${atten.end_Meter_Reading}\',\'${atten.EbTotAmount}\'`, function (error, data) {
+//                                 if (error) {
+//                                     console.error(error);
+//                                     response.status(202).json({ message: 'Database error' });
+//                                 } else {
+//                                     response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
+//                                 }
+//                             });
+
+//                         }
+                       
+//                     } else {
+//                         response.status(201).json({ message: 'No Data Found' });
+//                     }
+//                 });
+//             }
+            
+            
+          
+            
+//         })
+//     }
+
+// }
+function EbReadingAmount(connection, atten, response) {
+    console.log("atten", atten);
+    if (!atten) {
+        response.status(201).json({ message: 'Missing parameter' });
+        return;
+    }
+
+    if (atten.id) {
+        // Update existing record
+        connection.query(`UPDATE EbReading SET Floor= ${atten.Floor},Room= ${atten.Room},start_Meter_Reading= ${atten.start_Meter_Reading} end_Meter_Reading='${atten.end_Meter_Reading}' where id ${atten.id}`, function (error, data) {
+            if (error) {
+                console.error(error);
+                response.status(500).json({ message: "Update failed" });
+            } else {
+                response.status(200).json({ message: "Update successful" });
+            }
+        });
+    } else {
+        // Insert new record
+        connection.query(`SELECT isHostelBased FROM hosteldetails `, function (err, datum) {
+            console.log("datum", datum);
+            if (err) {
+                console.error(err);
+                response.status(500).json({ message: 'Database error' });
+                return;
+            }
+            
+            if (datum.length > 0) {
+                const isHostelBased = datum[0].isHostelBased;
+                const insertQuery = isHostelBased ? `INSERT INTO EbReading (start_Meter_Reading, end_Meter_Reading, EbTotAmount) VALUES (${atten.start_Meter_Reading},${atten.end_Meter_Reading},${atten.EbTotAmount})` : `INSERT INTO EbReading (Floor, Room, start_Meter_Reading, end_Meter_Reading, EbTotAmount) VALUES (\'${atten.Floor}\',\'${atten.Room}\', ${atten.start_Meter_Reading},\'${atten.end_Meter_Reading}\',\'${atten.EbTotAmount}\')`;
+                const values = isHostelBased ? [atten.start_Meter_Reading, atten.end_Meter_Reading, atten.EbTotAmount] : [atten.Floor, atten.Room, atten.start_Meter_Reading, atten.end_Meter_Reading, atten.EbTotAmount];
+
+                connection.query(insertQuery, values, function (error, data) {
+                    if (error) {
+                        console.error(error);
+                        response.status(500).json({ message: 'Insertion failed' });
+                    } else {
+                        response.status(200).json({ message: 'Inserted successfully' });
+                    }
+                });
+            } else {
+                response.status(404).json({ message: 'No Data Found' });
+            }
+        });
+    }
+}
 
 
 
 
-module.exports = { IsEnableCheck, getAccount, InvoiceSettings, AmenitiesSetting ,UpdateEB,getAmenitiesList,getAmenitiesName};
+module.exports = { IsEnableCheck, getAccount, InvoiceSettings, AmenitiesSetting ,UpdateEB,getAmenitiesList,getAmenitiesName,getEbReading,EbReadingAmount};
