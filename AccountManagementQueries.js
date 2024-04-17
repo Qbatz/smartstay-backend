@@ -176,8 +176,54 @@ function forgetPassword(connection, response, reqData) {
 
 }
 
+function forgetPasswordOtpSend(connection, response, requestData) {
+    console.log("requestData",requestData.email)
+    if (requestData.email) {
+        connection.query(`SELECT * FROM createaccount WHERE email_id= \'${requestData.email}\'`, function (error, data) {
+            if (data && data.length > 0) {
+                const otp = Math.floor(100000 + Math.random() * 900000).toString();
+                console.log("otp is ", otp);
+                connection.query(`UPDATE createaccount SET Otp= \'${otp}\' WHERE email_id=\'${requestData.email}\' `, function (error, data) {
+                    if (data) {
+                        const transporter = nodemailer.createTransport({
+                            service: 'gmail',
+                            auth: {
+                                user: requestData.email,
+                                pass: 'afki rrvo jcke zjdt',
+                            },
 
-function sendOtpForMail(connection, response, Email_Id) {
+                        });
+                        const mailOptions = {
+                            from: requestData.email,
+                            to: requestData.email,
+                            subject: 'OTP for Password Reset',
+                            text: `Your OTP for password reset is: ${otp}`
+                        };
+                        transporter.sendMail(mailOptions, function (err, otpData) {
+                            console.log(" otpData*", otpData);
+                            console.log("otp send error", err);
+                            if (err) {
+                                response.status(203).json({ message: "Failed to send OTP to email", statusCode: 203 });
+                            } else {
+                                console.log('Email sent: ' + otp);
+                                response.status(200).json({ message: "Otp send  Successfully", otp: otp});
+                            }
+                        });
+                    } else {
+                        response.status(201).json({ message: "No User Found" });
+                    }
+                });
+            } else {
+                response.status(201).json({ message: `${requestData.email} is doesn't exist`, statusCode: 201 });
+            }
+        });
+    } else {
+        response.status(203).json({ message: "Missing parameter", statusCode: 203 });
+    }
+
+}
+
+function sendOtpForMail(connection, response, Email_Id,requestData) {
     if (Email_Id) {
         connection.query(`SELECT * FROM createaccount WHERE email_id= \'${Email_Id}\'`, function (error, data) {
             if (data && data.length > 0) {
@@ -214,7 +260,7 @@ function sendOtpForMail(connection, response, Email_Id) {
                     }
                 });
             } else {
-                response.status(201).json({ message: `${requestData.email} is doesn't exist`, statusCode: 201 });
+                response.status(201).json({ message: `${requestData.Email_Id} is doesn't exist`, statusCode: 201 });
             }
         });
     } else {
@@ -242,4 +288,4 @@ function sendResponseOtp(connection, response, requestData){
 
 
 
-module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail,sendResponseOtp }
+module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail,sendResponseOtp,forgetPasswordOtpSend }

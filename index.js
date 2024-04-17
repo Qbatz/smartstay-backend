@@ -120,7 +120,8 @@ app.post('/forget/select-list', (request, response) => {
 app.post('/otp-send/send-mail', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const requestData = request.body
-    accountManagement.sendOtpForMail(connection, response, requestData)
+    console.log("requestData",requestData)
+    accountManagement.forgetPasswordOtpSend(connection, response, requestData)
 })
 app.post('/otp-send/response', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
