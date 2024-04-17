@@ -223,7 +223,7 @@ function forgetPasswordOtpSend(connection, response, requestData) {
 
 }
 
-function sendOtpForMail(connection, response, Email_Id,requestData) {
+function sendOtpForMail(connection, response, Email_Id) {
     if (Email_Id) {
         connection.query(`SELECT * FROM createaccount WHERE email_id= \'${Email_Id}\'`, function (error, data) {
             if (data && data.length > 0) {
@@ -260,7 +260,7 @@ function sendOtpForMail(connection, response, Email_Id,requestData) {
                     }
                 });
             } else {
-                response.status(201).json({ message: `${requestData.Email_Id} is doesn't exist`, statusCode: 201 });
+                response.status(201).json({ message: `${Email_Id} is doesn't exist`, statusCode: 201 });
             }
         });
     } else {
