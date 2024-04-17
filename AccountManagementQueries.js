@@ -230,7 +230,7 @@ function sendResponseOtp(connection, response, requestData){
       console.log("resData",resData)
        if(resData.length > 0 && resData[0].Otp == requestData.OTP){
          
-        response.status(200).json({ message: "OTP Verified Success" })
+        response.status(200).json({ message: "OTP Verified Success",statusCode: 200 })
        } else {
          
         response.status(201).json({ message: "Enter Valid Otp", statusCode: 201 })
