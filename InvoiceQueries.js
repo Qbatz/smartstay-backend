@@ -40,7 +40,7 @@ function calculateAndInsertInvoice(connection, user) {
                 return;
             }
 
-            // console.log("amenitiesData", amenitiesData);
+            console.log("amenitiesData", amenitiesData);
 
             // Fetch room data
             connection.query(`SELECT * FROM hostelrooms WHERE Hostel_Id = ${connection.escape(user.Hostel_Id)} AND Floor_Id = ${connection.escape(user.Floor)} AND Room_Id = ${connection.escape(user.Rooms)}`, function (err, roomData) {
@@ -91,13 +91,19 @@ function calculateAndInsertInvoice(connection, user) {
 
 
                 let totalAmenitiesAmount = 0;
+                let minusAmnities = 0;
                 for (let i = 0; i < amenitiesData.length; i++) {
                     if (amenitiesData[i].Hostel_Id === user.Hostel_Id && amenitiesData[i].setAsDefault === 0 && amenitiesData[i].Status === 1) {
                         totalAmenitiesAmount += amenitiesData[i].Amount;
                     }
+                    else{
+                        minusAmnities = amenitiesData[i].Amount
+                    }
                 }
 
                 console.log("Total Amenities Amount:", totalAmenitiesAmount);
+                console.log("minusAmnities:", minusAmnities);
+
 
                 if (existingData.length > 0) {
                     let filteredArray = existingData.filter(item => item.Hostel_Id == user.Hostel_Id);
@@ -159,7 +165,7 @@ function calculateAndInsertInvoice(connection, user) {
                                 // console.log("AdvanceAmount.for Amenities..?.....?", AdvanceAmount);
 
                                 if (!isNaN(AdvanceAmount)) {
-                                    const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id,RoomRent,EbAmount,AmnitiesAmount) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}',${roomPrice},${existingData[0].EbAmount},${totalAmenitiesAmount})`;
+                                    const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id,RoomRent,EbAmount,AmnitiesAmount,Amnities_deduction_Amount) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}',${roomPrice},${existingData[0].EbAmount},${totalAmenitiesAmount},${minusAmnities})`;
                                     // console.log("Insertion query:", query);
                                     connection.query(query, function (error, data) {
                                         if (error) {
@@ -173,7 +179,7 @@ function calculateAndInsertInvoice(connection, user) {
                                 // console.log("AdvanceAmount...????", AdvanceAmount);
 
                                 if (!isNaN(AdvanceAmount) && isFinite(AdvanceAmount)) {
-                                    const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id,RoomRent,EbAmount,AmnitiesAmount) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}',${roomPrice},${existingData[0].EbAmount},${totalAmenitiesAmount})`;
+                                    const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id,RoomRent,EbAmount,AmnitiesAmount,Amnities_deduction_Amount) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}',${roomPrice},${existingData[0].EbAmount},${totalAmenitiesAmount},${minusAmnities})`;
                                     // console.log("Insertion query:", query);
                                     connection.query(query, function (error, data) {
                                         if (error) {
@@ -653,8 +659,7 @@ function convertAmountToWords(amount) {
     return words.trim();
 }
 
-function EbAmount(connection, atten, response) {
-   
+function EbAmount(connection, atten, response) {  
     console.log("atten", atten);
     if (!atten) {
         response.status(400).json({ message: 'Missing parameter' });

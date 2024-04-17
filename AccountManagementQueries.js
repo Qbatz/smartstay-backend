@@ -39,42 +39,42 @@ function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileDa
 function createAccountForLogin(connection, reqBodyData, response) {
     console.log("")
     if (reqBodyData.id) {
-if(reqBodyData.profile){
-    const timestamp = Date.now();
-console.log("timestamp",timestamp)
+        if (reqBodyData.profile) {
+            const timestamp = Date.now();
+            console.log("timestamp", timestamp)
 
-    uploadProfilePictureToS3Bucket('smartstaydevs', 'Profile/', 'Profile' + reqBodyData.id + `${timestamp}`+ '.jpg', reqBodyData.profile, (err, S3URL) => {
-        console.log("s3URL", S3URL);
-        if (err) {
-            console.error('Error uploading profile picture:', err);
-            response.status(500).json({ message: 'Error uploading profile picture' });
-        } else {
-            const query = `UPDATE createaccount SET profile='${S3URL}' WHERE id='${reqBodyData.id}'`;
-            connection.query(query, function (error, profileData) {
-                console.log("profileData", profileData);
-                console.log("error profileData", error);
-                if (error) {
-                    response.status(202).json({ message: 'Database error' });
+            uploadProfilePictureToS3Bucket('smartstaydevs', 'Profile/', 'Profile' + reqBodyData.id + `${timestamp}` + '.jpg', reqBodyData.profile, (err, S3URL) => {
+                console.log("s3URL", S3URL);
+                if (err) {
+                    console.error('Error uploading profile picture:', err);
+                    response.status(500).json({ message: 'Error uploading profile picture' });
                 } else {
-                    response.status(200).json({ message: 'profile Updated successfully', statusCode: 200 });
+                    const query = `UPDATE createaccount SET profile='${S3URL}' WHERE id='${reqBodyData.id}'`;
+                    connection.query(query, function (error, profileData) {
+                        console.log("profileData", profileData);
+                        console.log("error profileData", error);
+                        if (error) {
+                            response.status(202).json({ message: 'Database error' });
+                        } else {
+                            response.status(200).json({ message: 'profile Updated successfully', statusCode: 200 });
+                        }
+                    });
+                }
+            });
+
+
+        } else {
+
+            connection.query(`UPDATE createaccount SET Name='${reqBodyData.name}', mobileNo='${reqBodyData.mobileNo}', email_Id='${reqBodyData.emailId}', Address='${reqBodyData.Address}', Country='${reqBodyData.Country}', City='${reqBodyData.City}', State='${reqBodyData.State}' WHERE id='${reqBodyData.id}'`, function (error, data) {
+                if (error) {
+                    console.log("error", error);
+                    response.status(201).json({ message: "No User Found" });
+                } else {
+                    response.status(200).json({ message: "Update Successfully" });
+                    console.log("Success")
                 }
             });
         }
-    });
-
-
-}else{
-
-        connection.query(`UPDATE createaccount SET Name='${reqBodyData.name}', mobileNo='${reqBodyData.mobileNo}', email_Id='${reqBodyData.emailId}', Address='${reqBodyData.Address}', Country='${reqBodyData.Country}', City='${reqBodyData.City}', State='${reqBodyData.State}' WHERE id='${reqBodyData.id}'`, function (error, data) {
-            if (error) {
-                console.log("error", error);
-                response.status(201).json({ message: "No User Found" });
-            } else {
-                response.status(200).json({ message: "Update Successfully" });
-                console.log("Success")
-            }
-        });
-    }
 
     }
     else if (reqBodyData.mobileNo && reqBodyData.emailId) {
@@ -111,56 +111,9 @@ console.log("timestamp",timestamp)
 }
 
 
-
-// function createAccountForLogin(connection, reqBodyData, response) {
-//     if (reqBodyData.id) {
-//         connection.query(`UPDATE createaccount SET Name='${reqBodyData.name}', mobileNo='${reqBodyData.mobileNo}', email_Id='${reqBodyData.emailId}', Address='${reqBodyData.Address}', Country='${reqBodyData.Country}', City='${reqBodyData.City}', State='${reqBodyData.State}',profile='${reqBodyData.profile}' WHERE id='${reqBodyData.id}'`, function (error, data) {
-//             if (error) {
-//                 console.log("error", error);
-//                 response.status(201).json({ message: "No User Found" });
-//             } else {
-//                 response.status(200).json({ message: "Update Successfully" });
-//                 console.log("Success")
-//             }
-//         });
-//     }
-//     else if (reqBodyData.mobileNo && reqBodyData.emailId) {
-//         connection.query(`SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`, function (error, data) {
-//             console.log("data for", data);
-
-//             if (data.length === 0) {
-//                 connection.query(`INSERT INTO createaccount(Name, mobileNo, email_Id, password) VALUES ('${reqBodyData.name}', '${reqBodyData.mobileNo}', '${reqBodyData.emailId}', '${reqBodyData.password}')`, function (error, data) {
-//                     if (error) {
-//                         console.log("error", error);
-//                         response.status(500).json({ message: 'Database error' });
-//                     } else {
-//                         response.status(200).json({ message: 'Created Successfully', statusCode: 200 });
-//                     }
-//                 });
-//             } else {
-//                 const mobileExists = data.some(record => record.mobileNo === reqBodyData.mobileNo);
-//                 const emailExists = data.some(record => record.email_Id === reqBodyData.emailId);
-
-//                 if (mobileExists && emailExists) {
-//                     response.status(203).json({ message: 'Mobile Number and Email ID is already exist', statusCode: 203 });
-//                 } else if (emailExists) {
-//                     response.status(201).json({ message: 'Email ID already exists', statusCode: 201 });
-//                 } else if (mobileExists) {
-//                     response.status(202).json({ message: 'Mobile Number already exists', statusCode: 202 });
-//                 }
-//             }
-//         });
-//     }
-
-//     else {
-//         response.status(201).json({ message: 'Missing Parameter' });
-//     }
-// }
-
-
 function loginAccount(connection, response, email_Id, password) {
     if (email_Id && password) {
-        connection.query(`SELECT * FROM createaccount WHERE email_Id='${email_Id}'`, function (error, data) {
+        connection.query(`SELECT * FROM createaccount WHERE email_Id='${email_Id}' and password = '${password}' `, function (error, data) {
             console.log('data', data, "error", error)
             if (error) {
                 console.error(error);
@@ -170,14 +123,20 @@ function loginAccount(connection, response, email_Id, password) {
                     const storedPassword = data[0].password;
                     const isEnable = data[0].isEnable
                     const providedPassword = password;
-                    if (isEnable == true) {
+
+                    const Email_Id = email_Id
+
+                    if (isEnable == 1) {
+                        response.status(203).json({ message: "otp Send Successfully", statusCode: 203, Data: data })
+                        sendOtpForMail(connection, response, Email_Id)
+                    } else {
+                        response.status(200).json({ message: "Login Successfully", statusCode: 200, Data: data });
 
                     }
-                    if (storedPassword === providedPassword) {
-                        response.status(200).json({ message: "Login Successfully", statusCode: 200, Data: data });
-                    } else {
-                        response.status(201).json({ message: "Please Enter valid Password", statusCode: 201 });
-                    }
+                    // if (storedPassword === providedPassword) {
+                    // } else {
+                    //     response.status(201).json({ message: "Please Enter valid Password", statusCode: 201 });
+                    // }
                 } else {
                     response.status(201).json({ message: "Please Enter valid Email ID", statusCode: 201 });
                 }
@@ -218,25 +177,25 @@ function forgetPassword(connection, response, reqData) {
 }
 
 
-function sendOtpForMail(connection, response, requestData) {
-    if (requestData.email) {
-        connection.query(`SELECT * FROM createaccount WHERE email_id= \'${requestData.email}\'`, function (error, data) {
+function sendOtpForMail(connection, response, Email_Id) {
+    if (Email_Id) {
+        connection.query(`SELECT * FROM createaccount WHERE email_id= \'${Email_Id}\'`, function (error, data) {
             if (data && data.length > 0) {
                 const otp = Math.floor(100000 + Math.random() * 900000).toString();
                 console.log("otp is ", otp);
-                connection.query(`UPDATE createaccount SET Otp= \'${otp}\' WHERE email_id=\'${requestData.email}\' `, function (error, data) {
+                connection.query(`UPDATE createaccount SET Otp= \'${otp}\' WHERE email_id=\'${Email_Id}\' `, function (error, data) {
                     if (data) {
                         const transporter = nodemailer.createTransport({
                             service: 'gmail',
                             auth: {
-                                user: requestData.email,
+                                user: Email_Id,
                                 pass: 'afki rrvo jcke zjdt',
                             },
 
                         });
                         const mailOptions = {
-                            from: requestData.email,
-                            to: requestData.email,
+                            from: Email_Id,
+                            to: Email_Id,
                             subject: 'OTP for Password Reset',
                             text: `Your OTP for password reset is: ${otp}`
                         };
@@ -247,7 +206,7 @@ function sendOtpForMail(connection, response, requestData) {
                                 response.status(203).json({ message: "Failed to send OTP to email", statusCode: 203 });
                             } else {
                                 console.log('Email sent: ' + otp);
-                                response.status(200).json({ message: "Otp send  Successfully", otp: otp });
+                                response.status(200).json({ message: "Otp send  Successfully", otp: otp});
                             }
                         });
                     } else {
@@ -265,6 +224,22 @@ function sendOtpForMail(connection, response, requestData) {
 }
 
 
+ 
+function sendResponseOtp(connection, response, requestData){
+    connection.query(`SELECT * FROM createaccount WHERE email_id= \'${requestData.Email_Id}\' ` ,function (error, resData){
+      console.log("resData",resData)
+       if(resData.length > 0 && resData[0].Otp == requestData.OTP){
+         
+        response.status(200).json({ message: "OTP Verified Success" })
+       } else {
+         
+        response.status(201).json({ message: "Enter Valid Otp", statusCode: 201 })
+       }
+ 
+    })
+ }
 
 
-module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail }
+
+
+module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail,sendResponseOtp }
