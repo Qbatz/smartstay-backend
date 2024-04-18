@@ -33,7 +33,6 @@ function calculateAndInsertInvoice(connection, user) {
             return;
         }
 
-        // Fetch amenities data
         connection.query(`SELECT * FROM Amenities`, function (err, amenitiesData) {
             if (err) {
                 console.error("Error fetching amenities data:", err);
@@ -91,18 +90,18 @@ function calculateAndInsertInvoice(connection, user) {
 
 
                 let totalAmenitiesAmount = 0;
-                let minusAmnities = 0;
+                // let minusAmnities = 0;
                 for (let i = 0; i < amenitiesData.length; i++) {
                     if (amenitiesData[i].Hostel_Id === user.Hostel_Id && amenitiesData[i].setAsDefault === 0 && amenitiesData[i].Status === 1) {
                         totalAmenitiesAmount += amenitiesData[i].Amount;
                     }
-                    else{
-                        minusAmnities = amenitiesData[i].Amount
-                    }
+                    // else{
+                    //     minusAmnities = amenitiesData[i].Amount
+                    // }
                 }
 
                 console.log("Total Amenities Amount:", totalAmenitiesAmount);
-                console.log("minusAmnities:", minusAmnities);
+                
 
 
                 if (existingData.length > 0) {
@@ -165,7 +164,7 @@ function calculateAndInsertInvoice(connection, user) {
                                 // console.log("AdvanceAmount.for Amenities..?.....?", AdvanceAmount);
 
                                 if (!isNaN(AdvanceAmount)) {
-                                    const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id,RoomRent,EbAmount,AmnitiesAmount,Amnities_deduction_Amount) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}',${roomPrice},${existingData[0].EbAmount},${totalAmenitiesAmount},${minusAmnities})`;
+                                    const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id,RoomRent,EbAmount,AmnitiesAmount) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}',${roomPrice},${existingData[0].EbAmount},${totalAmenitiesAmount})`;
                                     // console.log("Insertion query:", query);
                                     connection.query(query, function (error, data) {
                                         if (error) {
@@ -179,7 +178,7 @@ function calculateAndInsertInvoice(connection, user) {
                                 // console.log("AdvanceAmount...????", AdvanceAmount);
 
                                 if (!isNaN(AdvanceAmount) && isFinite(AdvanceAmount)) {
-                                    const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id,RoomRent,EbAmount,AmnitiesAmount,Amnities_deduction_Amount) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}',${roomPrice},${existingData[0].EbAmount},${totalAmenitiesAmount},${minusAmnities})`;
+                                    const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id,RoomRent,EbAmount,AmnitiesAmount) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}',${roomPrice},${existingData[0].EbAmount},${totalAmenitiesAmount})`;
                                     // console.log("Insertion query:", query);
                                     connection.query(query, function (error, data) {
                                         if (error) {
@@ -677,8 +676,8 @@ function EbAmount(connection, atten, response) {
             if (atten.id) {
                 const isHostelBasedUpdated = datum[0].isHostelBased;
                 const updateQuery = isHostelBasedUpdated ?
-                    `UPDATE EbAmount SET start_Meter_Reading= ${atten.start_Meter_Reading},end_Meter_Reading=${atten.end_Meter_Reading}, EbAmount=${atten.EbAmount}  WHERE Hostel_Id= ${atten.Hostel_Id}` :
-                    `UPDATE EbAmount SET  Floor= ${atten.Floor},Room= ${atten.Room},start_Meter_Reading= ${atten.start_Meter_Reading} ,end_Meter_Reading=${atten.end_Meter_Reading},EbAmount=${atten.EbAmount} where Hostel_Id = ${atten.Hostel_Id}`;
+                    `UPDATE EbAmount SET start_Meter_Reading= ${atten.start_Meter_Reading},end_Meter_Reading=${atten.end_Meter_Reading}, EbAmount=${atten.EbAmount} WHERE Hostel_Id= ${atten.Hostel_Id}` :
+                    `UPDATE EbAmount SET  Floor= ${atten.Floor},Room= ${atten.Room},start_Meter_Reading= ${atten.start_Meter_Reading} ,end_Meter_Reading=${atten.end_Meter_Reading},EbAmount=${atten.EbAmount}  where Hostel_Id = ${atten.Hostel_Id}`;
 
                 connection.query(updateQuery, function (error, data) {
                     if (error) {
@@ -691,8 +690,8 @@ function EbAmount(connection, atten, response) {
             } else {
                 const isHostelBased = datum[0].isHostelBased;
                 const insertQuery = isHostelBased ?
-                    `INSERT INTO EbAmount (Hostel_Id,start_Meter_Reading, end_Meter_Reading, EbAmount) VALUES (${atten.Hostel_Id},${atten.start_Meter_Reading},${atten.end_Meter_Reading},${atten.EbAmount})` :
-                    `INSERT INTO EbAmount (Hostel_Id,Floor, Room, start_Meter_Reading, end_Meter_Reading, EbAmount) VALUES (\'${atten.Hostel_Id}\',\'${atten.Floor}\',\'${atten.Room}\', ${atten.start_Meter_Reading},\'${atten.end_Meter_Reading}\',\'${atten.EbAmount}\')`;
+                    `INSERT INTO EbAmount (Hostel_Id,start_Meter_Reading, end_Meter_Reading,EbAmount) VALUES (${atten.Hostel_Id},${atten.start_Meter_Reading},${atten.end_Meter_Reading},${atten.EbAmount})` :
+                    `INSERT INTO EbAmount (Hostel_Id,Floor, Room, start_Meter_Reading, end_Meter_Reading,EbAmount) VALUES (\'${atten.Hostel_Id}\',\'${atten.Floor}\',\'${atten.Room}\', ${atten.start_Meter_Reading},\'${atten.end_Meter_Reading}\',\'${atten.EbAmount}\')`;
 
                 connection.query(insertQuery, function (error, data) {
                     if (error) {

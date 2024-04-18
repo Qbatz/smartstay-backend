@@ -120,24 +120,18 @@ function loginAccount(connection, response, email_Id, password) {
                 response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
             } else {
                 if (data.length > 0) {
-                    const storedPassword = data[0].password;
+             
                     const isEnable = data[0].isEnable
-                    const providedPassword = password;
-
-                    const Email_Id = email_Id
+                                  
 
                     if (isEnable == 1) {
-                        response.status(203).json({ message: "otp Send Successfully", statusCode: 203, Data: data })
-                        sendOtpForMail(connection, response, Email_Id)
-                    } else {
+                        sendOtpForMail(connection, response, email_Id)
+                        response.status(203).json({ message: "otp Send Successfully", statusCode: 203 })
+                                           } else {
                         response.status(200).json({ message: "Login Successfully", statusCode: 200, Data: data });
 
                     }
-                    // if (storedPassword === providedPassword) {
-                    // } else {
-                    //     response.status(201).json({ message: "Please Enter valid Password", statusCode: 201 });
-                    // }
-                } else {
+                                   } else {
                     response.status(201).json({ message: "Please Enter valid Email ID", statusCode: 201 });
                 }
             }
@@ -177,7 +171,7 @@ function forgetPassword(connection, response, reqData) {
 }
 
 function forgetPasswordOtpSend(connection, response, requestData) {
-    console.log("requestData",requestData.email)
+    console.log("requestData", requestData.email)
     if (requestData.email) {
         connection.query(`SELECT * FROM createaccount WHERE email_id= \'${requestData.email}\'`, function (error, data) {
             if (data && data.length > 0) {
@@ -206,7 +200,7 @@ function forgetPasswordOtpSend(connection, response, requestData) {
                                 response.status(203).json({ message: "Failed to send OTP to email", statusCode: 203 });
                             } else {
                                 console.log('Email sent: ' + otp);
-                                response.status(200).json({ message: "Otp send  Successfully", otp: otp});
+                                response.status(200).json({ message: "Otp send  Successfully", otp: otp });
                             }
                         });
                     } else {
@@ -225,8 +219,7 @@ function forgetPasswordOtpSend(connection, response, requestData) {
 
 function sendOtpForMail(connection, response, Email_Id) {
     if (Email_Id) {
-        connection.query(`SELECT * FROM createaccount WHERE email_id= \'${Email_Id}\'`, function (error, data) {
-            if (data && data.length > 0) {
+       
                 const otp = Math.floor(100000 + Math.random() * 900000).toString();
                 console.log("otp is ", otp);
                 connection.query(`UPDATE createaccount SET Otp= \'${otp}\' WHERE email_id=\'${Email_Id}\' `, function (error, data) {
@@ -259,12 +252,9 @@ function sendOtpForMail(connection, response, Email_Id) {
                         response.status(201).json({ message: "No User Found" });
                     }
                 });
-            } else {
-                response.status(201).json({ message: `${Email_Id} is doesn't exist`, statusCode: 201 });
-            }
-        });
+           
     } else {
-        response.status(203).json({ message: "Missing parameter", statusCode: 203 });
+        response.status(201).json({ message: `${Email_Id} is doesn't exist`, statusCode: 201 });
     }
 
 }
@@ -276,7 +266,7 @@ function sendResponseOtp(connection, response, requestData){
       console.log("resData",resData)
        if(resData.length > 0 && resData[0].Otp == requestData.OTP){
          
-        response.status(200).json({ message: "OTP Verified Success",statusCode: 200 })
+        response.status(200).json({ message: "OTP Verified Success",statusCode: 200, Data:resData })
        } else {
          
         response.status(201).json({ message: "Enter Valid Otp", statusCode: 201 })
@@ -288,4 +278,4 @@ function sendResponseOtp(connection, response, requestData){
 
 
 
-module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail,sendResponseOtp,forgetPasswordOtpSend }
+module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend }
