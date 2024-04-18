@@ -101,7 +101,7 @@ function calculateAndInsertInvoice(connection, user) {
                 }
 
                 console.log("Total Amenities Amount:", totalAmenitiesAmount);
-                
+
 
 
                 if (existingData.length > 0) {
@@ -658,7 +658,7 @@ function convertAmountToWords(amount) {
     return words.trim();
 }
 
-function EbAmount(connection, atten, response) {  
+function EbAmount(connection, atten, response) {
     console.log("atten", atten);
     if (!atten) {
         response.status(400).json({ message: 'Missing parameter' });
@@ -687,7 +687,10 @@ function EbAmount(connection, atten, response) {
                         response.status(200).json({ message: 'Update successful' });
                     }
                 });
-            } else {
+            }
+
+             else {
+
                 const isHostelBased = datum[0].isHostelBased;
                 const insertQuery = isHostelBased ?
                     `INSERT INTO EbAmount (Hostel_Id,start_Meter_Reading, end_Meter_Reading,EbAmount) VALUES (${atten.Hostel_Id},${atten.start_Meter_Reading},${atten.end_Meter_Reading},${atten.EbAmount})` :
@@ -702,6 +705,8 @@ function EbAmount(connection, atten, response) {
                     }
                 });
             }
+           
+
         } else {
             response.status(203).json({ message: 'No Data Found' });
         }

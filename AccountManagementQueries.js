@@ -114,7 +114,7 @@ function createAccountForLogin(connection, reqBodyData, response) {
 function loginAccount(connection, response, email_Id, password) {
     if (email_Id && password) {
         connection.query(`SELECT * FROM createaccount WHERE email_Id='${email_Id}' and password = '${password}' `, function (error, data) {
-            console.log('data', data, "error", error)
+            console.log('data *&*', data, "error", error)
             if (error) {
                 console.error(error);
                 response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
@@ -122,10 +122,11 @@ function loginAccount(connection, response, email_Id, password) {
                 if (data.length > 0) {
              
                     const isEnable = data[0].isEnable
-                                  
+                     const LoginId = data[0].id  
+
 
                     if (isEnable == 1) {
-                        sendOtpForMail(connection, response, email_Id)
+                        sendOtpForMail(connection, response, email_Id, LoginId)
                         response.status(203).json({ message: "otp Send Successfully", statusCode: 203 })
                                            } else {
                         response.status(200).json({ message: "Login Successfully", statusCode: 200, Data: data });
@@ -171,13 +172,16 @@ function forgetPassword(connection, response, reqData) {
 }
 
 function forgetPasswordOtpSend(connection, response, requestData) {
-    console.log("requestData", requestData.email)
+    console.log("requestData",requestData.email)
     if (requestData.email) {
         connection.query(`SELECT * FROM createaccount WHERE email_id= \'${requestData.email}\'`, function (error, data) {
             if (data && data.length > 0) {
                 const otp = Math.floor(100000 + Math.random() * 900000).toString();
                 console.log("otp is ", otp);
-                connection.query(`UPDATE createaccount SET Otp= \'${otp}\' WHERE email_id=\'${requestData.email}\' `, function (error, data) {
+
+             const LoginId = data[0].id
+             console.log("LoginId",LoginId)
+                connection.query(`UPDATE createaccount SET Otp= \'${otp}\' WHERE email_id=\'${requestData.email}\' AND id = \' ${LoginId}\'  `, function (error, data) {
                     if (data) {
                         const transporter = nodemailer.createTransport({
                             service: 'gmail',
@@ -200,7 +204,7 @@ function forgetPasswordOtpSend(connection, response, requestData) {
                                 response.status(203).json({ message: "Failed to send OTP to email", statusCode: 203 });
                             } else {
                                 console.log('Email sent: ' + otp);
-                                response.status(200).json({ message: "Otp send  Successfully", otp: otp });
+                                response.status(200).json({ message: "Otp send  Successfully", otp: otp});
                             }
                         });
                     } else {
@@ -217,12 +221,13 @@ function forgetPasswordOtpSend(connection, response, requestData) {
 
 }
 
-function sendOtpForMail(connection, response, Email_Id) {
+function sendOtpForMail(connection, response, Email_Id,LoginId) {
     if (Email_Id) {
-       
+        // connection.query(`SELECT * FROM createaccount WHERE email_id= \'${Email_Id}\'`, function (error, data) {
+            // if (data && data.length > 0) {
                 const otp = Math.floor(100000 + Math.random() * 900000).toString();
                 console.log("otp is ", otp);
-                connection.query(`UPDATE createaccount SET Otp= \'${otp}\' WHERE email_id=\'${Email_Id}\' `, function (error, data) {
+                connection.query(`UPDATE createaccount SET Otp= \'${otp}\' WHERE email_id=\'${Email_Id}\' AND id = \'${LoginId}\' `, function (error, data) {
                     if (data) {
                         const transporter = nodemailer.createTransport({
                             service: 'gmail',
@@ -252,7 +257,10 @@ function sendOtpForMail(connection, response, Email_Id) {
                         response.status(201).json({ message: "No User Found" });
                     }
                 });
-           
+            // } else {
+            //     response.status(201).json({ message: `${Email_Id} is doesn't exist`, statusCode: 201 });
+            // }
+        // });
     } else {
         response.status(201).json({ message: `${Email_Id} is doesn't exist`, statusCode: 201 });
     }
