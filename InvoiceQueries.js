@@ -752,10 +752,22 @@ function getEBList(connection, request, response) {
     });
 }
 
+function getEbStart(connection, response) {
+    connection.query('select * from EbAmount', function (error, data) {
+        console.log(error);
+        console.log(data);
+
+        if (error) {
+            response.status(203).json({ message: 'not connected' })
+        }
+        else {
+            response.status(200).json(data)
+        }
+    })
+}
 
 
 
 
 
-
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount,getEBList };
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount,getEBList ,getEbStart};
