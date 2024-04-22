@@ -151,6 +151,15 @@ app.get('/list/invoice-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     invoiceQueries.getInvoiceList(connection, response)
 })
+// app.get('/list/eb_list', (request, response) => {
+//     response.set('Access-Control-Allow-Origin', '*')
+//     invoiceQueries.getEBList(connection, response,request)
+// })
+app.get('/list/eb_list', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*')
+    invoiceQueries.getEBList(connection, request, response)
+})
+
 
 
 // app.get('/invoice/invoice-list-pdf',(request, response) => {

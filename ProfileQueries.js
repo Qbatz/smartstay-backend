@@ -234,9 +234,9 @@ function AmenitiesSetting(connection, reqData, response) {
             else {
                 const amenitiesName = reqData.AmenitiesName.trim().toLowerCase().replace(/\s+/g, ''); 
                 connection.query(`SELECT * FROM AmnitiesName WHERE LOWER(Amnities_Name) = '${amenitiesName}'`, function (err, data) {
-                    console.log("data...?", data.length)
+                    console.log("data...?", data)
                     if (data.length === 0) {
-                        connection.query(`INSERT INTO AmnitiesName (Amnities_Name) VALUES ('${reqData.AmenitiesName}')`, function (error, data) {
+                        connection.query(`INSERT INTO AmnitiesName (Amnities_Name) VALUES ('${amenitiesName}')`, function (error, data) {
                             if (error) {
                                 console.error(error);
                                 response.status(202).json({ message: 'Database error' });
