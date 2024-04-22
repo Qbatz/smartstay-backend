@@ -23,10 +23,11 @@ const https = require('https');
 function calculateAndInsertInvoice(connection, user) {
     // console.log("user **", user);  
     connection.query(`
-        SELECT hos.id AS Hosteldetails_Id, hos.prefix, hos.suffix, hos.Name, hos.isHostelBased, eb.Hostel_Id AS EbHostel_Id, eb.Floor, eb.Room, eb.EbAmount FROM hosteldetails AS hos  
+        SELECT hos.id AS Hosteldetails_Id, hos.prefix, hos.suffix, hos.Name, hos.isHostelBased, eb.Hostel_Id AS EbHostel_Id, eb.Floor, eb.Room, eb.EbAmount,eb.createAt FROM hosteldetails AS hos  
         INNER JOIN EbAmount AS eb ON hos.id = eb.Hostel_Id 
         WHERE hos.id = ${user.Hostel_Id} 
         GROUP BY hos.id`, function (err, existingData) {
+            console.log("existingData",existingData)
 
         if (err) {
             console.error("Error fetching hosteldetails:", err);
@@ -87,6 +88,7 @@ function calculateAndInsertInvoice(connection, user) {
                 let AdvanceAmount = 0;
                 let HostelBasedEb = 0;
                 let roomBasedEb = 0;
+                let creatAtMonth
 
 
                 let totalAmenitiesAmount = 0;
@@ -112,7 +114,7 @@ function calculateAndInsertInvoice(connection, user) {
                         // console.log("result", result);
 
                         if (result.length > 0) {
-                            if (existingData[0].isHostelBased === 1) {
+                            if (existingData[0].isHostelBased === 1  ) {
                                 HostelBasedEb = existingData[0].EbAmount / result.length;
                                 // console.log("filteredArray[0].EbAmount", existingData[0].EbAmount);
                                 console.log("HostelBasedEb", HostelBasedEb);
@@ -137,7 +139,7 @@ function calculateAndInsertInvoice(connection, user) {
                                     return item.EbHostel_Id === resultData[0].Hostel_Id && item.Floor === resultData[0].Floor && item.Room === resultData[0].Rooms
                                 });
                                 console.log("tempArray", tempArray);
-                                if (tempArray.length > 0 && tempArray[0].isHostelBased === 0) {
+                                if (tempArray.length > 0 && tempArray[0].isHostelBased === 0 ) {
                                     roomBasedEb = tempArray[0].EbAmount / resultData.length;
                                     // console.log("filteredArray[0].EbAmount.....?", tempArray[0].EbAmount);
                                     console.log("roomBasedEb", roomBasedEb);
@@ -675,8 +677,8 @@ function EbAmount(connection, atten, response) {
             if (atten.id) {
                 const isHostelBasedUpdated = datum[0].isHostelBased;
                 const updateQuery = isHostelBasedUpdated ?
-                    `UPDATE EbAmount SET start_Meter_Reading= ${atten.start_Meter_Reading},end_Meter_Reading=${atten.end_Meter_Reading}, EbAmount=${atten.EbAmount} WHERE Hostel_Id= ${atten.Hostel_Id}` :
-                    `UPDATE EbAmount SET  Floor= ${atten.Floor},Room= ${atten.Room},start_Meter_Reading= ${atten.start_Meter_Reading} ,end_Meter_Reading=${atten.end_Meter_Reading},EbAmount=${atten.EbAmount}  where Hostel_Id = ${atten.Hostel_Id}`;
+                    `UPDATE EbAmount SET EbAmount=${atten.EbAmount} WHERE Hostel_Id= ${atten.Hostel_Id}` :
+                    `UPDATE EbAmount SET EbAmount=${atten.EbAmount}  where Hostel_Id = ${atten.Hostel_Id}, Floor= ${atten.Floor},Room= ${atten.Room}`;
                 connection.query(updateQuery, function (error, data) {
                     if (error) {
                         console.error(error);
@@ -732,55 +734,19 @@ function EbAmount(connection, atten, response) {
 
 };
 
-// function getEBList (connection, request, response){
-    
-//     connection.query('select inv.Name ,inv.Room_No, eb.Eb_Unit,eb.EbAmount FROM invoicedetails AS inv INNER JOIN EbAmount AS eb', function (error, data) {
-//         console.log("data",data)
-//         console.log(error);
-//         console.log(data);
 
-//         if (data.length > 0) {
-//             console.log("response",response);
-
-//             response.status(200).json(data)
-            
-//         }
-//         else {
-//             response.status(201).json({ message: 'not connected' })
-//         }
-//     })
-
-
-// }
-
-// function getEBList(connection, request, response) {
-//     connection.query('select inv.Name ,inv.Room_No, eb.Eb_Unit, eb.EbAmount FROM invoicedetails AS inv INNER JOIN EbAmount AS eb', function (error, data) {
-      
-//         if (error) {
-//             console.error(error);
-//             response.Status(500).json({ message: 'Internal Server Error' });
-//         } else {
-//             if (data.length > 0) {
-//                 console.log("response...?",response)
-//                 response.Status(200).json(data);
-//             } else {
-//                 response.Status(404).json({ message: 'No data found' });
-//             }
-//         }
-//     });
-// }
 function getEBList(connection, request, response) {
-    connection.query('select inv.Name ,inv.Room_No, eb.Eb_Unit, eb.EbAmount FROM invoicedetails AS inv INNER JOIN EbAmount AS eb', function (error, data) {
+    connection.query('select inv.Name ,inv.Room_No,inv.Hostel_Based,inv.Room_Based, eb.Eb_Unit  FROM invoicedetails AS inv INNER JOIN EbAmount AS eb ON inv.Hostel_Id = eb.Hostel_Id  ' , function (error, data) {
       
         if (error) {
             console.error(error);
-            response.status(500).json({ message: 'Internal Server Error' });
+            response.status(201).json({ message: 'Internal Server Error' });
         } else {
             if (data.length > 0) {
                 
                 response.status(200).json(data);
             } else {
-                response.status(404).json({ message: 'No data found' });
+                response.status(203).json({ message: 'No data found' });
             }
         }
     });
