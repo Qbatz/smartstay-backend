@@ -25,7 +25,7 @@ function calculateAndInsertInvoice(connection, user) {
     connection.query(`
         SELECT hos.id AS Hosteldetails_Id, hos.prefix, hos.suffix, hos.Name, hos.isHostelBased, eb.Hostel_Id AS EbHostel_Id, eb.Floor, eb.Room, eb.EbAmount FROM hosteldetails AS hos  
         INNER JOIN EbAmount AS eb ON hos.id = eb.Hostel_Id 
-        WHERE hos.id = ${connection.escape(user.Hostel_Id)} 
+        WHERE hos.id = ${user.Hostel_Id} 
         GROUP BY hos.id`, function (err, existingData) {
 
         if (err) {
@@ -42,7 +42,7 @@ function calculateAndInsertInvoice(connection, user) {
             console.log("amenitiesData", amenitiesData);
 
             // Fetch room data
-            connection.query(`SELECT * FROM hostelrooms WHERE Hostel_Id = ${connection.escape(user.Hostel_Id)} AND Floor_Id = ${connection.escape(user.Floor)} AND Room_Id = ${connection.escape(user.Rooms)}`, function (err, roomData) {
+            connection.query(`SELECT * FROM hostelrooms WHERE Hostel_Id = ${user.Hostel_Id} AND Floor_Id = ${user.Floor} AND Room_Id = ${user.Rooms}`, function (err, roomData) {
                 if (err) {
                     console.error("Error fetching room data:", err);
                     return;
@@ -108,7 +108,7 @@ function calculateAndInsertInvoice(connection, user) {
                     let filteredArray = existingData.filter(item => item.Hostel_Id == user.Hostel_Id);
 
                     // console.log("AdvanceAmount...????....", AdvanceAmount);
-                    connection.query(`SELECT * from hostel WHERE Hostel_Id = ${connection.escape(user.Hostel_Id)}`, function (error, result) {
+                    connection.query(`SELECT * from hostel WHERE Hostel_Id = ${user.Hostel_Id}`, function (error, result) {
                         // console.log("result", result);
 
                         if (result.length > 0) {
@@ -128,9 +128,9 @@ function calculateAndInsertInvoice(connection, user) {
                         connection.query(`
                             SELECT * 
                             FROM hostel 
-                            WHERE Hostel_Id = ${connection.escape(user.Hostel_Id)} 
-                            AND Floor = ${connection.escape(user.Floor)} 
-                            AND Rooms = ${connection.escape(user.Rooms)}`, function (error, resultData) {
+                            WHERE Hostel_Id = ${user.Hostel_Id} 
+                            AND Floor = ${user.Floor} 
+                            AND Rooms = ${user.Rooms}`, function (error, resultData) {
 
                             if (resultData.length > 0) {
                                 let tempArray = existingData.filter(item => {
@@ -666,14 +666,16 @@ function EbAmount(connection, atten, response) {
     }
 
     connection.query(`SELECT isHostelBased FROM hosteldetails`, function (err, datum) {
+        console.log("datum..?", datum)
         if (err) {
             console.error(err);
-            response.status(500).json({ message: 'Database error' });
+            response.status(203).json({ message: 'Database error' });
             return;
         }
 
         if (datum.length > 0) {
             if (atten.id) {
+
                 const isHostelBasedUpdated = datum[0].isHostelBased;
                 const updateQuery = isHostelBasedUpdated ?
                     `UPDATE EbAmount SET start_Meter_Reading= ${atten.start_Meter_Reading},end_Meter_Reading=${atten.end_Meter_Reading}, EbAmount=${atten.EbAmount} WHERE Hostel_Id= ${atten.Hostel_Id}` :
@@ -689,27 +691,47 @@ function EbAmount(connection, atten, response) {
                 });
             }
 
-             else {
-
-                const isHostelBased = datum[0].isHostelBased;
-                const insertQuery = isHostelBased ?
-                    `INSERT INTO EbAmount (Hostel_Id,start_Meter_Reading, end_Meter_Reading,EbAmount) VALUES (${atten.Hostel_Id},${atten.start_Meter_Reading},${atten.end_Meter_Reading},${atten.EbAmount})` :
-                    `INSERT INTO EbAmount (Hostel_Id,Floor, Room, start_Meter_Reading, end_Meter_Reading,EbAmount) VALUES (\'${atten.Hostel_Id}\',\'${atten.Floor}\',\'${atten.Room}\', ${atten.start_Meter_Reading},\'${atten.end_Meter_Reading}\',\'${atten.EbAmount}\')`;
-
-                connection.query(insertQuery, function (error, data) {
-                    if (error) {
-                        console.error(error);
-                        response.status(201).json({ message: 'Insertion failed' });
-                    } else {
-                        response.status(200).json({ message: 'Inserted successfully' });
+            else {
+                connection.query(`SELECT * FROM EbAmount WHERE hostel_Id = ${atten.Hostel_Id} AND Floor = '${atten.Floor}' AND Room = '${atten.Room}' ORDER BY id DESC LIMIT 1`, function (err, temdata) {
+                    if (err) {
+                        console.error(err);
+                        response.status(500).json({ message: 'Database error' });
+                        return;
                     }
+            
+                    let startMeterReading;
+                  
+                    const previousEndMeterReading = temdata.length > 0 ? temdata[0].end_Meter_Reading : 0;
+                    const isHostelBased = datum[0].isHostelBased; 
+            
+                    if (isHostelBased) {
+                        startMeterReading = previousEndMeterReading;
+                    } else {
+                        let sameRoomFound = temdata.length > 0; 
+                        if (!sameRoomFound) {
+                            startMeterReading = 0;
+                        } else {
+                            startMeterReading = previousEndMeterReading;
+                        }
+                    }
+                   
+            
+                    const insertQuery = isHostelBased ?
+                        `INSERT INTO EbAmount (hostel_Id, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit) VALUES (${atten.Hostel_Id}, ${startMeterReading}, ${atten.end_Meter_Reading}, ${atten.EbAmount},${atten.Eb_Unit})` :
+                        `INSERT INTO EbAmount (hostel_Id, Floor, Room, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit) VALUES ('${atten.Hostel_Id}', '${atten.Floor}', '${atten.Room}', ${startMeterReading}, '${atten.end_Meter_Reading}', '${atten.EbAmount}',${atten.Eb_Unit})`;
+            
+                    connection.query(insertQuery, function (error, data) {
+                        if (error) {
+                            console.error(error);
+                            response.status(500).json({ message: 'Insertion failed', error: error });
+                            return;
+                        }
+                        console.log("Inserted successfully");
+                        response.status(200).json({ message: 'Inserted successfully' });
+                    });
                 });
             }
-           
-
-        } else {
-            response.status(203).json({ message: 'No Data Found' });
-        }
+  }  
     });
 
 };
