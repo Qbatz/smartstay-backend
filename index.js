@@ -114,7 +114,7 @@ app.post('/forget/select-list', (request, response) => {
 app.post('/otp-send/send-mail', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const requestData = request.body
-    console.log("requestData",requestData)
+    console.log("requestData", requestData)
     accountManagement.forgetPasswordOtpSend(connection, response, requestData)
 })
 app.post('/otp-send/response', (request, response) => {
@@ -196,30 +196,21 @@ app.get('/compliance/compliance-list', (request, response) => {
 })
 
 
-//  create Pg, room, floor Queries
-
-
-
 app.get('/list/hostel-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     pgQueries.getHostelList(connection, response)
 })
-
-
 
 app.get('/room-id/check-room-id', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     pgQueries.checkRoom(connection, response)
 })
 
-
 app.get('/hostel/list-details', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     pgQueries.hostelListDetails(connection, response)
 
 })
-
-
 
 app.post('/add/new-hostel', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
@@ -280,7 +271,6 @@ app.post('/check/room-full', (request, response) => {
 
 app.post('/invoice/settings', upload.single('profile'), (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    // const reqInvoice = request.file;
     const reqInvoice = {
         profile: request.file,
         hostel_Id: request.body.hostel_Id,
@@ -334,13 +324,7 @@ app.get('/list/EbReading', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     profileQueries.getEbReading(connection, response)
 })
-// app.post('/eb/EbReadind_list', (request, response) => {
-//     response.set('Access-Control-Allow-Origin', '*');
-//     const atten = request.body
-//     profileQueries.EbReadingAmount(connection, atten, response)
 
-
-// })
 app.get('/list/Ebstartmeter', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     invoiceQueries.getEbStart(connection, response)

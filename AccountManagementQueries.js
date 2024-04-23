@@ -223,8 +223,7 @@ function forgetPasswordOtpSend(connection, response, requestData) {
 
 function sendOtpForMail(connection, response, Email_Id,LoginId) {
     if (Email_Id) {
-        // connection.query(`SELECT * FROM createaccount WHERE email_id= \'${Email_Id}\'`, function (error, data) {
-            // if (data && data.length > 0) {
+       
                 const otp = Math.floor(100000 + Math.random() * 900000).toString();
                 console.log("otp is ", otp);
                 connection.query(`UPDATE createaccount SET Otp= \'${otp}\' WHERE email_id=\'${Email_Id}\' AND id = \'${LoginId}\' `, function (error, data) {
@@ -257,10 +256,7 @@ function sendOtpForMail(connection, response, Email_Id,LoginId) {
                         response.status(201).json({ message: "No User Found" });
                     }
                 });
-            // } else {
-            //     response.status(201).json({ message: `${Email_Id} is doesn't exist`, statusCode: 201 });
-            // }
-        // });
+           
     } else {
         response.status(201).json({ message: `${Email_Id} is doesn't exist`, statusCode: 201 });
     }

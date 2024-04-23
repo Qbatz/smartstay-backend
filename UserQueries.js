@@ -85,14 +85,4 @@ function getPaymentDetails(connection, response) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
 module.exports = { getUsers, createUser, getPaymentDetails }
