@@ -174,13 +174,6 @@ app.get('/get/userAccount', (request, response) => {
 })
 
 
-
-
-
-
-
-
-
 app.post('/compliance/add-details', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     var atten = request.body;
