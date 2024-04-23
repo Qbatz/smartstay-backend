@@ -206,6 +206,8 @@ function calculateAndInsertInvoice(connection, user) {
 
 
 
+
+
 function getInvoiceList(connection, response) {
     connection.query('select * from invoicedetails', function (error, data) {
         console.log(error);
