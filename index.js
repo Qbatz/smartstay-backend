@@ -75,13 +75,7 @@ app.get('/user-list/bill-payment', (request, response) => {
 })
 
 
-// Account Management queries 
 
-// app.post('/create/create-account', (request, response) => {
-//     response.set('Access-Control-Allow-Origin', '*')
-//     let reqBodyData = request.body;
-//     accountManagement.createAccountForLogin(connection, reqBodyData, response)
-// })
 app.post('/create/create-account', upload.single('profile'), (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
 
@@ -151,21 +145,11 @@ app.get('/list/invoice-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     invoiceQueries.getInvoiceList(connection, response)
 })
-// app.get('/list/eb_list', (request, response) => {
-//     response.set('Access-Control-Allow-Origin', '*')
-//     invoiceQueries.getEBList(connection, response,request)
-// })
+
 app.get('/list/eb_list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     invoiceQueries.getEBList(connection, request, response)
 })
-
-
-
-// app.get('/invoice/invoice-list-pdf',(request, response) => {
-//     response.set('Access-Control-Allow-Origin', '*')
-//     invoiceQueries.InvoicePDf(connection,response)
-// })
 
 
 app.post('/invoice/invoice-list-pdf', (request, response) => {
@@ -174,9 +158,6 @@ app.post('/invoice/invoice-list-pdf', (request, response) => {
     console.log("reqBodyData", reqBodyData)
     invoiceQueries.InvoicePDf(connection, reqBodyData, response)
 })
-
-// Profile Queries
-
 
 
 app.post('/create/isEnable', (request, response) => {
@@ -195,7 +176,7 @@ app.get('/get/userAccount', (request, response) => {
 
 
 
-//  compliance Queries
+
 
 
 
