@@ -2,14 +2,12 @@
 function getUsers(connection, response, ReqData) {
     const query = `SELECT * FROM hosteldetails WHERE created_By = '${ReqData.loginId}'`;
     let errorMessage;
-
     connection.query(query, function (error, hostelData) {
         if (error) {
             console.error(error);
             response.status(403).json({ message: 'Error  hostel data' });
             return;
         }
-
         console.log("hostelData.length",hostelData.length)
         let userDataArray = [];
         hostelData.forEach(hostel => {
@@ -21,13 +19,11 @@ function getUsers(connection, response, ReqData) {
                     userDataArray.push(userData);
                     console.log("userDataArray.length",userDataArray.length)
                 }
-
                 if (userDataArray.length === hostelData.length) {
                     userDataArray = userDataArray.filter(userData => userData.length > 0);
                     if (errorMessage) {
                         response.status(403).json({ message: 'Error  user data' });
                     } else {
-
                         response.status(200).json(userDataArray);
                     }
                 }
