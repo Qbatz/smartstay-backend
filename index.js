@@ -55,9 +55,11 @@ app.listen('2001', function () {
 
 // userQueries.js
 
-app.get('/users/user-list', (request, response) => {
+app.post('/users/user-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    userQueries.getUsers(connection, response);
+
+    const ReqData = request.body
+    userQueries.getUsers(connection, response, ReqData);
 
 });
 
@@ -124,7 +126,7 @@ app.post('/otp-send/response', (request, response) => {
 })
 
 
-cron.schedule("* * * * * ", function () {
+cron.schedule("0 0 1 * * ", function () {
     console.log("This task runs every minute");
     connection.query(`SELECT * FROM hostel where isActive=true`, function (err, users) {
         console.log(" users", users)
@@ -189,9 +191,10 @@ app.get('/compliance/compliance-list', (request, response) => {
 })
 
 
-app.get('/list/hostel-list', (request, response) => {
+app.post('/list/hostel-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    pgQueries.getHostelList(connection, response)
+    const reqData = request.body
+    pgQueries.getHostelList(connection, response, reqData)
 })
 
 app.get('/room-id/check-room-id', (request, response) => {
