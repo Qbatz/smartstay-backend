@@ -124,17 +124,17 @@ app.post('/otp-send/response', (request, response) => {
 })
 
 
-cron.schedule("* * * * * ", function () {
+cron.schedule("0 0 1 * * ", function () {
     console.log("This task runs every minute");
     connection.query(`SELECT * FROM hostel where isActive=true`, function (err, users) {
-        console.log(" users", users)
+        // console.log(" users", users)
         if (err) {
             console.error("Error fetching users:", err);
             return;
         }
         users.forEach(user => {
             const userID = user.User_Id;
-            invoiceQueries.calculateAndInsertInvoice(connection, user);
+            invoiceQueries.calculateAndInsertInvoice(connection, user,users);
         });
     });
 });
