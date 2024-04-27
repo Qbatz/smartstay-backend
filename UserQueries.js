@@ -8,7 +8,7 @@ function getUsers(connection, response, ReqData) {
             response.status(403).json({ message: 'Error  hostel data' });
             return;
         }
-        console.log("hostelData.length",hostelData.length)
+        // console.log("hostelData.length",hostelData.length)
         let userDataArray = [];
         hostelData.forEach(hostel => {
             connection.query(`SELECT * FROM hostel WHERE Hostel_Id = '${hostel.id}' AND isActive=true`, function (error, userData) {
@@ -17,7 +17,7 @@ function getUsers(connection, response, ReqData) {
                     errorMessage = error;
                 } else {
                     userDataArray.push(userData);
-                    console.log("userDataArray.length",userDataArray.length)
+                    // console.log("userDataArray.length",userDataArray.length)
                 }
                 if (userDataArray.length === hostelData.length) {
                     userDataArray = userDataArray.filter(userData => userData.length > 0);
