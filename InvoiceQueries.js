@@ -20,376 +20,463 @@ const s3 = new AWS.S3();
 
 const https = require('https');
 
-// function calculateAndInsertInvoice(connection, user) {
 
+// function calculateAndInsertInvoice(connection, user,users) {
+//     // console.log("users",users);
 //     connection.query(`
-//         SELECT hos.id AS Hosteldetails_Id, hos.prefix, hos.suffix, hos.Name, hos.isHostelBased, eb.Hostel_Id AS EbHostel_Id, eb.Floor, eb.Room, eb.EbAmount,eb.createAt FROM hosteldetails AS hos  
-//         INNER JOIN EbAmount AS eb ON hos.id = eb.Hostel_Id 
-//         WHERE hos.id = ${user.Hostel_Id} 
-//         GROUP BY hos.id`, function (err, existingData) {
-//         console.log("existingData", existingData)
+//     SELECT 
+//     rms.Price,
+//     rms.Hostel_Id AS roomHostel_Id,
+//     rms.Floor_Id AS roomFloor_Id,
+//     rms.Room_Id AS roomRoom_Id,
 
+//     dtls.id AS detHostel_Id,
+//     dtls.isHostelBased,
+//     dtls.prefix,
+//     dtls.suffix,
+//     dtls.Name,
+//     hstl.Name AS UserName,
+//     hstl.Hostel_Id AS hosHostel_Id,
+//     hstl.Rooms AS hosRoom,
+//     hstl.Floor As hosFloor,
+//     (
+//         SELECT EbAmount 
+//         FROM EbAmount 
+//         WHERE hostel_Id = hstl.Hostel_Id 
+//         AND Floor = hstl.Floor 
+//         AND Room = hstl.Rooms 
+//         ORDER BY id DESC 
+//         LIMIT 1
+//     ) AS ebBill,
+//     (
+//         SELECT createAt 
+//         FROM EbAmount 
+//         WHERE hostel_Id = hstl.Hostel_Id 
+//         AND Floor = hstl.Floor 
+//         AND Room = hstl.Rooms 
+//         ORDER BY id DESC 
+//         LIMIT 1
+//     ) AS createdAt    
+// FROM 
+//     hostel hstl 
+// INNER JOIN 
+//     hosteldetails dtls ON dtls.id = hstl.Hostel_Id 
+// INNER JOIN 
+//     hostelrooms rms ON rms.Hostel_Id = hstl.Hostel_Id 
+//     AND rms.Floor_Id = hstl.Floor 
+//     AND rms.Room_Id = hstl.Rooms 
 
+// WHERE 
+//     hstl.isActive = true and hstl.id = ${user.ID};
+//     `, function (err, existingData) {
+//         // console.log("existingData...?",existingData)
 //         if (err) {
 //             console.error("Error fetching hosteldetails:", err);
 //             return;
 //         }
+//         else {
+//             if (existingData.length > 0) {
+//                 let amenitiesDatum;
+//                 let finalArray = []
 
-//         connection.query(`SELECT * FROM Amenities`, function (err, amenitiesData) {
-//             if (err) {
-//                 console.error("Error fetching amenities data:", err);
-//                 return;
-//             }
+//                 for (let i = 0; i < existingData.length; i++) {
+//                     let tempObj = {}
+//                     let roomPrice;
+//                     let AdvanceAmount = 0;
+//                     let HostelBasedEb = 0;
+//                     let roomBasedEb = 0;
+//                     let dueDate, invoiceDate;
 
-//             // console.log("amenitiesData", amenitiesData);
+//                     const currentDate = moment().format('YYYY-MM-DD');
+//                     const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
 
+//                     const currentMonth = moment(currentDate).month() + 1;
+//                     const currentYear = moment(currentDate).year();
+//                     const createdAtMonth = moment(joinDate).month() + 1;
+//                     const createdAtYear = moment(joinDate).year();
 
-//             connection.query(`SELECT * FROM hostelrooms WHERE Hostel_Id = ${user.Hostel_Id} AND Floor_Id = ${user.Floor} AND Room_Id = ${user.Rooms}`, function (err, roomData) {
-//                 if (err) {
-//                     console.error("Error fetching room data:", err);
-//                     return;
-//                 }
+//                     let totalAmenitiesAmount = 0;
+//                     roomPrice = existingData[i].Price;
 
-
-//                 let roomPrice;
-//                 const currentDate = moment().format('YYYY-MM-DD');
-//                 const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-//                 let dueDate, invoiceDate;
-//                 let invoiceNo = '';
-
-//                 const currentMonth = moment(currentDate).month() + 1;
-//                 const currentYear = moment(currentDate).year();
-//                 const createdAtMonth = moment(joinDate).month() + 1;
-//                 const createdAtYear = moment(joinDate).year();
-
-
-//                 roomPrice = roomData[0]?.Price;
-//                 console.log("roomPrice", roomPrice)
-
-
-
-//                 let filteredRoomsLength = [];
-
-//                 filteredRoomsLength = roomData.filter(item => item.Hostel_Id == user.Hostel_Id && item.Floor_Id == user.Floor);
-
-
-
-//                 if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
-//                     dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
-//                     invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-//                 } else {
-//                     dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
-//                     invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
-//                 }
-
-//                 const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-//                 const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-//                 console.log("formattedJoinDate",formattedJoinDate)
-                
-//                 let AdvanceAmount = 0;
-//                 let HostelBasedEb = 0;
-//                 let roomBasedEb = 0;
-//                 let creatAtMonth
-//                 // const createAtFormate = existingData[0].createAt
-//                 // console.log("createAtFormate",createAtFormate)
-               
-//                 // const formateCreateAt =moment(createAtFormate).format('YYYY-MM-DD');
-//                 // console.log("formateCreateAt",formateCreateAt)
-//                 // if (existingData && existingData.length > 0) {
-//                 //     for (let i = 0; i < existingData.length; i++) {
-//                 //         const createAtFormate = moment(existingData[i].createAt).format('YYYY-MM-DD');
-//                 //         console.log("createAtFormate for index", i, ":", createAtFormate);
-
-                        
-                       
-//                 //     }
-//                 // } else {
-//                 //     console.log("No existing data found.");
-                    
-//                 // }
-//                 if (existingData && existingData.length > 0) {
-//                     for (let i = 0; i < existingData.length; i++) {
-//                         const createAtFormate = moment(existingData[i].createAt).format('YYYY-MM-DD');
-//                         console.log("createAtFormate for index", i, ":", createAtFormate);
-                
-//                         // If the formattedJoinDate month matches the createAtFormate month, add HostelBasedEb and roomBasedEb to AdvanceAmount
-//                         if (moment(formattedJoinDate).month() === moment(createAtFormate).month()) {
-//                             AdvanceAmount += HostelBasedEb + roomBasedEb;
-//                         }
+//                     if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+//                         dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+//                         invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+//                     } else {
+//                         dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+//                         invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
 //                     }
-//                 } else {
-//                     console.log("No existing data found.");
-//                 }
-                
-
-
-
-//                 const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
-
-                
-
-//                 let totalAmenitiesAmount = 0;
-
-//                 for (let i = 0; i < amenitiesData.length; i++) {
-//                     if (amenitiesData[i].Hostel_Id === user.Hostel_Id && amenitiesData[i].setAsDefault === 0 && amenitiesData[i].Status === 1) {
-//                         totalAmenitiesAmount += amenitiesData[i].Amount;
+//                     const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+//                     const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+//                     const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+//                     let invoiceNo;
+//                     const userID = user.User_Id.toString().slice(0, 4);
+//                     if (existingData[i].prefix !== '' && existingData[i].suffix !== '' &&
+//                         existingData[i].prefix != 'undefined' && existingData[i].suffix != 'undefined' &&
+//                         existingData[i].prefix !== null && existingData[i].suffix !== null) {
+//                         invoiceNo = existingData[i].prefix + existingData[i].suffix + user.Name + currentMonth + currentYear;
+//                     } else {
+//                         invoiceNo = 'INVC' + currentMonth + currentYear + userID;
 //                     }
 
-//                 }
-
-//                 console.log("Total Amenities Amount:", totalAmenitiesAmount);
 
 
-
-//                 if (existingData.length > 0) {
-//                     let filteredArray = existingData.filter(item => item.Hostel_Id == user.Hostel_Id);
-
-                  
-//                     connection.query(`SELECT * from hostel WHERE Hostel_Id = ${user.Hostel_Id}`, function (error, result) {
-                     
-
-//                         if (result.length > 0) {
-//                             if (existingData[0].isHostelBased === 1) {
-//                                 HostelBasedEb = existingData[0].EbAmount / result.length;
-
-//                                 console.log("HostelBasedEb", HostelBasedEb);
-
-//                             } else {
-//                                 console.log("No users found for the given hostel ID");
-//                             }
-//                         } else {
-//                             console.log("No users found for the given hostel ID");
-//                         }
-
-//                         connection.query(`
-//                             SELECT * 
-//                             FROM hostel 
-//                             WHERE Hostel_Id = ${user.Hostel_Id} 
-//                             AND Floor = ${user.Floor} 
-//                             AND Rooms = ${user.Rooms}`, function (error, resultData) {
-
-//                             if (resultData.length > 0) {
-//                                 let tempArray = existingData.filter(item => {
-//                                     return item.EbHostel_Id === resultData[0].Hostel_Id && item.Floor === resultData[0].Floor && item.Room === resultData[0].Rooms
-//                                 });
-//                                 // console.log("tempArray", tempArray);
-//                                 if (tempArray.length > 0 && tempArray[0].isHostelBased === 0) {
-//                                     roomBasedEb = tempArray[0].EbAmount / resultData.length;
-
-//                                     console.log("roomBasedEb", roomBasedEb);
-
-//                                 }
-//                             } else {
-//                                 console.log("No users found for the given hostel ID");
-//                             }
-
-
-//                             const userID = user.User_Id.toString().slice(0, 4);
-//                             if (existingData[0].prefix != '' && existingData[0].suffix != '' && existingData[0].prefix != 'undefined' && existingData[0].suffix != 'undefined' && existingData[0].prefix != '' && existingData[0].suffix != '') {
-//                                 invoiceNo = existingData[0].prefix + existingData[0].suffix + user.Name + currentMonth + currentYear;
-//                             } else {
-//                                 invoiceNo = 'INVC' + currentMonth + currentYear + userID;
-//                             }
-
-
-//                             if (amenitiesData[0].setAsDefault == 0 && amenitiesData[0].Status == 1 ) {
-//                                 AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + totalAmenitiesAmount + HostelBasedEb + roomBasedEb;
-
-
-//                                 if (!isNaN(AdvanceAmount)) {
-//                                     const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id,RoomRent,EbAmount,AmnitiesAmount,Hostel_Based,Room_Based) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}',${roomPrice},${existingData[0].EbAmount},${totalAmenitiesAmount},${HostelBasedEb},${roomBasedEb})`;
-
-//                                     connection.query(query, function (error, data) {
-//                                         if (error) {
-//                                             console.error("Error inserting invoice data for user:", user.User_Id, error);
-//                                             return;
-//                                         }
-//                                     });
-//                                 }
-//                             } else {
-//                                 AdvanceAmount = (roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays + HostelBasedEb + roomBasedEb;
-
-
-//                                 if (!isNaN(AdvanceAmount) && isFinite(AdvanceAmount)) {
-//                                     const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id,RoomRent,EbAmount,AmnitiesAmount,Hostel_Based,Room_Based) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}',${roomPrice},${existingData[0].EbAmount},${totalAmenitiesAmount},${HostelBasedEb},${roomBasedEb})`;
-
-//                                     connection.query(query, function (error, data) {
-//                                         if (error) {
-//                                             console.error("Error inserting invoice data for user:", user.User_Id, error);
-//                                             return;
-//                                         }
-//                                     });
-//                                 }
-//                             }
-//                         });
+//                     // console.log("invoiceNo for index " + i + ":", invoiceNo);
+//                     const month = moment(new Date()).month() + 1;
+//                     const year = moment(new Date()).year();
+//                     let filteredArray = users.filter(item => {
+//                         const userMonth = moment(existingData[i].createdAt).month() + 1;
+//                         const userYear = moment(existingData[i].createdAt).year();
+//                         return item.Hostel_Id === existingData[i].roomHostel_Id && month === userMonth && year === userYear;
 //                     });
+//                     // console.log("filteredArray",filteredArray)
+
+//                     if (filteredArray.length > 0) {
+//                         for (let index = 0; index < filteredArray.length; index++) {
+
+//                             if (existingData[i].isHostelBased === 1) {
+//                                 HostelBasedEb = existingData[i].ebBill / filteredArray.length;
+//                                 console.log("HostelBasedEb",HostelBasedEb)
+//                             } else {
+//                                 // console.log("No users found for the given hostel ID");
+//                             } 
+//                         }
+
+//                     } else {
+//                         console.log("No users found for the given hostel ID");
+//                     }
+
+//                     let tempArray = users.filter(Item => {
+//                         const userMonth = moment(existingData[i].createdAt).month() + 1;
+//                         const userYear = moment(existingData[i].createdAt).year();
+//                         return Item.Hostel_Id == existingData[i].roomHostel_Id && Item.Floor == existingData[i].roomFloor_Id && Item.Rooms == existingData[i].roomRoom_Id && month == userMonth && year == userYear;
+//                     });
+//                     // console.log("tempArray",tempArray)
+
+//                     if (tempArray.length > 0) {
+//                         for (let index = 0; index < tempArray.length; index++) {
+
+//                             if (existingData[i].isHostelBased === 0) {
+
+//                                 roomBasedEb = existingData[i].ebBill / tempArray.length;
+//                             } else {
+//                                 console.log("No users found for the given hostel ID");
+//                             } 
+//                         }
+
+//                     } else {
+//                         console.log("No users found for the given hostel ID");
+//                     }
+
+
+
+//                     connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${existingData[i].hosHostel_Id}`, function (err, amenitiesData) {
+//                         if (err) {
+//                             console.log("Error occurred while fetching amenities data:", err);
+//                         } else {
+//                             if (amenitiesData.length > 0) {
+//                                 let totalAmenitiesAmount = 0;
+//                                 for (let j = 0; j < amenitiesData.length; j++) {
+//                                     if (amenitiesData[j].setAsDefault === 0 && amenitiesData[j].Status === 1) {
+//                                         totalAmenitiesAmount += amenitiesData[j].Amount;
+//                                         console.log("totalAmenitiesAmount",totalAmenitiesAmount)
+//                                     }
+//                                 }
+//                                 AdvanceAmount += ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + totalAmenitiesAmount + HostelBasedEb + roomBasedEb;
+//                             } else {
+//                                 AdvanceAmount += (roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays + HostelBasedEb + roomBasedEb;
+//                             }
+//                             console.log("Advance Amount:", AdvanceAmount);
+//                         }
+//                     });
+
+
+//                     // connection.query(`SELECT * FROM Amenities where Hostel_Id = ${existingData[i].hosHostel_Id}  `, function (err, amenitiesData) {
+//                     //     if (amenitiesData.length > 0) {
+
+//                     //         amenitiesDatum = amenitiesData
+//                     //         console.log("amenitiesDatum....?",amenitiesDatum);
+
+//                     //     }
+//                     //     else if (err) {
+//                     //         console.log("err", err);
+//                     //     }
+//                     //     else {
+//                     //         console.log("No Data Found");
+//                     //     }
+
+//                     // })
+
+//                     // console.log("amenitiesDatum",amenitiesDatum)
+//                     // if (amenitiesDatum && amenitiesDatum.length > 0) {
+
+//                     //     let totalAmenitiesAmount = 0; 
+//                     //     for (let j = 0; j < amenitiesDatum.length; j++) {
+//                     //         if (amenitiesDatum[j].setAsDefault === 0 && amenitiesDatum[j].Status === 1) {
+//                     //             totalAmenitiesAmount += amenitiesDatum[j].Amount;
+//                     //             console.log("totalAmenitiesAmount", totalAmenitiesAmount);
+//                     //         }
+//                     //     }
+
+//                     //     AdvanceAmount += ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + totalAmenitiesAmount + HostelBasedEb + roomBasedEb;
+//                     // } else {
+
+//                     //     AdvanceAmount += (roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays + HostelBasedEb + roomBasedEb;
+//                     // }
+
+
+//  // if (amenitiesDatum && amenitiesDatum.length > 0) {
+
+//                     //     for (let i = 0; i < amenitiesDatum.length; i++) {
+//                     //         if ( amenitiesDatum[i].setAsDefault === 0 && amenitiesDatum[i].Status === 1) {
+//                     //             totalAmenitiesAmount += amenitiesDatum[i].Amount;
+//                     //             console.log("totalAmenitiesAmount",totalAmenitiesAmount)
+//                     //             AdvanceAmount += ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + totalAmenitiesAmount + HostelBasedEb + roomBasedEb;
+//                     //         }
+
+//                     //     }
+//                     // }
+//                     // else {
+//                     //     AdvanceAmount += (roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays + HostelBasedEb + roomBasedEb;
+//                     // }
+//                     tempObj = {
+//                         invoiceDate: invoiceDate,
+//                         invoiceNo: invoiceNo,
+//                         dueDate: dueDate,
+//                         ebBill: existingData[i].ebBill,
+//                         totalAmenitiesAmount: totalAmenitiesAmount,
+//                         HostelBasedEb, HostelBasedEb,
+//                         roomPrice: roomPrice,
+//                         roomBasedEb: roomBasedEb,
+//                         AdvanceAmount: AdvanceAmount
+//                     }
+
+//                     finalArray.push(tempObj)
+
+
 //                 }
-//             });
-//         });
+// // console.log("finalArray.length,existingData.length",finalArray.length, existingData.length);
+//                 if (finalArray.length === existingData.length) {
+//                     // console.log("finalArray.length === existingData.length",finalArray.length === existingData.length);
+//                     // console.log("finalArray",finalArray);
+//                     for (let i = 0; i < finalArray.length; i++) {
+//                         let query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Hostel_Based, Room_Based) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${finalArray[i].AdvanceAmount}, '${user.Address}', '${finalArray[i].invoiceDate}', '${finalArray[i].dueDate}', '${finalArray[i].invoiceNo}', '${user.Status}', '${user.User_Id}', ${finalArray[i].roomPrice}, ${finalArray[i].ebBill}, ${finalArray[i].totalAmenitiesAmount}, ${finalArray[i].HostelBasedEb}, ${finalArray[i].roomBasedEb})`;
+
+//                         connection.query(query, function (error, data) {
+//                             if (error) {
+//                                 console.error("Error inserting invoice data for user:", user.User_Id, error);
+//                                 return;
+//                             }
+//                             // console.log("Invoice inserted successfully for user:", user.User_Id);
+//                         });
+
+//                     }
+
+//                 }
+
+//             }
+//         }
 //     });
 // }
-function calculateAndInsertInvoice(connection, user) {
-    // Fetch existing data from hosteldetails table
-    connection.query(`SELECT * FROM hosteldetails`, function (err, existingData) {
+
+function calculateAndInsertInvoice(connection, user, users) {
+    connection.query(`
+        SELECT 
+            rms.Price,
+            rms.Hostel_Id AS roomHostel_Id,
+            rms.Floor_Id AS roomFloor_Id,
+            rms.Room_Id AS roomRoom_Id,
+          
+            dtls.id AS detHostel_Id,
+            dtls.isHostelBased,
+            dtls.prefix,
+            dtls.suffix,
+            dtls.Name,
+            hstl.Name AS UserName,
+            hstl.Hostel_Id AS hosHostel_Id,
+            hstl.Rooms AS hosRoom,
+            hstl.Floor As hosFloor,
+            (
+                SELECT EbAmount 
+                FROM EbAmount 
+                WHERE hostel_Id = hstl.Hostel_Id 
+                AND Floor = hstl.Floor 
+                AND Room = hstl.Rooms 
+                ORDER BY id DESC 
+                LIMIT 1
+            ) AS ebBill,
+            (
+                SELECT createAt 
+                FROM EbAmount 
+                WHERE hostel_Id = hstl.Hostel_Id 
+                AND Floor = hstl.Floor 
+                AND Room = hstl.Rooms 
+                ORDER BY id DESC 
+                LIMIT 1
+            ) AS createdAt    
+        FROM 
+            hostel hstl 
+        INNER JOIN 
+            hosteldetails dtls ON dtls.id = hstl.Hostel_Id 
+        INNER JOIN 
+            hostelrooms rms ON rms.Hostel_Id = hstl.Hostel_Id 
+            AND rms.Floor_Id = hstl.Floor 
+            AND rms.Room_Id = hstl.Rooms 
+
+        WHERE 
+            hstl.isActive = true and hstl.id = ${user.ID};
+    `, function (err, existingData) {
         if (err) {
             console.error("Error fetching hosteldetails:", err);
             return;
         }
+        else {
+            if (existingData.length > 0) {
+                let finalArray = [];
 
-        // Fetch amenities data
-        connection.query(`SELECT * FROM Amenities`, function (err, amenitiesData) {
-            if (err) {
-                console.error("Error fetching amenities data:", err);
-                return;
-            }
+                for (let i = 0; i < existingData.length; i++) {
+                    let tempObj = {};
+                    let roomPrice = existingData[i].Price;
+                    let AdvanceAmount = 0;
+                    let HostelBasedEb = 0;
+                    let roomBasedEb = 0;
+                    let totalAmenitiesAmount = 0; 
+                    const currentDate = moment().format('YYYY-MM-DD');
+                    const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
+                    const currentMonth = moment(currentDate).month() + 1;
+                    const currentYear = moment(currentDate).year();
+                    const createdAtMonth = moment(joinDate).month() + 1;
+                    const createdAtYear = moment(joinDate).year();
+                    let dueDate, invoiceDate;
 
-            // Fetch room data
-            connection.query(`SELECT * FROM hostelrooms WHERE Hostel_Id = ${user.Hostel_Id} AND Floor_Id = ${user.Floor} AND Room_Id = ${user.Rooms}`, function (err, roomData) {
-                if (err) {
-                    console.error("Error fetching room data:", err);
-                    return;
-                }
-
-                // Initialize variables
-                let roomPrice;
-                const currentDate = moment().format('YYYY-MM-DD');
-                const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-                let dueDate, invoiceDate;
-                let invoiceNo = '';
-
-                const currentMonth = moment(currentDate).month() + 1;
-                const currentYear = moment(currentDate).year();
-                const createdAtMonth = moment(joinDate).month() + 1;
-                const createdAtYear = moment(joinDate).year();
-
-                // Set roomPrice
-                roomPrice = roomData[0]?.Price;
-
-                // Determine dueDate and invoiceDate
-                if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
-                    dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
-                    invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-                } else {
-                    dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
-                    invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
-                }
-
-                const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-                const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-
-                // Initialize amounts
-                let AdvanceAmount = 0;
-                let HostelBasedEb = 0;
-                let roomBasedEb = 0;
-                const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
-
-                // Process EbAmount data
-                connection.query(`SELECT * FROM EbAmount`, function (err, EbData) {
-                    if (err) {
-                        console.error("Error fetching EbAmount data:", err);
-                        return;
+                    if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+                        dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+                        invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+                    } else {
+                        dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+                        invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
+                    }
+                    const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+                    const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+                    const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+                    let invoiceNo;
+                    const userID = user.User_Id.toString().slice(0, 4);
+                    if (existingData[i].prefix !== '' && existingData[i].suffix !== '' &&
+                        existingData[i].prefix != 'undefined' && existingData[i].suffix != 'undefined' &&
+                        existingData[i].prefix !== null && existingData[i].suffix !== null) {
+                        invoiceNo = existingData[i].prefix + existingData[i].suffix + user.Name + currentMonth + currentYear;
+                    } else {
+                        invoiceNo = 'INVC' + currentMonth + currentYear + userID;
                     }
 
-                    if (EbData && EbData.length > 0) {
-                        console.log("EbData",EbData)
-                        for (let i = 0; i < EbData.length; i++) {
-                            const createAtFormate = moment(EbData[i].createAt).format('YYYY-MM-DD');
+                    const month = moment(new Date()).month() + 1;
+                    const year = moment(new Date()).year();
+                    let filteredArray = users.filter(item => {
+                        const userMonth = moment(existingData[i].createdAt).month() + 1;
+                        const userYear = moment(existingData[i].createdAt).year();
+                        return item.Hostel_Id === existingData[i].roomHostel_Id && month === userMonth && year === userYear;
+                    });
+                    
 
-                            if (moment(formattedJoinDate).month() + 1 === moment(createAtFormate).month() + 1) {
-                                if (EbData[i].isHostelBased === 1) {
-                                    AdvanceAmount += EbData[i].EbAmount;
-                                }
+                    if (filteredArray.length > 0) {
+                        for (let index = 0; index < filteredArray.length; index++) {
+
+                            if (existingData[i].isHostelBased === 1) {
+                                HostelBasedEb = existingData[i].ebBill / filteredArray.length;
+                                console.log("HostelBasedEb", HostelBasedEb)
+                            } else {
+                              
                             }
                         }
+
                     } else {
-                        console.log("No existing data found in EbAmount.");
+                        console.log("No users found for the given hostel ID");
                     }
 
-                    // Calculate total amenities amount
-                    let totalAmenitiesAmount = 0;
-                    for (let i = 0; i < amenitiesData.length; i++) {
-                        if (amenitiesData[i].Hostel_Id === user.Hostel_Id && amenitiesData[i].setAsDefault === 0 && amenitiesData[i].Status === 1) {
-                            totalAmenitiesAmount += amenitiesData[i].Amount;
-                        }
-                    }
-                    if (existingData.length > 0) {
-                        let filteredArray = existingData.filter(item => item.Hostel_Id == user.Hostel_Id);
-                        connection.query(`SELECT * from hostel WHERE Hostel_Id = ${user.Hostel_Id}`, function (error, result) {
-                            if (result.length > 0) {
-                                if (existingData[0].isHostelBased === 1) {
-                                    HostelBasedEb = EbData[0].EbAmount / result.length;
-                                    console.log("HostelBasedEb", HostelBasedEb);
-                                } else {
-                                    console.log("No users found for the given hostel ID");
-                                }
+                    let tempArray = users.filter(Item => {
+                        const userMonth = moment(existingData[i].createdAt).month() + 1;
+                        const userYear = moment(existingData[i].createdAt).year();
+                        return Item.Hostel_Id == existingData[i].roomHostel_Id && Item.Floor == existingData[i].roomFloor_Id && Item.Rooms == existingData[i].roomRoom_Id && month == userMonth && year == userYear;
+                    });
+                 
+                    if (tempArray.length > 0) {
+                        for (let index = 0; index < tempArray.length; index++) {
+
+                            if (existingData[i].isHostelBased === 0) {
+
+                                roomBasedEb = existingData[i].ebBill / tempArray.length;
                             } else {
                                 console.log("No users found for the given hostel ID");
                             }
-                    
-                            connection.query(`
-                                SELECT * 
-                                FROM hostel 
-                                WHERE Hostel_Id = ${user.Hostel_Id} 
-                                AND Floor = ${user.Floor} 
-                                AND Rooms = ${user.Rooms}`, function (error, resultData) {
-                    
-                                if (resultData.length > 0) {
-                                    let tempArray = EbData.filter(item => {
-                                        return item.hostel_Id === resultData[0].Hostel_Id && item.Floor === resultData[0].Floor && item.Room === resultData[0].Rooms
-                                    });
-                                    if (tempArray.length > 0 && existingData[0].isHostelBased === 0) {
-                                        roomBasedEb = tempArray[0].EbAmount / resultData.length;
-                                        console.log("roomBasedEb", roomBasedEb);
-                                    }
-                                } else {
-                                    console.log("No users found for the given hostel ID");
-                                }
-                    
-                                const userID = user.User_Id.toString().slice(0, 4);
-                                // if (existingData[0].prefix != '' && existingData[0].suffix != '' && existingData[0].prefix != 'undefined' && existingData[0].suffix != 'undefined' && existingData[0].prefix != null && existingData[0].suffix != null) {
-                                //     invoiceNo = existingData[0].prefix + existingData[0].suffix + user.Name + currentMonth + currentYear;
-                                // } else {
-                                //     invoiceNo = 'INVC' + currentMonth + currentYear + userID;
-                                // }
-                                if (existingData[0].prefix != '' && existingData[0].suffix != '' && existingData[0].prefix != 'undefined' && existingData[0].suffix != 'undefined' && existingData[0].prefix != null && existingData[0].suffix != null) {
-                                    invoiceNo = existingData[0].prefix + existingData[0].suffix + user.Name + currentMonth + currentYear;
-                                } else {
-                                    invoiceNo = 'INVC' + currentMonth + currentYear + userID;
-                                }
-                                
-                    
-                                if (amenitiesData[0].setAsDefault == 0 && amenitiesData[0].Status == 1  ) {
-                                    AdvanceAmount = ((roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays) + totalAmenitiesAmount + HostelBasedEb + roomBasedEb;
-                                    if (!isNaN(AdvanceAmount)) {
-                                        const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id,RoomRent,EbAmount,AmnitiesAmount,Hostel_Based,Room_Based) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}',${roomPrice},${EbData[0].EbAmount},${totalAmenitiesAmount},${HostelBasedEb},${roomBasedEb})`;
-                                        connection.query(query, function (error, data) {
-                                            if (error) {
-                                                console.error("Error inserting invoice data for user:", user.User_Id, error);
-                                                return;
-                                            }
-                                        });
-                                    }
-                                } else {
-                                    AdvanceAmount = (roomPrice / moment(formattedDueDate).daysInMonth()) * numberOfDays + HostelBasedEb + roomBasedEb;
-                                    if (!isNaN(AdvanceAmount) && isFinite(AdvanceAmount)) {
-                                        const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id,RoomRent,EbAmount,AmnitiesAmount,Hostel_Based,Room_Based) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${AdvanceAmount},'${user.Address}', '${formattedJoinDate}', '${formattedDueDate}', '${invoiceNo}', '${user.Status}', '${user.User_Id}',${roomPrice},${EbData[0].EbAmount},${totalAmenitiesAmount},${HostelBasedEb},${roomBasedEb})`;
-                                        connection.query(query, function (error, data) {
-                                            if (error) {
-                                                console.error("Error inserting invoice data for user:", user.User_Id, error);
-                                                return;
-                                            }
-                                        });
-                                    }
-                                }
-                            });
-                        });
+                        }
+
+                    } else {
+                        console.log("No users found for the given hostel ID");
                     }
-                   
-                });
-            });
-        });
+
+                    connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${existingData[i].hosHostel_Id}`, function (err, amenitiesData) {
+                        if (err) {
+                            console.log("Error occurred while fetching amenities data:", err);
+                        } else {
+                            if (amenitiesData.length > 0) {
+                                for (let j = 0; j < amenitiesData.length; j++) {
+                                    if (amenitiesData[j].setAsDefault === 0 && amenitiesData[j].Status === 1) {
+                                        totalAmenitiesAmount += amenitiesData[j].Amount;
+                                    }
+                                }
+                            }
+
+                            AdvanceAmount = ((roomPrice / moment(dueDate).daysInMonth()) * numberOfDays) + totalAmenitiesAmount + HostelBasedEb + roomBasedEb;
+
+
+                            tempObj = {
+                                invoiceDate: invoiceDate,
+                                invoiceNo: invoiceNo,
+                                dueDate: dueDate,
+                                ebBill: existingData[i].ebBill,
+                                totalAmenitiesAmount: totalAmenitiesAmount,
+                                HostelBasedEb, HostelBasedEb,
+                                roomPrice: roomPrice,
+                                roomBasedEb: roomBasedEb,
+                                AdvanceAmount: AdvanceAmount
+                            };
+                            finalArray.push(tempObj);
+
+
+                            if (i === existingData.length - 1) {
+
+                                insertInvoices(finalArray, user, connection);
+                            }
+                        }
+                    });
+                }
+            }
+        }
     });
 }
+
+function insertInvoices(finalArray, user, connection) {
+
+    for (let i = 0; i < finalArray.length; i++) {
+        let query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Hostel_Based, Room_Based) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${finalArray[i].AdvanceAmount}, '${user.Address}', '${finalArray[i].invoiceDate}', '${finalArray[i].dueDate}', '${finalArray[i].invoiceNo}', '${user.Status}', '${user.User_Id}', ${finalArray[i].roomPrice}, ${finalArray[i].ebBill}, ${finalArray[i].totalAmenitiesAmount}, ${finalArray[i].HostelBasedEb}, ${finalArray[i].roomBasedEb})`;
+
+        connection.query(query, function (error, data) {
+            if (error) {
+                console.error("Error inserting invoice data for user:", user.User_Id, error);
+                return;
+            }
+
+        });
+    }
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -454,8 +541,13 @@ function embedImage(doc, imageUrl, fallbackPath, callback) {
 }
 function InvoicePDf(connection, reqBodyData, response) {
     console.log("reqBodyData", reqBodyData)
+
+    connection.query(`SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND DATE(invoice.Date) = ? AND invoice.id=?`,
+        [reqBodyData.User_Id, reqBodyData.Date, reqBodyData.id], function (error, data) {
+
     connection.query(`SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND DATE(invoice.Date) = ? AND invoice.id = ?`,
         [reqBodyData.User_Id, reqBodyData.Date,reqBodyData.id], function (error, data) {
+
             if (error) {
                 console.log(error);
                 response.status(500).json({ message: 'Internal server error' });
