@@ -731,6 +731,8 @@ function InvoicePDf(connection, reqBodyData, response) {
                 response.status(404).json({ message: 'No data found' });
             }
         });
+    
+    // });
 }
 
 
