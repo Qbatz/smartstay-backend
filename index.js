@@ -55,9 +55,11 @@ app.listen('2001', function () {
 
 // userQueries.js
 
-app.get('/users/user-list', (request, response) => {
+app.post('/users/user-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    userQueries.getUsers(connection, response);
+
+    const ReqData = request.body
+    userQueries.getUsers(connection, response, ReqData);
 
 });
 
@@ -189,9 +191,10 @@ app.get('/compliance/compliance-list', (request, response) => {
 })
 
 
-app.get('/list/hostel-list', (request, response) => {
+app.post('/list/hostel-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    pgQueries.getHostelList(connection, response)
+    const reqData = request.body
+    pgQueries.getHostelList(connection, response, reqData)
 })
 
 app.get('/room-id/check-room-id', (request, response) => {

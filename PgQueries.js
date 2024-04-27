@@ -1,5 +1,5 @@
-function getHostelList(connection, response) {
-    connection.query(`select * from hosteldetails`, function (err, data) {
+function getHostelList(connection, response,reqData) {
+    connection.query(`select * from hosteldetails where created_By = '${reqData.loginId}' `, function (err, data) {
         if (data) {
             response.status(200).json(data)
         }
@@ -241,7 +241,7 @@ function CreateRoom(connection, reqsData, response) {
                                 message = `Room ID is already exists.`;
                             }, 1000)
 
-                            const updateQuery = ` UPDATE hostelrooms SET Number_Of_Beds = '${currentRoom.number_of_beds}' WHERE Hostel_Id = '${hostelId}' AND Floor_Id = '${currentRoom.floorId}' AND Room_Id = '${currentRoom.roomId}'`;
+                            const updateQuery = ` UPDATE hostelrooms SET Number_Of_Beds = '${currentRoom.number_of_beds}', Price = '${currentRoom.roomRent}'  WHERE Hostel_Id = '${hostelId}' AND Floor_Id = '${currentRoom.floorId}' AND Room_Id = '${currentRoom.roomId}'`;
                             console.log("Update Query:", updateQuery);
                             connection.query(updateQuery, function (error, updateResult) {
                                 console.log("Update result", updateResult);
@@ -251,7 +251,7 @@ function CreateRoom(connection, reqsData, response) {
 
                             });
                         } else {
-                            const insertQuery = `INSERT INTO hostelrooms (Hostel_Id, Floor_Id, Room_Id, Number_Of_Beds)VALUES ('${hostelId}', '${currentRoom.floorId}', '${currentRoom.roomId}', '${currentRoom.number_of_beds}')`;
+                            const insertQuery = `INSERT INTO hostelrooms (Hostel_Id, Floor_Id, Room_Id, Number_Of_Beds, Price)VALUES ('${hostelId}', '${currentRoom.floorId}', '${currentRoom.roomId}', '${currentRoom.number_of_beds}', '${currentRoom.roomRent}')`;
 
                             connection.query(insertQuery, function (error, insertResult) {
                                 if (error) {
