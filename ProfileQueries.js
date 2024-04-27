@@ -190,7 +190,7 @@ function AmenitiesSetting(connection, reqData, response) {
                         const AmnitiName = data[0];
                         console.log("AmnitiName", AmnitiName);
                         const Amnities_Id = AmnitiName.id;
-                        connection.query(`INSERT INTO Amenities (AmenitiesName, Amount, setAsDefault, Hostel_Id, Status, Amnities_Id, createdBy) VALUES ('${AmnitiName.Amnities_Name}', '${reqData.Amount}', ${reqData.setAsDefault}, '${reqData.Hostel_Id}', '${reqData.Status}', '${Amnities_Id}', ${reqData.createdBy})`, function (error, data) {
+                        connection.query(`INSERT INTO Amenities (AmenitiesName, Amount, setAsDefault, Hostel_Id,  Amnities_Id, createdBy) VALUES ('${AmnitiName.Amnities_Name}', '${reqData.Amount}', ${reqData.setAsDefault}, '${reqData.Hostel_Id}', '${Amnities_Id}', ${reqData.createdBy})`, function (error, data) {
                             if (error) {
                                 console.error(error);
                                 response.status(202).json({ message: 'Database error' });
