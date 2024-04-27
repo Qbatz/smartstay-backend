@@ -184,9 +184,10 @@ app.post('/compliance/add-details', (request, response) => {
 })
 
 
-app.get('/compliance/compliance-list', (request, response) => {
+app.post('/compliance/compliance-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-    complianceQueries.GetComplianceList(connection, response)
+    const reqData = request.body
+    complianceQueries.GetComplianceList(connection, response,  reqData)
 
 })
 
