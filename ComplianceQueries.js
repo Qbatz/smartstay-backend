@@ -67,17 +67,44 @@ function AddCompliance(connection, atten, response) {
     });
 }
 
-function GetComplianceList(connection,response) {
-    connection.query('select * from compliance', function (error, data) {
-        console.log(error);
-        console.log(data);
+function GetComplianceList(connection, response, reqData) {
+    const query = `SELECT * FROM hosteldetails WHERE created_By = '${reqData.loginId}'`;
+    let errorMessage;
+    let completedQueries = 0;
+    let totalQueries = 0;
+    const complianceArray = [];
+
+    connection.query(query, function (error, hostelData) {
         if (error) {
-            response.status(403).json({ message: 'not connected' })
+            console.error(error);
+            response.status(403).json({ message: 'Error fetching hostel data' });
+                       return;
         }
-        else {
-            response.status(200).json(data)
-        }
-    })
+
+        totalQueries = hostelData.length;
+
+        hostelData.forEach(item => {
+            connection.query(`SELECT * FROM compliance WHERE Hostel_id = '${item.id}'`, function (error, complianceData) {
+                completedQueries++;
+                
+                if (error) {
+                    errorMessage = error;
+                } else if (complianceData.length > 0) {
+                    complianceArray.push(complianceData);
+                }
+
+                if (completedQueries === totalQueries) {
+                    if (errorMessage) {
+                        response.status(403).json({ message: 'Error fetching compliance data' });
+                    } else {
+                        const filteredComplianceArray = complianceArray.filter(item => item.length > 0);
+                        response.status(200).json(filteredComplianceArray);
+                    }
+                }
+            });
+        });
+    });
 }
+
 
 module.exports = { AddCompliance, GetComplianceList };
