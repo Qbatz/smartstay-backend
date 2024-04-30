@@ -1,45 +1,30 @@
 
 function getUsers(connection, response, ReqData) {
-    const query = `SELECT * FROM hosteldetails WHERE created_By = '${ReqData.loginId}'`;
-    let errorMessage;
-    connection.query(query, function (error, hostelData) {
+    const query = `SELECT * FROM hosteldetails hstlDetails inner join hostel hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true WHERE hstlDetails.created_By ='${ReqData.loginId}' order by hstl.Hostel_Id;`;
+      connection.query(query, function (error, hostelData) {
+        console.log("hostelData",hostelData)
         if (error) {
             console.error(error);
             response.status(403).json({ message: 'Error  hostel data' });
             return;
+        }else{
+            response.status(200).json(hostelData);
         }
-        // console.log("hostelData.length",hostelData.length)
-        let userDataArray = [];
-        hostelData.forEach(hostel => {
-            connection.query(`SELECT * FROM hostel WHERE Hostel_Id = '${hostel.id}' AND isActive=true`, function (error, userData) {
-                if (error) {
-                    console.error(error);
-                    errorMessage = error;
-                } else {
-                    userDataArray.push(userData);
-                    // console.log("userDataArray.length",userDataArray.length)
-                }
-                if (userDataArray.length === hostelData.length) {
-                    userDataArray = userDataArray.filter(userData => userData.length > 0);
-                    if (errorMessage) {
-                        response.status(403).json({ message: 'Error  user data' });
-                    } else {
-                        response.status(200).json(userDataArray);
-                    }
-                }
-            });
-        });
+                     
     });
 }
-
 
 
 function createUser(connection, atten, response) {
     const FirstNameInitial = atten.firstname.charAt(0).toUpperCase();
     const LastNameInitial = atten.lastname.charAt(0).toUpperCase();
     const Circle = FirstNameInitial + LastNameInitial;
-    const Status = atten.BalanceDue > 0 ? 'Pending' : 'Success';
+    // const Status = atten.BalanceDue > 0 ? 'Pending' : 'Success' 
+    const Status = atten.BalanceDue < 0 ? 'Pending' : 'Success';
+
     const Name = atten.firstname + ' ' + atten.lastname;
+
+
 
     if (atten.ID) {
         connection.query(`UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${atten.Phone}', Email='${atten.Email}', Address='${atten.Address}', AadharNo='${atten.AadharNo}', PancardNo='${atten.PancardNo}',licence='${atten.licence}',HostelName='${atten.HostelName}',Hostel_Id='${atten.hostel_Id}', Floor='${atten.Floor}', Rooms='${atten.Rooms}', Bed='${atten.Bed}', AdvanceAmount='${atten.AdvanceAmount}', RoomRent='${atten.RoomRent}', BalanceDue='${atten.BalanceDue}', PaymentType='${atten.PaymentType}', Status='${Status}',isActive='${atten.isActive}'  WHERE ID='${atten.ID}' `, function (updateError, updateData) {
@@ -93,7 +78,7 @@ function createUser(connection, atten, response) {
 
 
 function getPaymentDetails(connection, response) {
-    connection.query(`SELECT hos.Name ,hos.Phone,hos.Email,hos.Address,hos.AdvanceAmount,hos.BalanceDue,hos.Status,hos.createdAt,inv.Name as invoiceName, inv.phoneNo as invoicePhone ,inv.Date as invDate, inv.Amount as invAmount,inv.BalanceDue as invBalance ,inv.Status as invStatus, inv.Invoices as InvoiceNo FROM hostel hos INNER JOIN invoicedetails inv on inv.phoneNo= hos.Phone`, function (error, data) {
+    connection.query(`SELECT hos.Name ,hos.Phone,hos.Email,hos.Address,hos.AdvanceAmount,hos.BalanceDue,hos.Status,hos.createdAt,inv.Name as invoiceName, inv.phoneNo as invoicePhone ,inv.Date as invDate, inv.Amount as invAmount ,inv.Status as invStatus, inv.Invoices as InvoiceNo FROM hostel hos INNER JOIN invoicedetails inv on inv.phoneNo= hos.Phone`, function (error, data) {
         console.log(error);
         if (error) {
             response.status(201).json({ message: 'No Data Found', statusCode: 201 })
