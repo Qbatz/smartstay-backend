@@ -158,8 +158,11 @@ function AmenitiesSetting(connection, reqData, response) {
     else {
         connection.query(`select * from Amenities WHERE Hostel_Id = ${reqData.Hostel_Id}`, function (error, amenitiesData) {
             console.log("amenitiesData", amenitiesData)
+            const amenitiesName = reqData.AmenitiesName.trim() .replace(/\s+/g, ''); 
+                const capitalizedAmenitiesName = amenitiesName.charAt(0).toUpperCase() + amenitiesName.slice(1).toLowerCase();
+                console.log("capitalizedAmenitiesName",capitalizedAmenitiesName)
             if (reqData.id) {
-                connection.query(`UPDATE Amenities SET Amount= ${reqData.Amount},setAsDefault= ${reqData.setAsDefault},Status= ${reqData.Status} WHERE Hostel_Id='${reqData.Hostel_Id}' and AmenitiesName ='${reqData.AmenitiesName}'`, function (error, data) {
+                connection.query(`UPDATE Amenities SET Amount= ${reqData.Amount},setAsDefault= ${reqData.setAsDefault},Status= ${reqData.Status} WHERE Hostel_Id='${reqData.Hostel_Id}' and AmenitiesName ='${capitalizedAmenitiesName}'`, function (error, data) {
                     if (error) {
                         console.error(error);
                         response.status(201).json({ message: "doesn't update" });
@@ -171,25 +174,34 @@ function AmenitiesSetting(connection, reqData, response) {
 
             }
           
-         
-            
             else {
-                const amenitiesName = reqData.AmenitiesName.trim().toLowerCase().replace(/\s+/g, ''); 
-                connection.query(`SELECT * FROM AmnitiesName WHERE LOWER(Amnities_Name) = '${amenitiesName}'`, function (err, data) {
+                
+                
+                connection.query(`SELECT * FROM AmnitiesName WHERE LOWER(Amnities_Name) = '${capitalizedAmenitiesName}'`, function (err, data) {
                     console.log("data...?", data)
                     if (data.length === 0) {
-                        connection.query(`INSERT INTO AmnitiesName (Amnities_Name) VALUES ('${amenitiesName}')`, function (error, data) {
+                       
+                        connection.query(`INSERT INTO AmnitiesName (Amnities_Name) VALUES ('${capitalizedAmenitiesName}')`, function (error, data) {
                             if (error) {
                                 console.error(error);
                                 response.status(202).json({ message: 'Database error' });
                             } else {
-                                response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
+                               
+                                connection.query(`INSERT INTO Amenities (AmenitiesName, Amount, setAsDefault, Hostel_Id,  Amnities_Id, createdBy) VALUES ('${capitalizedAmenitiesName}', '${reqData.Amount}', ${reqData.setAsDefault}, '${reqData.Hostel_Id}', (SELECT id FROM AmnitiesName WHERE Amnities_Name = '${capitalizedAmenitiesName}'), ${reqData.createdBy})`, function (error, data) {
+                                    if (error) {
+                                        console.error(error);
+                                        response.status(202).json({ message: 'Database error' });
+                                    } else {
+                                        response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
+                                    }
+                                });
                             }
                         });
                     } else {
                         const AmnitiName = data[0];
                         console.log("AmnitiName", AmnitiName);
                         const Amnities_Id = AmnitiName.id;
+                        
                         connection.query(`INSERT INTO Amenities (AmenitiesName, Amount, setAsDefault, Hostel_Id,  Amnities_Id, createdBy) VALUES ('${AmnitiName.Amnities_Name}', '${reqData.Amount}', ${reqData.setAsDefault}, '${reqData.Hostel_Id}', '${Amnities_Id}', ${reqData.createdBy})`, function (error, data) {
                             if (error) {
                                 console.error(error);
@@ -201,6 +213,35 @@ function AmenitiesSetting(connection, reqData, response) {
                     }
                 });
             }
+            
+            // else {
+            //     const amenitiesName = reqData.AmenitiesName.trim().toLowerCase().replace(/\s+/g, ''); 
+            //     connection.query(`SELECT * FROM AmnitiesName WHERE LOWER(Amnities_Name) = '${amenitiesName}'`, function (err, data) {
+            //         console.log("data...?", data)
+            //         if (data.length === 0) {
+            //             connection.query(`INSERT INTO AmnitiesName (Amnities_Name) VALUES ('${amenitiesName}')`, function (error, data) {
+            //                 if (error) {
+            //                     console.error(error);
+            //                     response.status(202).json({ message: 'Database error' });
+            //                 } else {
+            //                     response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
+            //                 }
+            //             });
+            //         } else {
+            //             const AmnitiName = data[0];
+            //             console.log("AmnitiName", AmnitiName);
+            //             const Amnities_Id = AmnitiName.id;
+            //             connection.query(`INSERT INTO Amenities (AmenitiesName, Amount, setAsDefault, Hostel_Id,  Amnities_Id, createdBy) VALUES ('${AmnitiName.Amnities_Name}', '${reqData.Amount}', ${reqData.setAsDefault}, '${reqData.Hostel_Id}', '${Amnities_Id}', ${reqData.createdBy})`, function (error, data) {
+            //                 if (error) {
+            //                     console.error(error);
+            //                     response.status(202).json({ message: 'Database error' });
+            //                 } else {
+            //                     response.status(200).json({ message: 'Inserted successfully', statusCode: 200 });
+            //                 }
+            //             });
+            //         }
+            //     });
+            // }
             
            
             

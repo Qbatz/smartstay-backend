@@ -20,8 +20,6 @@ const s3 = new AWS.S3();
 
 const https = require('https');
 
-
-
 function calculateAndInsertInvoice(connection, user, users) {
     connection.query(`
         SELECT 
@@ -84,6 +82,7 @@ function calculateAndInsertInvoice(connection, user, users) {
                     let HostelBasedEb = 0;
                     let roomBasedEb = 0;
                     let totalAmenitiesAmount = 0; 
+                   let dedctAmenitiesAmount =0;
                     const currentDate = moment().format('YYYY-MM-DD');
                     const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
                     const currentMonth = moment(currentDate).month() + 1;
@@ -112,50 +111,77 @@ function calculateAndInsertInvoice(connection, user, users) {
                         invoiceNo = 'INVC' + currentMonth + currentYear + userID;
                     }
 
-                    const month = moment(new Date()).month() + 1;
-                    const year = moment(new Date()).year();
-                    let filteredArray = users.filter(item => {
-                        const userMonth = moment(existingData[i].createdAt).month() + 1;
-                        const userYear = moment(existingData[i].createdAt).year();
-                        return item.Hostel_Id === existingData[i].roomHostel_Id && month === userMonth && year === userYear;
-                    });
+                  
+                    // let filteredArray = users.filter(item => {
+                    //     const userMonth = moment(existingData[i].createdAt).month() + 1;
+                    //     const userYear = moment(existingData[i].createdAt).year();
+                    //     return item.Hostel_Id === existingData[i].roomHostel_Id && month === userMonth && year === userYear;
+                    // });
                     
 
-                    if (filteredArray.length > 0) {
-                        for (let index = 0; index < filteredArray.length; index++) {
-
+                    // if (filteredArray.length > 0) {
+                        // for (let index = 0; index < filteredArray.length; index++) {
+                            const month = moment(new Date()).month() + 1;
+                            const year = moment(new Date()).year();
                             if (existingData[i].isHostelBased === 1) {
-                                HostelBasedEb = existingData[i].ebBill / filteredArray.length;
+                                let filteredArray = users.filter(item => {
+                                    const userMonth = moment(existingData[i].createdAt).month() + 1;
+                                    const userYear = moment(existingData[i].createdAt).year();
+                                    return item.Hostel_Id === existingData[i].roomHostel_Id && month === userMonth && year === userYear;
+                                });
+                                console.log("ebBill",existingData[i].ebBill);
+                                HostelBasedEb = existingData[i].ebBill == null ? 0 : Number(existingData[i].ebBill / filteredArray.length);
+                                roomBasedEb = 0
                                 console.log("HostelBasedEb", HostelBasedEb)
-                            } else {
-                              
                             }
-                        }
+                            else{
+                                let tempArray = users.filter(Item => {
+                                    const userMonth = moment(existingData[i].createdAt).month() + 1;
+                                    const userYear = moment(existingData[i].createdAt).year();
+                                    return Item.Hostel_Id == existingData[i].roomHostel_Id && Item.Floor == existingData[i].roomFloor_Id && Item.Rooms == existingData[i].roomRoom_Id && month == userMonth && year == userYear;
+                                });
+                                if (tempArray.length > 0) {
+                                    // for (let index = 0; index < tempArray.length; index++) {
+            
+                                        // if (existingData[i].isHostelBased === 0) {
+            
+                                            roomBasedEb = existingData[i].ebBill / tempArray.length;
+                                            HostelBasedEb = 0;
+                                        // } 
+                                       
+                                    }
+            
+                                // } 
+                               
 
-                    } else {
-                        console.log("No users found for the given hostel ID");
-                    }
 
-                    let tempArray = users.filter(Item => {
-                        const userMonth = moment(existingData[i].createdAt).month() + 1;
-                        const userYear = moment(existingData[i].createdAt).year();
-                        return Item.Hostel_Id == existingData[i].roomHostel_Id && Item.Floor == existingData[i].roomFloor_Id && Item.Rooms == existingData[i].roomRoom_Id && month == userMonth && year == userYear;
-                    });
+                            }
+                           
+                        // }
+
+                    // }
+                   
+
+                    // let tempArray = users.filter(Item => {
+                    //     const userMonth = moment(existingData[i].createdAt).month() + 1;
+                    //     const userYear = moment(existingData[i].createdAt).year();
+                    //     return Item.Hostel_Id == existingData[i].roomHostel_Id && Item.Floor == existingData[i].roomFloor_Id && Item.Rooms == existingData[i].roomRoom_Id && month == userMonth && year == userYear;
+                    // });
                  
-                    if (tempArray.length > 0) {
-                        for (let index = 0; index < tempArray.length; index++) {
+                    // if (tempArray.length > 0) {
+                    //     for (let index = 0; index < tempArray.length; index++) {
 
-                            if (existingData[i].isHostelBased === 0) {
+                    //         if (existingData[i].isHostelBased === 0) {
 
-                                roomBasedEb = existingData[i].ebBill / tempArray.length;
-                            } else {
-                                console.log("No users found for the given hostel ID");
-                            }
-                        }
+                    //             roomBasedEb = existingData[i].ebBill / tempArray.length;
+                    //         } else {
+                    //             console.log("No users found for the given hostel ID");
+                    //         }
+                    //     }
 
-                    } else {
-                        console.log("No users found for the given hostel ID");
-                    }
+                    // } else {
+                    //     console.log("No users found for the given hostel ID");
+                    // }
 
                     connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${existingData[i].hosHostel_Id}`, function (err, amenitiesData) {
                         if (err) {
@@ -166,10 +192,14 @@ function calculateAndInsertInvoice(connection, user, users) {
                                     if (amenitiesData[j].setAsDefault === 0 && amenitiesData[j].Status === 1) {
                                         totalAmenitiesAmount += amenitiesData[j].Amount;
                                     }
+                                    else{
+                                        dedctAmenitiesAmount += amenitiesData[j].Amount;
+                                        console.log("dedctAmenitiesAmount",dedctAmenitiesAmount)
+                                    }
                                 }
                             }
 
-                            AdvanceAmount = ((roomPrice / moment(dueDate).daysInMonth()) * numberOfDays) + totalAmenitiesAmount + HostelBasedEb + roomBasedEb;
+                            AdvanceAmount = ((roomPrice / moment(dueDate).daysInMonth()) * Number(numberOfDays)) + totalAmenitiesAmount + HostelBasedEb + roomBasedEb;
 
 
                             tempObj = {
@@ -179,6 +209,7 @@ function calculateAndInsertInvoice(connection, user, users) {
                                 ebBill: existingData[i].ebBill,
                                 totalAmenitiesAmount: totalAmenitiesAmount,
                                 HostelBasedEb, HostelBasedEb,
+                                dedctAmenitiesAmount:dedctAmenitiesAmount,
                                 roomPrice: roomPrice,
                                 roomBasedEb: roomBasedEb,
                                 AdvanceAmount: AdvanceAmount
@@ -201,7 +232,7 @@ function calculateAndInsertInvoice(connection, user, users) {
 function insertInvoices(finalArray, user, connection) {
 
     for (let i = 0; i < finalArray.length; i++) {
-        let query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Hostel_Based, Room_Based) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${finalArray[i].AdvanceAmount}, '${user.Address}', '${finalArray[i].invoiceDate}', '${finalArray[i].dueDate}', '${finalArray[i].invoiceNo}', '${user.Status}', '${user.User_Id}', ${finalArray[i].roomPrice}, ${finalArray[i].ebBill}, ${finalArray[i].totalAmenitiesAmount}, ${finalArray[i].HostelBasedEb}, ${finalArray[i].roomBasedEb})`;
+        let query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount,Amnities_deduction_Amount, Hostel_Based, Room_Based) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${finalArray[i].AdvanceAmount}, '${user.Address}', '${finalArray[i].invoiceDate}', '${finalArray[i].dueDate}', '${finalArray[i].invoiceNo}', '${user.Status}', '${user.User_Id}', ${finalArray[i].roomPrice}, ${finalArray[i].ebBill}, ${finalArray[i].totalAmenitiesAmount},${finalArray[i].dedctAmenitiesAmount}, ${finalArray[i].HostelBasedEb}, ${finalArray[i].roomBasedEb})`;
 
         connection.query(query, function (error, data) {
             if (error) {
