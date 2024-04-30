@@ -381,7 +381,7 @@ function InvoicePDf(connection, reqBodyData, response) {
 
 
 
-                        connection.query(`SELECT * from hostel WHERE Hostel_Id = ${hostel.Hostel_Id}`, function (error, resultDataForIsHostelbased) {
+                        connection.query(`SELECT * from hostel WHERE Hostel_Id = ${hostel.Hostel_Id} and isActive=true`, function (error, resultDataForIsHostelbased) {
                             console.log("resultDataForIsHostelbased", resultDataForIsHostelbased.length)
 
 
@@ -397,7 +397,7 @@ function InvoicePDf(connection, reqBodyData, response) {
 
                             connection.query(`SELECT * FROM hostel WHERE Hostel_Id = ${hostel.Hostel_Id} 
                             AND Floor = ${hostel.Floor_Id} 
-                            AND Rooms = ${hostel.Room_No}`, function (error, resultDataForRoomBased) {
+                            AND Rooms = ${hostel.Room_No} and isActive=true`, function (error, resultDataForRoomBased) {
 
                                 console.log("resultDataForRoomBased", resultDataForRoomBased.length)
 
