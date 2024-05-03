@@ -130,9 +130,10 @@ function calculateAndInsertInvoice(connection, user, users) {
                                     return item.Hostel_Id === existingData[i].roomHostel_Id && month === userMonth && year === userYear;
                                 });
                                 console.log("ebBill",existingData[i].ebBill);
-                                HostelBasedEb = existingData[i].ebBill == null ? 0 : Number(existingData[i].ebBill / filteredArray.length);
+                                // HostelBasedEb = existingData[i].ebBill == null ? 0 : Number(existingData[i].ebBill / filteredArray.length);
+                                HostelBasedEb = filteredArray.length !== 0 ? (existingData[i].ebBill == null ? 0 : Number(existingData[i].ebBill / filteredArray.length)) : 0;
                                 roomBasedEb = 0
-                                console.log("HostelBasedEb", HostelBasedEb)
+                                console.log("HostelBasedEb....?", HostelBasedEb)
                             }
                             else{
                                 let tempArray = users.filter(Item => {
@@ -208,7 +209,7 @@ function calculateAndInsertInvoice(connection, user, users) {
                                 dueDate: dueDate,
                                 ebBill: existingData[i].ebBill,
                                 totalAmenitiesAmount: totalAmenitiesAmount,
-                                HostelBasedEb, HostelBasedEb,
+                                HostelBasedEb: HostelBasedEb,
                                 dedctAmenitiesAmount:dedctAmenitiesAmount,
                                 roomPrice: roomPrice,
                                 roomBasedEb: roomBasedEb,
