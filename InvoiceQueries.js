@@ -960,7 +960,7 @@ function EbAmount(connection, atten, response) {
 
 
 function getEBList(connection, request, response) {
-    connection.query('select inv.Name ,inv.Hostel_Id,inv.Room_No,inv.Hostel_Based,inv.Room_Based, eb.Eb_Unit ,eb.Hostel_Id  FROM invoicedetails AS inv INNER JOIN EbAmount AS eb ON inv.Hostel_Id = eb.Hostel_Id  ', function (error, data) {
+    connection.query('select inv.Name ,inv.Hostel_Id,inv.Room_No,inv.Hostel_Based,inv.Room_Based, eb.Eb_Unit ,eb.Hostel_Id.eb.createAt  FROM invoicedetails AS inv INNER JOIN EbAmount AS eb ON inv.Hostel_Id = eb.Hostel_Id  ', function (error, data) {
 
         if (error) {
             console.error(error);
