@@ -167,7 +167,7 @@ function RoomCount(connection, reqFloorID, response) {
                 for (let i = 0; i < RoomsData.length; i++) {
                     const Room_Id = RoomsData[i].Room_Id;
 
-                    connection.query(`SELECT COUNT('Bed') AS bookedBedCount, hos.Hostel_Id AS hostel_Id, hos.Floor, hos.Rooms FROM hostel hos WHERE Floor = '${reqFloorID.floor_Id}' AND Hostel_Id = '${reqFloorID.hostel_Id}' AND Rooms = '${Room_Id}'`, function (error, hostelData) {
+                    connection.query(`SELECT COUNT('Bed') AS bookedBedCount, hos.Hostel_Id AS hostel_Id, hos.Floor, hos.Rooms FROM hostel hos WHERE Floor = '${reqFloorID.floor_Id}' AND Hostel_Id = '${reqFloorID.hostel_Id}' AND Rooms = '${Room_Id}' AND hos.isActive = true`, function (error, hostelData) {
                         if (error) {
                             errorMessage = error;
                         } else {
