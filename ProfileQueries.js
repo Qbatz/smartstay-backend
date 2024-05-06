@@ -203,7 +203,7 @@ function AmenitiesSetting(connection, reqData, response) {
                 console.error(error);
                 response.status(202).json({ message: 'Database error' });
             } else if (existingAmenity.length > 0) {
-                response.status(202).json({ message: 'Amenity already exists for this Hostel_Id' });
+                response.status(203).json({ message: 'Amenity already exists for this Hostel_Id' });
             } else {
                 connection.query(`INSERT INTO Amenities (Amount, setAsDefault, Hostel_Id,  Amnities_Id, createdBy) VALUES (${reqData.Amount}, ${reqData.setAsDefault}, ${reqData.Hostel_Id}, ${id}, ${reqData.createdBy})`, function (error, data) {
                     if (error) {
