@@ -1,4 +1,3 @@
-
 function getUsers(connection, response, ReqData) {
     const query = `SELECT * FROM hosteldetails hstlDetails inner join hostel hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true WHERE hstlDetails.created_By ='${ReqData.loginId}' order by hstl.Hostel_Id;`;
       connection.query(query, function (error, hostelData) {
@@ -19,13 +18,8 @@ function createUser(connection, atten, response) {
     const FirstNameInitial = atten.firstname.charAt(0).toUpperCase();
     const LastNameInitial = atten.lastname.charAt(0).toUpperCase();
     const Circle = FirstNameInitial + LastNameInitial;
-    // const Status = atten.BalanceDue > 0 ? 'Pending' : 'Success' 
-    const Status = atten.BalanceDue < 0 ? 'Pending' : 'Success';
-
+     const Status = atten.BalanceDue < 0 ? 'Pending' : 'Success';
     const Name = atten.firstname + ' ' + atten.lastname;
-
-
-
     if (atten.ID) {
         connection.query(`UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${atten.Phone}', Email='${atten.Email}', Address='${atten.Address}', AadharNo='${atten.AadharNo}', PancardNo='${atten.PancardNo}',licence='${atten.licence}',HostelName='${atten.HostelName}',Hostel_Id='${atten.hostel_Id}', Floor='${atten.Floor}', Rooms='${atten.Rooms}', Bed='${atten.Bed}', AdvanceAmount='${atten.AdvanceAmount}', RoomRent='${atten.RoomRent}', BalanceDue='${atten.BalanceDue}', PaymentType='${atten.PaymentType}', Status='${Status}',isActive='${atten.isActive}'  WHERE ID='${atten.ID}' `, function (updateError, updateData) {
             if (updateError) {
