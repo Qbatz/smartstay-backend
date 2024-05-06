@@ -323,7 +323,7 @@ app.get('/list/Ebstartmeter', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     invoiceQueries.getEbStart(connection, response)
 })
-app.post('/amnityUpdate', (request, response) => {
+app.post('/amenities/amnityUpdate', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     var atten = request.body;
     profileQueries.UpdateAmnity(connection, atten, response)
