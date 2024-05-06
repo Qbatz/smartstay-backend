@@ -286,7 +286,7 @@ function AmenitiesSetting(connection, reqData, response) {
 
 
 function getAmenitiesList(connection, response) {
-    connection.query(`select * from Amenities `, function (err, data) {
+    connection.query(`select * from Amenities AmeList INNER JOIN AmnitiesName AmeName ON AmeList.Amnities_Id = AmeName.id `, function (err, data) {
         if (data) {
             response.status(200).json(data)
         }
@@ -295,16 +295,7 @@ function getAmenitiesList(connection, response) {
         }
     })
 }
-function getAmenitiesName(connection, response) {
-    connection.query(`select * from AmnitiesName `, function (err, data) {
-        if (data) {
-            response.status(200).json(data)
-        }
-        else {
-            response.status(201).json({ message: 'No Data Found' })
-        }
-    })
-}
+
 function getEbReading(connection, response) {
     connection.query(`select * from EbReading `, function (err, data) {
         if (data) {
@@ -341,4 +332,4 @@ function UpdateAmnity(connection, attenArray, response) {
 
 
 
-module.exports = { IsEnableCheck, getAccount, InvoiceSettings, AmenitiesSetting, UpdateEB, getAmenitiesList, getAmenitiesName, getEbReading,UpdateAmnity };
+module.exports = { IsEnableCheck, getAccount, InvoiceSettings, AmenitiesSetting, UpdateEB, getAmenitiesList,  getEbReading,UpdateAmnity };

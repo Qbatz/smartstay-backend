@@ -313,10 +313,7 @@ app.post('/AmnitiesName_list', (request, response) => {
 
 
 })
-app.get('/list/amenities-Name', (request, response) => {
-    response.set('Access-Control-Allow-Origin', '*')
-    profileQueries.getAmenitiesName(connection, response)
-})
+
 app.get('/list/EbReading', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     profileQueries.getEbReading(connection, response)
