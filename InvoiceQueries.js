@@ -361,16 +361,16 @@ function InvoicePDf(connection, reqBodyData, response) {
 
 
 
-                    connection.query(`select * from Amenities where Hostel_Id = \'${hostel.Hostel_Id} \'`, function (error, Amenitiesdata) {
+                    connection.query(`select * from Amenities AmeList INNER JOIN AmnitiesName AmeName ON AmeList.Amnities_Id = AmeName.id  where AmeList.Hostel_Id = \'${hostel.Hostel_Id} \'`, function (error, Amenitiesdata) {
                         console.log("Amenitiesdata", Amenitiesdata)
 
                         if (Amenitiesdata.length > 0) {
                             for (let i = 0; i < Amenitiesdata.length; i++) {
                                 const tempObj = {};
                                 if (Amenitiesdata[i].setAsDefault == 0 && Amenitiesdata[i].Status == 1) {
-                                    tempObj[Amenitiesdata[i].AmenitiesName] = Amenitiesdata[i].Amount
+                                    tempObj[Amenitiesdata[i].Amnities_Name] = Amenitiesdata[i].Amount
                                 } else if (Amenitiesdata[i].setAsDefault == 1 && Amenitiesdata[i].Status == 1) {
-                                    tempObj[Amenitiesdata[i].AmenitiesName] = Amenitiesdata[i].Amount;
+                                    tempObj[Amenitiesdata[i].Amnities_Name] = Amenitiesdata[i].Amount;
                                     RoomRent.Rent -= Amenitiesdata[i].Amount;
                                 }
                                 breakUpTable.push(tempObj);
