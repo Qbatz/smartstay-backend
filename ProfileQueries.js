@@ -312,7 +312,7 @@ function UpdateAmnity(connection, attenArray, response) {
     connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${attenArray.Hostel_Id}`, function (error, amenitiesData) {
         console.log("amenitiesData", amenitiesData)
         if (attenArray.id) {
-            connection.query(`UPDATE Amenities SET Amount= ${attenArray.Amount},setAsDefault= ${attenArray.setAsDefault},Status= ${attenArray.Status} WHERE id='${attenArray.Hostel_Id}' and Amnities_Id = '${attenArray.id}'`, function (error, data) {
+            connection.query(`UPDATE Amenities SET Amount= ${attenArray.Amount},setAsDefault= ${attenArray.setAsDefault},Status= ${attenArray.Status} WHERE id='${attenArray.id}' and Hostel_Id = '${attenArray.Hostel_Id}'`, function (error, data) {
                 if (error) {
                     console.error(error);
                     response.status(201).json({ message: "doesn't update" });
