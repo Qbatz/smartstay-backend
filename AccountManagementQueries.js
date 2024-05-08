@@ -37,7 +37,7 @@ function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileDa
 }
 
 function createAccountForLogin(connection, reqBodyData, response) {
-    console.log("")
+    console.log("reqBodyData...",reqBodyData)
     if (reqBodyData.id) {
         if (reqBodyData.profile) {
             const timestamp = Date.now();
@@ -83,6 +83,7 @@ function createAccountForLogin(connection, reqBodyData, response) {
 
             if (data.length === 0) {
                 connection.query(`INSERT INTO createaccount(Name, mobileNo, email_Id, password) VALUES ('${reqBodyData.name}', '${reqBodyData.mobileNo}', '${reqBodyData.emailId}', '${reqBodyData.password}')`, function (error, data) {
+                   
                     if (error) {
                         console.log("error", error);
                         response.status(500).json({ message: 'Database error' });

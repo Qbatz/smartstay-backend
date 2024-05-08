@@ -91,6 +91,7 @@ app.post('/create/create-account', upload.single('profile'), (request, response)
         Country: request.body.Country,
         City: request.body.City,
         State: request.body.State,
+        password:request.body.password
 
     };
     console.log("reqBodyData **", reqBodyData)
