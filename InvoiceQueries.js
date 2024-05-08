@@ -940,7 +940,7 @@ function EbAmount(connection, atten, response) {
 
                     const insertQuery = isHostelBased ?
                         `INSERT INTO EbAmount (hostel_Id, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit) VALUES (${atten.Hostel_Id}, ${startMeterReading}, ${atten.end_Meter_Reading}, ${atten.EbAmount},${difference})` :
-                        `INSERT INTO EbAmount (hostel_Id, Floor, Room, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit) VALUES ('${atten.Hostel_Id}', '${atten.Floor}', '${atten.Room}', ${startMeterReading}, '${atten.end_Meter_Reading}', '${atten.EbAmount}',${difference})`;
+                        `INSERT INTO EbAmount (hostel_Id, Floor, Room, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit) VALUES (${atten.Hostel_Id}, ${atten.Floor}, ${atten.Room}, ${startMeterReading}, '${atten.end_Meter_Reading}', '${atten.EbAmount}',${difference})`;
 
                     connection.query(insertQuery, function (error, data) {
                         if (error) {
@@ -948,8 +948,12 @@ function EbAmount(connection, atten, response) {
                             response.status(500).json({ message: 'Insertion failed', error: error });
                             return;
                         }
-                        console.log("Inserted successfully");
-                        response.status(200).json({ message: 'Inserted successfully' });
+                        else{
+                            console.log("Inserted successfully");
+                            response.status(200).json({ message: 'Inserted successfully' });
+                        }
+                        // console.log("Inserted successfully");
+                        // response.status(200).json({ message: 'Inserted successfully' });
                     });
                 });
             }
