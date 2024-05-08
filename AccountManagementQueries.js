@@ -77,7 +77,8 @@ function createAccountForLogin(connection, reqBodyData, response) {
         }
 
     }
-    else if (reqBodyData.mobileNo && reqBodyData.emailId) {
+
+     else if (reqBodyData.mobileNo && reqBodyData.emailId) {
         connection.query(`SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`, function (error, data) {
             console.log("data for", data);
 
@@ -110,6 +111,8 @@ function createAccountForLogin(connection, reqBodyData, response) {
         response.status(201).json({ message: 'Missing Parameter' });
     }
 }
+
+
 
 
 function loginAccount(connection, response, email_Id, password) {
@@ -216,7 +219,8 @@ function forgetPasswordOtpSend(connection, response, requestData) {
                 response.status(201).json({ message: `${requestData.email} is doesn't exist`, statusCode: 201 });
             }
         });
-    } else {
+    }
+     else {
         response.status(203).json({ message: "Missing parameter", statusCode: 203 });
     }
 
