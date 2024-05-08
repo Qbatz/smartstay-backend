@@ -143,6 +143,22 @@ cron.schedule("0 0 1 * * ", function () {
 });
 
 
+app.get('/manual/manual-invoice', (request, response) => {
+    connection.query(`SELECT * FROM hostel where isActive=true`, function (err, users) {
+               if (err) {
+            console.error("Error fetching users:", err);
+            return;
+        }
+        users.forEach(user => {
+            const userID = user.User_Id;
+            invoiceQueries.calculateAndInsertInvoice(connection, user,users);
+        });
+    });
+})
+
+
+
+
 
 app.get('/list/invoice-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
