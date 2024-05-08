@@ -887,7 +887,7 @@ function convertAmountToWords(amount) {
 function EbAmount(connection, atten, response) {
     console.log("atten", atten);
     if (!atten) {
-        response.status(400).json({ message: 'Missing parameter' });
+        response.status(201).json({ message: 'Missing parameter' });
         return;
     }
     connection.query(`SELECT isHostelBased FROM hosteldetails`, function (err, datum) {
@@ -917,7 +917,7 @@ function EbAmount(connection, atten, response) {
                 connection.query(`SELECT * FROM EbAmount WHERE hostel_Id = ${atten.Hostel_Id} AND Floor = '${atten.Floor}' AND Room = '${atten.Room}' ORDER BY id DESC LIMIT 1`, function (err, temdata) {
                     if (err) {
                         console.error(err);
-                        response.status(500).json({ message: 'Database error' });
+                        response.status(203).json({ message: 'Database error' });
                         return;
                     }
 
@@ -945,15 +945,14 @@ function EbAmount(connection, atten, response) {
                     connection.query(insertQuery, function (error, data) {
                         if (error) {
                             console.error(error);
-                            response.status(500).json({ message: 'Insertion failed', error: error });
+                            response.status(202).json({ message: 'Insertion failed', error: error });
                             return;
                         }
                         else{
                             console.log("Inserted successfully");
                             response.status(200).json({ message: 'Inserted successfully' });
                         }
-                        // console.log("Inserted successfully");
-                        // response.status(200).json({ message: 'Inserted successfully' });
+                      
                     });
                 });
             }
