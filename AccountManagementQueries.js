@@ -38,7 +38,7 @@ function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileDa
 
 function createAccountForLogin(connection, reqBodyData, response) {
     console.log("reqBodyData...",reqBodyData)
-    if (reqBodyData.id) {
+    if (reqBodyData.id != "" && reqBodyData.id != undefined) {
         if (reqBodyData.profile) {
             const timestamp = Date.now();
             console.log("timestamp", timestamp)
@@ -78,39 +78,135 @@ function createAccountForLogin(connection, reqBodyData, response) {
 
     }
 
-     else if (reqBodyData.mobileNo && reqBodyData.emailId) {
-        connection.query(`SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`, function (error, data) {
-            console.log("data for", data);
+    //  else if (reqBodyData.mobileNo && reqBodyData.emailId) {
+    //     connection.query(`SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`, function (error, data) {
+    //         console.log("data for", data);
 
-            if (data.length === 0) {
-                connection.query(`INSERT INTO createaccount(Name, mobileNo, email_Id, password) VALUES ('${reqBodyData.name}', '${reqBodyData.mobileNo}', '${reqBodyData.emailId}', '${reqBodyData.password}')`, function (error, data) {
+    //         if (data.length === 0) {
+    //             connection.query(`INSERT INTO createaccount(Name, mobileNo, email_Id, password) VALUES ('${reqBodyData.name}', '${reqBodyData.mobileNo}', '${reqBodyData.emailId}', '${reqBodyData.password}')`, function (error, data) {
                    
-                    if (error) {
-                        console.log("error", error);
-                        response.status(500).json({ message: 'Database error' });
-                    } else {
-                        response.status(200).json({ message: 'Created Successfully', statusCode: 200 });
-                    }
-                });
-            } else {
-                const mobileExists = data.some(record => record.mobileNo === reqBodyData.mobileNo);
-                const emailExists = data.some(record => record.email_Id === reqBodyData.emailId);
+    //                 if (error) {
+    //                     console.log("error", error);
+    //                     response.status(500).json({ message: 'Database error' });
+    //                 } else {
+    //                     response.status(200).json({ message: 'Created Successfully', statusCode: 200 });
+    //                 }
+    //             });
+    //         } else {
+    //             const mobileExists = data.some(record => record.mobileNo === reqBodyData.mobileNo);
+    //             const emailExists = data.some(record => record.email_Id === reqBodyData.emailId);
 
-                if (mobileExists && emailExists) {
-                    response.status(203).json({ message: 'Mobile Number and Email ID is already exist', statusCode: 203 });
-                } else if (emailExists) {
-                    response.status(201).json({ message: 'Email ID already exists', statusCode: 201 });
-                } else if (mobileExists) {
-                    response.status(202).json({ message: 'Mobile Number already exists', statusCode: 202 });
-                }
-            }
-        });
-    }
+    //             if (mobileExists && emailExists) {
+    //                 response.status(203).json({ message: 'Mobile Number and Email ID is already exist', statusCode: 203 });
+    //             } else if (emailExists) {
+    //                 response.status(201).json({ message: 'Email ID already exists', statusCode: 201 });
+    //             } else if (mobileExists) {
+    //                 response.status(202).json({ message: 'Mobile Number already exists', statusCode: 202 });
+    //             }
+    //         }
+    //     });
+    // }
 
     else {
         response.status(201).json({ message: 'Missing Parameter' });
     }
 }
+
+
+function createnewAccount(connection, reqBodyData, response) {
+   
+    if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.name && reqBodyData.password) {
+        connection.query(
+            `SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`,
+            [reqBodyData.mobileNo, reqBodyData.emailId],
+            function (error, data) {
+                if (error) {
+                    console.error("Database error:", error);
+                    response.status(500).json({ message: 'Database error' });
+                    return;
+                }
+
+                if (data.length === 0) {
+                    connection.query(
+                        `INSERT INTO createaccount (Name, mobileNo, email_Id, password) VALUES ('${reqBodyData.name}', '${reqBodyData.mobileNo}', '${reqBodyData.emailId}', '${reqBodyData.password}')`,
+                        [reqBodyData.name, reqBodyData.mobileNo, reqBodyData.emailId, reqBodyData.password],
+                        function (error, result) {
+                            if (error) {
+                                console.error("Database error:", error);
+                                response.status(500).json({ message: 'Database error' });
+                                return;
+                            } else {
+                                response.status(200).json({ message: 'Created Successfully', statusCode: 200 });
+                            }
+                        }
+                    );
+                } else {
+                    const mobileExists = data.some(record => record.mobileNo === reqBodyData.mobileNo);
+                    const emailExists = data.some(record => record.email_Id === reqBodyData.emailId);
+
+                    if (mobileExists && emailExists) {
+                        response.status(203).json({ message: 'Mobile Number and Email ID already exist', statusCode: 203 });
+                    } else if (emailExists) {
+                        response.status(201).json({ message: 'Email ID already exists', statusCode: 201 });
+                    } else if (mobileExists) {
+                        response.status(202).json({ message: 'Mobile Number already exists', statusCode: 202 });
+                    }
+                    // else {
+                    //     response.status(400).json({ message: 'Missing Parameter' });
+                    // }
+                }
+            }
+        );
+    } else {
+        response.status(400).json({ message: 'Missing Parameter' });
+    }
+}
+
+
+
+// function createnewAccount(connection, reqBodyData, response) {
+//     if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.name && reqBodyData.password) {
+       
+//         connection.query(`SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`, function (error, data) {
+//             if (error) {
+//                 console.error("Database error:", error);
+//                 response.status(500).json({ message: 'Database error' });
+//                 return;
+//             }
+
+//             if (data.length === 0) {
+            
+//                 connection.query(`INSERT INTO createaccount(Name, mobileNo, email_Id, password) VALUES ('${reqBodyData.name}', '${reqBodyData.mobileNo}', '${reqBodyData.emailId}', '${reqBodyData.password}')`, function (error, result) {
+//                     if (error) {
+//                         console.error("Database error:", error);
+//                         response.status(500).json({ message: 'Database error' });
+//                         return;
+//                     }
+//                     else{
+//                         response.status(200).json({ message: 'Created Successfully', statusCode: 200 });
+//                     }
+                   
+//                 });
+//             } else {
+               
+//                 const mobileExists = data.some(record => record.mobileNo === reqBodyData.mobileNo);
+//                 const emailExists = data.some(record => record.email_Id === reqBodyData.emailId);
+
+//                 if (mobileExists && emailExists) {
+//                     response.status(203).json({ message: 'Mobile Number and Email ID already exist', statusCode: 203 });
+//                 } else if (emailExists) {
+//                     response.status(201).json({ message: 'Email ID already exists', statusCode: 201 });
+//                 } else if (mobileExists) {
+//                     response.status(202).json({ message: 'Mobile Number already exists', statusCode: 202 });
+//                 }
+//                 else{
+//                     response.status(201).json({ message: 'Missing Parameter' });
+//                 }
+//             }
+//         });
+//     }
+    
+// }
 
 
 
@@ -287,4 +383,4 @@ function sendResponseOtp(connection, response, requestData){
 
 
 
-module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend }
+module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend,createnewAccount }

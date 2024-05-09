@@ -98,6 +98,13 @@ app.post('/create/create-account', upload.single('profile'), (request, response)
     accountManagement.createAccountForLogin(connection, reqBodyData, response)
 })
 
+
+app.post('/newaccount/create-account', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    const reqBodyData = request.body
+    accountManagement.createnewAccount(connection, reqBodyData, response);
+})
+
 app.get('/login/login', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const { email_Id, password } = request.query;
