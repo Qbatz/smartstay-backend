@@ -681,9 +681,6 @@ function InvoicePDf(connection, reqBodyData, response) {
                                             });
 
 
-
-
-
                                         }
                                     });
                                 } else {
@@ -845,8 +842,6 @@ function InvoicePDf(connection, reqBodyData, response) {
                 response.status(404).json({ message: 'No data found' });
             }
         });
-
-    // });
 }
 
 
@@ -855,10 +850,7 @@ function uploadToS3(filenames, response, pdfDetails, connection) {
     let uploadedPDFs = 0;
     let pdfInfo = [];
     let errorMessage;
-
-
     pdfDetails.forEach(pdf => {
-
         const { filename, fileContent, user } = pdf;
         const key = `Invoice/${filename}`;
         const BucketName = 'smartstaydevs';
