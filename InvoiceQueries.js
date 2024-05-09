@@ -9,7 +9,7 @@ const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 const AWS_REGION = process.env.AWS_REGION;
 const request = require('request');
-
+const sharp = require('sharp');
 
 AWS.config.update({
     accessKeyId: AWS_ACCESS_KEY_ID,
@@ -295,20 +295,71 @@ function getInvoiceList(connection, response) {
     })
 }
 
+// function embedImage(doc, imageUrl, fallbackPath, callback) {
+//     console.log(`Fetching image from URL: ${imageUrl}`);
+//     if (imageUrl == null) {
+//         doc.image(fallbackPath, {
+//             fit: [80, 100],
+//             align: 'center',
+//             valign: 'top',
+//             margin: 50
+//         });
+//         callback(new Error("Image URL is null"));
+//         return;
+//     }
+//     request({ url: imageUrl, encoding: null }, (error, response, body) => {
+//         if (error) {
+//             doc.image(fallbackPath, {
+//                 fit: [80, 100],
+//                 align: 'center',
+//                 valign: 'top',
+//                 margin: 50
+//             });
+//             callback(error);
+//         } else if (response && response.statusCode === 200) {
+//             const img = Buffer.from(body, 'base64');
+//             doc.image(img, {
+//                 fit: [50, 70],
+//                 align: 'center',
+//                 valign: 'top',
+//                 margin: 10,
+//                 continue: true,
+
+//             });
+//             callback(null, body);
+//         } else {
+//             console.error(`Failed to fetch image`);
+//             doc.image(fallbackPath, {
+//                 fit: [80, 100],
+//                 align: 'center',
+//                 valign: 'top',
+//                 margin: 50
+//             });
+//             callback(new Error(`Failed to fetch image`));
+//         }
+//     });
+// }
+
+
+
+
 function embedImage(doc, imageUrl, fallbackPath, callback) {
     console.log(`Fetching image from URL: ${imageUrl}`);
-    if (imageUrl == null) {
+    if (!imageUrl) {
+        console.log("Image URL is empty. Using fallback image.");
         doc.image(fallbackPath, {
             fit: [80, 100],
             align: 'center',
             valign: 'top',
             margin: 50
         });
-        callback(new Error("Image URL is null"));
+        callback(new Error("Image URL is empty"));
         return;
     }
-    request({ url: imageUrl, encoding: null }, (error, response, body) => {
+    
+    request({ url: imageUrl, encoding: null }, async (error, response, body) => {
         if (error) {
+           
             doc.image(fallbackPath, {
                 fit: [80, 100],
                 align: 'center',
@@ -317,28 +368,52 @@ function embedImage(doc, imageUrl, fallbackPath, callback) {
             });
             callback(error);
         } else if (response && response.statusCode === 200) {
-            const img = Buffer.from(body, 'base64');
-            doc.image(img, {
-                fit: [50, 70],
-                align: 'center',
-                valign: 'top',
-                margin: 10,
-                continue: true,
-
-            });
-            callback(null, body);
+            try {
+                const imageBuffer = Buffer.from(body, 'base64');
+                const convertedImageBuffer = await convertImage(imageBuffer);
+                
+                doc.image(convertedImageBuffer, {
+                    fit: [50, 70],
+                    align: 'center',
+                    valign: 'top',
+                    margin: 10,
+                    continue: true
+                });
+                
+                callback(null, convertedImageBuffer);
+            } catch (conversionError) {
+                             doc.image(fallbackPath, {
+                    fit: [80, 100],
+                    align: 'center',
+                    valign: 'top',
+                    margin: 50
+                });
+                callback(conversionError);
+            }
         } else {
-            console.error(`Failed to fetch image`);
+            
             doc.image(fallbackPath, {
                 fit: [80, 100],
                 align: 'center',
                 valign: 'top',
                 margin: 50
             });
-            callback(new Error(`Failed to fetch image`));
+            callback(new Error(`Failed to fetch image. Status code: ${response.statusCode}`));
         }
     });
 }
+
+async function convertImage(imageBuffer) {
+      const convertedImageBuffer = await sharp(imageBuffer)
+        .jpeg()
+        .toBuffer();
+    
+    return convertedImageBuffer;
+}
+
+
+
+
 
 function InvoicePDf(connection, reqBodyData, response) {
     console.log("reqBodyData", reqBodyData)
@@ -358,33 +433,17 @@ function InvoicePDf(connection, reqBodyData, response) {
                 data.forEach((hostel, index) => {
                     console.log("hostelData **", hostel);
                     let breakUpTable = []
-
-
                     const JoiningDate = hostel.Date
-
                     const DueDate = hostel.DueDate
-
-
                     const numberOfDays = moment(DueDate).diff(moment(JoiningDate), 'days') + 1;
-
                     console.log("numberOfDays", numberOfDays)
-
-
                     const JoiningWiseRoomRent = (hostel.RoomRent / moment(DueDate).daysInMonth()) * numberOfDays
-
                     let RoomRent = {
                         Rent: Math.round(JoiningWiseRoomRent),
 
                     }
-
                     console.log("RoomRent", RoomRent)
-
-
                     breakUpTable.push(RoomRent)
-
-
-
-
                     connection.query(`select * from Amenities AmeList INNER JOIN AmnitiesName AmeName ON AmeList.Amnities_Id = AmeName.id  where AmeList.Hostel_Id = \'${hostel.Hostel_Id} \'`, function (error, Amenitiesdata) {
                         console.log("Amenitiesdata", Amenitiesdata)
 
@@ -401,8 +460,7 @@ function InvoicePDf(connection, reqBodyData, response) {
                             }
                         }
                         else {
-                            // breakUpTable.push(RoomRent);
-                        }
+                                                   }
 
 
 
