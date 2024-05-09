@@ -914,7 +914,7 @@ function EbAmount(connection, atten, response) {
         response.status(201).json({ message: 'Missing parameter' });
         return;
     }
-    connection.query(`SELECT isHostelBased FROM hosteldetails`, function (err, datum) {
+    connection.query(`SELECT isHostelBased FROM hosteldetails where id=${atten.Hostel_Id}`, function (err, datum) {
         console.log("datum..?", datum)
         if (err) {
             console.error(err);
@@ -984,6 +984,8 @@ function EbAmount(connection, atten, response) {
     });
 
 };
+
+
 
 
 function getEBList(connection, request, response) {
