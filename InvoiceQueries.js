@@ -27,7 +27,7 @@ function calculateAndInsertInvoice(connection, user, users) {
             rms.Hostel_Id AS roomHostel_Id,
             rms.Floor_Id AS roomFloor_Id,
             rms.Room_Id AS roomRoom_Id,
-          
+             hstl.Bed,
             dtls.id AS detHostel_Id,
             dtls.isHostelBased,
             dtls.prefix,
@@ -37,6 +37,9 @@ function calculateAndInsertInvoice(connection, user, users) {
             hstl.Hostel_Id AS hosHostel_Id,
             hstl.Rooms AS hosRoom,
             hstl.Floor As hosFloor,
+            
+            
+         
             (
                 SELECT EbAmount 
                 FROM EbAmount 
@@ -67,6 +70,7 @@ function calculateAndInsertInvoice(connection, user, users) {
         WHERE 
             hstl.isActive = true and hstl.id = ${user.ID};
     `, function (err, existingData) {
+        console.log("existingData",existingData)
         if (err) {
             console.error("Error fetching hosteldetails:", err);
             return;
@@ -256,7 +260,7 @@ function insertInvoices(finalArray, user, connection) {
             }
 
             if (checkResult[0].count === 0) {
-                const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Amnities_deduction_Amount, Hostel_Based, Room_Based) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${finalArray[i].AdvanceAmount}, '${user.Address}', '${finalArray[i].invoiceDate}', '${finalArray[i].dueDate}', '${finalArray[i].invoiceNo}', '${user.Status}', '${user.User_Id}', ${finalArray[i].roomPrice}, ${finalArray[i].ebBill}, ${finalArray[i].totalAmenitiesAmount}, ${finalArray[i].dedctAmenitiesAmount}, ${finalArray[i].HostelBasedEb}, ${finalArray[i].roomBasedEb})`;
+                const query = `INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Amnities_deduction_Amount, Hostel_Based, Room_Based,Bed) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${finalArray[i].AdvanceAmount}, '${user.Address}', '${finalArray[i].invoiceDate}', '${finalArray[i].dueDate}', '${finalArray[i].invoiceNo}', '${user.Status}', '${user.User_Id}', ${finalArray[i].roomPrice}, ${finalArray[i].ebBill}, ${finalArray[i].totalAmenitiesAmount}, ${finalArray[i].dedctAmenitiesAmount}, ${finalArray[i].HostelBasedEb}, ${finalArray[i].roomBasedEb},${user.Bed})`;
 
                 connection.query(query, function (error, data) {
                     if (error) {
