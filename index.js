@@ -353,3 +353,10 @@ app.post('/amenities/amnityUpdate', (request, response) => {
     profileQueries.UpdateAmnity(connection, atten, response)
 
 })
+
+
+app.post('/checkout/checkout-user', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    const attenData = request.body;
+    userQueries.CheckOutUser(connection, response, attenData )
+})
