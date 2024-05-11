@@ -26,8 +26,7 @@ function calculateAndInsertInvoice(connection, user, users) {
             rms.Price,
             rms.Hostel_Id AS roomHostel_Id,
             rms.Floor_Id AS roomFloor_Id,
-            rms.Room_Id AS roomRoom_Id,
-             hstl.Bed,
+            rms.Room_Id AS roomRoom_Id,    
             dtls.id AS detHostel_Id,
             dtls.isHostelBased,
             dtls.prefix,
@@ -37,7 +36,8 @@ function calculateAndInsertInvoice(connection, user, users) {
             hstl.Hostel_Id AS hosHostel_Id,
             hstl.Rooms AS hosRoom,
             hstl.Floor As hosFloor,
-            
+            hstl.Bed,
+             hstl.CheckoutDate,
             
          
             (
