@@ -289,11 +289,10 @@ function insertInvoices(finalArray, user, connection) {
 
 
 function getInvoiceList(connection, response, reqData) {
-    const query = `SELECT * FROM hosteldetails hstlDetails inner join invoicedetails  invoice  on invoice.Hostel_Id=hstlDetails.id  WHERE hstlDetails.created_By ='${reqData.loginId}' order by hstl.Hostel_Id;`;
-
-    connection.query('select * from invoicedetails', function (error, data) {
+    const query = `SELECT * FROM hosteldetails  hstlDetails inner join invoicedetails  invoice  on invoice.Hostel_Id=hstlDetails.id  WHERE hstlDetails.created_By ='${reqData.loginId}' order by invoice.Hostel_Id;`;
+    connection.query(query, function (error, data) {
         console.log(error);
-        console.log(data);
+        console.log("InvoiceData",data);
 
         if (error) {
             response.status(403).json({ message: 'not connected' })
