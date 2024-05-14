@@ -234,6 +234,8 @@ function calculateAndInsertInvoice(connection, user, users) {
     });
 }
 
+
+
 // function insertInvoices(finalArray, user, connection) {
 
 //     for (let i = 0; i < finalArray.length; i++) {
@@ -248,6 +250,7 @@ function calculateAndInsertInvoice(connection, user, users) {
 //         });
 //     }
 // }
+
 
 
 function insertInvoices(finalArray, user, connection) {
@@ -285,7 +288,9 @@ function insertInvoices(finalArray, user, connection) {
 
 
 
-function getInvoiceList(connection, response) {
+function getInvoiceList(connection, response, reqData) {
+    const query = `SELECT * FROM hosteldetails hstlDetails inner join invoicedetails  invoice  on invoice.Hostel_Id=hstlDetails.id  WHERE hstlDetails.created_By ='${reqData.loginId}' order by hstl.Hostel_Id;`;
+
     connection.query('select * from invoicedetails', function (error, data) {
         console.log(error);
         console.log(data);
