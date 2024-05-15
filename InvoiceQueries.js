@@ -44,8 +44,7 @@ function calculateAndInsertInvoice(connection, user, users) {
                 SELECT EbAmount 
                 FROM EbAmount 
                 WHERE hostel_Id = hstl.Hostel_Id 
-                AND Floor = hstl.Floor 
-                AND Room = hstl.Rooms 
+                
                 ORDER BY id DESC 
                 LIMIT 1
             ) AS ebBill,
@@ -70,7 +69,7 @@ function calculateAndInsertInvoice(connection, user, users) {
         WHERE 
             hstl.isActive = true and hstl.id = ${user.ID};
     `, function (err, existingData) {
-        console.log("existingData",existingData)
+        // console.log("users", users)
         if (err) {
             console.error("Error fetching hosteldetails:", err);
             return;
@@ -102,6 +101,7 @@ function calculateAndInsertInvoice(connection, user, users) {
                         dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
                         invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
                     }
+                    console.log("invoiceDate",invoiceDate)
                     const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
                     const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
                     const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
@@ -116,23 +116,26 @@ function calculateAndInsertInvoice(connection, user, users) {
                     }
 
 
-                    // let filteredArray = users.filter(item => {
-                    //     const userMonth = moment(existingData[i].createdAt).month() + 1;
-                    //     const userYear = moment(existingData[i].createdAt).year();
-                    //     return item.Hostel_Id === existingData[i].roomHostel_Id && month === userMonth && year === userYear;
-                    // });
 
-
-                    // if (filteredArray.length > 0) {
-                    // for (let index = 0; index < filteredArray.length; index++) {
                     const month = moment(new Date()).month() + 1;
                     const year = moment(new Date()).year();
                     if (existingData[i].isHostelBased === 1) {
                         let filteredArray = users.filter(item => {
-                            const userMonth = moment(existingData[i].createdAt).month() + 1;
-                            const userYear = moment(existingData[i].createdAt).year();
-                            return item.Hostel_Id === existingData[i].roomHostel_Id && month === userMonth && year === userYear;
+
+                            console.log(item)
+                            // const userMonth = moment(existingData[i].createdAt).month() + 1;
+                            // const userYear = moment(existingData[i].createdAt).year();
+
+                            console.log("item.Hostel_Id == existingData[i].roomHostel_Id", item.Hostel_Id == existingData[i].roomHostel_Id)
+                            // console.log("month == userMonth",month == userMonth)
+                            // console.log("year == userYear",year == userYear)
+
+                            return item.Hostel_Id == existingData[i].roomHostel_Id;
+
                         });
+                        console.log("filteredArray", filteredArray)
+
+
                         console.log("ebBill", existingData[i].ebBill);
                         // HostelBasedEb = existingData[i].ebBill == null ? 0 : Number(existingData[i].ebBill / filteredArray.length);
                         HostelBasedEb = filteredArray.length !== 0 ? (existingData[i].ebBill == null ? 0 : Number(existingData[i].ebBill / filteredArray.length)) : 0;
@@ -141,10 +144,11 @@ function calculateAndInsertInvoice(connection, user, users) {
                     }
                     else {
                         let tempArray = users.filter(Item => {
-                            const userMonth = moment(existingData[i].createdAt).month() + 1;
-                            const userYear = moment(existingData[i].createdAt).year();
-                            return Item.Hostel_Id == existingData[i].roomHostel_Id && Item.Floor == existingData[i].roomFloor_Id && Item.Rooms == existingData[i].roomRoom_Id && month == userMonth && year == userYear;
+                            // const userMonth = moment(existingData[i].createdAt).month() + 1;
+                            // const userYear = moment(existingData[i].createdAt).year();
+                            return Item.Hostel_Id == existingData[i].roomHostel_Id && Item.Floor == existingData[i].roomFloor_Id && Item.Rooms == existingData[i].roomRoom_Id ;
                         });
+                        // console.log("tempArray",tempArray)
                         if (tempArray.length > 0) {
                             // for (let index = 0; index < tempArray.length; index++) {
 
@@ -161,32 +165,39 @@ function calculateAndInsertInvoice(connection, user, users) {
 
 
                     }
+                    // const month = moment(new Date()).month() + 1;
+                    // const year = moment(new Date()).year();
 
+                    // if (existingData[i].isHostelBased === 1) {
+                    //     let filteredArray = users.filter(item => {
+                    //         const userMonth = moment(existingData[i].createdAt).month() + 1;
+                    //         const userYear = moment(existingData[i].createdAt).year();
+                    //         return item.Hostel_Id === existingData[i].roomHostel_Id && month === userMonth && year === userYear;
+                    //     });
+                    //     console.log("ebBill", existingData[i].ebBill);
+                    //     HostelBasedEb = filteredArray.length !== 0 ? (existingData[i].ebBill == null ? 0 : Number(existingData[i].ebBill / filteredArray.length)) : 0;
+                    //     roomBasedEb = 0; 
+                    //     console.log("HostelBasedEb....?", HostelBasedEb);
                     // }
-
-                    // }
-
-
-                    // let tempArray = users.filter(Item => {
-                    //     const userMonth = moment(existingData[i].createdAt).month() + 1;
-                    //     const userYear = moment(existingData[i].createdAt).year();
-                    //     return Item.Hostel_Id == existingData[i].roomHostel_Id && Item.Floor == existingData[i].roomFloor_Id && Item.Rooms == existingData[i].roomRoom_Id && month == userMonth && year == userYear;
-                    // });
-
-                    // if (tempArray.length > 0) {
-                    //     for (let index = 0; index < tempArray.length; index++) {
-
-                    //         if (existingData[i].isHostelBased === 0) {
-
-                    //             roomBasedEb = existingData[i].ebBill / tempArray.length;
-                    //         } else {
-                    //             console.log("No users found for the given hostel ID");
-                    //         }
+                    //  else {
+                    //     let tempArray = users.filter(item => {
+                    //         const userMonth = moment(existingData[i].createdAt).month() + 1;
+                    //         const userYear = moment(existingData[i].createdAt).year();
+                    //         return item.Hostel_Id == existingData[i].roomHostel_Id && item.Floor == existingData[i].roomFloor_Id && item.Rooms == existingData[i].roomRoom_Id && month == userMonth && year == userYear;
+                    //     });
+                    //     if (tempArray.length > 0) {
+                    //         roomBasedEb = existingData[i].ebBill / tempArray.length;
+                    //         HostelBasedEb = 0; 
+                    //     } else {
+                    //         roomBasedEb = 0; 
+                    //         HostelBasedEb = 0; 
                     //     }
-
-                    // } else {
-                    //     console.log("No users found for the given hostel ID");
                     // }
+
+                    console.log("HostelBasedEb", HostelBasedEb);
+                    console.log("roomBasedEb", roomBasedEb);
+
+
 
                     connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${existingData[i].hosHostel_Id}`, function (err, amenitiesData) {
                         if (err) {
@@ -360,10 +371,10 @@ function embedImage(doc, imageUrl, fallbackPath, callback) {
         callback(new Error("Image URL is empty"));
         return;
     }
-    
+
     request({ url: imageUrl, encoding: null }, async (error, response, body) => {
         if (error) {
-           
+
             doc.image(fallbackPath, {
                 fit: [80, 100],
                 align: 'center',
@@ -375,7 +386,7 @@ function embedImage(doc, imageUrl, fallbackPath, callback) {
             try {
                 const imageBuffer = Buffer.from(body, 'base64');
                 const convertedImageBuffer = await convertImage(imageBuffer);
-                
+
                 doc.image(convertedImageBuffer, {
                     fit: [50, 70],
                     align: 'center',
@@ -383,10 +394,10 @@ function embedImage(doc, imageUrl, fallbackPath, callback) {
                     margin: 10,
                     continue: true
                 });
-                
+
                 callback(null, convertedImageBuffer);
             } catch (conversionError) {
-                             doc.image(fallbackPath, {
+                doc.image(fallbackPath, {
                     fit: [80, 100],
                     align: 'center',
                     valign: 'top',
@@ -395,7 +406,7 @@ function embedImage(doc, imageUrl, fallbackPath, callback) {
                 callback(conversionError);
             }
         } else {
-            
+
             doc.image(fallbackPath, {
                 fit: [80, 100],
                 align: 'center',
@@ -408,10 +419,10 @@ function embedImage(doc, imageUrl, fallbackPath, callback) {
 }
 
 async function convertImage(imageBuffer) {
-      const convertedImageBuffer = await sharp(imageBuffer)
+    const convertedImageBuffer = await sharp(imageBuffer)
         .jpeg()
         .toBuffer();
-    
+
     return convertedImageBuffer;
 }
 
@@ -464,7 +475,7 @@ function InvoicePDf(connection, reqBodyData, response) {
                             }
                         }
                         else {
-                                                   }
+                        }
 
 
 
@@ -1026,11 +1037,11 @@ function EbAmount(connection, atten, response) {
                             response.status(202).json({ message: 'Insertion failed', error: error });
                             return;
                         }
-                        else{
+                        else {
                             console.log("Inserted successfully");
                             response.status(200).json({ message: 'Inserted successfully' });
                         }
-                      
+
                     });
                 });
             }
