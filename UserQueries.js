@@ -21,7 +21,7 @@ function createUser(connection, atten, response) {
      const Status = atten.BalanceDue < 0 ? 'Pending' : 'Success';
     const Name = atten.firstname + ' ' + atten.lastname;
     if (atten.ID) {
-        connection.query(`UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${atten.Phone}', Email='${atten.Email}', Address='${atten.Address}', AadharNo='${atten.AadharNo}', PancardNo='${atten.PancardNo}',licence='${atten.licence}',HostelName='${atten.HostelName}',Hostel_Id='${atten.hostel_Id}', Floor='${atten.Floor}', Rooms='${atten.Rooms}', Bed='${atten.Bed}', AdvanceAmount='${atten.AdvanceAmount}', RoomRent='${atten.RoomRent}', BalanceDue='${atten.BalanceDue}', PaymentType='${atten.PaymentType}', Status='${Status}',isActive='${atten.isActive}'  WHERE ID='${atten.ID}' `, function (updateError, updateData) {
+        connection.query(`UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${atten.Phone}', Email='${atten.Email}', Address='${atten.Address}', AadharNo='${atten.AadharNo}', PancardNo='${atten.PancardNo}',licence='${atten.licence}',HostelName='${atten.HostelName}',Hostel_Id='${atten.hostel_Id}', Floor='${atten.Floor}', Rooms='${atten.Rooms}', Bed='${atten.Bed}', AdvanceAmount='${atten.AdvanceAmount}', RoomRent='${atten.RoomRent}', BalanceDue='${atten.BalanceDue}', PaymentType='${atten.PaymentType}', Status='${Status}' WHERE ID='${atten.ID}' `, function (updateError, updateData) {
             if (updateError) {
                 response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
             } else {
@@ -84,4 +84,30 @@ function getPaymentDetails(connection, response) {
 }
 
 
-module.exports = { getUsers, createUser, getPaymentDetails }
+function CheckOutUser (connection, response, attenData){
+    console.log("attenData",attenData)
+if(attenData){
+
+    const query = `UPDATE hostel SET CheckoutDate= '${attenData.CheckOutDate}' , isActive ='${attenData.isActive}' WHERE User_Id='${attenData.User_Id}'`
+
+    console.log("query",query)
+    connection.query(query, function(error, UpdateData){
+        console.log("updateData",UpdateData)
+        if(error){
+            response.status(201).json({ message: 'No Data Found' })
+        }else{
+            response.status(200).json({ message: "Update Successfully"});
+        }
+    })
+
+}else{
+    response.status(201).json({ message: 'missing parameter' })
+}
+
+
+
+}
+
+
+
+module.exports = { getUsers, createUser, getPaymentDetails,CheckOutUser }

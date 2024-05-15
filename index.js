@@ -167,9 +167,10 @@ app.get('/manual/manual-invoice', (request, response) => {
 
 
 
-app.get('/list/invoice-list', (request, response) => {
+app.post('/list/invoice-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-    invoiceQueries.getInvoiceList(connection, response)
+    const reqData = request.body
+    invoiceQueries.getInvoiceList(connection, response, reqData)
 })
 
 app.get('/list/eb_list', (request, response) => {
@@ -352,4 +353,11 @@ app.post('/amenities/amnityUpdate', (request, response) => {
     var atten = request.body;
     profileQueries.UpdateAmnity(connection, atten, response)
 
+})
+
+
+app.post('/checkout/checkout-user', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    const attenData = request.body;
+    userQueries.CheckOutUser(connection, response, attenData )
 })
