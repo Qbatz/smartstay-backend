@@ -1058,7 +1058,37 @@ function EbAmount(connection, atten, response) {
 
 
 function getEBList(connection, request, response) {
-    connection.query(`select inv.Name ,inv.Hostel_Id,inv.Room_No,inv.Hostel_Based,inv.Room_Based, eb.Eb_Unit ,eb.Hostel_Id,eb.createAt,eb.id  FROM invoicedetails AS inv INNER JOIN EbAmount AS eb ON inv.Hostel_Id = eb.Hostel_Id `, function (error, data) {
+    connection.query(`SELECT 
+    inv.Name,
+    inv.Hostel_Id,
+    inv.Room_No,
+    inv.Hostel_Based,
+    inv.Room_Based,
+    eb.Eb_Unit,
+    eb.Hostel_Id,
+    eb.createAt,
+    eb.id
+FROM 
+    invoicedetails AS inv
+INNER JOIN 
+    EbAmount AS eb
+ON 
+    inv.Hostel_Id = eb.Hostel_Id
+INNER JOIN (
+    SELECT 
+        Hostel_Id,
+        MAX(createAt) as latestCreateAt
+    FROM 
+        EbAmount
+    GROUP BY 
+        Hostel_Id
+) as latestEb
+ON 
+    eb.Hostel_Id = latestEb.Hostel_Id
+AND 
+    eb.createAt = latestEb.latestCreateAt
+ORDER BY 
+    eb.createAt DESC;`, function (error, data) {
 
         if (error) {
             console.error(error);
