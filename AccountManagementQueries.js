@@ -37,22 +37,16 @@ function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileDa
 }
 
 function createAccountForLogin(connection, reqBodyData, response) {
-    console.log("reqBodyData...",reqBodyData)
     if (reqBodyData.id != "" && reqBodyData.id != undefined) {
         if (reqBodyData.profile) {
             const timestamp = Date.now();
-            console.log("timestamp", timestamp)
-
             uploadProfilePictureToS3Bucket('smartstaydevs', 'Profile/', 'Profile' + reqBodyData.id + `${timestamp}` + '.jpg', reqBodyData.profile, (err, S3URL) => {
-                console.log("s3URL", S3URL);
                 if (err) {
                     console.error('Error uploading profile picture:', err);
                     response.status(500).json({ message: 'Error uploading profile picture' });
                 } else {
                     const query = `UPDATE createaccount SET profile='${S3URL}' WHERE id='${reqBodyData.id}'`;
                     connection.query(query, function (error, profileData) {
-                        console.log("profileData", profileData);
-                        console.log("error profileData", error);
                         if (error) {
                             response.status(202).json({ message: 'Database error' });
                         } else {
@@ -227,7 +221,7 @@ function loginAccount(connection, response, email_Id, password) {
 
                     if (isEnable == 1) {
                         sendOtpForMail(connection, response, email_Id, LoginId)
-                        response.status(203).json({ message: "otp Send Successfully", statusCode: 203 })
+                        // response.status(203).json({ message: "otp Send Successfully", statusCode: 203 })
                                            } else {
                         response.status(200).json({ message: "Login Successfully", statusCode: 200, Data: data });
 
