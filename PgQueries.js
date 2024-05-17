@@ -176,7 +176,8 @@ function RoomCount(connection, reqFloorID, response) {
                                 Hostel_Id: RoomsData[i].Hostel_Id,
                                 Floor_Id: RoomsData[i].Floor_Id,
                                 Room_Id: RoomsData[i].Room_Id,
-                                Number_Of_Beds: RoomsData[i].Number_Of_Beds
+                                Number_Of_Beds: RoomsData[i].Number_Of_Beds,
+                                Room_Rent : RoomsData[i].Price
                             };
                             responseData.push(objectFormation);
                         }
