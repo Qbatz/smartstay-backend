@@ -37,14 +37,28 @@ const connection = mysql.createConnection({
     password: 'Password!#$0'
 })
 
-connection.connect(function (error) {
-    if (error) {
-        console.log(error)
-    }
-    else {
-        console.log("connection success")
-    }
-})
+// connection.connect(function (error) {
+//     if (error) {
+//         console.log(error)
+//     }
+//     else {
+//         console.log("connection success")
+//     }
+// })
+
+try{
+    connection.connect(function (error) {
+        if (error) {
+            console.log(error)
+        }
+        else {
+            console.log("connection success")
+        }
+    }) 
+}
+catch(error){
+    console.log(error)
+}
 
 app.listen('2001', function () {
     console.log("node is started at 2001")
