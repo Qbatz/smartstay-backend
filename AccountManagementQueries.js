@@ -289,7 +289,6 @@ function forgetPasswordOtpSend(connection, response, requestData) {
                                 user: requestData.email,
                                 pass: 'afki rrvo jcke zjdt',
                             },
-
                         });
                         const mailOptions = {
                             from: requestData.email,
@@ -335,7 +334,7 @@ function sendOtpForMail(connection, response, Email_Id,LoginId) {
                                 user: Email_Id,
                                 pass: 'afki rrvo jcke zjdt',
                             },
-
+// yhwc bxxn uprf zsgr
                         });
                         const mailOptions = {
                             from: Email_Id,
