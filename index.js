@@ -164,20 +164,51 @@ cron.schedule("0 0 1 * * ", function () {
 });
 
 
-app.get('/manual/manual-invoice', (request, response) => {
-    connection.query(`SELECT * FROM hostel where isActive=true`, function (err, users) {
+app.get('/checkout/checkout-invoice', (request, response) => {
+    connection.query(`SELECT * FROM hostel`, function (err, users) {
+        console.log("users",users)
                if (err) {
             console.error("Error fetching users:", err);
             return;
         }
         users.forEach(user => {
             const userID = user.User_Id;
-            invoiceQueries.calculateAndInsertInvoice(connection, user,users);
+            invoiceQueries.CheckOutInvoice(connection, user,users);
         });
     });
 })
 
 
+app.post('/manual/manual-invoice', (request, response)=>{
+    response.set('Access-Control-Allow-Origin', '*')
+    const reqData = request.body;
+    console.log("reqData",reqData)
+    connection.query(`SELECT * FROM hostel`, function (err, users) {
+    //  console.log(" users", users)
+               if (err) {
+            console.error("Error fetching users:", err);
+            return;
+        }
+        const ParticularUser = users.filter(user => {
+           return user.User_Id == reqData.User_Id
+
+        });
+        // console.log("ParticularUser",ParticularUser)
+        invoiceQueries.InsertManualInvoice(connection,users,reqData,ParticularUser );
+
+    });
+})
+
+
+
+
+
+
+
+app.get('/list/invoice-for-all-user-list', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*')
+        invoiceQueries.getInvoiceListForAll(connection, response)
+})
 
 
 
