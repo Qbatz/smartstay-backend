@@ -221,7 +221,7 @@ function loginAccount(connection, response, email_Id, password) {
 
                     if (isEnable == 1) {
                         sendOtpForMail(connection, response, email_Id, LoginId)
-                        // response.status(203).json({ message: "otp Send Successfully", statusCode: 203 })
+                        response.status(203).json({ message: "otp Send Successfully", statusCode: 203 })
                                            } else {
                         response.status(200).json({ message: "Login Successfully", statusCode: 200, Data: data });
 
@@ -280,12 +280,12 @@ function forgetPasswordOtpSend(connection, response, requestData) {
                         const transporter = nodemailer.createTransport({
                             service: 'gmail',
                             auth: {
-                                user: requestData.email,
+                                user:'smartstay1234@gmail.com',
                                 pass: 'afki rrvo jcke zjdt',
                             },
                         });
                         const mailOptions = {
-                            from: requestData.email,
+                            from: 'smartstay1234@gmail.com',
                             to: requestData.email,
                             subject: 'OTP for Password Reset',
                             text: `Your OTP for password reset is: ${otp}`
@@ -325,13 +325,12 @@ function sendOtpForMail(connection, response, Email_Id,LoginId) {
                         const transporter = nodemailer.createTransport({
                             service: 'gmail',
                             auth: {
-                                user: Email_Id,
+                                user: 'smartstay1234@gmail.com',
                                 pass: 'afki rrvo jcke zjdt',
                             },
-// yhwc bxxn uprf zsgr
                         });
                         const mailOptions = {
-                            from: Email_Id,
+                            from: 'smartstay1234@gmail.com',
                             to: Email_Id,
                             subject: 'OTP for Password Reset',
                             text: `Your OTP for password reset is: ${otp}`
