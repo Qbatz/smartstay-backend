@@ -1,5 +1,5 @@
 function getUsers(connection, response, ReqData) {
-    const query = `SELECT * FROM hosteldetails hstlDetails inner join hostel hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true WHERE hstlDetails.created_By ='${ReqData.loginId}' order by hstl.Hostel_Id;`;
+    const query = `SELECT * FROM hosteldetails hstlDetails inner join hostel hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true WHERE hstlDetails.created_By ='${ReqData.loginId}'`;
       connection.query(query, function (error, hostelData) {
         console.log("hostelData",hostelData)
         if (error) {
