@@ -755,7 +755,7 @@ function getInvoiceListForAll(connection, response) {
 
 
 function getInvoiceList(connection, response, reqData) {
-    const query = `SELECT * FROM hosteldetails  hstlDetails inner join invoicedetails  invoice  on invoice.Hostel_Id=hstlDetails.id  WHERE hstlDetails.created_By ='${reqData.loginId}' order by invoice.Hostel_Id;`;
+    const query = `SELECT * FROM hosteldetails  hstlDetails inner join invoicedetails  invoice  on invoice.Hostel_Id=hstlDetails.id  WHERE hstlDetails.created_By ='${reqData.loginId}'`;
     connection.query(query, function (error, data) {
         console.log(error);
         console.log("InvoiceData", data);
