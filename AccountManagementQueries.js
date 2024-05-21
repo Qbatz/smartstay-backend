@@ -205,37 +205,70 @@ function createnewAccount(connection, reqBodyData, response) {
 
 
 
+// function loginAccount(connection, response, email_Id, password) {
+//     if (email_Id && password) {
+//         connection.query(`SELECT * FROM createaccount WHERE email_Id='${email_Id}' and password = '${password}' `, function (error, data) {
+//             console.log('data *&*', data, "error", error)
+//             if (error) {
+//                 console.error(error);
+//                 response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
+//             } else {
+//                 if (data.length > 0) {
+             
+//                     const isEnable = data[0].isEnable
+//                      const LoginId = data[0].id  
+
+
+//                     if (isEnable == 1) {
+//                         sendOtpForMail(connection, response, email_Id, LoginId)
+//                         response.status(203).json({ message: "otp Send Successfully", statusCode: 203 })
+//                                            } else {
+//                         response.status(200).json({ message: "Login Successfully", statusCode: 200, Data: data });
+
+//                     }
+//                                    } else {
+//                     response.status(201).json({ message: "Please Enter valid Email ID", statusCode: 201 });
+//                 }
+//             }
+//         });
+//     } else {
+//         response.status(202).json({ message: "Missing Parameter", statusCode: 202 });
+//     }
+
+// }
+
+
 function loginAccount(connection, response, email_Id, password) {
     if (email_Id && password) {
-        connection.query(`SELECT * FROM createaccount WHERE email_Id='${email_Id}' and password = '${password}' `, function (error, data) {
-            console.log('data *&*', data, "error", error)
+        connection.query(`SELECT * FROM createaccount WHERE email_Id='${email_Id}'`, function (error, data) {
             if (error) {
                 console.error(error);
-                response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
+                response.status(500).json({ message: "Internal Server Error", statusCode: 500 });
             } else {
                 if (data.length > 0) {
-             
-                    const isEnable = data[0].isEnable
-                     const LoginId = data[0].id  
-
-
-                    if (isEnable == 1) {
-                        sendOtpForMail(connection, response, email_Id, LoginId)
-                        response.status(203).json({ message: "otp Send Successfully", statusCode: 203 })
-                                           } else {
-                        response.status(200).json({ message: "Login Successfully", statusCode: 200, Data: data });
-
+                    if (data[0].password === password) {
+                        const isEnable = data[0].isEnable;
+                        const LoginId = data[0].id;
+                        if (isEnable == 1) {
+                            sendOtpForMail(connection, response, email_Id, LoginId);
+                            response.status(203).json({ message: "OTP sent successfully", statusCode: 203 });
+                        } else {
+                            response.status(200).json({ message: "Login successful", statusCode: 200, Data: data });
+                        }
+                    } else {
+                        response.status(202).json({ message: "Enter Valid Password", statusCode: 202 });
                     }
-                                   } else {
-                    response.status(201).json({ message: "Please Enter valid Email ID", statusCode: 201 });
+                } else {
+                    response.status(201).json({ message: "Enter Valid Email ID", statusCode: 201 });
                 }
             }
         });
     } else {
-        response.status(202).json({ message: "Missing Parameter", statusCode: 202 });
+        response.status(202).json({ message: "Missing parameter", statusCode: 202 });
     }
-
 }
+
+
 
 
 function forgetPassword(connection, response, reqData) {
