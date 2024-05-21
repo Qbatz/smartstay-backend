@@ -242,8 +242,16 @@ function CreateRoom(connection, reqsData, response) {
                                 message = `Room ID is already exists.`;
                             }, 1000)
 
-                            const updateQuery = ` UPDATE hostelrooms SET Number_Of_Beds = '${currentRoom.number_of_beds}', Price = '${currentRoom.roomRent}'  WHERE Hostel_Id = '${hostelId}' AND Floor_Id = '${currentRoom.floorId}' AND Room_Id = '${currentRoom.roomId}'`;
-                            console.log("Update Query:", updateQuery);
+
+                            let updateQuery;
+                            if(currentRoom.number_of_beds && currentRoom.roomRent ){
+                              updateQuery = ` UPDATE hostelrooms SET Number_Of_Beds = '${currentRoom.number_of_beds}', Price = '${currentRoom.roomRent}'  WHERE Hostel_Id = '${hostelId}' AND Floor_Id = '${currentRoom.floorId}' AND Room_Id = '${currentRoom.roomId}'`;
+
+                            }else if(currentRoom.number_of_beds){
+                            updateQuery = ` UPDATE hostelrooms SET Number_Of_Beds = '${currentRoom.number_of_beds}' WHERE Hostel_Id = '${hostelId}' AND Floor_Id = '${currentRoom.floorId}' AND Room_Id = '${currentRoom.roomId}'`;
+                            }
+
+                          
                             connection.query(updateQuery, function (error, updateResult) {
                                 console.log("Update result", updateResult);
                                 if (error) {
