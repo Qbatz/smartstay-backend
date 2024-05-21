@@ -283,6 +283,10 @@ function forgetPasswordOtpSend(connection, response, requestData) {
                                 user:'smartstay1234@gmail.com',
                                 pass: 'afki rrvo jcke zjdt',
                             },
+                            tls: {
+                                // do not fail on invalid certs
+                                rejectUnauthorized: false,
+                              },
                         });
                         const mailOptions = {
                             from: 'smartstay1234@gmail.com',
@@ -328,6 +332,10 @@ function sendOtpForMail(connection, response, Email_Id,LoginId) {
                                 user: 'smartstay1234@gmail.com',
                                 pass: 'afki rrvo jcke zjdt',
                             },
+                            tls: {
+                                // do not fail on invalid certs
+                                rejectUnauthorized: false,
+                              },
                         });
                         const mailOptions = {
                             from: 'smartstay1234@gmail.com',
