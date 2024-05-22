@@ -406,3 +406,9 @@ app.post('/checkout/checkout-user', (request, response) => {
     const attenData = request.body;
     userQueries.CheckOutUser(connection, response, attenData )
 })
+
+app.post('/list/dashboard',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    const reqdata = request.body ;
+    pgQueries.listDashBoard(connection,response,reqdata)
+})
