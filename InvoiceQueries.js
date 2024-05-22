@@ -299,55 +299,84 @@ function insertInvoices(finalArray, user, connection) {
 
 function CheckOutInvoice(connection, user, users) {
     connection.query(`
-        SELECT 
-            rms.Price,
-            rms.Hostel_Id AS roomHostel_Id,
-            rms.Floor_Id AS roomFloor_Id,
-            rms.Room_Id AS roomRoom_Id,    
-            dtls.id AS detHostel_Id,
-            dtls.isHostelBased,
-            dtls.prefix,
-            dtls.suffix,
-            dtls.Name,
-            hstl.Name AS UserName,
-            hstl.Hostel_Id AS hosHostel_Id,
-            hstl.Rooms AS hosRoom,
-            hstl.Floor As hosFloor,
-            hstl.Bed,
-             hstl.CheckoutDate,
-            
-         
+    SELECT 
+    rms.Price,
+    rms.Hostel_Id AS roomHostel_Id,
+    rms.Floor_Id AS roomFloor_Id,
+    rms.Room_Id AS roomRoom_Id,    
+    dtls.id AS detHostel_Id,
+    dtls.isHostelBased,
+    dtls.prefix,
+    dtls.suffix,
+    dtls.Name,
+    hstl.Name AS UserName,
+    hstl.Hostel_Id AS hosHostel_Id,
+    hstl.Rooms AS hosRoom,
+    hstl.Floor AS hosFloor,
+    hstl.Bed,
+    hstl.CheckoutDate,
+    CASE 
+        WHEN dtls.isHostelBased = true THEN 
             (
-                SELECT EbAmount 
-                FROM EbAmount 
-                WHERE hostel_Id = hstl.Hostel_Id 
-                
-                ORDER BY id DESC 
+                SELECT eb.EbAmount 
+                FROM EbAmount eb
+                WHERE eb.hostel_Id = hstl.Hostel_Id  
+                ORDER BY eb.id DESC 
                 LIMIT 1
-            ) AS ebBill,
+            )
+        ELSE 
             (
-                SELECT createAt 
-                FROM EbAmount 
-                WHERE hostel_Id = hstl.Hostel_Id 
-                AND Floor = hstl.Floor 
-                AND Room = hstl.Rooms 
-                ORDER BY id DESC 
+                SELECT eb.EbAmount 
+                FROM EbAmount eb
+                WHERE eb.hostel_Id = hstl.Hostel_Id 
+                 AND eb.Floor = hstl.Floor 
+                AND eb.Room = hstl.Rooms 
+                ORDER BY eb.id DESC 
                 LIMIT 1
-            ) AS createdAt    
-        FROM 
-            hostel hstl 
-        INNER JOIN 
-            hosteldetails dtls ON dtls.id = hstl.Hostel_Id 
-        INNER JOIN 
-            hostelrooms rms ON rms.Hostel_Id = hstl.Hostel_Id 
-            AND rms.Floor_Id = hstl.Floor 
-            AND rms.Room_Id = hstl.Rooms 
-
-        WHERE 
-            hstl.isActive = false and hstl.id = ${user.ID};
-    `, function (err, existingData) {
-        // console.log("users", users)
-
+            )
+    END AS ebBill,
+    (
+        SELECT eb.Floor 
+        FROM EbAmount eb
+        WHERE eb.hostel_Id = hstl.Hostel_Id   
+        ORDER BY eb.id DESC 
+        LIMIT 1
+    ) AS ebFloor,
+    (
+        SELECT eb.hostel_Id 
+        FROM EbAmount eb
+        WHERE eb.hostel_Id = hstl.Hostel_Id 
+        
+        ORDER BY eb.id DESC 
+        LIMIT 1
+    ) AS ebhostel_Id,
+    (
+        SELECT eb.Room 
+        FROM EbAmount eb
+        WHERE eb.hostel_Id = hstl.Hostel_Id 
+        ORDER BY eb.id DESC 
+        LIMIT 1
+    ) AS ebRoom,
+    (
+        SELECT eb.createAt 
+        FROM EbAmount eb
+        WHERE eb.hostel_Id = hstl.Hostel_Id 
+        AND eb.Floor = hstl.Floor 
+        AND eb.Room = hstl.Rooms 
+        ORDER BY eb.id DESC 
+        LIMIT 1
+    ) AS createdAt    
+FROM 
+    hostel hstl 
+INNER JOIN 
+    hosteldetails dtls ON dtls.id = hstl.Hostel_Id 
+INNER JOIN 
+    hostelrooms rms ON rms.Hostel_Id = hstl.Hostel_Id 
+    AND rms.Floor_Id = hstl.Floor 
+    AND rms.Room_Id = hstl.Rooms 
+WHERE 
+    hstl.isActive = false  AND hstl.id = ${user.ID}`, function (err, existingData) {
+      
         console.log("existingData Array", existingData)
         if (err) {
             console.error("Error fetching hosteldetails:", err);
