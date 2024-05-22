@@ -1,4 +1,4 @@
-function getHostelList(connection, response,reqData) {
+function getHostelList(connection, response, reqData) {
     connection.query(`select * from hosteldetails where created_By = '${reqData.loginId}' `, function (err, data) {
         if (data) {
             response.status(200).json(data)
@@ -177,7 +177,7 @@ function RoomCount(connection, reqFloorID, response) {
                                 Floor_Id: RoomsData[i].Floor_Id,
                                 Room_Id: RoomsData[i].Room_Id,
                                 Number_Of_Beds: RoomsData[i].Number_Of_Beds,
-                                Room_Rent : RoomsData[i].Price
+                                Room_Rent: RoomsData[i].Price
                             };
                             responseData.push(objectFormation);
                         }
@@ -244,14 +244,14 @@ function CreateRoom(connection, reqsData, response) {
 
 
                             let updateQuery;
-                            if(currentRoom.number_of_beds && currentRoom.roomRent ){
-                              updateQuery = ` UPDATE hostelrooms SET Number_Of_Beds = '${currentRoom.number_of_beds}', Price = '${currentRoom.roomRent}'  WHERE Hostel_Id = '${hostelId}' AND Floor_Id = '${currentRoom.floorId}' AND Room_Id = '${currentRoom.roomId}'`;
+                            if (currentRoom.number_of_beds && currentRoom.roomRent) {
+                                updateQuery = ` UPDATE hostelrooms SET Number_Of_Beds = '${currentRoom.number_of_beds}', Price = '${currentRoom.roomRent}'  WHERE Hostel_Id = '${hostelId}' AND Floor_Id = '${currentRoom.floorId}' AND Room_Id = '${currentRoom.roomId}'`;
 
-                            }else if(currentRoom.number_of_beds){
-                            updateQuery = ` UPDATE hostelrooms SET Number_Of_Beds = '${currentRoom.number_of_beds}' WHERE Hostel_Id = '${hostelId}' AND Floor_Id = '${currentRoom.floorId}' AND Room_Id = '${currentRoom.roomId}'`;
+                            } else if (currentRoom.number_of_beds) {
+                                updateQuery = ` UPDATE hostelrooms SET Number_Of_Beds = '${currentRoom.number_of_beds}' WHERE Hostel_Id = '${hostelId}' AND Floor_Id = '${currentRoom.floorId}' AND Room_Id = '${currentRoom.roomId}'`;
                             }
 
-                          
+
                             connection.query(updateQuery, function (error, updateResult) {
                                 console.log("Update result", updateResult);
                                 if (error) {
@@ -340,7 +340,7 @@ function RoomFull(connection, reqFloorID, response) {
 }
 
 function UpdateEB(connection, atten, response) {
-  
+
     if (atten) {
         connection.query(`UPDATE hosteldetails SET isHostelBased= ${atten.Ishostelbased} WHERE id='${atten.Id}'`, function (error, data) {
             if (error) {
@@ -349,11 +349,26 @@ function UpdateEB(connection, atten, response) {
                 response.status(200).json({ message: "Update Successfully" });
             }
         });
-    } 
-   
+    }
+
 };
+function listDashBoard(connection, response,reqdata) {
+    if(reqdata){
+    let query = `select (select count(id) from smart_stay.hosteldetails where created_By=details.created_By) as hostelCount, sum((select count(Room_Id) from smart_stay.hostelrooms where Hostel_Id=details.id)) as roomCount,  sum((select sum(Number_Of_Beds) from smart_stay.hostelrooms where Hostel_Id=details.id)) as Bed ,sum((select count(id) from smart_stay.hostel where Hostel_Id= details.id and isActive =1)) as occupied_Bed ,(select sum(RoomRent) from smart_stay.hostel ) as Revenue from smart_stay.hosteldetails details where details.created_By=${reqdata.created_by};`
+    connection.query(query, function (error, data) {
+        console.log("data", data);
+        if (error) {
+            response.status(201).json({ message: "No data found" });
+        } else {
+            response.status(200).json({ data });
+        }
+    })
+}
+else{
+    response.status(201).json({ message: "Missing Parameter" });
+}
+}
 
 
 
-
-module.exports = { getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull,UpdateEB }
+module.exports = { getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard }
