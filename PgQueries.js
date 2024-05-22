@@ -352,21 +352,42 @@ function UpdateEB(connection, atten, response) {
     }
 
 };
-function listDashBoard(connection, response,reqdata) {
-    if(reqdata){
-    let query = `select (select count(id) from smart_stay.hosteldetails where created_By=details.created_By) as hostelCount, sum((select count(Room_Id) from smart_stay.hostelrooms where Hostel_Id=details.id)) as roomCount,  sum((select sum(Number_Of_Beds) from smart_stay.hostelrooms where Hostel_Id=details.id)) as Bed ,sum((select count(id) from smart_stay.hostel where Hostel_Id= details.id and isActive =1)) as occupied_Bed ,(select sum(RoomRent) from smart_stay.hostel ) as Revenue from smart_stay.hosteldetails details where details.created_By=${reqdata.created_by};`
-    connection.query(query, function (error, data) {
-        console.log("data", data);
-        if (error) {
-            response.status(201).json({ message: "No data found" });
-        } else {
-            response.status(200).json({ data });
-        }
-    })
-}
-else{
-    response.status(201).json({ message: "Missing Parameter" });
-}
+function listDashBoard(connection, response, reqdata) {
+    if (reqdata) {
+        let query = `select (select count(id) from smart_stay.hosteldetails where created_By=details.created_By) as hostelCount, sum((select count(Room_Id) from smart_stay.hostelrooms where Hostel_Id=details.id)) as roomCount,  sum((select sum(Number_Of_Beds) from smart_stay.hostelrooms where Hostel_Id=details.id)) as Bed ,sum((select count(id) from smart_stay.hostel where Hostel_Id= details.id and isActive =1)) as occupied_Bed ,(select sum(RoomRent) from smart_stay.hostel ) as Revenue,sum((select sum(BalanceDue) from smart_stay.hostel where Hostel_Id= details.id)) as overdue from smart_stay.hosteldetails details where details.created_By=${reqdata.created_by};`
+        connection.query(query, function (error, data) {
+            if (error) {
+                response.status(201).json({ message: "No data found" });
+            } else {
+                if (data.length > 0) {
+                    let obj ={};
+                    let tempArray = []
+                    let dashboardList = data.map((item) => {
+                         obj = {
+                            hostelCount: item.hostelCount,
+                            roomCount: item.roomCount,
+                            TotalBed: item.Bed,
+                            occupied_Bed: item.occupied_Bed,
+                            availableBed: item.Bed - item.occupied_Bed,
+                            Revenue: item.Revenue,
+                            overdue : item.overdue,
+                            current : item.Revenue - item.overdue
+                            
+                        }
+                        tempArray.push(obj)
+                        return tempArray
+
+                    })
+                    if(dashboardList.length == data.length){
+                    response.status(200).json({ dashboardList });
+                    }
+                }
+            }
+        })
+    }
+    else {
+        response.status(201).json({ message: "Missing Parameter" });
+    }
 }
 
 
