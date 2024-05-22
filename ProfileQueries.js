@@ -83,7 +83,31 @@ function uploadProfilePictureToS3(bucketName, folderName, fileName, fileData, ca
 function InvoiceSettings(connection, reqInvoice, response) {
     console.log("reqInvoice", reqInvoice);
     if (reqInvoice.hostel_Id) {
-        if (reqInvoice.profile) {
+
+        const Prefix = reqInvoice.prefix !== undefined && reqInvoice.prefix !== null && reqInvoice.prefix !== '';
+        const Suffix = reqInvoice.suffix !== undefined && reqInvoice.suffix !== null && reqInvoice.suffix !== '';
+        const Profile = reqInvoice.profile !== undefined && reqInvoice.profile !== null;
+
+
+        if (Prefix && Suffix && Profile) {
+            const timestamp = Date.now();
+            uploadProfilePictureToS3('smartstaydevs', 'Logo/', 'Logo' + reqInvoice.hostel_Id + `${timestamp}` + '.jpg', reqInvoice.profile, (err, s3Url) => {
+                if (err) {
+                    response.status(202).json({ message: 'Database error' });
+                } else {
+                    const query = `UPDATE hosteldetails SET Profile='${s3Url}', prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}' WHERE id='${reqInvoice.hostel_Id}'`;
+                    connection.query(query, function (error, invoiceData) {
+                        console.log("invoiceData", invoiceData);
+                        console.log("error invoice", error);
+                        if (error) {
+                            response.status(202).json({ message: 'Database error' });
+                        } else {
+                            response.status(200).json({ message: 'Prefix suffix and profile Updated successfully', statusCode: 200 });
+                        }
+                    });
+                }
+            });
+        } else if (Profile) {
             const timestamp = Date.now();
             console.log("timestamp", timestamp)
             uploadProfilePictureToS3('smartstaydevs', 'Logo/', 'Logo' + reqInvoice.hostel_Id + `${timestamp}` + '.jpg', reqInvoice.profile, (err, s3Url) => {
@@ -99,20 +123,20 @@ function InvoiceSettings(connection, reqInvoice, response) {
                         if (error) {
                             response.status(202).json({ message: 'Database error' });
                         } else {
-                            response.status(200).json({ message: 'Updated successfully', statusCode: 200 });
+                            response.status(200).json({ message: 'Profile Updated successfully', statusCode: 200 });
                         }
                     });
                 }
             });
-        } else {
-            const query = `UPDATE hosteldetails SET prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}' WHERE id='${reqInvoice.hostel_Id}'`;
+        } else if(Prefix && Suffix){
+            const query = `UPDATE hosteldetails SET  prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}' WHERE id='${reqInvoice.hostel_Id}'`;
             connection.query(query, function (error, invoiceData) {
                 console.log("invoiceData", invoiceData);
                 console.log("error invoice", error);
                 if (error) {
                     response.status(202).json({ message: 'Database error' });
                 } else {
-                    response.status(200).json({ message: 'Updated successfully', statusCode: 200 });
+                    response.status(200).json({ message: 'prefix and suffix Updated successfully', statusCode: 200 });
                 }
             });
         }
@@ -158,11 +182,11 @@ function AmenitiesSetting(connection, reqData, response) {
     else {
         const amenitiesName = reqData?.AmenitiesName?.trim().replace(/\s+/g, '');
         const capitalizedAmenitiesName = amenitiesName?.charAt(0).toUpperCase() + amenitiesName?.slice(1).toLowerCase();
-    
+
         connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${reqData.Hostel_Id}`, function (error, amenitiesData) {
             console.log("amenitiesData", amenitiesData)
             console.log("capitalizedAmenitiesName", capitalizedAmenitiesName)
-    
+
             let amenityId = reqData.amenityId;
             if (reqData.amenityId != undefined || reqData.AmenitiesName != undefined) {
                 connection.query(`SELECT * FROM AmnitiesName WHERE LOWER(Amnities_Name) = '${capitalizedAmenitiesName}'`, function (err, data) {
@@ -196,7 +220,7 @@ function AmenitiesSetting(connection, reqData, response) {
             }
         })
     }
-    
+
     function insertAminity(id) {
         connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${reqData.Hostel_Id} AND Amnities_Id = ${id}`, function (error, existingAmenity) {
             if (error) {
@@ -216,7 +240,7 @@ function AmenitiesSetting(connection, reqData, response) {
             }
         })
     }
-    
+
     // else {
 
 
@@ -324,12 +348,12 @@ function UpdateAmnity(connection, attenArray, response) {
 
         }
     })
-    }
-    
+}
 
 
 
 
 
 
-module.exports = { IsEnableCheck, getAccount, InvoiceSettings, AmenitiesSetting, UpdateEB, getAmenitiesList,  getEbReading,UpdateAmnity };
+
+module.exports = { IsEnableCheck, getAccount, InvoiceSettings, AmenitiesSetting, UpdateEB, getAmenitiesList, getEbReading, UpdateAmnity };
