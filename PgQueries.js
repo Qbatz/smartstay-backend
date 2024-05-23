@@ -361,7 +361,7 @@ function listDashBoard(connection, response, reqdata) {
             } else {
                 if (data.length > 0) {
                     let obj ={};
-                    let tempArray = []
+                    // let tempArray = []
                     let dashboardList = data.map((item) => {
                          obj = {
                             hostelCount: item.hostelCount,
@@ -374,8 +374,8 @@ function listDashBoard(connection, response, reqdata) {
                             current : item.Revenue - item.overdue
                             
                         }
-                        tempArray.push(obj)
-                        return tempArray
+                        // tempArray.push(obj)
+                        return obj
 
                     })
                     if(dashboardList.length == data.length){
