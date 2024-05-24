@@ -412,3 +412,10 @@ app.post('/list/dashboard',(request,response)=>{
     const reqdata = request.body ;
     pgQueries.listDashBoard(connection,response,reqdata)
 })
+app.post('/invoice/invoiceUpdate',(request,response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    const atten = request.body;
+    console.log("request.body",request.body)
+    invoiceQueries.UpdateInvoice(connection,response,atten)
+
+})
