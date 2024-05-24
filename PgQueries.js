@@ -1,3 +1,6 @@
+const moment = require('moment')
+
+
 function getHostelList(connection, response, reqData) {
     connection.query(`select * from hosteldetails where created_By = '${reqData.loginId}' `, function (err, data) {
         if (data) {
@@ -354,33 +357,48 @@ function UpdateEB(connection, atten, response) {
 };
 function listDashBoard(connection, response, reqdata) {
     if (reqdata) {
-        let query = `select (select count(id) from smart_stay.hosteldetails where created_By=details.created_By) as hostelCount, sum((select count(Room_Id) from smart_stay.hostelrooms where Hostel_Id=details.id)) as roomCount,  sum((select sum(Number_Of_Beds) from smart_stay.hostelrooms where Hostel_Id=details.id)) as Bed ,sum((select count(id) from smart_stay.hostel where Hostel_Id= details.id and isActive =1)) as occupied_Bed ,(select sum(RoomRent) from smart_stay.hostel ) as Revenue,sum((select sum(BalanceDue) from smart_stay.hostel where Hostel_Id= details.id)) as overdue from smart_stay.hosteldetails details where details.created_By=${reqdata.created_by};`
-        connection.query(query, function (error, data) {
+        let query = `select (select count(id) from smart_stay.hosteldetails where created_By=details.created_By) as hostelCount, sum((select count(Room_Id) from smart_stay.hostelrooms where Hostel_Id=details.id)) as roomCount,  sum((select sum(Number_Of_Beds) from smart_stay.hostelrooms where Hostel_Id=details.id)) as Bed ,sum((select count(id) from smart_stay.hostel where Hostel_Id= details.id and isActive =1)) as occupied_Bed ,(select COALESCE(SUM(COALESCE(icv.RoomRent, 0) + COALESCE(icv.EbAmount, 0) + COALESCE(icv.AmnitiesAmount, 0)), 0) AS revenue
+        FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=?) AS Revenue,(select COALESCE(SUM(COALESCE(icv.RoomRent, 0) + COALESCE(icv.EbAmount, 0) + COALESCE(icv.AmnitiesAmount, 0)), 0) AS revenue
+        FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=? AND icv.Status='Pending') AS overdue from smart_stay.hosteldetails details where details.created_By=?;`
+        connection.query(query,[reqdata.created_by,reqdata.created_by,reqdata.created_by], function (error, data) {
             if (error) {
                 response.status(201).json({ message: "No data found" });
             } else {
                 if (data.length > 0) {
-                    let obj ={};
+                    let obj = {};
                     // let tempArray = []
                     let dashboardList = data.map((item) => {
-                         obj = {
+                        if (item.Revenue > 0) {
+                            var current = item.Revenue - item.overdue
+                        } else {
+                            var current = 0
+                        }
+                        obj = {
                             hostelCount: item.hostelCount,
                             roomCount: item.roomCount,
                             TotalBed: item.Bed,
                             occupied_Bed: item.occupied_Bed,
                             availableBed: item.Bed - item.occupied_Bed,
                             Revenue: item.Revenue,
-                            overdue : item.overdue,
-                            current : item.Revenue - item.overdue
-                            
+                            overdue: item.overdue,
+                            current: current
                         }
                         // tempArray.push(obj)
                         return obj
 
                     })
-                    if(dashboardList.length == data.length){
-                    response.status(200).json({ dashboardList });
-                    }
+
+                    // Get Revenue Details 
+                    var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.RoomRent, 0) + COALESCE(invo.EbAmount, 0) + COALESCE(invo.AmnitiesAmount, 0)), 0) AS revenue FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL  SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS numbers ) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.RoomRent, invo.EbAmount,invo.AmnitiesAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By = ?  AND invo.Status = 'Success' ) AS invo ON m.month = invo.month GROUP BY m.month ORDER BY m.month; "
+                    // Execute the query
+                    connection.query(query1, [reqdata.created_by], (error, results, fields) => {
+                        if (error) {
+                            console.error('Error executing query:', error);
+                            return;
+                        }
+                        // Process the results
+                        response.status(200).json({ dashboardList, Revenue_reports: results });
+                    })
                 }
             }
         })
