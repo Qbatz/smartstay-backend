@@ -1,3 +1,6 @@
+const moment = require('moment')
+
+
 function getHostelList(connection, response, reqData) {
     connection.query(`select * from hosteldetails where created_By = '${reqData.loginId}' `, function (err, data) {
         if (data) {
@@ -360,27 +363,36 @@ function listDashBoard(connection, response, reqdata) {
                 response.status(201).json({ message: "No data found" });
             } else {
                 if (data.length > 0) {
-                    let obj ={};
+                    let obj = {};
                     // let tempArray = []
                     let dashboardList = data.map((item) => {
-                         obj = {
+                        obj = {
                             hostelCount: item.hostelCount,
                             roomCount: item.roomCount,
                             TotalBed: item.Bed,
                             occupied_Bed: item.occupied_Bed,
                             availableBed: item.Bed - item.occupied_Bed,
                             Revenue: item.Revenue,
-                            overdue : item.overdue,
-                            current : item.Revenue - item.overdue
-                            
+                            overdue: item.overdue,
+                            current: item.Revenue - item.overdue
+
                         }
                         // tempArray.push(obj)
                         return obj
 
                     })
-                    if(dashboardList.length == data.length){
-                    response.status(200).json({ dashboardList });
-                    }
+
+                    // Get Revenue Details 
+                    var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.RoomRent, 0) + COALESCE(invo.EbAmount, 0) + COALESCE(invo.AmnitiesAmount, 0)), 0) AS revenue FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL  SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS numbers ) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.RoomRent, invo.EbAmount,invo.AmnitiesAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By = ?  AND invo.Status = 'Success' ) AS invo ON m.month = invo.month GROUP BY m.month ORDER BY m.month; "
+                    // Execute the query
+                    connection.query(query1, [reqdata.created_by], (error, results, fields) => {
+                        if (error) {
+                            console.error('Error executing query:', error);
+                            return;
+                        }
+                        // Process the results
+                        response.status(200).json({ dashboardList, Revenue_reports: results });
+                    })
                 }
             }
         })

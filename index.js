@@ -14,7 +14,6 @@ const pgQueries = require('./PgQueries')
 const multer = require('multer');
 const upload = multer();
 
-
 var corsOptions = {
     origin: '*',
     credentials: true,
