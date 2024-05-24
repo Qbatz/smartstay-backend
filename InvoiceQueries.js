@@ -36,6 +36,7 @@ function calculateAndInsertInvoice(connection, user, users) {
     hstl.Rooms AS hosRoom,
     hstl.Floor AS hosFloor,
     hstl.Bed,
+     hstl.RoomRent,
     hstl.CheckoutDate,
     CASE 
         WHEN dtls.isHostelBased = true THEN 
@@ -113,7 +114,7 @@ WHERE
 
                 for (let i = 0; i < existingData.length; i++) {
                     let tempObj = {};
-                    let roomPrice = existingData[i].Price;
+                    let roomPrice = existingData[i].RoomRent;
                     let AdvanceAmount = 0;
                     let HostelBasedEb = 0;
                     let roomBasedEb = 0;
@@ -297,6 +298,8 @@ function insertInvoices(finalArray, user, connection) {
 
 // CheckOUt Invoice
 
+
+
 function CheckOutInvoice(connection, user, users) {
     connection.query(`
     SELECT 
@@ -314,6 +317,7 @@ function CheckOutInvoice(connection, user, users) {
     hstl.Rooms AS hosRoom,
     hstl.Floor AS hosFloor,
     hstl.Bed,
+    hstl.RoomRent,
     hstl.CheckoutDate,
     CASE 
         WHEN dtls.isHostelBased = true THEN 
@@ -388,7 +392,8 @@ WHERE
 
                 for (let i = 0; i < existingData.length; i++) {
                     let tempObj = {};
-                    let roomPrice = existingData[i].Price;
+                    let roomPrice = existingData[i].RoomRent;
+                    console.log("roomPrice",roomPrice)
                     let AdvanceAmount = 0;
                     let HostelBasedEb = 0;
                     let roomBasedEb = 0;
