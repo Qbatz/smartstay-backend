@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const AWS = require('aws-sdk');
+const conn = require('./config/connection');
 require('dotenv').config();
 
 
@@ -78,7 +79,7 @@ function createAccountForLogin(connection, reqBodyData, response) {
 
     //         if (data.length === 0) {
     //             connection.query(`INSERT INTO createaccount(Name, mobileNo, email_Id, password) VALUES ('${reqBodyData.name}', '${reqBodyData.mobileNo}', '${reqBodyData.emailId}', '${reqBodyData.password}')`, function (error, data) {
-                   
+
     //                 if (error) {
     //                     console.log("error", error);
     //                     response.status(500).json({ message: 'Database error' });
@@ -108,7 +109,7 @@ function createAccountForLogin(connection, reqBodyData, response) {
 
 
 function createnewAccount(connection, reqBodyData, response) {
-   
+
     if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.name && reqBodyData.password) {
         connection.query(
             `SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`,
@@ -160,7 +161,7 @@ function createnewAccount(connection, reqBodyData, response) {
 
 // function createnewAccount(connection, reqBodyData, response) {
 //     if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.name && reqBodyData.password) {
-       
+
 //         connection.query(`SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`, function (error, data) {
 //             if (error) {
 //                 console.error("Database error:", error);
@@ -169,7 +170,7 @@ function createnewAccount(connection, reqBodyData, response) {
 //             }
 
 //             if (data.length === 0) {
-            
+
 //                 connection.query(`INSERT INTO createaccount(Name, mobileNo, email_Id, password) VALUES ('${reqBodyData.name}', '${reqBodyData.mobileNo}', '${reqBodyData.emailId}', '${reqBodyData.password}')`, function (error, result) {
 //                     if (error) {
 //                         console.error("Database error:", error);
@@ -179,10 +180,10 @@ function createnewAccount(connection, reqBodyData, response) {
 //                     else{
 //                         response.status(200).json({ message: 'Created Successfully', statusCode: 200 });
 //                     }
-                   
+
 //                 });
 //             } else {
-               
+
 //                 const mobileExists = data.some(record => record.mobileNo === reqBodyData.mobileNo);
 //                 const emailExists = data.some(record => record.email_Id === reqBodyData.emailId);
 
@@ -199,7 +200,7 @@ function createnewAccount(connection, reqBodyData, response) {
 //             }
 //         });
 //     }
-    
+
 // }
 
 
@@ -214,7 +215,7 @@ function createnewAccount(connection, reqBodyData, response) {
 //                 response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
 //             } else {
 //                 if (data.length > 0) {
-             
+
 //                     const isEnable = data[0].isEnable
 //                      const LoginId = data[0].id  
 
@@ -237,6 +238,12 @@ function createnewAccount(connection, reqBodyData, response) {
 
 // }
 
+function generateToken() {
+    const N = 30;
+    return Array(N + 1)
+        .join((Math.random().toString(36) + "00000000000000000").slice(2, 18))
+        .slice(0, N);
+}
 
 function loginAccount(connection, response, email_Id, password) {
     if (email_Id && password) {
@@ -253,7 +260,21 @@ function loginAccount(connection, response, email_Id, password) {
                             sendOtpForMail(connection, response, email_Id, LoginId);
                             response.status(203).json({ message: "OTP sent successfully", statusCode: 203 });
                         } else {
-                            response.status(200).json({ message: "Login successful", statusCode: 200, Data: data });
+                            const token = generateToken(); // token is generated
+                            console.log(`token`, token);
+                            // Insert Token Details
+                            var sql_1 = "INSERT INTO user_session (user_id,token,status) VALUES(?,?,1)";
+                            connection.query(sql_1, [LoginId, token], function (ins_err, ins_res) {
+                                if (ins_err) {
+                                    console.error(error);
+                                    response.status(500).json({ message: "Internal Server Error", statusCode: 500 });
+                                } else {
+                                    var temp=data[0];
+                                    temp['token']=token;
+                                    data[0]=temp;
+                                    response.status(200).json({ message: "Login successful", statusCode: 200, Data: data });
+                                }
+                            })
                         }
                     } else {
                         response.status(202).json({ message: "Enter Valid Password", statusCode: 202 });
@@ -299,27 +320,27 @@ function forgetPassword(connection, response, reqData) {
 }
 
 function forgetPasswordOtpSend(connection, response, requestData) {
-    console.log("requestData",requestData.email)
+    console.log("requestData", requestData.email)
     if (requestData.email) {
         connection.query(`SELECT * FROM createaccount WHERE email_id= \'${requestData.email}\'`, function (error, data) {
             if (data && data.length > 0) {
                 const otp = Math.floor(100000 + Math.random() * 900000).toString();
                 console.log("otp is ", otp);
 
-             const LoginId = data[0].id
-             console.log("LoginId",LoginId)
+                const LoginId = data[0].id
+                console.log("LoginId", LoginId)
                 connection.query(`UPDATE createaccount SET Otp= \'${otp}\' WHERE email_id=\'${requestData.email}\' AND id = \' ${LoginId}\'  `, function (error, data) {
                     if (data) {
                         const transporter = nodemailer.createTransport({
                             service: 'gmail',
                             auth: {
-                                user:'smartstay1234@gmail.com',
+                                user: 'smartstay1234@gmail.com',
                                 pass: 'afki rrvo jcke zjdt',
                             },
                             tls: {
                                 // do not fail on invalid certs
                                 rejectUnauthorized: false,
-                              },
+                            },
                         });
                         const mailOptions = {
                             from: 'smartstay1234@gmail.com',
@@ -334,7 +355,7 @@ function forgetPasswordOtpSend(connection, response, requestData) {
                                 response.status(203).json({ message: "Failed to send OTP to email", statusCode: 203 });
                             } else {
                                 console.log('Email sent: ' + otp);
-                                response.status(200).json({ message: "Otp send  Successfully", otp: otp});
+                                response.status(200).json({ message: "Otp send  Successfully", otp: otp });
                             }
                         });
                     } else {
@@ -346,51 +367,51 @@ function forgetPasswordOtpSend(connection, response, requestData) {
             }
         });
     }
-     else {
+    else {
         response.status(203).json({ message: "Missing parameter", statusCode: 203 });
     }
 
 }
 
-function sendOtpForMail(connection, response, Email_Id,LoginId) {
+function sendOtpForMail(connection, response, Email_Id, LoginId) {
     if (Email_Id) {
-       
-                const otp = Math.floor(100000 + Math.random() * 900000).toString();
-                console.log("otp is ", otp);
-                connection.query(`UPDATE createaccount SET Otp= \'${otp}\' WHERE email_id=\'${Email_Id}\' AND id = \'${LoginId}\' `, function (error, data) {
-                    if (data) {
-                        const transporter = nodemailer.createTransport({
-                            service: 'gmail',
-                            auth: {
-                                user: 'smartstay1234@gmail.com',
-                                pass: 'afki rrvo jcke zjdt',
-                            },
-                            tls: {
-                                // do not fail on invalid certs
-                                rejectUnauthorized: false,
-                              },
-                        });
-                        const mailOptions = {
-                            from: 'smartstay1234@gmail.com',
-                            to: Email_Id,
-                            subject: 'OTP for Password Reset',
-                            text: `Your OTP for password reset is: ${otp}`
-                        };
-                        transporter.sendMail(mailOptions, function (err, otpData) {
-                            console.log(" otpData*", otpData);
-                            console.log("otp send error", err);
-                            if (err) {
-                                response.status(203).json({ message: "Failed to send OTP to email", statusCode: 203 });
-                            } else {
-                                console.log('Email sent: ' + otp);
-                                response.status(200).json({ message: "Otp send  Successfully", otp: otp});
-                            }
-                        });
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        console.log("otp is ", otp);
+        connection.query(`UPDATE createaccount SET Otp= \'${otp}\' WHERE email_id=\'${Email_Id}\' AND id = \'${LoginId}\' `, function (error, data) {
+            if (data) {
+                const transporter = nodemailer.createTransport({
+                    service: 'gmail',
+                    auth: {
+                        user: 'smartstay1234@gmail.com',
+                        pass: 'afki rrvo jcke zjdt',
+                    },
+                    tls: {
+                        // do not fail on invalid certs
+                        rejectUnauthorized: false,
+                    },
+                });
+                const mailOptions = {
+                    from: 'smartstay1234@gmail.com',
+                    to: Email_Id,
+                    subject: 'OTP for Password Reset',
+                    text: `Your OTP for password reset is: ${otp}`
+                };
+                transporter.sendMail(mailOptions, function (err, otpData) {
+                    console.log(" otpData*", otpData);
+                    console.log("otp send error", err);
+                    if (err) {
+                        response.status(203).json({ message: "Failed to send OTP to email", statusCode: 203 });
                     } else {
-                        response.status(201).json({ message: "No User Found" });
+                        console.log('Email sent: ' + otp);
+                        response.status(200).json({ message: "Otp send  Successfully", otp: otp });
                     }
                 });
-           
+            } else {
+                response.status(201).json({ message: "No User Found" });
+            }
+        });
+
     } else {
         response.status(201).json({ message: `${Email_Id} is doesn't exist`, statusCode: 201 });
     }
@@ -398,22 +419,22 @@ function sendOtpForMail(connection, response, Email_Id,LoginId) {
 }
 
 
- 
-function sendResponseOtp(connection, response, requestData){
-    connection.query(`SELECT * FROM createaccount WHERE email_id= \'${requestData.Email_Id}\' ` ,function (error, resData){
-      console.log("resData",resData)
-       if(resData.length > 0 && resData[0].Otp == requestData.OTP){
-         
-        response.status(200).json({ message: "OTP Verified Success",statusCode: 200, Data:resData })
-       } else {
-         
-        response.status(201).json({ message: "Enter Valid Otp", statusCode: 201 })
-       }
- 
+
+function sendResponseOtp(connection, response, requestData) {
+    connection.query(`SELECT * FROM createaccount WHERE email_id= \'${requestData.Email_Id}\' `, function (error, resData) {
+        console.log("resData", resData)
+        if (resData.length > 0 && resData[0].Otp == requestData.OTP) {
+
+            response.status(200).json({ message: "OTP Verified Success", statusCode: 200, Data: resData })
+        } else {
+
+            response.status(201).json({ message: "Enter Valid Otp", statusCode: 201 })
+        }
+
     })
- }
+}
 
 
 
 
-module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend,createnewAccount }
+module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount }

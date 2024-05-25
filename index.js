@@ -3,6 +3,9 @@ const mysql = require('mysql');
 var cors = require('cors');
 const cron = require('node-cron');
 const moment = require('moment');
+const middleware = require('./middleware');
+const connection = require('./config/connection');
+
 const app = express()
 const userQueries = require('./UserQueries');
 const accountManagement = require('./AccountManagementQueries')
@@ -29,42 +32,11 @@ app.use(function (req, res, next) {
     next();
 })
 
-const connection = mysql.createConnection({
-    host: 'ls-f4c1514e53cc8c27ec23a4ce119af8c49d7b1ce7.crocoq6qec8l.ap-south-1.rds.amazonaws.com',
-    database: 'smart_stay',
-    user: 'dbadmin',
-    password: 'Password!#$0'
-})
-
-// connection.connect(function (error) {
-//     if (error) {
-//         console.log(error)
-//     }
-//     else {
-//         console.log("connection success")
-//     }
-// })
-
-try{
-    connection.connect(function (error) {
-        if (error) {
-            console.log(error)
-        }
-        else {
-            console.log("connection success")
-        }
-    }) 
-}
-catch(error){
-    console.log(error)
-}
+app.use(middleware);
 
 app.listen('2001', function () {
     console.log("node is started at 2001")
 })
-
-
-
 
 // userQueries.js
 
@@ -83,13 +55,10 @@ app.post('/add/adduser-list', (request, response) => {
     userQueries.createUser(connection, atten, response)
 })
 
-
 app.get('/user-list/bill-payment', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     userQueries.getPaymentDetails(connection, response)
 })
-
-
 
 app.post('/create/create-account', upload.single('profile'), (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
@@ -408,6 +377,5 @@ app.post('/checkout/checkout-user', (request, response) => {
 
 app.post('/list/dashboard',(request,response)=>{
     response.set('Access-Control-Allow-Origin', '*');
-    const reqdata = request.body ;
-    pgQueries.listDashBoard(connection,response,reqdata)
+    pgQueries.listDashBoard(connection,response,request)
 })
