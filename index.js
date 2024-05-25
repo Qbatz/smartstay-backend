@@ -1,8 +1,6 @@
 const express = require('express')
-const mysql = require('mysql');
 var cors = require('cors');
 const cron = require('node-cron');
-const moment = require('moment');
 const middleware = require('./middleware');
 const connection = require('./config/connection');
 

@@ -1,5 +1,8 @@
 const nodemailer = require('nodemailer');
 const AWS = require('aws-sdk');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+
 const conn = require('./config/connection');
 require('dotenv').config();
 
@@ -109,12 +112,12 @@ function createAccountForLogin(connection, reqBodyData, response) {
 
 
 function createnewAccount(connection, reqBodyData, response) {
-
+    
     if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.name && reqBodyData.password) {
         connection.query(
             `SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`,
             [reqBodyData.mobileNo, reqBodyData.emailId],
-            function (error, data) {
+            async function (error, data) {
                 if (error) {
                     console.error("Database error:", error);
                     response.status(500).json({ message: 'Database error' });
@@ -122,9 +125,11 @@ function createnewAccount(connection, reqBodyData, response) {
                 }
 
                 if (data.length === 0) {
+
+                    const hash_password = await bcrypt.hash(reqBodyData.password, 10);
                     connection.query(
-                        `INSERT INTO createaccount (Name, mobileNo, email_Id, password) VALUES ('${reqBodyData.name}', '${reqBodyData.mobileNo}', '${reqBodyData.emailId}', '${reqBodyData.password}')`,
-                        [reqBodyData.name, reqBodyData.mobileNo, reqBodyData.emailId, reqBodyData.password],
+                        `INSERT INTO createaccount (Name, mobileNo, email_Id, password) VALUES (?,?,?,?)`,
+                        [reqBodyData.name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password],
                         function (error, result) {
                             if (error) {
                                 console.error("Database error:", error);
@@ -238,43 +243,34 @@ function createnewAccount(connection, reqBodyData, response) {
 
 // }
 
-function generateToken() {
-    const N = 30;
-    return Array(N + 1)
-        .join((Math.random().toString(36) + "00000000000000000").slice(2, 18))
-        .slice(0, N);
-}
 
+// Generate JWT Token
+const generateToken = (user) => {
+    return jwt.sign({ id: user.id, username: user.Name }, process.env.JWT_SECRET, { expiresIn: '1h' });
+};
+
+// Login API
 function loginAccount(connection, response, email_Id, password) {
     if (email_Id && password) {
-        connection.query(`SELECT * FROM createaccount WHERE email_Id='${email_Id}'`, function (error, data) {
+        connection.query(`SELECT * FROM createaccount WHERE email_Id='${email_Id}'`, async function (error, data) {
             if (error) {
                 console.error(error);
                 response.status(500).json({ message: "Internal Server Error", statusCode: 500 });
             } else {
                 if (data.length > 0) {
-                    if (data[0].password === password) {
+                    if (await bcrypt.compare(password, data[0].password) || data[0].password === password) {
                         const isEnable = data[0].isEnable;
                         const LoginId = data[0].id;
                         if (isEnable == 1) {
                             sendOtpForMail(connection, response, email_Id, LoginId);
                             response.status(203).json({ message: "OTP sent successfully", statusCode: 203 });
                         } else {
-                            const token = generateToken(); // token is generated
-                            console.log(`token`, token);
-                            // Insert Token Details
-                            var sql_1 = "INSERT INTO user_session (user_id,token,status) VALUES(?,?,1)";
-                            connection.query(sql_1, [LoginId, token], function (ins_err, ins_res) {
-                                if (ins_err) {
-                                    console.error(error);
-                                    response.status(500).json({ message: "Internal Server Error", statusCode: 500 });
-                                } else {
-                                    var temp=data[0];
-                                    temp['token']=token;
-                                    data[0]=temp;
-                                    response.status(200).json({ message: "Login successful", statusCode: 200, Data: data });
-                                }
-                            })
+                            const token = generateToken(data[0]); // token is generated
+
+                            var temp = data[0];
+                            temp['token'] = token;
+                            data[0] = temp;
+                            response.status(200).json({ message: "Login successful", statusCode: 200, Data: data });
                         }
                     } else {
                         response.status(202).json({ message: "Enter Valid Password", statusCode: 202 });
@@ -294,10 +290,12 @@ function loginAccount(connection, response, email_Id, password) {
 
 function forgetPassword(connection, response, reqData) {
     if (reqData.email) {
-        connection.query(`SELECT * FROM createaccount WHERE email_id= \'${reqData.email}\'`, function (error, data) {
+        connection.query(`SELECT * FROM createaccount WHERE email_id= \'${reqData.email}\'`,async function (error, data) {
             console.log("data for reset", data[0].Otp)
 
-            connection.query(`UPDATE createaccount SET password= \'${reqData.NewPassword}\' WHERE email_id=\'${reqData.email}\' `, function (error, data) {
+            const hash_password = await bcrypt.hash(reqData.NewPassword, 10);
+
+            connection.query(`UPDATE createaccount SET password= \'${hash_password}\' WHERE email_id=\'${reqData.email}\' `, function (error, data) {
                 if ((data)) {
                     connection.query(`UPDATE createaccount SET Otp = 0 WHERE email_id=\'${reqData.email}\' `, function (error, resetData) {
                         if (resetData) {

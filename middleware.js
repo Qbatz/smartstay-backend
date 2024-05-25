@@ -1,29 +1,22 @@
-const connection = require('./config/connection')
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
 module.exports = (req, res, next) => {
 
-    let originalUrl = req.originalUrl; // Get API URL
-
-    let token = req.headers.authorization ||  "kaw67ap58b000000kaw67ap58b0000"; // Token
-
-    if (!token) {
-        res.status(201).json({ message: "Access denied. No token provided" });
+    let token = req.headers.authorization; // Token
+    if (req.originalUrl === '/login/login' || req.originalUrl.startsWith('/login/login?')) {
+        next();
     } else {
-        if (originalUrl == '/login/login') {
-            next();
+        if (!token) {
+            res.status(201).json({ message: "Access denied. No token provided" });
         } else {
-            var sql1 = "SELECT * FROM createaccount AS cs JOIN user_session AS us ON cs.id=us.user_id WHERE us.token =? AND us.status=1;";
-            connection.query(sql1, [token], function (get_err, get_res) {
-                if (get_err) {
-                    res.status(201).json({ message: "Unable to Get User Details, Please Retry" });
-                } else if (get_res.length == 0) {
-                    res.status(201).json({ message: "Invalid Token" });
-                } else {
-                    req.user_details = get_res[0];
-                    next();
-                }
-            })
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                req.user_details = decoded;
+                next();
+            } catch (err) {
+                res.status(201).json({ message: "Access denied. Invalid Token" });
+            }
         }
     }
 }
-
