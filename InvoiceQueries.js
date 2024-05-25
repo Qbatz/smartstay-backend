@@ -1598,7 +1598,46 @@ function getEbStart(connection, response) {
 }
 
 
+// function UpdateInvoice(connection, atten, response) {
+//     console.log(" atten", atten)
+//     connection.query(`SELECT * FROM invoicedetails WHERE Hostel_Id = ${attenArray.Hostel_Id}`, function (error, data) {
+       
+//         if (atten.id) {
+//             connection.query(`UPDATE invoicedetails SET BalanceDue= ${atten.BalanceDue} WHERE id=${atten.id} and Hostel_Id = ${atten.Hostel_Id}`, function (error, data) {
+//                 if (error) {
+//                     console.error(error);
+//                     response.status(201).json({ message: "doesn't update" });
+//                 } else {
+//                     response.status(200).json({ message: "Update successful" });
+//                 }
+//             });
+
+
+//         }
+//     })
+// }
+
+function UpdateInvoice(connection, response, atten) {
+    console.log("atten", atten);
+       
+
+        if (atten.id) {
+            connection.query(`UPDATE invoicedetails SET BalanceDue= ${atten.BalanceDue} WHERE id=${atten.id}`,  function (error, result) {
+                if (error) {
+                    console.error(error);
+                    return response.status(203).json({ message: "Error updating invoice" });
+                } else {
+                    return response.status(200).json({ message: "Update successful" });
+                }
+            });
+        } 
+        else {
+            
+            return response.status(201).json({ message: "Invoice id is required for update" });
+        }
+}
 
 
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice }
+
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice,UpdateInvoice }
