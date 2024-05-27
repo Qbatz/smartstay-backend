@@ -238,7 +238,6 @@ function CreateRoom(connection, reqsData, response) {
 
                     connection.query(checkRoomQuery, function (error, existingRoom) {
 
-
                         if (existingRoom && existingRoom.length > 0) {
 
                             setTimeout(() => {
@@ -251,7 +250,8 @@ function CreateRoom(connection, reqsData, response) {
                                 updateQuery = ` UPDATE hostelrooms SET Number_Of_Beds = '${currentRoom.number_of_beds}', Price = '${currentRoom.roomRent}'  WHERE Hostel_Id = '${hostelId}' AND Floor_Id = '${currentRoom.floorId}' AND Room_Id = '${currentRoom.roomId}'`;
 
                             } else if (currentRoom.number_of_beds) {
-                                updateQuery = ` UPDATE hostelrooms SET Number_Of_Beds = '${currentRoom.number_of_beds}' WHERE Hostel_Id = '${hostelId}' AND Floor_Id = '${currentRoom.floorId}' AND Room_Id = '${currentRoom.roomId}'`;
+                                let bed = Number(existingRoom[0].Number_Of_Beds) + Number(currentRoom.number_of_beds)
+                                updateQuery = ` UPDATE hostelrooms SET Number_Of_Beds = '${bed}' WHERE Hostel_Id = '${hostelId}' AND Floor_Id = '${currentRoom.floorId}' AND Room_Id = '${currentRoom.roomId}'`;
                             }
 
 
