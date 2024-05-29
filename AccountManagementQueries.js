@@ -294,6 +294,7 @@ function refresh_token(connection, request, response) {
 // Get User Details Based on Token
 function get_user_details(connection, request, response) {
     const userDetails = request.user_details;
+    console.log(`userDetails`, userDetails);
     var sql1 = "SELECT * FROM createaccount WHERE id=?;";
     connection.query(sql1, [userDetails.id], function (sel_err, sel_res) {
         if (sel_err) {

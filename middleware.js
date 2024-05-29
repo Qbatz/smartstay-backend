@@ -11,7 +11,7 @@ module.exports = (req, res, next) => {
         next();
     } else {
         if (!token) {
-            res.status(201).json({ message: "Access denied. No token provided" });
+            res.status(401).json({ message: "Access denied. No token provided" });
         } else {
             try {
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -21,21 +21,21 @@ module.exports = (req, res, next) => {
                 const timeToExpire = decoded.exp - currentTime;
 
                 let newToken = null;
-
+                console.log(`timeToExpire`, timeToExpire);
                 // Refresh the token
-                if (timeToExpire <= 60) {
+                if (timeToExpire <= 600) {
                     newToken = jwt.sign(
-                        { user_id: decoded.user_id, sub: decoded.user_id, username: decoded.username }, process.env.JWT_SECRET, { expiresIn: '30m' }
+                        { id: decoded.id, sub: decoded.id, username: decoded.username }, process.env.JWT_SECRET, { expiresIn: '30m' }
                     );
                     res.locals.refresh_token = newToken;
                 }
 
                 const originalJson = res.json.bind(res);
 
-                console.log(`originalJson`, originalJson);
+                // console.log(`originalJson`, originalJson);
                 res.json = (body) => {
                     if (newToken) {
-                        body.newToken = newToken;
+                        body.refresh_token = newToken;
                     }
                     originalJson(body);
                 };
@@ -43,7 +43,7 @@ module.exports = (req, res, next) => {
                 next();
 
             } catch (err) {
-                res.status(201).json({ message: "Access denied. Invalid Token or Token Expired" });
+                res.status(401).json({ message: "Access denied. Invalid Token or Token Expired" });
             }
         }
     }
