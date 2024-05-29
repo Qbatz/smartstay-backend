@@ -3,7 +3,7 @@ const AWS = require('aws-sdk');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
-const conn = require('./config/connection');
+// const conn = require('./config/connection');
 require('dotenv').config();
 
 
@@ -110,9 +110,8 @@ function createAccountForLogin(connection, reqBodyData, response) {
     }
 }
 
-
 function createnewAccount(connection, reqBodyData, response) {
-    
+
     if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.name && reqBodyData.password) {
         connection.query(
             `SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`,
@@ -161,8 +160,6 @@ function createnewAccount(connection, reqBodyData, response) {
         response.status(400).json({ message: 'Missing Parameter' });
     }
 }
-
-
 
 // function createnewAccount(connection, reqBodyData, response) {
 //     if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.name && reqBodyData.password) {
@@ -246,7 +243,7 @@ function createnewAccount(connection, reqBodyData, response) {
 
 // Generate JWT Token
 const generateToken = (user) => {
-    return jwt.sign({ id: user.id, username: user.Name }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    return jwt.sign({ id: user.id, sub: user.id, username: user.Name }, process.env.JWT_SECRET, { expiresIn: '30m' });
 };
 
 // Login API
@@ -267,10 +264,10 @@ function loginAccount(connection, response, email_Id, password) {
                         } else {
                             const token = generateToken(data[0]); // token is generated
 
-                            var temp = data[0];
-                            temp['token'] = token;
-                            data[0] = temp;
-                            response.status(200).json({ message: "Login successful", statusCode: 200, Data: data });
+                            // var temp = data[0];
+                            // temp['token'] = token;
+                            // data[0] = temp;
+                            response.status(200).json({ message: "Login successful", statusCode: 200, token: token });
                         }
                     } else {
                         response.status(202).json({ message: "Enter Valid Password", statusCode: 202 });
@@ -285,12 +282,33 @@ function loginAccount(connection, response, email_Id, password) {
     }
 }
 
+// Get Refresh Token
+function refresh_token(connection, request, response) {
+    const res_message = { message: 'Refresh Token API' };
+    if (response.locals.refresh_token) {
+        res_message.refresh_token = response.locals.refresh_token;
+    }
+    response.status(200).json(res_message);
+}
 
-
+// Get User Details Based on Token
+function get_user_details(connection, request, response) {
+    const userDetails = request.user_details;
+    var sql1 = "SELECT * FROM createaccount WHERE id=?;";
+    connection.query(sql1, [userDetails.id], function (sel_err, sel_res) {
+        if (sel_err) {
+            response.status(201).json({ message: "Unable to Get User Details" });
+        } else if (sel_res.length == 0) {
+            response.status(201).json({ message: "Inavlid User Details" });
+        } else {
+            response.status(200).json({ message: "User Details", user_details: sel_res[0] });
+        }
+    })
+}
 
 function forgetPassword(connection, response, reqData) {
     if (reqData.email) {
-        connection.query(`SELECT * FROM createaccount WHERE email_id= \'${reqData.email}\'`,async function (error, data) {
+        connection.query(`SELECT * FROM createaccount WHERE email_id= \'${reqData.email}\'`, async function (error, data) {
             console.log("data for reset", data[0].Otp)
 
             const hash_password = await bcrypt.hash(reqData.NewPassword, 10);
@@ -435,4 +453,4 @@ function sendResponseOtp(connection, response, requestData) {
 
 
 
-module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount }
+module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount,refresh_token, get_user_details }

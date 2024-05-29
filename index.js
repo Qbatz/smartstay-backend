@@ -91,15 +91,11 @@ app.get('/login/login', (request, response) => {
     accountManagement.loginAccount(connection, response, email_Id, password);
 })
 
-
-
 app.post('/forget/select-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const reqData = request.body
     accountManagement.forgetPassword(connection, response, reqData);
 })
-
-
 
 app.post('/otp-send/send-mail', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
@@ -376,4 +372,14 @@ app.post('/checkout/checkout-user', (request, response) => {
 app.post('/list/dashboard',(request,response)=>{
     response.set('Access-Control-Allow-Origin', '*');
     pgQueries.listDashBoard(connection,response,request)
+})
+
+app.post('/refresh_token', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    accountManagement.refresh_token(connection,request,response);
+})
+
+app.post('/get_user_details', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    accountManagement.get_user_details(connection,request,response);
 })
