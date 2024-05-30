@@ -32,7 +32,6 @@ module.exports = (req, res, next) => {
 
                 const originalJson = res.json.bind(res);
 
-                // console.log(`originalJson`, originalJson);
                 res.json = (body) => {
                     if (newToken) {
                         body.refresh_token = newToken;

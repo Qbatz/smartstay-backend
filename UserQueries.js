@@ -1,15 +1,16 @@
-function getUsers(connection, response, ReqData) {
-    const query = `SELECT * FROM hosteldetails hstlDetails inner join hostel hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true WHERE hstlDetails.created_By ='${ReqData.loginId}'`;
-      connection.query(query, function (error, hostelData) {
-        console.log("hostelData",hostelData)
+function getUsers(connection, response, request) {
+    // Get values in middleware
+    const userDetails = request.user_details;
+    const query = `SELECT * FROM hosteldetails hstlDetails inner join hostel hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true WHERE hstlDetails.created_By ='${userDetails.id}'`;
+    connection.query(query, function (error, hostelData) {
         if (error) {
             console.error(error);
             response.status(403).json({ message: 'Error  hostel data' });
             return;
-        }else{
-            response.status(200).json(hostelData);
+        } else {
+            response.status(200).json({hostelData:hostelData});
         }
-                     
+
     });
 }
 
@@ -18,7 +19,7 @@ function createUser(connection, atten, response) {
     const FirstNameInitial = atten.firstname.charAt(0).toUpperCase();
     const LastNameInitial = atten.lastname.charAt(0).toUpperCase();
     const Circle = FirstNameInitial + LastNameInitial;
-     const Status = atten.BalanceDue < 0 ? 'Pending' : 'Success';
+    const Status = atten.BalanceDue < 0 ? 'Pending' : 'Success';
     const Name = atten.firstname + ' ' + atten.lastname;
     if (atten.ID) {
         connection.query(`UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${atten.Phone}', Email='${atten.Email}', Address='${atten.Address}', AadharNo='${atten.AadharNo}', PancardNo='${atten.PancardNo}',licence='${atten.licence}',HostelName='${atten.HostelName}',Hostel_Id='${atten.hostel_Id}', Floor='${atten.Floor}', Rooms='${atten.Rooms}', Bed='${atten.Bed}', AdvanceAmount='${atten.AdvanceAmount}', RoomRent='${atten.RoomRent}', BalanceDue='${atten.BalanceDue}', PaymentType='${atten.PaymentType}', Status='${Status}' WHERE ID='${atten.ID}' `, function (updateError, updateData) {
@@ -84,30 +85,30 @@ function getPaymentDetails(connection, response) {
 }
 
 
-function CheckOutUser (connection, response, attenData){
-    console.log("attenData",attenData)
-if(attenData){
+function CheckOutUser(connection, response, attenData) {
+    console.log("attenData", attenData)
+    if (attenData) {
 
-    const query = `UPDATE hostel SET CheckoutDate= '${attenData.CheckOutDate}' , isActive ='${attenData.isActive}' WHERE User_Id='${attenData.User_Id}'`
+        const query = `UPDATE hostel SET CheckoutDate= '${attenData.CheckOutDate}' , isActive ='${attenData.isActive}' WHERE User_Id='${attenData.User_Id}'`
 
-    console.log("query",query)
-    connection.query(query, function(error, UpdateData){
-        console.log("updateData",UpdateData)
-        if(error){
-            response.status(201).json({ message: 'No Data Found' })
-        }else{
-            response.status(200).json({ message: "Update Successfully"});
-        }
-    })
+        console.log("query", query)
+        connection.query(query, function (error, UpdateData) {
+            console.log("updateData", UpdateData)
+            if (error) {
+                response.status(201).json({ message: 'No Data Found' })
+            } else {
+                response.status(200).json({ message: "Update Successfully" });
+            }
+        })
 
-}else{
-    response.status(201).json({ message: 'missing parameter' })
+    } else {
+        response.status(201).json({ message: 'missing parameter' })
+    }
+
+
+
 }
 
 
 
-}
-
-
-
-module.exports = { getUsers, createUser, getPaymentDetails,CheckOutUser }
+module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser }

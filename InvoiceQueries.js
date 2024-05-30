@@ -164,7 +164,7 @@ WHERE
                             // console.log("month == userMonth",month == userMonth)
                             // console.log("year == userYear",year == userYear)
 
-                            return item.Hostel_Id == existingData[i].roomHostel_Id ;
+                            return item.Hostel_Id == existingData[i].roomHostel_Id;
 
                         });
                         console.log("filteredArray", filteredArray)
@@ -380,7 +380,7 @@ INNER JOIN
     AND rms.Room_Id = hstl.Rooms 
 WHERE 
     hstl.isActive = false  AND hstl.id = ${user.ID}`, function (err, existingData) {
-      
+
         console.log("existingData Array", existingData)
         if (err) {
             console.error("Error fetching hosteldetails:", err);
@@ -393,7 +393,7 @@ WHERE
                 for (let i = 0; i < existingData.length; i++) {
                     let tempObj = {};
                     let roomPrice = existingData[i].RoomRent;
-                    console.log("roomPrice",roomPrice)
+                    console.log("roomPrice", roomPrice)
                     let AdvanceAmount = 0;
                     let HostelBasedEb = 0;
                     let roomBasedEb = 0;
@@ -786,24 +786,13 @@ function insertManualInvoices(finalArray, ParticularUser, connection, reqData) {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
 function getInvoiceListForAll(connection, response) {
     // const query = `SELECT * FROM  Invoice_Details_For_All  hstlDetails inner join invoicedetails  invoice  on invoice.Hostel_Id=hstlDetails.id  WHERE hstlDetails.created_By ='${reqData.loginId}' order by invoice.Hostel_Id;`;
     const query = `SELECT * FROM  Invoice_Details_For_All`;
 
     connection.query(query, function (error, data) {
-        console.log(error);
-        console.log("InvoiceData", data);
-
+        // console.log(error);
+        // console.log("InvoiceData", data);
         if (error) {
             response.status(403).json({ message: 'not connected' })
         }
@@ -814,32 +803,17 @@ function getInvoiceListForAll(connection, response) {
 }
 
 
-
-
-
-
-
-
-
-function getInvoiceList(connection, response, reqData) {
-    const query = `SELECT * FROM hosteldetails  hstlDetails inner join invoicedetails  invoice  on invoice.Hostel_Id=hstlDetails.id  WHERE hstlDetails.created_By ='${reqData.loginId}'`;
+function getInvoiceList(connection, response, request) {
+    const userDetails = request.user_details;
+    const query = `SELECT * FROM hosteldetails  hstlDetails inner join invoicedetails  invoice  on invoice.Hostel_Id=hstlDetails.id  WHERE hstlDetails.created_By ='${userDetails.id}'`;
     connection.query(query, function (error, data) {
-        console.log(error);
-        console.log("InvoiceData", data);
-
         if (error) {
             response.status(403).json({ message: 'not connected' })
-        }
-        else {
-            response.status(200).json(data)
+        } else {
+            response.status(200).json({ data: data })
         }
     })
 }
-
-
-
-
-
 
 function embedImage(doc, imageUrl, fallbackPath, callback) {
     console.log(`Fetching image from URL: ${imageUrl}`);
@@ -909,10 +883,6 @@ async function convertImage(imageBuffer) {
     return convertedImageBuffer;
 }
 
-
-
-
-
 function InvoicePDf(connection, reqBodyData, response) {
     console.log("reqBodyData", reqBodyData)
     connection.query(`SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND DATE(invoice.Date) = ? AND invoice.id = ?`,
@@ -925,8 +895,6 @@ function InvoicePDf(connection, reqBodyData, response) {
                 let uploadedPDFs = 0;
                 let filenames = [];
                 let pdfDetails = [];
-
-
 
                 data.forEach((hostel, index) => {
                     console.log("hostelData **", hostel);
@@ -960,12 +928,8 @@ function InvoicePDf(connection, reqBodyData, response) {
                         else {
                         }
 
-
-
                         connection.query(`SELECT * from hostel WHERE Hostel_Id = ${hostel.Hostel_Id} and isActive=true`, function (error, resultDataForIsHostelbased) {
                             console.log("resultDataForIsHostelbased", resultDataForIsHostelbased.length)
-
-
 
                             if (hostel.isHostelBased == 1) {
                                 const Is_EbAmount_Hostel_Based = hostel.EbAmount / resultDataForIsHostelbased.length
@@ -1064,10 +1028,6 @@ function InvoicePDf(connection, reqBodyData, response) {
                                                 .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
                                                 .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
                                                 .moveDown(0.5);
-
-
-
-
 
                                             const headers = ['SNo', 'Description', 'Amount'];
                                             const tableTop = 250;

@@ -337,7 +337,7 @@ function forgetPassword(connection, response, reqData) {
 }
 
 function forgetPasswordOtpSend(connection, response, requestData) {
-    console.log("requestData", requestData.email)
+    // console.log("requestData", requestData.email)
     if (requestData.email) {
         connection.query(`SELECT * FROM createaccount WHERE email_id= \'${requestData.email}\'`, function (error, data) {
             if (data && data.length > 0) {

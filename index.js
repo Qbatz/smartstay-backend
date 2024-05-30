@@ -40,9 +40,7 @@ app.listen('2001', function () {
 
 app.post('/users/user-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-
-    const ReqData = request.body
-    userQueries.getUsers(connection, response, ReqData);
+    userQueries.getUsers(connection, response, request);
 
 });
 
@@ -161,24 +159,18 @@ app.post('/manual/manual-invoice', (request, response)=>{
     });
 })
 
-
-
-
-
-
-
 app.get('/list/invoice-for-all-user-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
         invoiceQueries.getInvoiceListForAll(connection, response)
 })
 
 
-
 app.post('/list/invoice-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-    const reqData = request.body
-    invoiceQueries.getInvoiceList(connection, response, reqData)
+    invoiceQueries.getInvoiceList(connection, response, request)
 })
+
+// Checked API ***************************************************//
 
 app.get('/list/eb_list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
