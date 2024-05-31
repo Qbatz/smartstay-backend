@@ -432,7 +432,7 @@ app.post('/delete/delete-bed',(request,response)=>{
     response.set('Access-Control-Allow-Origin', '*');
     let reqData = request.body
     pgQueries.deleteBed(connection,response,reqData)
-
+})
 
 app.post('/transaction/list',(request,response)=>{
     response.set('Access-Control-Allow-Origin', '*');
