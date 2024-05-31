@@ -108,6 +108,25 @@ if(attenData){
 
 }
 
+function transitionlist(connection, reqData, response) {
+    if (reqData) {
+        const query = `INSERT INTO transactions (user_id, invoice_id, amount, status, created_by) VALUES (?, ?, ?, 1, ?)`;
+        const queryValues = [reqData.user_id, reqData.invoice_id, reqData.amount,  reqData.created_by];
+
+        console.log("query", query, queryValues);
+        connection.query(query, queryValues, function(error, data) {
+            if (error) {
+                console.error("Database Error:", error);
+                response.status(500).json({ message: 'Database Error', error });
+            } else {
+                response.status(201).json({ message: "Insert Successfully" });
+            }
+        });
+    } else {
+        response.status(400).json({ message: 'Missing parameter' });
+    }
+}
 
 
-module.exports = { getUsers, createUser, getPaymentDetails,CheckOutUser }
+
+module.exports = { getUsers, createUser, getPaymentDetails,CheckOutUser,transitionlist }
