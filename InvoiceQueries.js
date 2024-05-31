@@ -21,6 +21,7 @@ const s3 = new AWS.S3();
 
 const https = require('https');
 
+
 async function calculateAndInsertInvoice(connection, user, users) {
     const query = util.promisify(connection.query).bind(connection);
 
@@ -131,6 +132,7 @@ async function calculateAndInsertInvoice(connection, user, users) {
                 dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
                 invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
             }
+
 
             const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
             const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
@@ -1813,7 +1815,7 @@ function UpdateInvoice(connection, response, atten) {
        
 
         if (atten.id) {
-            connection.query(`UPDATE invoicedetails SET BalanceDue= ${atten.BalanceDue} WHERE id=${atten.id}`,  function (error, result) {
+            connection.query(`UPDATE invoicedetails SET BalanceDue= ${atten.BalanceDue},PaidAmount = ${atten.paidAmount} WHERE id=${atten.id}`,  function (error, result) {
                 if (error) {
                     console.error(error);
                     return response.status(203).json({ message: "Error updating invoice" });
