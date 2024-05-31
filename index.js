@@ -149,16 +149,15 @@ app.post('/otp-send/response', (request, response) => {
 
 cron.schedule("0 0 1 * * ", function () {
     console.log("This task runs every minute");
-    connection.query(`SELECT * FROM hostel where isActive=true`, function (err, users) {
-        // console.log(" users", users)
+    connection.query(`SELECT * FROM hostel where isActive=true`,async function (err, users) {
         if (err) {
             console.error("Error fetching users:", err);
             return;
+        }else{
+            for (const user of users) {
+                await invoiceQueries.calculateAndInsertInvoice(connection, user, users);
+            }
         }
-        users.forEach(user => {
-            const userID = user.User_Id;
-            invoiceQueries.calculateAndInsertInvoice(connection, user,users);
-        });
     });
 });
 
