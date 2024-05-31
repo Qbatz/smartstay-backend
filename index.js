@@ -420,6 +420,5 @@ app.post('/invoice/invoiceUpdate',(request,response) => {
 
 app.post('/transaction/list',(request,response)=>{
     response.set('Access-Control-Allow-Origin', '*');
-    const reqdata = request.body ;
-    userQueries.transitionlist(connection,reqdata,response)
+    userQueries.transitionlist(connection,request,response)
 })
