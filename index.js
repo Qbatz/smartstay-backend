@@ -418,3 +418,18 @@ app.post('/invoice/invoiceUpdate',(request,response) => {
     invoiceQueries.UpdateInvoice(connection,response,atten)
 
 })
+app.post('/delete/delete-floor',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    let reqData = request.body
+    pgQueries.deleteFloor(connection,response,reqData)
+})
+app.post('/delete/delete-room',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    let reqData = request.body
+    pgQueries.deleteRoom(connection,response,reqData)
+})
+app.post('/delete/delete-bed',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    let reqData = request.body
+    pgQueries.deleteBed(connection,response,reqData)
+})

@@ -99,9 +99,6 @@ INNER JOIN
     AND rms.Room_Id = hstl.Rooms 
 WHERE 
     hstl.isActive = true  AND hstl.id = ${user.ID};
-   
-
-
     `, function (err, existingData) {
         console.log("existingData", existingData)
         if (err) {
@@ -1622,7 +1619,7 @@ function UpdateInvoice(connection, response, atten) {
        
 
         if (atten.id) {
-            connection.query(`UPDATE invoicedetails SET BalanceDue= ${atten.BalanceDue} WHERE id=${atten.id}`,  function (error, result) {
+            connection.query(`UPDATE invoicedetails SET BalanceDue= ${atten.BalanceDue},PaidAmount = ${atten.paidAmount} WHERE id=${atten.id}`,  function (error, result) {
                 if (error) {
                     console.error(error);
                     return response.status(203).json({ message: "Error updating invoice" });
