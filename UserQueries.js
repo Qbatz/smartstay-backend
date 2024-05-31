@@ -1,15 +1,15 @@
 function getUsers(connection, response, ReqData) {
     const query = `SELECT * FROM hosteldetails hstlDetails inner join hostel hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true WHERE hstlDetails.created_By ='${ReqData.loginId}'`;
-      connection.query(query, function (error, hostelData) {
-        console.log("hostelData",hostelData)
+    connection.query(query, function (error, hostelData) {
+        console.log("hostelData", hostelData)
         if (error) {
             console.error(error);
             response.status(403).json({ message: 'Error  hostel data' });
             return;
-        }else{
+        } else {
             response.status(200).json(hostelData);
         }
-                     
+
     });
 }
 
@@ -18,7 +18,7 @@ function createUser(connection, atten, response) {
     const FirstNameInitial = atten.firstname.charAt(0).toUpperCase();
     const LastNameInitial = atten.lastname.charAt(0).toUpperCase();
     const Circle = FirstNameInitial + LastNameInitial;
-     const Status = atten.BalanceDue < 0 ? 'Pending' : 'Success';
+    const Status = atten.BalanceDue < 0 ? 'Pending' : 'Success';
     const Name = atten.firstname + ' ' + atten.lastname;
     if (atten.ID) {
         connection.query(`UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${atten.Phone}', Email='${atten.Email}', Address='${atten.Address}', AadharNo='${atten.AadharNo}', PancardNo='${atten.PancardNo}',licence='${atten.licence}',HostelName='${atten.HostelName}',Hostel_Id='${atten.hostel_Id}', Floor='${atten.Floor}', Rooms='${atten.Rooms}', Bed='${atten.Bed}', AdvanceAmount='${atten.AdvanceAmount}', RoomRent='${atten.RoomRent}', BalanceDue='${atten.BalanceDue}', PaymentType='${atten.PaymentType}', Status='${Status}' WHERE ID='${atten.ID}' `, function (updateError, updateData) {
@@ -84,49 +84,109 @@ function getPaymentDetails(connection, response) {
 }
 
 
-function CheckOutUser (connection, response, attenData){
-    console.log("attenData",attenData)
-if(attenData){
+function CheckOutUser(connection, response, attenData) {
+    console.log("attenData", attenData)
+    if (attenData) {
 
-    const query = `UPDATE hostel SET CheckoutDate= '${attenData.CheckOutDate}' , isActive ='${attenData.isActive}' WHERE User_Id='${attenData.User_Id}'`
+        const query = `UPDATE hostel SET CheckoutDate= '${attenData.CheckOutDate}' , isActive ='${attenData.isActive}' WHERE User_Id='${attenData.User_Id}'`
 
-    console.log("query",query)
-    connection.query(query, function(error, UpdateData){
-        console.log("updateData",UpdateData)
-        if(error){
-            response.status(201).json({ message: 'No Data Found' })
-        }else{
-            response.status(200).json({ message: "Update Successfully"});
-        }
-    })
-
-}else{
-    response.status(201).json({ message: 'missing parameter' })
-}
-
-
-
-}
-
-function transitionlist(connection, reqData, response) {
-    if (reqData) {
-        const query = `INSERT INTO transactions (user_id, invoice_id, amount, status, created_by) VALUES (?, ?, ?, 1, ?)`;
-        const queryValues = [reqData.user_id, reqData.invoice_id, reqData.amount,  reqData.created_by];
-
-        console.log("query", query, queryValues);
-        connection.query(query, queryValues, function(error, data) {
+        console.log("query", query)
+        connection.query(query, function (error, UpdateData) {
+            console.log("updateData", UpdateData)
             if (error) {
-                console.error("Database Error:", error);
-                response.status(500).json({ message: 'Database Error', error });
+                response.status(201).json({ message: 'No Data Found' })
             } else {
-                response.status(201).json({ message: "Insert Successfully" });
+                response.status(200).json({ message: "Update Successfully" });
             }
-        });
+        })
+
     } else {
-        response.status(400).json({ message: 'Missing parameter' });
+        response.status(201).json({ message: 'missing parameter' })
     }
+
+
+
 }
 
+function transitionlist(connection, request, response) {
+
+    
+    var { id, invoice_id, amount, balance_due, created_by } = request.body;
+    console.log(request.body);
+    if ((!amount && amount == undefined) && (!balance_due || balance_due == undefined)) {
+        response.status(203).json({ message: "Missing Required Fields" });
+    } else {
+        
+        var sql1 = "SELECT * FROM invoicedetails WHERE id='" + id + "';";
+        connection.query(sql1, function (check_err, check_res) {
+            if (check_err) {
+                response.status(201).json({ message: 'Unable to Get User Details' });
+            } else if (check_res.length != 0) {
+
+                var already_paid_amount = check_res[0].PaidAmount;
+                var new_amount = already_paid_amount + amount;
+               
+                var sql2 = "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=? WHERE id=?";
+                connection.query(sql2, [balance_due, new_amount, id], function (up_err, up_res) {
+                    if (up_err) {
+                        response.status(201).json({ message: 'Unable to Update User Details' });
+                    } else {
+
+                       
+                        var sql3 = "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by) VALUES (?,?,?,1,?)";
+                        connection.query(sql3, [id, invoice_id, amount, created_by], function (ins_err, ins_res) {
+                            if (ins_err) {
+                                response.status(201).json({ message: 'Unable to Add Transactions Details' });
+                            } else {
+                                response.status(200).json({ message: "Update Successfully" });
+                            }
+                        })
+
+                    }
+                })
+
+            } else {
+                response.status(201).json({ message: 'Invalid User Id' });
+            }
+        })
+    }
 
 
-module.exports = { getUsers, createUser, getPaymentDetails,CheckOutUser,transitionlist }
+}
+// function transitionlist(connection, reqData, response) {
+//     if (!reqData) {
+//         return response.status(400).json({ message: 'Missing parameter' });
+//     }
+
+//     const insertQuery = `INSERT INTO transactions (user_id, invoice_id, amount, status, created_by) VALUES (?, ?, ?, 1, ?)`;
+//     const insertValues = [reqData.user_id, reqData.invoice_id, reqData.amount, reqData.created_by];
+
+//     console.log("Insert Query:", insertQuery, insertValues);
+//     connection.query(insertQuery, insertValues, function(insertError, insertData) {
+//         if (insertError) {
+//             console.error("Database Insert Error:", insertError);
+//             return response.status(500).json({ message: 'Database Insert Error', error: insertError });
+//         }
+
+//         if (reqData.user_id) {
+//             const updateQuery = `UPDATE hostel SET amount = ? WHERE user_id = ?`;
+//             const updateValues = [reqData.amount, reqData.user_id];
+
+//             console.log("Update Query:", updateQuery, updateValues);
+//             connection.query(updateQuery, updateValues, function(updateError, updateData) {
+//                 if (updateError) {
+//                     console.error("Database Update Error:", updateError);
+//                     return response.status(500).json({ message: "Database Update Error", error: updateError });
+//                 }
+
+//                 return response.status(200).json({ message: "Insert and Update Successfully" });
+//             });
+//         } else {
+//             return response.status(201).json({ message: "Insert Successfully" });
+//         }
+//     });
+// }
+
+
+
+module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist }
