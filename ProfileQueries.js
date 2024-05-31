@@ -44,14 +44,13 @@ function IsEnableCheck(connection, reqBodyData, response) {
 
 function getAccount(connection, response) {
     connection.query('select * from createaccount', function (error, data) {
-        console.log(error);
-        console.log(data);
-
+        // console.log(error);
+        // console.log(data);
         if (error) {
             response.status(403).json({ message: 'not connected' })
         }
         else {
-            response.status(200).json(data)
+            response.status(200).json({ data: data })
         }
     })
 }
@@ -128,7 +127,7 @@ function InvoiceSettings(connection, reqInvoice, response) {
                     });
                 }
             });
-        } else if(Prefix && Suffix){
+        } else if (Prefix && Suffix) {
             const query = `UPDATE hosteldetails SET  prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}' WHERE id='${reqInvoice.hostel_Id}'`;
             connection.query(query, function (error, invoiceData) {
                 console.log("invoiceData", invoiceData);
@@ -312,7 +311,7 @@ function AmenitiesSetting(connection, reqData, response) {
 function getAmenitiesList(connection, response) {
     connection.query(`select * from Amenities AmeList INNER JOIN AmnitiesName AmeName ON AmeList.Amnities_Id = AmeName.id `, function (err, data) {
         if (data) {
-            response.status(200).json(data)
+            response.status(200).json({ data: data })
         }
         else {
             response.status(201).json({ message: 'No Data Found' })
@@ -323,7 +322,7 @@ function getAmenitiesList(connection, response) {
 function getEbReading(connection, response) {
     connection.query(`select * from EbReading `, function (err, data) {
         if (data) {
-            response.status(200).json(data)
+            response.status(200).json({data:data})
         }
         else {
             response.status(201).json({ message: 'No Data Found' })
@@ -332,9 +331,9 @@ function getEbReading(connection, response) {
 }
 
 function UpdateAmnity(connection, attenArray, response) {
-    console.log(" attenArray", attenArray)
+    // console.log(" attenArray", attenArray)
     connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${attenArray.Hostel_Id}`, function (error, amenitiesData) {
-        console.log("amenitiesData", amenitiesData)
+        // console.log("amenitiesData", amenitiesData)
         if (attenArray.id) {
             connection.query(`UPDATE Amenities SET Amount= ${attenArray.Amount},setAsDefault= ${attenArray.setAsDefault},Status= ${attenArray.Status} WHERE  Amnities_Id='${attenArray.id}' and Hostel_Id = '${attenArray.Hostel_Id}'`, function (error, data) {
                 if (error) {

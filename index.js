@@ -69,7 +69,7 @@ app.post('/create/create-account', upload.single('profile'), (request, response)
         Country: request.body.Country,
         City: request.body.City,
         State: request.body.State,
-        password:request.body.password
+        password: request.body.password
 
     };
     console.log("reqBodyData **", reqBodyData)
@@ -98,7 +98,7 @@ app.post('/forget/select-list', (request, response) => {
 app.post('/otp-send/send-mail', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const requestData = request.body
-    console.log("requestData", requestData)
+    // console.log("requestData", requestData)
     accountManagement.forgetPasswordOtpSend(connection, response, requestData)
 })
 app.post('/otp-send/response', (request, response) => {
@@ -118,7 +118,7 @@ cron.schedule("0 0 1 * * ", function () {
         }
         users.forEach(user => {
             const userID = user.User_Id;
-            invoiceQueries.calculateAndInsertInvoice(connection, user,users);
+            invoiceQueries.calculateAndInsertInvoice(connection, user, users);
         });
     });
 });
@@ -126,42 +126,42 @@ cron.schedule("0 0 1 * * ", function () {
 
 app.get('/checkout/checkout-invoice', (request, response) => {
     connection.query(`SELECT * FROM hostel`, function (err, users) {
-        console.log("users",users)
-               if (err) {
+        // console.log("users",users)
+        if (err) {
             console.error("Error fetching users:", err);
             return;
         }
         users.forEach(user => {
             const userID = user.User_Id;
-            invoiceQueries.CheckOutInvoice(connection, user,users);
+            invoiceQueries.CheckOutInvoice(connection, user, users);
         });
     });
 })
 
 
-app.post('/manual/manual-invoice', (request, response)=>{
+app.post('/manual/manual-invoice', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     const reqData = request.body;
-    console.log("reqData",reqData)
+    // console.log("reqData", reqData)
     connection.query(`SELECT * FROM hostel`, function (err, users) {
-    //  console.log(" users", users)
-               if (err) {
+        //  console.log(" users", users)
+        if (err) {
             console.error("Error fetching users:", err);
             return;
         }
         const ParticularUser = users.filter(user => {
-           return user.User_Id == reqData.User_Id
+            return user.User_Id == reqData.User_Id
 
         });
         // console.log("ParticularUser",ParticularUser)
-        invoiceQueries.InsertManualInvoice(connection,users,reqData,ParticularUser );
+        invoiceQueries.InsertManualInvoice(connection, users, reqData, ParticularUser);
 
     });
 })
 
 app.get('/list/invoice-for-all-user-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-        invoiceQueries.getInvoiceListForAll(connection, response)
+    invoiceQueries.getInvoiceListForAll(connection, response)
 })
 
 
@@ -170,7 +170,6 @@ app.post('/list/invoice-list', (request, response) => {
     invoiceQueries.getInvoiceList(connection, response, request)
 })
 
-// Checked API ***************************************************//
 
 app.get('/list/eb_list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
@@ -181,7 +180,7 @@ app.get('/list/eb_list', (request, response) => {
 app.post('/invoice/invoice-list-pdf', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     let reqBodyData = request.body;
-    console.log("reqBodyData", reqBodyData)
+    // console.log("reqBodyData", reqBodyData)
     invoiceQueries.InvoicePDf(connection, reqBodyData, response)
 })
 
@@ -210,17 +209,16 @@ app.post('/compliance/add-details', (request, response) => {
 
 app.post('/compliance/compliance-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-    const reqData = request.body
-    complianceQueries.GetComplianceList(connection, response,  reqData)
+    complianceQueries.GetComplianceList(connection, response, request)
 
 })
 
 
 app.post('/list/hostel-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const reqData = request.body
-    pgQueries.getHostelList(connection, response, reqData)
+    pgQueries.getHostelList(connection, response, request)
 })
+
 
 app.get('/room-id/check-room-id', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
@@ -298,7 +296,7 @@ app.post('/invoice/settings', upload.single('profile'), (request, response) => {
         prefix: request.body.prefix,
         suffix: request.body.suffix
     };
-    console.log("reqInvoice **", reqInvoice)
+    // console.log("reqInvoice **", reqInvoice)
     profileQueries.InvoiceSettings(connection, reqInvoice, response)
 })
 
@@ -330,13 +328,11 @@ app.post('/ebamount/setting', (request, response) => {
 
 
 })
-app.post('/AmnitiesName_list', (request, response) => {
-    response.set('Access-Control-Allow-Origin', '*');
-    const atten = request.body
-    invoiceQueries.AmenitiesName(connection, atten, response)
-
-
-})
+// app.post('/AmnitiesName_list', (request, response) => {
+//     response.set('Access-Control-Allow-Origin', '*');
+//     const atten = request.body
+//     invoiceQueries.AmenitiesName(connection, atten, response)
+// })
 
 app.get('/list/EbReading', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
@@ -358,20 +354,15 @@ app.post('/amenities/amnityUpdate', (request, response) => {
 app.post('/checkout/checkout-user', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const attenData = request.body;
-    userQueries.CheckOutUser(connection, response, attenData )
+    userQueries.CheckOutUser(connection, response, attenData)
 })
 
-app.post('/list/dashboard',(request,response)=>{
+app.post('/list/dashboard', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    pgQueries.listDashBoard(connection,response,request)
-})
-
-app.post('/refresh_token', (request, response) => {
-    response.set('Access-Control-Allow-Origin', '*');
-    accountManagement.refresh_token(connection,request,response);
+    pgQueries.listDashBoard(connection, response, request)
 })
 
 app.post('/get_user_details', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    accountManagement.get_user_details(connection,request,response);
+    accountManagement.get_user_details(connection, request, response);
 })

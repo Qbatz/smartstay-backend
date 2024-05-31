@@ -74,26 +74,26 @@ function createUser(connection, atten, response) {
 
 function getPaymentDetails(connection, response) {
     connection.query(`SELECT hos.Name ,hos.Phone,hos.Email,hos.Address,hos.AdvanceAmount,hos.BalanceDue,hos.Status,hos.createdAt,inv.Name as invoiceName, inv.phoneNo as invoicePhone ,inv.Date as invDate, inv.Amount as invAmount ,inv.Status as invStatus, inv.Invoices as InvoiceNo FROM hostel hos INNER JOIN invoicedetails inv on inv.phoneNo= hos.Phone`, function (error, data) {
-        console.log(error);
+        // console.log(error);
         if (error) {
             response.status(201).json({ message: 'No Data Found', statusCode: 201 })
         }
         else {
-            response.status(200).json(data)
+            response.status(200).json({data:data})
         }
     })
 }
 
 
 function CheckOutUser(connection, response, attenData) {
-    console.log("attenData", attenData)
+    // console.log("attenData", attenData)
     if (attenData) {
 
         const query = `UPDATE hostel SET CheckoutDate= '${attenData.CheckOutDate}' , isActive ='${attenData.isActive}' WHERE User_Id='${attenData.User_Id}'`
 
-        console.log("query", query)
+        // console.log("query", query)
         connection.query(query, function (error, UpdateData) {
-            console.log("updateData", UpdateData)
+            // console.log("updateData", UpdateData)
             if (error) {
                 response.status(201).json({ message: 'No Data Found' })
             } else {

@@ -60,7 +60,6 @@ function createAccountForLogin(connection, reqBodyData, response) {
                 }
             });
 
-
         } else {
 
             connection.query(`UPDATE createaccount SET Name='${reqBodyData.name}', mobileNo='${reqBodyData.mobileNo}', email_Id='${reqBodyData.emailId}', Address='${reqBodyData.Address}', Country='${reqBodyData.Country}', City='${reqBodyData.City}', State='${reqBodyData.State}' WHERE id='${reqBodyData.id}'`, function (error, data) {
@@ -74,38 +73,7 @@ function createAccountForLogin(connection, reqBodyData, response) {
             });
         }
 
-    }
-
-    //  else if (reqBodyData.mobileNo && reqBodyData.emailId) {
-    //     connection.query(`SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`, function (error, data) {
-    //         console.log("data for", data);
-
-    //         if (data.length === 0) {
-    //             connection.query(`INSERT INTO createaccount(Name, mobileNo, email_Id, password) VALUES ('${reqBodyData.name}', '${reqBodyData.mobileNo}', '${reqBodyData.emailId}', '${reqBodyData.password}')`, function (error, data) {
-
-    //                 if (error) {
-    //                     console.log("error", error);
-    //                     response.status(500).json({ message: 'Database error' });
-    //                 } else {
-    //                     response.status(200).json({ message: 'Created Successfully', statusCode: 200 });
-    //                 }
-    //             });
-    //         } else {
-    //             const mobileExists = data.some(record => record.mobileNo === reqBodyData.mobileNo);
-    //             const emailExists = data.some(record => record.email_Id === reqBodyData.emailId);
-
-    //             if (mobileExists && emailExists) {
-    //                 response.status(203).json({ message: 'Mobile Number and Email ID is already exist', statusCode: 203 });
-    //             } else if (emailExists) {
-    //                 response.status(201).json({ message: 'Email ID already exists', statusCode: 201 });
-    //             } else if (mobileExists) {
-    //                 response.status(202).json({ message: 'Mobile Number already exists', statusCode: 202 });
-    //             }
-    //         }
-    //     });
-    // }
-
-    else {
+    } else {
         response.status(201).json({ message: 'Missing Parameter' });
     }
 }
@@ -243,7 +211,7 @@ function createnewAccount(connection, reqBodyData, response) {
 
 // Generate JWT Token
 const generateToken = (user) => {
-    return jwt.sign({ id: user.id, sub: user.id, username: user.Name }, process.env.JWT_SECRET, { expiresIn: '30m' });
+    return jwt.sign({ id: user.id, sub: user.id, username: user.Name }, process.env.JWT_SECRET, { expiresIn: '1m' });
 };
 
 // Login API
@@ -282,19 +250,9 @@ function loginAccount(connection, response, email_Id, password) {
     }
 }
 
-// Get Refresh Token
-function refresh_token(connection, request, response) {
-    const res_message = { message: 'Refresh Token API' };
-    if (response.locals.refresh_token) {
-        res_message.refresh_token = response.locals.refresh_token;
-    }
-    response.status(200).json(res_message);
-}
-
 // Get User Details Based on Token
 function get_user_details(connection, request, response) {
     const userDetails = request.user_details;
-    console.log(`userDetails`, userDetails);
     var sql1 = "SELECT * FROM createaccount WHERE id=?;";
     connection.query(sql1, [userDetails.id], function (sel_err, sel_res) {
         if (sel_err) {
@@ -439,12 +397,11 @@ function sendOtpForMail(connection, response, Email_Id, LoginId) {
 
 function sendResponseOtp(connection, response, requestData) {
     connection.query(`SELECT * FROM createaccount WHERE email_id= \'${requestData.Email_Id}\' `, function (error, resData) {
-        console.log("resData", resData)
         if (resData.length > 0 && resData[0].Otp == requestData.OTP) {
-
-            response.status(200).json({ message: "OTP Verified Success", statusCode: 200, Data: resData })
+            const token = generateToken(resData[0]); // token is generated
+            console.log(`token`, token);
+            response.status(200).json({ message: "OTP Verified Success", statusCode: 200, token: token })
         } else {
-
             response.status(201).json({ message: "Enter Valid Otp", statusCode: 201 })
         }
 
@@ -454,4 +411,4 @@ function sendResponseOtp(connection, response, requestData) {
 
 
 
-module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount,refresh_token, get_user_details }
+module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount, get_user_details }

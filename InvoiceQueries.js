@@ -797,7 +797,7 @@ function getInvoiceListForAll(connection, response) {
             response.status(403).json({ message: 'not connected' })
         }
         else {
-            response.status(200).json(data)
+            response.status(200).json({ data: data })
         }
     })
 }
@@ -884,7 +884,7 @@ async function convertImage(imageBuffer) {
 }
 
 function InvoicePDf(connection, reqBodyData, response) {
-    console.log("reqBodyData", reqBodyData)
+    // console.log("reqBodyData", reqBodyData)
     connection.query(`SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND DATE(invoice.Date) = ? AND invoice.id = ?`,
         [reqBodyData.User_Id, reqBodyData.Date, reqBodyData.id], function (error, data) {
             if (error) {
@@ -1535,7 +1535,7 @@ ORDER BY
         } else {
             if (data.length > 0) {
 
-                response.status(200).json(data);
+                response.status(200).json({data:data});
             } else {
                 response.status(203).json({ message: 'No data found' });
             }
@@ -1545,14 +1545,11 @@ ORDER BY
 
 function getEbStart(connection, response) {
     connection.query('select * from EbAmount', function (error, data) {
-        console.log(error);
-        console.log(data);
-
         if (error) {
             response.status(203).json({ message: 'not connected' })
         }
         else {
-            response.status(200).json(data)
+            response.status(200).json({data:data})
         }
     })
 }
