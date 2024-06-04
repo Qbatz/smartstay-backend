@@ -7,8 +7,15 @@ module.exports = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
-    if (req.originalUrl === '/login/login' || req.originalUrl.startsWith('/login/login?') || req.originalUrl == '/otp-send/response' || req.originalUrl == '/otp-send/send-mail' || req.originalUrl == '/forget/select-list') {
-        next();
+    const openEndpoints = [
+        '/login/login',
+        '/otp-send/response',
+        '/otp-send/send-mail',
+        '/forget/select-list'
+    ];
+
+    if (openEndpoints.includes(req.originalUrl) || req.originalUrl.startsWith('/login/login?')) {
+        return next();
     } else {
         if (!token) {
             res.status(401).json({ message: "Access denied. No token provided" });

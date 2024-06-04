@@ -366,3 +366,8 @@ app.post('/get_user_details', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     accountManagement.get_user_details(connection, request, response);
 })
+
+app.post('/pay_advance_amount', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    invoiceQueries.pay_advance_amount(connection, request, response);
+})

@@ -1535,7 +1535,7 @@ ORDER BY
         } else {
             if (data.length > 0) {
 
-                response.status(200).json({data:data});
+                response.status(200).json({ data: data });
             } else {
                 response.status(203).json({ message: 'No data found' });
             }
@@ -1549,13 +1549,20 @@ function getEbStart(connection, response) {
             response.status(203).json({ message: 'not connected' })
         }
         else {
-            response.status(200).json({data:data})
+            response.status(200).json({ data: data })
         }
     })
 }
 
 
+function pay_advance_amount(connection, request, response) {
+
+    const userDetails = request.user_details;
+
+    // var {advance_amount,}
+
+}
 
 
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice }
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, pay_advance_amount }
