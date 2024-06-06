@@ -18,7 +18,7 @@ module.exports = (req, res, next) => {
         return next();
     } else {
         if (!token) {
-            res.status(401).json({ message: "Access denied. No token provided",statusCode:206 });
+            res.status(206).json({ message: "Access denied. No token provided",statusCode:206 });
         } else {
             try {
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -49,7 +49,7 @@ module.exports = (req, res, next) => {
                 next();
 
             } catch (err) {
-                res.status(401).json({ message: "Access denied. Invalid Token or Token Expired",statusCode:206 });
+                res.status(206).json({ message: "Access denied. Invalid Token or Token Expired",statusCode:206 });
             }
         }
     }
