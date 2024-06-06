@@ -315,15 +315,13 @@ app.post('/EB/Hostel_Room_based', (request, response) => {
 
 app.post('/amenities/setting', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    profileQueries.AmenitiesSetting(connection, reqData, response)
-
-
+    profileQueries.AmenitiesSetting(connection, request, response)
 })
+
 app.post('/ebamount/setting', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const atten = request.body
     invoiceQueries.EbAmount(connection, atten, response)
-
 
 })
 // app.post('/AmnitiesName_list', (request, response) => {
