@@ -172,7 +172,13 @@ function UpdateEB(connection, attenArray, response) {
 }
 
 
-function AmenitiesSetting(connection, reqData, response) {
+function AmenitiesSetting(connection, request, response) {
+
+    var reqData=request.body;
+    const userDetails = request.user_details;
+    
+    var created_by=userDetails.id;
+
     console.log("reqData", reqData);
     if (!reqData) {
         response.status(201).json({ message: 'Missing parameter' });
@@ -194,7 +200,7 @@ function AmenitiesSetting(connection, reqData, response) {
                         console.error(error);
                         response.status(202).json({ message: 'Database error' });
                     } else if (data.length > 0) {
-                        insertAminity(data[0].id)
+                        insertAminity(data[0].id,created_by)
                     } else {
                         if (!reqData.amenityId && reqData.amenityId != 0 && reqData.amenityId != "") {
                             connection.query(`INSERT INTO AmnitiesName (Amnities_Name) VALUES ('${capitalizedAmenitiesName}')`, function (error, data) {
@@ -203,7 +209,7 @@ function AmenitiesSetting(connection, reqData, response) {
                                         if (!error) {
                                             amenityId = amenityData[0].id
                                             console.log("amenityData", amenityData[0].id);
-                                            insertAminity(amenityData[0].id)
+                                            insertAminity(amenityData[0].id,created_by)
                                         }
                                     })
                                 }
@@ -212,7 +218,7 @@ function AmenitiesSetting(connection, reqData, response) {
                                 }
                             })
                         } else {
-                            insertAminity(reqData.amenityId)
+                            insertAminity(reqData.amenityId,created_by)
                         }
                     }
                 })
@@ -220,7 +226,7 @@ function AmenitiesSetting(connection, reqData, response) {
         })
     }
 
-    function insertAminity(id) {
+    function insertAminity(id,created_by) {
         connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${reqData.Hostel_Id} AND Amnities_Id = ${id}`, function (error, existingAmenity) {
             if (error) {
                 console.error(error);
@@ -228,7 +234,7 @@ function AmenitiesSetting(connection, reqData, response) {
             } else if (existingAmenity.length > 0) {
                 response.status(203).json({ message: 'Amenity already exists for this Hostel_Id' });
             } else {
-                connection.query(`INSERT INTO Amenities (Amount, setAsDefault, Hostel_Id,  Amnities_Id, createdBy) VALUES (${reqData.Amount}, ${reqData.setAsDefault}, ${reqData.Hostel_Id}, ${id}, ${reqData.createdBy})`, function (error, data) {
+                connection.query(`INSERT INTO Amenities (Amount, setAsDefault, Hostel_Id,  Amnities_Id, createdBy) VALUES (${reqData.Amount}, ${reqData.setAsDefault}, ${reqData.Hostel_Id}, ${id}, ${created_by})`, function (error, data) {
                     if (error) {
                         console.error(error);
                         response.status(202).json({ message: 'Database error' });

@@ -1554,15 +1554,4 @@ function getEbStart(connection, response) {
     })
 }
 
-
-function pay_advance_amount(connection, request, response) {
-
-    const userDetails = request.user_details;
-
-    // var {advance_amount,}
-
-}
-
-
-
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, pay_advance_amount }
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice }

@@ -40,10 +40,13 @@ function hostelListDetails(connection, response) {
     })
 }
 
-function createPG(connection, reqData, response) {
+function createPG(connection, request, response) {
+    const userDetails = request.user_details;
+    const reqData = request.body;
+    
     let hostelID, errorMessage
     if (reqData) {
-        const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) values (\'${reqData.name}\',\'${reqData.phoneNo}\',\'${reqData.number_of_floors}\',\'${reqData.email_Id}\',\'${reqData.location}\',\'${reqData.created_by}\')`
+        const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) values (\'${reqData.name}\',\'${reqData.phoneNo}\',\'${reqData.number_of_floors}\',\'${reqData.email_Id}\',\'${reqData.location}\',\'${userDetails.id}\')`
         connection.query(query, function (error, data) {
             if (error) {
                 console.log("error", error);
@@ -60,7 +63,7 @@ function createPG(connection, reqData, response) {
                                 const bed = Number(reqData.floorDetails[i][j].number_Of_Bed)
                                 const room = Number(reqData.floorDetails[i][j].roomName)
                                 const price = Number(reqData.floorDetails[i][j].price)
-                                const query3 = `insert into hostelrooms(Hostel_Id,Floor_Id,Room_Id,Number_Of_Beds,Created_By,Price) values(\'${hostelID}\',\'${i + 1}\',\'${room}\',\'${bed}\',\'${reqData.created_by}\',\'${price}\')`
+                                const query3 = `insert into hostelrooms(Hostel_Id,Floor_Id,Room_Id,Number_Of_Beds,Created_By,Price) values(\'${hostelID}\',\'${i + 1}\',\'${room}\',\'${bed}\',\'${userDetails.id}\',\'${price}\')`
                                 connection.query(query3, function (error, data) {
                                     console.log(error);
                                     if (error) {

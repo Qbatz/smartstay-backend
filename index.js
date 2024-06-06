@@ -233,8 +233,7 @@ app.get('/hostel/list-details', (request, response) => {
 
 app.post('/add/new-hostel', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const reqData = request.body;
-    pgQueries.createPG(connection, reqData, response)
+    pgQueries.createPG(connection, request, response)
 })
 
 app.post('/list/floor-list', (request, response) => {
@@ -316,7 +315,6 @@ app.post('/EB/Hostel_Room_based', (request, response) => {
 
 app.post('/amenities/setting', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const reqData = request.body
     profileQueries.AmenitiesSetting(connection, reqData, response)
 
 
@@ -365,9 +363,4 @@ app.post('/list/dashboard', (request, response) => {
 app.post('/get_user_details', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     accountManagement.get_user_details(connection, request, response);
-})
-
-app.post('/pay_advance_amount', (request, response) => {
-    response.set('Access-Control-Allow-Origin', '*');
-    invoiceQueries.pay_advance_amount(connection, request, response);
 })
