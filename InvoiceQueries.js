@@ -4,7 +4,7 @@ require('dotenv').config();
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
-const { Console } = require('console');
+const { Console, log } = require('console');
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 const AWS_REGION = process.env.AWS_REGION;
@@ -109,7 +109,7 @@ async function calculateAndInsertInvoice(connection, user, users) {
                 AND rms.Floor_Id = hstl.Floor 
                 AND rms.Room_Id = hstl.Rooms 
             WHERE 
-                hstl.isActive = true AND hstl.id = ?
+                hstl.isActive = 1 AND hstl.id = ?
         `, [user.ID]);
 
         if (existingData.length != 0) {
@@ -135,24 +135,128 @@ async function calculateAndInsertInvoice(connection, user, users) {
             const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
             const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
             const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+            // console.log("numberOfDays", numberOfDays)
 
             let HostelBasedEb = 0;
             let roomBasedEb = 0;
-            if (existingData[0].isHostelBased == 1) {
-                let filteredArray = users.filter(item => item.Hostel_Id === existingData[0].roomHostel_Id);
-                HostelBasedEb = filteredArray.length !== 0 ? (existingData[0].ebBill == null ? 0 : Number(existingData[0].ebBill / filteredArray.length)) : 0;
-                // console.log("HostelBasedEb...?", HostelBasedEb)
-            } else {
-                let tempArray = users.filter(item =>
-                    item.Hostel_Id == existingData[0].roomHostel_Id && item.Floor == existingData[0].roomFloor_Id && item.Rooms == existingData[0].roomRoom_Id);
-                // console.log("users...?", tempArray.length)
-                if (tempArray.length > 0) {
-                    roomBasedEb = existingData[0].ebBill / tempArray.length;
+            let roombase = 0;
+            let totalDays = 0;
 
+            let eb_amount_total;
+            let eb_Hostel = 0
+
+            if (existingData[0].isHostelBased == 1) {
+                let filteredArray = users.filter(item => item.Hostel_Id == existingData[0].roomHostel_Id);
+
+                console.log("filteredArray.length", filteredArray.length);
+
+                if (filteredArray.length > 0) {
+                    let totalNumberOfDays = 0;
+
+                    let userDayAmounts = filteredArray.map(user => {
+                        const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
+                        const createdAtMonth = moment(joinDate).month() + 1;
+                        const createdAtYear = moment(joinDate).year();
+                        let dueDate, invoiceDate;
+
+                        if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+                            dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+                            invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+                        } else {
+                            dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+                            invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
+                        }
+
+                        const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+                        const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+                        const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+
+                        totalNumberOfDays += numberOfDays;
+
+                        return { numberOfDays: numberOfDays, hostel_id: user.Hostel_Id, user_id: user.User_Id };
+                    });
+
+
+                    const roombase = existingData[0].ebBill / totalNumberOfDays;
+
+                    console.log(userDayAmounts, "<<<<<<<<<<<<<<<<<<.............>>>>>>>>>>>>>>>>>>>>>");
+
+
+                    let userAmounts = userDayAmounts.map(user => ({
+                        user_id: user.user_id,
+                        hostel_id: user.hostel_id,
+                        amount: roombase * user.numberOfDays
+                    }));
+
+                    console.log("User Amounts:", userAmounts);
+
+                    let userAmount = userAmounts.find(user_id => user_id.user_id === user.User_Id);
+
+                    eb_Hostel = userAmount ? userAmount.amount.toFixed() : 0;
+
+                    // console.log(eb_Hostel,"/////////////////////////////");
+                } else {
+                    eb_Hostel = 0;
                 }
+
+                eb_amount_total = 0;
+            }
+            else {
+                let tempArray = users.filter(item =>
+                    item.Hostel_Id == existingData[0].roomHostel_Id &&
+                    item.Floor == existingData[0].roomFloor_Id &&
+                    item.Rooms == existingData[0].roomRoom_Id
+                );
+
+                if (tempArray.length > 0) {
+                    let totalNumberOfDays = 0;
+
+                    // Calculate number of days each user stayed and total number of days
+                    let userDayAmounts = tempArray.map(user => {
+                        const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
+                        const createdAtMonth = moment(joinDate).month() + 1;
+                        const createdAtYear = moment(joinDate).year();
+                        let dueDate, invoiceDate;
+
+                        if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+                            dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+                            invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+                        } else {
+                            dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+                            invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
+                        }
+
+                        const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+                        const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+                        const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+
+                        totalNumberOfDays += numberOfDays;
+
+                        return { numberOfDays: numberOfDays, user_id: user.User_Id };
+                    });
+
+
+                    const roombase = existingData[0].ebBill / totalNumberOfDays;
+
+
+                    let userAmounts = userDayAmounts.map(user => ({
+                        user_id: user.user_id,
+                        amount: roombase * user.numberOfDays
+                    }));
+
+                    console.log("User Amounts:", userAmounts);
+
+                    let userAmount = userAmounts.find(user_id => user_id.user_id === user.User_Id);
+
+                    eb_amount_total = userAmount.amount.toFixed();
+
+                } else {
+                    eb_amount_total = 0;
+                }
+                eb_Hostel = 0;
             }
 
-
+            console.log(eb_Hostel, "Ending Eb AMount");
 
             const amenitiesData = await query(`SELECT * FROM Amenities WHERE Hostel_Id = ?`, [existingData[0].hosHostel_Id]);
             if (amenitiesData.length > 0) {
@@ -167,9 +271,9 @@ async function calculateAndInsertInvoice(connection, user, users) {
 
             let AdvanceAmount = ((roomPrice / moment(dueDate).daysInMonth()) * Number(numberOfDays)) + totalAmenitiesAmount + HostelBasedEb + roomBasedEb;
 
-           
+
             let invoiceNo;
-            
+
             if (existingData[0].prefix && existingData[0].suffix) {
                 let numericSuffix;
                 if (existingData[0].InvoiceDetails != null) {
@@ -192,14 +296,16 @@ async function calculateAndInsertInvoice(connection, user, users) {
                 dueDate: dueDate,
                 ebBill: existingData[0].ebBill,
                 totalAmenitiesAmount: totalAmenitiesAmount,
-                HostelBasedEb: HostelBasedEb,
+                HostelBasedEb: eb_Hostel,
                 dedctAmenitiesAmount: dedctAmenitiesAmount,
                 roomPrice: roomPrice,
-                roomBasedEb: roomBasedEb,
-                AdvanceAmount: AdvanceAmount
+                roomBasedEb: eb_amount_total,
+                AdvanceAmount: AdvanceAmount,
+                numberOfDays: numberOfDays
             };
 
-            await query(`INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Amnities_deduction_Amount, Hostel_Based, Room_Based, Bed) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${tempObj.AdvanceAmount}, '${user.Address}', '${tempObj.invoiceDate}', '${tempObj.dueDate}', '${tempObj.invoiceNo}', '${user.Status}', '${user.User_Id}', ${tempObj.roomPrice}, ${tempObj.ebBill}, ${tempObj.totalAmenitiesAmount},${tempObj.dedctAmenitiesAmount}, ${tempObj.HostelBasedEb}, ${tempObj.roomBasedEb},${user.Bed})`, {
+
+            await query(`INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Amnities_deduction_Amount, Hostel_Based, Room_Based, Bed,numberofdays) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${tempObj.AdvanceAmount}, '${user.Address}', '${tempObj.invoiceDate}', '${tempObj.dueDate}', '${tempObj.invoiceNo}', '${user.Status}', '${user.User_Id}', ${tempObj.roomPrice}, ${tempObj.ebBill}, ${tempObj.totalAmenitiesAmount},${tempObj.dedctAmenitiesAmount}, ${tempObj.HostelBasedEb}, ${tempObj.roomBasedEb},${user.Bed},${tempObj.numberOfDays})`, {
 
             });
 
@@ -260,7 +366,7 @@ async function calculateAndInsertInvoice(connection, user, users) {
 //         SELECT eb.hostel_Id 
 //         FROM EbAmount eb
 //         WHERE eb.hostel_Id = hstl.Hostel_Id 
-        
+
 //         ORDER BY eb.id DESC 
 //         LIMIT 1
 //     ) AS ebhostel_Id,
@@ -290,7 +396,7 @@ async function calculateAndInsertInvoice(connection, user, users) {
 //     AND rms.Room_Id = hstl.Rooms 
 // WHERE 
 //     hstl.isActive = true  AND hstl.id = ${user.ID};
-   
+
 
 
 //     `, function (err, existingData) {
@@ -571,7 +677,7 @@ INNER JOIN
     AND rms.Room_Id = hstl.Rooms 
 WHERE 
     hstl.isActive = false  AND hstl.id = ${user.ID}`, function (err, existingData) {
-      
+
         console.log("existingData Array", existingData)
         if (err) {
             console.error("Error fetching hosteldetails:", err);
@@ -584,7 +690,7 @@ WHERE
                 for (let i = 0; i < existingData.length; i++) {
                     let tempObj = {};
                     let roomPrice = existingData[i].RoomRent;
-                    console.log("roomPrice",roomPrice)
+                    console.log("roomPrice", roomPrice)
                     let AdvanceAmount = 0;
                     let HostelBasedEb = 0;
                     let roomBasedEb = 0;
@@ -976,14 +1082,6 @@ function insertManualInvoices(finalArray, ParticularUser, connection, reqData) {
         });
     }
 }
-
-
-
-
-
-
-
-
 
 
 
@@ -1792,7 +1890,7 @@ function getEbStart(connection, response) {
 // function UpdateInvoice(connection, atten, response) {
 //     console.log(" atten", atten)
 //     connection.query(`SELECT * FROM invoicedetails WHERE Hostel_Id = ${attenArray.Hostel_Id}`, function (error, data) {
-       
+
 //         if (atten.id) {
 //             connection.query(`UPDATE invoicedetails SET BalanceDue= ${atten.BalanceDue} WHERE id=${atten.id} and Hostel_Id = ${atten.Hostel_Id}`, function (error, data) {
 //                 if (error) {
@@ -1810,25 +1908,25 @@ function getEbStart(connection, response) {
 
 function UpdateInvoice(connection, response, atten) {
     console.log("atten", atten);
-       
 
-        if (atten.id) {
-            connection.query(`UPDATE invoicedetails SET BalanceDue= ${atten.BalanceDue} WHERE id=${atten.id}`,  function (error, result) {
-                if (error) {
-                    console.error(error);
-                    return response.status(203).json({ message: "Error updating invoice" });
-                } else {
-                    return response.status(200).json({ message: "Update successful" });
-                }
-            });
-        } 
-        else {
-            
-            return response.status(201).json({ message: "Invoice id is required for update" });
-        }
+
+    if (atten.id) {
+        connection.query(`UPDATE invoicedetails SET BalanceDue= ${atten.BalanceDue} WHERE id=${atten.id}`, function (error, result) {
+            if (error) {
+                console.error(error);
+                return response.status(203).json({ message: "Error updating invoice" });
+            } else {
+                return response.status(200).json({ message: "Update successful" });
+            }
+        });
+    }
+    else {
+
+        return response.status(201).json({ message: "Invoice id is required for update" });
+    }
 }
 
 
 
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice,UpdateInvoice }
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice }
