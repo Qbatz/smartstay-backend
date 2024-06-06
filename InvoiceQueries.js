@@ -169,9 +169,9 @@ async function calculateAndInsertInvoice(connection, user, users) {
 
             let AdvanceAmount = ((roomPrice / moment(dueDate).daysInMonth()) * Number(numberOfDays)) + totalAmenitiesAmount + HostelBasedEb + roomBasedEb;
 
-           
+
             let invoiceNo;
-            
+
             if (existingData[0].prefix && existingData[0].suffix) {
                 let numericSuffix;
                 if (existingData[0].InvoiceDetails != null) {
@@ -262,7 +262,7 @@ async function calculateAndInsertInvoice(connection, user, users) {
 //         SELECT eb.hostel_Id 
 //         FROM EbAmount eb
 //         WHERE eb.hostel_Id = hstl.Hostel_Id 
-        
+
 //         ORDER BY eb.id DESC 
 //         LIMIT 1
 //     ) AS ebhostel_Id,
@@ -292,7 +292,7 @@ async function calculateAndInsertInvoice(connection, user, users) {
 //     AND rms.Room_Id = hstl.Rooms 
 // WHERE 
 //     hstl.isActive = true  AND hstl.id = ${user.ID};
-   
+
 
 
 //     `, function (err, existingData) {
@@ -573,7 +573,7 @@ INNER JOIN
     AND rms.Room_Id = hstl.Rooms 
 WHERE 
     hstl.isActive = false  AND hstl.id = ${user.ID}`, function (err, existingData) {
-      
+
         console.log("existingData Array", existingData)
         if (err) {
             console.error("Error fetching hosteldetails:", err);
@@ -586,7 +586,7 @@ WHERE
                 for (let i = 0; i < existingData.length; i++) {
                     let tempObj = {};
                     let roomPrice = existingData[i].RoomRent;
-                    console.log("roomPrice",roomPrice)
+                    console.log("roomPrice", roomPrice)
                     let AdvanceAmount = 0;
                     let HostelBasedEb = 0;
                     let roomBasedEb = 0;
@@ -1791,46 +1791,34 @@ function getEbStart(connection, response) {
 }
 
 
-// function UpdateInvoice(connection, atten, response) {
-//     console.log(" atten", atten)
-//     connection.query(`SELECT * FROM invoicedetails WHERE Hostel_Id = ${attenArray.Hostel_Id}`, function (error, data) {
-       
-//         if (atten.id) {
-//             connection.query(`UPDATE invoicedetails SET BalanceDue= ${atten.BalanceDue} WHERE id=${atten.id} and Hostel_Id = ${atten.Hostel_Id}`, function (error, data) {
-//                 if (error) {
-//                     console.error(error);
-//                     response.status(201).json({ message: "doesn't update" });
-//                 } else {
-//                     response.status(200).json({ message: "Update successful" });
-//                 }
-//             });
-
-
-//         }
-//     })
-// }
-
 function UpdateInvoice(connection, response, atten) {
     console.log("atten", atten);
-       
 
-        if (atten.id) {
-            connection.query(`UPDATE invoicedetails SET BalanceDue= ${atten.BalanceDue},PaidAmount = ${atten.paidAmount} WHERE id=${atten.id}`,  function (error, result) {
-                if (error) {
-                    console.error(error);
-                    return response.status(203).json({ message: "Error updating invoice" });
-                } else {
-                    return response.status(200).json({ message: "Update successful" });
-                }
-            });
-        } 
-        else {
-            
-            return response.status(201).json({ message: "Invoice id is required for update" });
-        }
+
+    if (atten.id) {
+        connection.query(`UPDATE invoicedetails SET BalanceDue= ${atten.BalanceDue},PaidAmount = ${atten.paidAmount} WHERE id=${atten.id}`, function (error, result) {
+            if (error) {
+                console.error(error);
+                return response.status(203).json({ message: "Error updating invoice" });
+            } else {
+                return response.status(200).json({ message: "Update successful" });
+            }
+        });
+    }
+    else {
+
+        return response.status(201).json({ message: "Invoice id is required for update" });
+    }
+}
+
+
+function pay_advance_amoont(connection, request, response) {
+
+    var { user_id, paid_advance, AdvanceAmount, amount, created_by } = request.body;
+
 }
 
 
 
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice,UpdateInvoice }
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, pay_advance_amoont }
