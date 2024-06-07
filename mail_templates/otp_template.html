@@ -1,0 +1,52 @@
+<html lang="en">
+
+<head>
+    <title>Otp Mail</title>
+    <style>
+        body {
+            text-align: center;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .header img {
+            margin-right: 10px;
+        }
+
+        #content {
+            line-height: 2;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <img src="{{LOGO_URL}}" alt="Logo" width="180" height="40" />
+        </div>
+        <div>
+            <h3>Verify Your Login</h3>
+            <h3>Below is Your one-time passcode:</h3>
+            <h3>{{OTP}}</h3>
+            <p id="content">We're here to help if you need it. Visit the Smart Stay <br />Support for more info or contacts us.</p>
+        </div>
+    </div>
+</body>
+
+</html>
