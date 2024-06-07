@@ -1100,45 +1100,100 @@ function getInvoiceListForAll(connection, response) {
     const query = `SELECT * FROM  Invoice_Details_For_All`;
 
     connection.query(query, function (error, data) {
-        console.log(error);
-        console.log("InvoiceData", data);
-
+        // console.log(error);
+        // console.log("InvoiceData", data);
         if (error) {
             response.status(403).json({ message: 'not connected' })
         }
         else {
-            response.status(200).json(data)
+            response.status(200).json({ data: data })
         }
     })
 }
 
 
-
-
-
-
-
-
-
-function getInvoiceList(connection, response, reqData) {
-    const query = `SELECT * FROM hosteldetails  hstlDetails inner join invoicedetails  invoice  on invoice.Hostel_Id=hstlDetails.id  WHERE hstlDetails.created_By ='${reqData.loginId}'`;
+function getInvoiceList(connection, response, request) {
+    const userDetails = request.user_details;
+    const query = `SELECT * FROM hosteldetails  hstlDetails inner join invoicedetails  invoice  on invoice.Hostel_Id=hstlDetails.id  WHERE hstlDetails.created_By ='${userDetails.id}'`;
     connection.query(query, function (error, data) {
-        console.log(error);
-        console.log("InvoiceData", data);
-
         if (error) {
             response.status(403).json({ message: 'not connected' })
-        }
-        else {
-            response.status(200).json(data)
+        } else {
+            response.status(200).json({ data: data })
         }
     })
 }
 
+function embedImage(doc, imageUrl, fallbackPath, callback) {
+    console.log(`Fetching image from URL: ${imageUrl}`);
+    if (!imageUrl) {
+        console.log("Image URL is empty. Using fallback image.");
+        doc.image(fallbackPath, {
+            fit: [80, 100],
+            align: 'center',
+            valign: 'top',
+            margin: 50
+        });
+        callback(new Error("Image URL is empty"));
+        return;
+    }
 
+    request({ url: imageUrl, encoding: null }, async (error, response, body) => {
+        if (error) {
+
+            doc.image(fallbackPath, {
+                fit: [80, 100],
+                align: 'center',
+                valign: 'top',
+                margin: 50
+            });
+            callback(error);
+        } else if (response && response.statusCode === 200) {
+            try {
+                const imageBuffer = Buffer.from(body, 'base64');
+                const convertedImageBuffer = await convertImage(imageBuffer);
+
+                doc.image(convertedImageBuffer, {
+                    fit: [50, 70],
+                    align: 'center',
+                    valign: 'top',
+                    margin: 10,
+                    continue: true
+                });
+
+                callback(null, convertedImageBuffer);
+            } catch (conversionError) {
+                doc.image(fallbackPath, {
+                    fit: [80, 100],
+                    align: 'center',
+                    valign: 'top',
+                    margin: 50
+                });
+                callback(conversionError);
+            }
+        } else {
+
+            doc.image(fallbackPath, {
+                fit: [80, 100],
+                align: 'center',
+                valign: 'top',
+                margin: 50
+            });
+            callback(new Error(`Failed to fetch image. Status code: ${response.statusCode}`));
+        }
+    });
+}
+
+async function convertImage(imageBuffer) {
+    const convertedImageBuffer = await sharp(imageBuffer)
+        .jpeg()
+        .toBuffer();
+
+    return convertedImageBuffer;
+}
 
 function InvoicePDf(connection, reqBodyData, response) {
-    console.log("reqBodyData", reqBodyData)
+    // console.log("reqBodyData", reqBodyData)
     connection.query(`SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND DATE(invoice.Date) = ? AND invoice.id = ?`,
         [reqBodyData.User_Id, reqBodyData.Date, reqBodyData.id], function (error, data) {
             if (error) {
@@ -1149,8 +1204,6 @@ function InvoicePDf(connection, reqBodyData, response) {
                 let uploadedPDFs = 0;
                 let filenames = [];
                 let pdfDetails = [];
-
-
 
                 data.forEach((hostel, index) => {
                     console.log("hostelData **", hostel);
@@ -1967,7 +2020,7 @@ ORDER BY
         } else {
             if (data.length > 0) {
 
-                response.status(200).json(data);
+                response.status(200).json({ data: data });
             } else {
                 response.status(203).json({ message: 'No data found' });
             }
@@ -1977,14 +2030,11 @@ ORDER BY
 
 function getEbStart(connection, response) {
     connection.query('select * from EbAmount', function (error, data) {
-        console.log(error);
-        console.log(data);
-
         if (error) {
             response.status(203).json({ message: 'not connected' })
         }
         else {
-            response.status(200).json(data)
+            response.status(200).json({ data: data })
         }
     })
 }

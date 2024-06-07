@@ -1,15 +1,15 @@
 const moment = require('moment')
-
-function getUsers(connection, response, ReqData) {
-    const query = `SELECT * FROM hosteldetails hstlDetails inner join hostel hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true WHERE hstlDetails.created_By ='${ReqData.loginId}'`;
+function getUsers(connection, response, request) {
+    // Get values in middleware
+    const userDetails = request.user_details;
+    const query = `SELECT * FROM hosteldetails hstlDetails inner join hostel hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true WHERE hstlDetails.created_By ='${userDetails.id}'`;
     connection.query(query, function (error, hostelData) {
-        console.log("hostelData", hostelData)
         if (error) {
             console.error(error);
             response.status(403).json({ message: 'Error  hostel data' });
             return;
         } else {
-            response.status(200).json(hostelData);
+            response.status(200).json({hostelData:hostelData});
         }
 
     });
@@ -238,26 +238,26 @@ function insert_advance_invoice(connection, user_id) {
 
 function getPaymentDetails(connection, response) {
     connection.query(`SELECT hos.Name ,hos.Phone,hos.Email,hos.Address,hos.AdvanceAmount,hos.BalanceDue,hos.Status,hos.createdAt,inv.Name as invoiceName, inv.phoneNo as invoicePhone ,inv.Date as invDate, inv.Amount as invAmount ,inv.Status as invStatus, inv.Invoices as InvoiceNo FROM hostel hos INNER JOIN invoicedetails inv on inv.phoneNo= hos.Phone`, function (error, data) {
-        console.log(error);
+        // console.log(error);
         if (error) {
             response.status(201).json({ message: 'No Data Found', statusCode: 201 })
         }
         else {
-            response.status(200).json(data)
+            response.status(200).json({data:data})
         }
     })
 }
 
 
 function CheckOutUser(connection, response, attenData) {
-    console.log("attenData", attenData)
+    // console.log("attenData", attenData)
     if (attenData) {
 
         const query = `UPDATE hostel SET CheckoutDate= '${attenData.CheckOutDate}' , isActive ='${attenData.isActive}' WHERE User_Id='${attenData.User_Id}'`
 
-        console.log("query", query)
+        // console.log("query", query)
         connection.query(query, function (error, UpdateData) {
-            console.log("updateData", UpdateData)
+            // console.log("updateData", UpdateData)
             if (error) {
                 response.status(201).json({ message: 'No Data Found' })
             } else {
