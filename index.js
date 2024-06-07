@@ -13,6 +13,7 @@ const complianceQueries = require('./ComplianceQueries')
 const pgQueries = require('./PgQueries')
 
 const multer = require('multer');
+const request = require('request');
 const upload = multer();
 
 var corsOptions = {
@@ -110,16 +111,15 @@ app.post('/otp-send/response', (request, response) => {
 
 cron.schedule("0 0 1 * * ", function () {
     console.log("This task runs every minute");
-    connection.query(`SELECT * FROM hostel where isActive=true`, function (err, users) {
-        // console.log(" users", users)
+    connection.query(`SELECT * FROM hostel where isActive=true`, async function (err, users) {
         if (err) {
             console.error("Error fetching users:", err);
             return;
+        } else {
+            for (const user of users) {
+                await invoiceQueries.calculateAndInsertInvoice(connection, user, users);
+            }
         }
-        users.forEach(user => {
-            const userID = user.User_Id;
-            invoiceQueries.calculateAndInsertInvoice(connection, user, users);
-        });
     });
 });
 
@@ -358,7 +358,35 @@ app.post('/list/dashboard', (request, response) => {
     pgQueries.listDashBoard(connection, response, request)
 })
 
-app.post('/get_user_details', (request, response) => {
+app.get('/get_user_details',(request,response)=>{
     response.set('Access-Control-Allow-Origin', '*');
-    accountManagement.get_user_details(connection, request, response);
+    accountManagement.get_user_details(connection,request,response);
+})
+
+app.post('/invoice/invoiceUpdate', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    const atten = request.body;
+    console.log("request.body", request.body)
+    invoiceQueries.UpdateInvoice(connection, response, atten)
+})
+
+app.post('/delete/delete-floor', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    let reqData = request.body
+    pgQueries.deleteFloor(connection, response, reqData)
+})
+app.post('/delete/delete-room', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    let reqData = request.body
+    pgQueries.deleteRoom(connection, response, reqData)
+})
+app.post('/delete/delete-bed', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    let reqData = request.body
+    pgQueries.deleteBed(connection, response, reqData)
+})
+
+app.post('/transaction/list', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    userQueries.transitionlist(connection, request, response)
 })

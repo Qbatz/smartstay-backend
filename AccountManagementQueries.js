@@ -5,7 +5,8 @@ const bcrypt = require('bcrypt');
 
 // const conn = require('./config/connection');
 require('dotenv').config();
-
+const fs = require('fs');
+const path = require('path');
 
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
@@ -129,86 +130,6 @@ function createnewAccount(connection, reqBodyData, response) {
     }
 }
 
-// function createnewAccount(connection, reqBodyData, response) {
-//     if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.name && reqBodyData.password) {
-
-//         connection.query(`SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`, function (error, data) {
-//             if (error) {
-//                 console.error("Database error:", error);
-//                 response.status(500).json({ message: 'Database error' });
-//                 return;
-//             }
-
-//             if (data.length === 0) {
-
-//                 connection.query(`INSERT INTO createaccount(Name, mobileNo, email_Id, password) VALUES ('${reqBodyData.name}', '${reqBodyData.mobileNo}', '${reqBodyData.emailId}', '${reqBodyData.password}')`, function (error, result) {
-//                     if (error) {
-//                         console.error("Database error:", error);
-//                         response.status(500).json({ message: 'Database error' });
-//                         return;
-//                     }
-//                     else{
-//                         response.status(200).json({ message: 'Created Successfully', statusCode: 200 });
-//                     }
-
-//                 });
-//             } else {
-
-//                 const mobileExists = data.some(record => record.mobileNo === reqBodyData.mobileNo);
-//                 const emailExists = data.some(record => record.email_Id === reqBodyData.emailId);
-
-//                 if (mobileExists && emailExists) {
-//                     response.status(203).json({ message: 'Mobile Number and Email ID already exist', statusCode: 203 });
-//                 } else if (emailExists) {
-//                     response.status(201).json({ message: 'Email ID already exists', statusCode: 201 });
-//                 } else if (mobileExists) {
-//                     response.status(202).json({ message: 'Mobile Number already exists', statusCode: 202 });
-//                 }
-//                 else{
-//                     response.status(201).json({ message: 'Missing Parameter' });
-//                 }
-//             }
-//         });
-//     }
-
-// }
-
-
-
-
-// function loginAccount(connection, response, email_Id, password) {
-//     if (email_Id && password) {
-//         connection.query(`SELECT * FROM createaccount WHERE email_Id='${email_Id}' and password = '${password}' `, function (error, data) {
-//             console.log('data *&*', data, "error", error)
-//             if (error) {
-//                 console.error(error);
-//                 response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
-//             } else {
-//                 if (data.length > 0) {
-
-//                     const isEnable = data[0].isEnable
-//                      const LoginId = data[0].id  
-
-
-//                     if (isEnable == 1) {
-//                         sendOtpForMail(connection, response, email_Id, LoginId)
-//                         response.status(203).json({ message: "otp Send Successfully", statusCode: 203 })
-//                                            } else {
-//                         response.status(200).json({ message: "Login Successfully", statusCode: 200, Data: data });
-
-//                     }
-//                                    } else {
-//                     response.status(201).json({ message: "Please Enter valid Email ID", statusCode: 201 });
-//                 }
-//             }
-//         });
-//     } else {
-//         response.status(202).json({ message: "Missing Parameter", statusCode: 202 });
-//     }
-
-// }
-
-
 // Generate JWT Token
 const generateToken = (user) => {
     return jwt.sign({ id: user.id, sub: user.id, username: user.Name }, process.env.JWT_SECRET, { expiresIn: '30m' });
@@ -317,11 +238,20 @@ function forgetPasswordOtpSend(connection, response, requestData) {
                                 rejectUnauthorized: false,
                             },
                         });
+
+                        const logoURL = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg'; // Replace with Smart Stay Logo
+
+                        const htmlFilePath = path.join(__dirname, '/mail_templates', 'forgot_otp.html');
+
+                        let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
+
+                        htmlContent = htmlContent.replace('{{OTP}}', otp).replace('{{LOGO_URL}}', logoURL);
+
                         const mailOptions = {
                             from: 'smartstay1234@gmail.com',
                             to: requestData.email,
                             subject: 'OTP for Password Reset',
-                            text: `Your OTP for password reset is: ${otp}`
+                            html: htmlContent
                         };
                         transporter.sendMail(mailOptions, function (err, otpData) {
                             console.log(" otpData*", otpData);
@@ -366,11 +296,20 @@ function sendOtpForMail(connection, response, Email_Id, LoginId) {
                         rejectUnauthorized: false,
                     },
                 });
+
+                const logoURL = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg'; // Replace with Smart Stay Logo
+
+                const htmlFilePath = path.join(__dirname, '/mail_templates', 'otp_template.html');
+
+                let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
+
+                htmlContent = htmlContent.replace('{{OTP}}', otp).replace('{{LOGO_URL}}', logoURL);
+
                 const mailOptions = {
                     from: 'smartstay1234@gmail.com',
                     to: Email_Id,
-                    subject: 'OTP for Password Reset',
-                    text: `Your OTP for password reset is: ${otp}`
+                    subject: 'OTP for Login Account',
+                    html: htmlContent
                 };
                 transporter.sendMail(mailOptions, function (err, otpData) {
                     console.log(" otpData*", otpData);
@@ -411,4 +350,4 @@ function sendResponseOtp(connection, response, requestData) {
 
 
 
-module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount, get_user_details }
+module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount }

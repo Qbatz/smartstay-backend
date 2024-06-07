@@ -106,7 +106,10 @@ function InvoiceSettings(connection, reqInvoice, response) {
                     });
                 }
             });
-        } else if (Profile) {
+        }
+
+        
+         else if (Profile) {
             const timestamp = Date.now();
             console.log("timestamp", timestamp)
             uploadProfilePictureToS3('smartstaydevs', 'Logo/', 'Logo' + reqInvoice.hostel_Id + `${timestamp}` + '.jpg', reqInvoice.profile, (err, s3Url) => {
@@ -127,6 +130,7 @@ function InvoiceSettings(connection, reqInvoice, response) {
                     });
                 }
             });
+        
         } else if (Prefix && Suffix) {
             const query = `UPDATE hosteldetails SET  prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}' WHERE id='${reqInvoice.hostel_Id}'`;
             connection.query(query, function (error, invoiceData) {
@@ -139,6 +143,8 @@ function InvoiceSettings(connection, reqInvoice, response) {
                 }
             });
         }
+        
+        
     } else {
         response.status(400).json({ message: 'Missing parameter' });
     }
