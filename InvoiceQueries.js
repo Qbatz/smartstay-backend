@@ -1912,20 +1912,20 @@ function UpdateInvoice(connection, response, atten) {
     console.log("atten", atten);
 
 
-        if (atten.id) {
-            connection.query(`UPDATE invoicedetails SET BalanceDue= ${atten.BalanceDue},PaidAmount = ${atten.paidAmount} WHERE id=${atten.id}`,  function (error, result) {
-                if (error) {
-                    console.error(error);
-                    return response.status(203).json({ message: "Error updating invoice" });
-                } else {
-                    return response.status(200).json({ message: "Update successful" });
-                }
-            });
-        } 
-        else {
-            
-            return response.status(201).json({ message: "Invoice id is required for update" });
-        }
+    if (atten.id) {
+        connection.query(`UPDATE invoicedetails SET BalanceDue= ${atten.BalanceDue},PaidAmount = ${atten.paidAmount} WHERE id=${atten.id}`, function (error, result) {
+            if (error) {
+                console.error(error);
+                return response.status(203).json({ message: "Error updating invoice" });
+            } else {
+                return response.status(200).json({ message: "Update successful" });
+            }
+        });
+    }
+    else {
+
+        return response.status(201).json({ message: "Invoice id is required for update" });
+    }
 }
 
 
