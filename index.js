@@ -1,8 +1,9 @@
 const express = require('express')
-const mysql = require('mysql');
 var cors = require('cors');
 const cron = require('node-cron');
-const moment = require('moment');
+const middleware = require('./middleware');
+const connection = require('./config/connection');
+
 const app = express()
 const userQueries = require('./UserQueries');
 const accountManagement = require('./AccountManagementQueries')
@@ -12,6 +13,7 @@ const complianceQueries = require('./ComplianceQueries')
 const pgQueries = require('./PgQueries')
 
 const multer = require('multer');
+const request = require('request');
 const upload = multer();
 
 var corsOptions = {
@@ -29,50 +31,17 @@ app.use(function (req, res, next) {
     next();
 })
 
-const connection = mysql.createConnection({
-    host: 'ls-f4c1514e53cc8c27ec23a4ce119af8c49d7b1ce7.crocoq6qec8l.ap-south-1.rds.amazonaws.com',
-    database: 'smart_stay',
-    user: 'dbadmin',
-    password: 'Password!#$0'
-})
-
-// connection.connect(function (error) {
-//     if (error) {
-//         console.log(error)
-//     }
-//     else {
-//         console.log("connection success")
-//     }
-// })
-
-try {
-    connection.connect(function (error) {
-        if (error) {
-            console.log(error)
-        }
-        else {
-            console.log("connection success")
-        }
-    })
-}
-catch (error) {
-    console.log(error)
-}
+app.use(middleware);
 
 app.listen('2001', function () {
     console.log("node is started at 2001")
 })
 
-
-
-
 // userQueries.js
 
 app.post('/users/user-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-
-    const ReqData = request.body
-    userQueries.getUsers(connection, response, ReqData);
+    userQueries.getUsers(connection, response, request);
 
 });
 
@@ -83,13 +52,10 @@ app.post('/add/adduser-list', (request, response) => {
     userQueries.createUser(connection, atten, response)
 })
 
-
 app.get('/user-list/bill-payment', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     userQueries.getPaymentDetails(connection, response)
 })
-
-
 
 app.post('/create/create-account', upload.single('profile'), (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
@@ -124,20 +90,16 @@ app.get('/login/login', (request, response) => {
     accountManagement.loginAccount(connection, response, email_Id, password);
 })
 
-
-
 app.post('/forget/select-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const reqData = request.body
     accountManagement.forgetPassword(connection, response, reqData);
 })
 
-
-
 app.post('/otp-send/send-mail', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const requestData = request.body
-    console.log("requestData", requestData)
+    // console.log("requestData", requestData)
     accountManagement.forgetPasswordOtpSend(connection, response, requestData)
 })
 app.post('/otp-send/response', (request, response) => {
@@ -164,7 +126,7 @@ cron.schedule("0 0 1 * * ", function () {
 
 app.get('/checkout/checkout-invoice', (request, response) => {
     connection.query(`SELECT * FROM hostel`, function (err, users) {
-        console.log("users", users)
+        // console.log("users",users)
         if (err) {
             console.error("Error fetching users:", err);
             return;
@@ -180,7 +142,7 @@ app.get('/checkout/checkout-invoice', (request, response) => {
 app.post('/manual/manual-invoice', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     const reqData = request.body;
-    console.log("reqData", reqData)
+    // console.log("reqData", reqData)
     connection.query(`SELECT * FROM hostel`, function (err, users) {
         //  console.log(" users", users)
         if (err) {
@@ -197,24 +159,17 @@ app.post('/manual/manual-invoice', (request, response) => {
     });
 })
 
-
-
-
-
-
-
 app.get('/list/invoice-for-all-user-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     invoiceQueries.getInvoiceListForAll(connection, response)
 })
 
 
-
 app.post('/list/invoice-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-    const reqData = request.body
-    invoiceQueries.getInvoiceList(connection, response, reqData)
+    invoiceQueries.getInvoiceList(connection, response, request)
 })
+
 
 app.get('/list/eb_list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
@@ -225,7 +180,7 @@ app.get('/list/eb_list', (request, response) => {
 app.post('/invoice/invoice-list-pdf', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     let reqBodyData = request.body;
-    console.log("reqBodyData", reqBodyData)
+    // console.log("reqBodyData", reqBodyData)
     invoiceQueries.InvoicePDf(connection, reqBodyData, response)
 })
 
@@ -254,17 +209,16 @@ app.post('/compliance/add-details', (request, response) => {
 
 app.post('/compliance/compliance-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-    const reqData = request.body
-    complianceQueries.GetComplianceList(connection, response, reqData)
+    complianceQueries.GetComplianceList(connection, response, request)
 
 })
 
 
 app.post('/list/hostel-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const reqData = request.body
-    pgQueries.getHostelList(connection, response, reqData)
+    pgQueries.getHostelList(connection, response, request)
 })
+
 
 app.get('/room-id/check-room-id', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
@@ -279,8 +233,7 @@ app.get('/hostel/list-details', (request, response) => {
 
 app.post('/add/new-hostel', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const reqData = request.body;
-    pgQueries.createPG(connection, reqData, response)
+    pgQueries.createPG(connection, request, response)
 })
 
 app.post('/list/floor-list', (request, response) => {
@@ -342,7 +295,7 @@ app.post('/invoice/settings', upload.single('profile'), (request, response) => {
         prefix: request.body.prefix,
         suffix: request.body.suffix
     };
-    console.log("reqInvoice **", reqInvoice)
+    // console.log("reqInvoice **", reqInvoice)
     profileQueries.InvoiceSettings(connection, reqInvoice, response)
 })
 
@@ -362,25 +315,20 @@ app.post('/EB/Hostel_Room_based', (request, response) => {
 
 app.post('/amenities/setting', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const reqData = request.body
-    profileQueries.AmenitiesSetting(connection, reqData, response)
-
-
+    profileQueries.AmenitiesSetting(connection, request, response)
 })
+
 app.post('/ebamount/setting', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const atten = request.body
     invoiceQueries.EbAmount(connection, atten, response)
 
-
 })
-app.post('/AmnitiesName_list', (request, response) => {
-    response.set('Access-Control-Allow-Origin', '*');
-    const atten = request.body
-    invoiceQueries.AmenitiesName(connection, atten, response)
-
-
-})
+// app.post('/AmnitiesName_list', (request, response) => {
+//     response.set('Access-Control-Allow-Origin', '*');
+//     const atten = request.body
+//     invoiceQueries.AmenitiesName(connection, atten, response)
+// })
 
 app.get('/list/EbReading', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
@@ -407,15 +355,19 @@ app.post('/checkout/checkout-user', (request, response) => {
 
 app.post('/list/dashboard', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const reqdata = request.body;
-    pgQueries.listDashBoard(connection, response, reqdata)
+    pgQueries.listDashBoard(connection, response, request)
 })
+
+app.get('/get_user_details',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    accountManagement.get_user_details(connection,request,response);
+})
+
 app.post('/invoice/invoiceUpdate', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const atten = request.body;
     console.log("request.body", request.body)
     invoiceQueries.UpdateInvoice(connection, response, atten)
-
 })
 
 app.post('/delete/delete-floor', (request, response) => {

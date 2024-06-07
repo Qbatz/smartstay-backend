@@ -67,15 +67,16 @@ function AddCompliance(connection, atten, response) {
     });
 }
 
-function GetComplianceList(connection, response, reqData) {
-      const query = `SELECT * FROM hosteldetails hstlDetails inner join compliance comp  on comp.Hostel_id=hstlDetails.id  WHERE hstlDetails.created_By ='${reqData.loginId}'`;
-     connection.query(query, function (error, hostelData) {
+function GetComplianceList(connection, response, request) {
+    const userDetails = request.user_details;
+    const query = `SELECT * FROM hosteldetails hstlDetails inner join compliance comp  on comp.Hostel_id=hstlDetails.id  WHERE hstlDetails.created_By ='${userDetails.id}'`;
+    connection.query(query, function (error, hostelData) {
         if (error) {
             console.error(error);
             response.status(403).json({ message: 'Error fetching hostel data' });
-                       return;
-        }else{
-            response.status(200).json(hostelData);
+            return;
+        } else {
+            response.status(200).json({ hostelData: hostelData });
         }
 
     });

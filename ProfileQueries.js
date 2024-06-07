@@ -44,14 +44,13 @@ function IsEnableCheck(connection, reqBodyData, response) {
 
 function getAccount(connection, response) {
     connection.query('select * from createaccount', function (error, data) {
-        console.log(error);
-        console.log(data);
-
+        // console.log(error);
+        // console.log(data);
         if (error) {
             response.status(403).json({ message: 'not connected' })
         }
         else {
-            response.status(200).json(data)
+            response.status(200).json({ data: data })
         }
     })
 }
@@ -131,8 +130,8 @@ function InvoiceSettings(connection, reqInvoice, response) {
                     });
                 }
             });
-        }
-         else if(Prefix && Suffix){
+        
+        } else if (Prefix && Suffix) {
             const query = `UPDATE hosteldetails SET  prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}' WHERE id='${reqInvoice.hostel_Id}'`;
             connection.query(query, function (error, invoiceData) {
                 console.log("invoiceData", invoiceData);
@@ -179,7 +178,13 @@ function UpdateEB(connection, attenArray, response) {
 }
 
 
-function AmenitiesSetting(connection, reqData, response) {
+function AmenitiesSetting(connection, request, response) {
+
+    var reqData=request.body;
+    const userDetails = request.user_details;
+    
+    var created_by=userDetails.id;
+
     console.log("reqData", reqData);
     if (!reqData) {
         response.status(201).json({ message: 'Missing parameter' });
@@ -201,7 +206,7 @@ function AmenitiesSetting(connection, reqData, response) {
                         console.error(error);
                         response.status(202).json({ message: 'Database error' });
                     } else if (data.length > 0) {
-                        insertAminity(data[0].id)
+                        insertAminity(data[0].id,created_by)
                     } else {
                         if (!reqData.amenityId && reqData.amenityId != 0 && reqData.amenityId != "") {
                             connection.query(`INSERT INTO AmnitiesName (Amnities_Name) VALUES ('${capitalizedAmenitiesName}')`, function (error, data) {
@@ -210,7 +215,7 @@ function AmenitiesSetting(connection, reqData, response) {
                                         if (!error) {
                                             amenityId = amenityData[0].id
                                             console.log("amenityData", amenityData[0].id);
-                                            insertAminity(amenityData[0].id)
+                                            insertAminity(amenityData[0].id,created_by)
                                         }
                                     })
                                 }
@@ -219,7 +224,7 @@ function AmenitiesSetting(connection, reqData, response) {
                                 }
                             })
                         } else {
-                            insertAminity(reqData.amenityId)
+                            insertAminity(reqData.amenityId,created_by)
                         }
                     }
                 })
@@ -227,7 +232,7 @@ function AmenitiesSetting(connection, reqData, response) {
         })
     }
 
-    function insertAminity(id) {
+    function insertAminity(id,created_by) {
         connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${reqData.Hostel_Id} AND Amnities_Id = ${id}`, function (error, existingAmenity) {
             if (error) {
                 console.error(error);
@@ -235,7 +240,7 @@ function AmenitiesSetting(connection, reqData, response) {
             } else if (existingAmenity.length > 0) {
                 response.status(203).json({ message: 'Amenity already exists for this Hostel_Id' });
             } else {
-                connection.query(`INSERT INTO Amenities (Amount, setAsDefault, Hostel_Id,  Amnities_Id, createdBy) VALUES (${reqData.Amount}, ${reqData.setAsDefault}, ${reqData.Hostel_Id}, ${id}, ${reqData.createdBy})`, function (error, data) {
+                connection.query(`INSERT INTO Amenities (Amount, setAsDefault, Hostel_Id,  Amnities_Id, createdBy) VALUES (${reqData.Amount}, ${reqData.setAsDefault}, ${reqData.Hostel_Id}, ${id}, ${created_by})`, function (error, data) {
                     if (error) {
                         console.error(error);
                         response.status(202).json({ message: 'Database error' });
@@ -318,7 +323,7 @@ function AmenitiesSetting(connection, reqData, response) {
 function getAmenitiesList(connection, response) {
     connection.query(`select * from Amenities AmeList INNER JOIN AmnitiesName AmeName ON AmeList.Amnities_Id = AmeName.id `, function (err, data) {
         if (data) {
-            response.status(200).json(data)
+            response.status(200).json({ data: data })
         }
         else {
             response.status(201).json({ message: 'No Data Found' })
@@ -329,7 +334,7 @@ function getAmenitiesList(connection, response) {
 function getEbReading(connection, response) {
     connection.query(`select * from EbReading `, function (err, data) {
         if (data) {
-            response.status(200).json(data)
+            response.status(200).json({data:data})
         }
         else {
             response.status(201).json({ message: 'No Data Found' })
@@ -338,9 +343,9 @@ function getEbReading(connection, response) {
 }
 
 function UpdateAmnity(connection, attenArray, response) {
-    console.log(" attenArray", attenArray)
+    // console.log(" attenArray", attenArray)
     connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${attenArray.Hostel_Id}`, function (error, amenitiesData) {
-        console.log("amenitiesData", amenitiesData)
+        // console.log("amenitiesData", amenitiesData)
         if (attenArray.id) {
             connection.query(`UPDATE Amenities SET Amount= ${attenArray.Amount},setAsDefault= ${attenArray.setAsDefault},Status= ${attenArray.Status} WHERE  Amnities_Id='${attenArray.id}' and Hostel_Id = '${attenArray.Hostel_Id}'`, function (error, data) {
                 if (error) {

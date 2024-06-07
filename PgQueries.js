@@ -1,10 +1,11 @@
 const moment = require('moment')
 
 
-function getHostelList(connection, response, reqData) {
-    connection.query(`select * from hosteldetails where created_By = '${reqData.loginId}' `, function (err, data) {
+function getHostelList(connection, response, request) {
+    const userDetails = request.user_details;
+    connection.query(`select * from hosteldetails where created_By = '${userDetails.id}' `, function (err, data) {
         if (data) {
-            response.status(200).json(data)
+            response.status(200).json({ data: data })
         }
         else {
             response.status(201).json({ message: 'No Data Found' })
@@ -20,7 +21,7 @@ function checkRoom(connection, response) {
             response.status(201).json({ message: 'No Data Found' })
         }
         else {
-            response.status(200).json(data)
+            response.status(200).json({ data: data })
         }
     })
 }
@@ -28,23 +29,25 @@ function checkRoom(connection, response) {
 
 function hostelListDetails(connection, response) {
     connection.query('select * from hostel_details', function (error, data) {
-        console.log(error);
-        console.log(data);
-
+        // console.log(error);
+        // console.log(data);
         if (error) {
             response.status(403).json({ message: 'not connected' })
         }
         else {
-            response.status(200).json(data)
+            response.status(200).json({ data: data })
         }
     })
 }
 
 
-function createPG(connection, reqData, response) {
+function createPG(connection, request, response) {
+    const userDetails = request.user_details;
+    const reqData = request.body;
+    
     let hostelID, errorMessage
     if (reqData) {
-        const query = `insert into hosteldetails(Name,hostel_PhoneNo,email_id,Address,created_By) values (\'${reqData.name}\',\'${reqData.phoneNo}\',\'${reqData.email_Id}\',\'${reqData.location}\',\'${reqData.created_by}\')`
+        const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) values (\'${reqData.name}\',\'${reqData.phoneNo}\',\'${reqData.number_of_floors}\',\'${reqData.email_Id}\',\'${reqData.location}\',\'${userDetails.id}\')`
         connection.query(query, function (error, data) {
             if (error) {
                 console.log("error", error);
@@ -98,7 +101,7 @@ function FloorList(connection, requestData, response) {
     if (requestData) {
         connection.query(`select * from hostelrooms where Hostel_Id = \'${requestData.hostel_Id}\ and isActive=1'`, function (error, data) {
             if (data) {
-                response.status(200).json(data)
+                response.status(200).json({ data: data })
             }
             else {
                 response.status(201).json({ message: 'No Data Found' })
@@ -115,7 +118,7 @@ function RoomList(connection, reqData, response) {
     if (reqData) {
         connection.query(`select * from hostelrooms where Hostel_Id = \'${reqData.hostel_Id}\' and Floor_Id = \'${reqData.floor_Id}\' and isActive=1`, function (error, data) {
             if (data) {
-                response.status(200).json(data)
+                response.status(200).json({ data: data })
             }
             else {
                 response.status(201).json({ message: 'No Data Found' })
@@ -134,7 +137,7 @@ function BedList(connection, requestBodyData, response) {
         connection.query(`select hosroom.Hostel_Id,hosroom.Floor_Id,hosroom.Room_Id,hosroom.Number_Of_Beds,hosroom.Price,COUNT(hos.Bed) as availableBed from hostelrooms hosroom INNER JOIN hostel hos on hosroom.Room_Id = hos.Rooms where hosroom.Hostel_Id = \'${requestBodyData.hostel_Id}\' and hosroom.Floor_Id = \'${requestBodyData.floor_Id}\' and hosroom.Room_Id = \'${requestBodyData.room_Id}\' and hosroom.isActive=1;`, function (error, data) {
 
             if (data) {
-                console.log("data", data);
+                // console.log("data", data);
                 let responseData = data.map((val) => ({
                     Hostel_Id: val.Hostel_Id,
                     Floor_Id: val.Floor_Id,
@@ -142,7 +145,7 @@ function BedList(connection, requestBodyData, response) {
                     AvailableBed: val.Number_Of_Beds - val.availableBed
                 }
                 ))
-                response.status(200).json(responseData)
+                response.status(200).json({ responseData: responseData })
             }
             else {
                 response.status(201).json({ message: 'No Data Found' })
@@ -190,8 +193,8 @@ function RoomCount(connection, reqFloorID, response) {
                             if (errorMessage) {
                                 response.status(202).json({ message: "Error occurred while fetching data" });
                             } else {
-                                console.log("responseData", responseData);
-                                response.status(200).json(responseData);
+                                // console.log("responseData", responseData);
+                                response.status(200).json({ responseData: responseData });
                             }
                         }
                     });
@@ -211,7 +214,7 @@ function ListForFloor(connection, reqData, response) {
         connection.query(`select * from hostelrooms where  Hostel_Id = \'${reqData.hostel_Id}\' and isActive=1`, function (error, data) {
 
             if (data) {
-                response.status(200).json(data)
+                response.status(200).json({ data: data })
             }
             else {
                 response.status(201).json({ message: "No User Found" })
@@ -365,7 +368,7 @@ function CreateFloor(connection, reqDataFloor, response) {
         const query1 = `select * from hosteldetails where hostel_PhoneNo=\'${reqDataFloor.phoneNo}\'`
         connection.query(query1, function (error, data) {
             if (data) {
-                console.log("data", data);
+                // console.log("data", data);
                 hostel_ID = data[0].id
                 const index = reqDataFloor.hostelDetails.length - 1
                 const floor = data[0].number_Of_Floor + reqDataFloor.hostelDetails.length
@@ -400,7 +403,7 @@ function RoomFull(connection, reqFloorID, response) {
         const query1 = `SELECT hos.Hostel_Id,hosRoom.Hostel_Id as hostel_Id, hos.Floor,hos.Rooms, hosRoom.Floor_Id,hosRoom.Room_Id, COUNT(hos.bed)as occupiedBeds ,hosRoom.Number_Of_Beds FROM hostel hos INNER JOIN hostelrooms hosRoom on hos.Floor = hosRoom.Floor_Id and hos.Rooms = hosRoom.Room_Id WHERE hosroom.Hostel_Id = \'${reqFloorID.hostel_Id}\' and hosroom.Floor_Id = \'${reqFloorID.floor_Id}\' and hosroom.Room_Id = \'${reqFloorID.room_Id}\' and hosroom.isActive=1`
         connection.query(query1, function (error, data) {
             if (data) {
-                response.status(200).json(data)
+                response.status(200).json({ data: data })
             }
             else {
                 response.status(201).json({ message: "No Data Found" })
@@ -425,57 +428,57 @@ function UpdateEB(connection, atten, response) {
     }
 
 };
-function listDashBoard(connection, response, reqdata) {
-    if (reqdata) {
-        let query = `select (select count(id) from smart_stay.hosteldetails where created_By=details.created_By) as hostelCount, sum((select count(Room_Id) from smart_stay.hostelrooms where Hostel_Id=details.id and isActive=1)) as roomCount,  sum((select sum(Number_Of_Beds) from smart_stay.hostelrooms where Hostel_Id=details.id and isActive=1)) as Bed ,sum((select count(id) from smart_stay.hostel where Hostel_Id= details.id and isActive =1)) as occupied_Bed ,(select COALESCE(SUM(COALESCE(icv.RoomRent, 0) + COALESCE(icv.EbAmount, 0) + COALESCE(icv.AmnitiesAmount, 0)), 0) AS revenue
+function listDashBoard(connection, response, request) {
+    const userDetails = request.user_details;
+    // if (reqdata) {
+    let query = `select COALESCE((select count(id) from smart_stay.hosteldetails where created_By=details.created_By),0) as hostelCount,COALESCE(sum((select count(Room_Id) from smart_stay.hostelrooms where Hostel_Id=details.id)),0) as roomCount, COALESCE(sum((select sum(Number_Of_Beds) from smart_stay.hostelrooms where Hostel_Id=details.id)),0) as Bed ,COALESCE(sum((select count(id) from smart_stay.hostel where Hostel_Id= details.id and isActive =1)),0) as occupied_Bed ,(select COALESCE(SUM(COALESCE(icv.RoomRent, 0) + COALESCE(icv.EbAmount, 0) + COALESCE(icv.AmnitiesAmount, 0)), 0) AS revenue
         FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=?) AS Revenue,(select COALESCE(SUM(COALESCE(icv.RoomRent, 0) + COALESCE(icv.EbAmount, 0) + COALESCE(icv.AmnitiesAmount, 0)), 0) AS revenue
         FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=? AND icv.Status='Pending') AS overdue from smart_stay.hosteldetails details where details.created_By=?;`
-        connection.query(query, [reqdata.created_by, reqdata.created_by, reqdata.created_by], function (error, data) {
-            if (error) {
-                response.status(201).json({ message: "No data found" });
-            } else {
-                if (data.length > 0) {
-                    let obj = {};
-                    // let tempArray = []
-                    let dashboardList = data.map((item) => {
-                        if (item.Revenue > 0) {
-                            var current = item.Revenue - item.overdue
-                        } else {
-                            var current = 0
-                        }
-                        obj = {
-                            hostelCount: item.hostelCount,
-                            roomCount: item.roomCount,
-                            TotalBed: item.Bed,
-                            occupied_Bed: item.occupied_Bed,
-                            availableBed: item.Bed - item.occupied_Bed,
-                            Revenue: item.Revenue,
-                            overdue: item.overdue,
-                            current: current
-                        }
-                        // tempArray.push(obj)
-                        return obj
+    connection.query(query, [userDetails.id, userDetails.id, userDetails.id], function (error, data) {
+        if (error) {
+            response.status(201).json({ message: "No data found" });
+        } else {
+            if (data.length > 0) {
+                let obj = {};
+                // let tempArray = []
+                let dashboardList = data.map((item) => {
+                    if (item.Revenue > 0) {
+                        var current = item.Revenue - item.overdue
+                    } else {
+                        var current = 0
+                    }
+                    obj = {
+                        hostelCount: item.hostelCount,
+                        roomCount: item.roomCount,
+                        TotalBed: item.Bed,
+                        occupied_Bed: item.occupied_Bed,
+                        availableBed: item.Bed - item.occupied_Bed,
+                        Revenue: item.Revenue,
+                        overdue: item.overdue,
+                        current: current
+                    }
+                    // tempArray.push(obj)
+                    return obj
 
-                    })
+                })
 
-                    // Get Revenue Details 
-                    var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.RoomRent, 0) + COALESCE(invo.EbAmount, 0) + COALESCE(invo.AmnitiesAmount, 0)), 0) AS revenue FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL  SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS numbers ) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.RoomRent, invo.EbAmount,invo.AmnitiesAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By = ?  AND invo.Status = 'Success' ) AS invo ON m.month = invo.month GROUP BY m.month ORDER BY m.month; "
-                    // Execute the query
-                    connection.query(query1, [reqdata.created_by], (error, results, fields) => {
-                        if (error) {
-                            console.error('Error executing query:', error);
-                            return;
-                        }
-                        // Process the results
-                        response.status(200).json({ dashboardList, Revenue_reports: results });
-                    })
-                }
+                // Get Revenue Details 
+                var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.RoomRent, 0) + COALESCE(invo.EbAmount, 0) + COALESCE(invo.AmnitiesAmount, 0)), 0) AS revenue FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL  SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS numbers ) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.RoomRent, invo.EbAmount,invo.AmnitiesAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By = ?  AND invo.Status = 'Success' ) AS invo ON m.month = invo.month GROUP BY m.month ORDER BY m.month; "
+                // Execute the query
+                connection.query(query1, [userDetails.id], (error, results, fields) => {
+                    if (error) {
+                        console.error('Error executing query:', error);
+                        return;
+                    }
+                    // Process the results
+                    response.status(200).json({ dashboardList, Revenue_reports: results });
+                })
             }
-        })
-    }
-    else {
-        response.status(201).json({ message: "Missing Parameter" });
-    }
+        }
+    })
+    // } else {
+    //     response.status(201).json({ message: "Missing Parameter" });
+    // }
 }
 
 
