@@ -446,7 +446,7 @@ app.post('/pay_advance_amount', (request, response) => {
 
 // Advance Amount Invoice
 
-app.post('/pay_advance_invoice/list', (request, response) => {
-    response.set('Access-Control-Allow-Origin', '*');
-    userQueries.advance_payment_transation(connection, request, response)
-})
+// app.post('/pay_advance_invoice/list', (request, response) => {
+//     response.set('Access-Control-Allow-Origin', '*');
+//     userQueries.advance_payment_transation(connection, request, response)
+// })
