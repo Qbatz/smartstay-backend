@@ -358,7 +358,7 @@ app.post('/list/dashboard', (request, response) => {
     pgQueries.listDashBoard(connection, response, request)
 })
 
-app.get('/get_user_details',(request,response)=>{
+app.post('/get_user_details',(request,response)=>{
     response.set('Access-Control-Allow-Origin', '*');
     accountManagement.get_user_details(connection,request,response);
 })
