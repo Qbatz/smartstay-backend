@@ -108,7 +108,6 @@ app.post('/otp-send/response', (request, response) => {
     accountManagement.sendResponseOtp(connection, response, requestData)
 })
 
-
 cron.schedule("0 0 1 * * ", function () {
     console.log("This task runs every minute");
     connection.query(`SELECT * FROM hostel where isActive=true`, async function (err, users) {
@@ -389,4 +388,12 @@ app.post('/delete/delete-bed', (request, response) => {
 app.post('/transaction/list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     userQueries.transitionlist(connection, request, response)
+})
+
+
+// Forgot Password Otp Response
+app.post('/forgot_otp_response', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    const requestData = request.body;
+    accountManagement.forgotpassword_otp_response(connection, response, requestData)
 })
