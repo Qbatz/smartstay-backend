@@ -9,7 +9,7 @@ function getUsers(connection, response, request) {
             response.status(403).json({ message: 'Error  hostel data' });
             return;
         } else {
-            response.status(200).json({hostelData:hostelData});
+            response.status(200).json({ hostelData: hostelData });
         }
 
     });
@@ -243,7 +243,7 @@ function getPaymentDetails(connection, response) {
             response.status(201).json({ message: 'No Data Found', statusCode: 201 })
         }
         else {
-            response.status(200).json({data:data})
+            response.status(200).json({ data: data })
         }
     })
 }
@@ -272,8 +272,10 @@ function CheckOutUser(connection, response, attenData) {
 
 function transitionlist(connection, request, response) {
 
-    var { id, invoice_id, amount, balance_due, created_by, invoice_type } = request.body;
-    console.log(request.body);
+    var { id, invoice_id, amount, balance_due, invoice_type } = request.body;
+
+    var userDetails = request.user_details;
+    var created_by = userDetails.id;
 
     if (!invoice_type || invoice_type == undefined) {
         var invoice_type = 1;
