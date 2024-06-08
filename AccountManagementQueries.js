@@ -352,9 +352,9 @@ function forgotpassword_otp_response(connection, response, requestData) {
     
     connection.query(`SELECT * FROM createaccount WHERE email_id= \'${requestData.Email_Id}\' `, function (error, resData) {
         if (resData.length > 0 && resData[0].Otp == requestData.OTP) {
-            const token = generateToken(resData[0]); // token is generated
-            console.log(`token`, token);
-            response.status(200).json({ message: "OTP Verified Success", statusCode: 200, token: token })
+            // const token = generateToken(resData[0]); // token is generated
+            // console.log(`token`, token);
+            response.status(200).json({ message: "OTP Verified Success", statusCode: 200})
         } else {
             response.status(201).json({ message: "Enter Valid Otp", statusCode: 201 })
         }
