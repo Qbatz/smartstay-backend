@@ -11,7 +11,8 @@ module.exports = (req, res, next) => {
         '/login/login',
         '/otp-send/response',
         '/otp-send/send-mail',
-        '/forget/select-list'
+        '/forget/select-list',
+        '/forgot_otp_response'
     ];
 
     if (openEndpoints.includes(req.originalUrl) || req.originalUrl.startsWith('/login/login?')) {

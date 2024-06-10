@@ -63,7 +63,7 @@ function createUser(connection, atten, response) {
                             })
                         }
 
-                        var total_rent = sel_res[0].RoomRent;
+                        var total_rent = atten.RoomRent;
 
                         if (paid_rent == undefined) {
                             var paid_amount = 0;
