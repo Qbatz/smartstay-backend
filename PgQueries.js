@@ -365,13 +365,16 @@ async function CreateRoom(connection, reqsData, response) {
 function CreateFloor(connection, reqDataFloor, response) {
     let hostel_ID, errorMessage
     if (reqDataFloor) {
-        const query1 = `select * from hosteldetails where hostel_PhoneNo=\'${reqDataFloor.phoneNo}\'`
+        // console.log("reqDataFloor **",reqDataFloor)
+        const query1 = `select * from hosteldetails where id =\'${reqDataFloor.hostel_Id}\'`
         connection.query(query1, function (error, data) {
+            // console.log("dta",data)
             if (data) {
                 // console.log("data", data);
                 hostel_ID = data[0].id
                 const index = reqDataFloor.hostelDetails.length - 1
                 const floor = data[0].number_Of_Floor + reqDataFloor.hostelDetails.length
+                
                 const query2 = `UPDATE hosteldetails SET number_Of_Floor='${floor}' WHERE id='${hostel_ID}'`
                 connection.query(query2, function (error, create_floor) {
                     if (error) {
@@ -388,7 +391,7 @@ function CreateFloor(connection, reqDataFloor, response) {
 
             }
             else {
-                response.status(201).json({ message: 'Phone number not Registered' })
+                response.status(201).json({ message: 'No data found' })
             }
         })
 
