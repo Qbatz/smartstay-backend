@@ -104,9 +104,10 @@ function createUser(connection, atten, response) {
                                 if (advanceData.length == 1) {
                                     var invoiceId = advanceData[0].id;
                                     var currentDate = moment().format('YYYY-MM-DD');
+                                    var balance_amount = advanceData[0].Amount - atten.paid_advance;
 
                                     var updateAdvanceQuery = "UPDATE invoicedetails SET Name=?, phoneNo=?, EmailID=?, Hostel_Name=?, Hostel_Id=?, Floor_Id=?, Room_No=?, Amount=?, UserAddress=?, Date=?, RoomRent=?, Bed=?, BalanceDue=?, PaidAmount=? WHERE id=?";
-                                    connection.query(updateAdvanceQuery, [Name, atten.Phone, atten.Email, atten.HostelName, atten.hostel_Id, atten.Floor, atten.Rooms, atten.AdvanceAmount, atten.Address, currentDate, atten.RoomRent, atten.Bed, atten.pending_advance, atten.paid_advance, invoiceId], function (updateAdvanceErr, updateAdvanceRes) {
+                                    connection.query(updateAdvanceQuery, [Name, atten.Phone, atten.Email, atten.HostelName, atten.hostel_Id, atten.Floor, atten.Rooms, atten.AdvanceAmount, atten.Address, currentDate, atten.RoomRent, atten.Bed, balance_amount, atten.paid_advance, invoiceId], function (updateAdvanceErr, updateAdvanceRes) {
                                         if (updateAdvanceErr) {
                                             response.status(500).json({ message: "Error processing invoices", statusCode: 500 });
                                             return;
@@ -183,7 +184,7 @@ function createUser(connection, atten, response) {
 
                                     var balance_rent = total_rent - paid_amount;
 
-                                    if (atten.AdvanceAmount != undefined) {
+                                    if (atten.AdvanceAmount != undefined && atten.AdvanceAmount !=0) {
                                         insert_rent_invoice(connection, user_ids, paid_amount, balance_rent).then(() => {
                                             return insert_advance_invoice(connection, user_ids);
                                         }).then(() => {
