@@ -380,7 +380,24 @@ function payment_history(connection, response, request) {
         } else if (sel_res.length != 0) {
 
             // Get Paid Advance Amount
-            var sql2="SELECT * FROM "
+            var sql2 = "SELECT * FROM advance_amount_transactions WHERE user_id='" + user_id + "';";
+            connection.query(sql2, function (ad_err, ad_res) {
+                if (ad_err) {
+                    response.status(201).json({ message: "Unable to get Advance Amount Details" })
+                } else {
+
+                    // Get Rent Amounts
+                    var sql3 = "SELECT * FROM transactions WHERE user_id='" + user_id + "';";
+                    connection.query(sql3, function (trans_err, trans_res) {
+                        if (trans_err) {
+                            response.status(201).json({ message: "Unable to get Transactions Details" })
+                        } else {
+                            response.status(200).json({ message: "Payment History", advance_history: ad_res, rent_history: trans_res })
+                        }
+                    })
+
+                }
+            })
 
         } else {
             response.status(201).json({ message: "Inavlid User Details" })

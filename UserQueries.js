@@ -20,7 +20,7 @@ function getUsers(connection, response, request) {
 
                 temp['paid_rent'] = '';
 
-                let sql1 = "SELECT COALESCE(SUM(amount), 0) AS paid_amount FROM transactions WHERE user_id = ? AND MONTH(createdAt) = MONTH(CURDATE()) AND YEAR(createdAt) = YEAR(CURDATE())";
+                let sql1 = "SELECT COALESCE(SUM(amount), 0) AS paid_amount FROM transactions WHERE user_id = ? AND status=1 AND MONTH(createdAt) = MONTH(CURDATE()) AND YEAR(createdAt) = YEAR(CURDATE())";
                 connection.query(sql1, [temp.ID], function (err, data) {
                     if (err) {
                         console.log(err);
@@ -51,7 +51,7 @@ function createUser(connection, request, response) {
     const Circle = FirstNameInitial + LastNameInitial;
     const Status = atten.BalanceDue < 0 ? 'Pending' : 'Success';
     const Name = atten.firstname + ' ' + atten.lastname;
- 
+
     const created_by = request.user_details.id;
 
     if (atten.ID) {
@@ -71,8 +71,6 @@ function createUser(connection, request, response) {
 
                 var paid_advance = paid_advance1;
                 var pending_advance = overall_advance - paid_advance;
-
-                console.log(pending_advance,"==================");
 
                 connection.query(`UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${atten.Phone}', Email='${atten.Email}', Address='${atten.Address}', AadharNo='${atten.AadharNo}', PancardNo='${atten.PancardNo}',licence='${atten.licence}',HostelName='${atten.HostelName}',Hostel_Id='${atten.hostel_Id}', Floor='${atten.Floor}', Rooms='${atten.Rooms}', Bed='${atten.Bed}', AdvanceAmount='${atten.AdvanceAmount}', RoomRent='${atten.RoomRent}', BalanceDue='${atten.BalanceDue}', PaymentType='${atten.PaymentType}', Status='${Status}',paid_advance='${paid_advance}',pending_advance='${pending_advance}' WHERE ID='${atten.ID}'`, function (updateError, updateData) {
                     if (updateError) {
@@ -107,14 +105,31 @@ function createUser(connection, request, response) {
                             })
                         }
 
-                        // if (paid_advance != undefined && paid_advance != 0) {
-                        //     var sql_1 = "INSERT INTO advance_amount_transactions (user_id,inv_id,amount,status) VALUES(?,?,?,?);";
-                        //     connection.query(sql_1, [user_ids, 0, paid_rent, 1], function (ins_err, ins_res) {
-                        //         if (ins_err) {
-                        //             console.log(ins_err, ins_err);
-                        //         }
-                        //     })
-                        // }
+                        if (paid_advance != undefined && paid_advance != 0) {
+
+                            var sql4 = "SELECT * FROM advance_amount_transactions WHERE user_id='" + user_ids + "' AND inv_id=0 ORDER BY id ASC";
+                            connection.query(sql4, function (ad_err, ad_res) {
+                                if (ad_err) {
+                                    console.log(ad_err);
+                                } else if (ad_res.length != 0) {
+
+                                    var ads_id = ad_res[0].id;
+                                    var sql3 = "UPDATE advance_amount_transactions SET advance_amount='" + paid_advance + "' WHERE id='" + ads_id + "';";
+                                    connection.query(sql3, function (err, data) {
+                                        console.log(err);
+                                    })
+
+                                } else {
+                                    var sql_1 = "INSERT INTO advance_amount_transactions (user_id,inv_id,amount,status) VALUES(?,?,?,?);";
+                                    connection.query(sql_1, [user_ids, 0, paid_rent, 1], function (ins_err, ins_res) {
+                                        if (ins_err) {
+                                            console.log(ins_err);
+                                        }
+                                    })
+                                }
+                            })
+
+                        }
 
                         // Check advance Rent
                         var sql1 = "SELECT * FROM invoicedetails WHERE hos_user_id=? AND invoice_type=1";
@@ -157,7 +172,7 @@ function createUser(connection, request, response) {
                                 })
                                     .catch(error => {
                                         console.error("Error:", error);
-                                        response.status(500).json({ message: "Error processing invoices", statusCode: 500 });
+                                        response.status(204).json({ message: "Error processing invoices", statusCode: 204 });
                                     });
                             }
                         })
@@ -169,7 +184,7 @@ function createUser(connection, request, response) {
                             connection.query(sqlAdvance, [atten.ID], function (advanceErr, advanceData) {
                                 if (advanceErr) {
                                     console.log(`Error checking advance:`, advanceErr);
-                                    response.status(500).json({ message: "Error processing invoices", statusCode: 500 });
+                                    response.status(204).json({ message: "Error processing invoices", statusCode: 204 });
                                     return;
                                 }
 
@@ -181,7 +196,7 @@ function createUser(connection, request, response) {
                                     var updateAdvanceQuery = "UPDATE invoicedetails SET Name=?, phoneNo=?, EmailID=?, Hostel_Name=?, Hostel_Id=?, Floor_Id=?, Room_No=?, Amount=?, UserAddress=?, Date=?, RoomRent=?, Bed=?, BalanceDue=?, PaidAmount=? WHERE id=?";
                                     connection.query(updateAdvanceQuery, [Name, atten.Phone, atten.Email, atten.HostelName, atten.hostel_Id, atten.Floor, atten.Rooms, atten.AdvanceAmount, atten.Address, currentDate, atten.RoomRent, atten.Bed, balance_amount, atten.paid_advance, invoiceId], function (updateAdvanceErr, updateAdvanceRes) {
                                         if (updateAdvanceErr) {
-                                            response.status(500).json({ message: "Error processing invoices", statusCode: 500 });
+                                            response.status(204).json({ message: "Error processing invoices", statusCode: 204 });
                                             return;
                                         }
                                         response.status(200).json({ message: "Update Successfully", statusCode: 200 });
