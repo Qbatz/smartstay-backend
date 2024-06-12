@@ -367,7 +367,9 @@ function forgotpassword_otp_response(connection, response, requestData) {
 
 function payment_history(connection, response, request) {
 
-    var user_id = request.user_id;
+    var user_id = request.body.user_id;
+
+    console.log(user_id);
 
     if (!user_id) {
         response.status(201).json({ message: "Missing User Id" })
@@ -380,14 +382,14 @@ function payment_history(connection, response, request) {
         } else if (sel_res.length != 0) {
 
             // Get Paid Advance Amount
-            var sql2 = "SELECT * FROM advance_amount_transactions WHERE user_id='" + user_id + "';";
+            var sql2 = "SELECT * FROM advance_amount_transactions WHERE user_id='" + user_id + "' ORDER BY id DESC;";
             connection.query(sql2, function (ad_err, ad_res) {
                 if (ad_err) {
                     response.status(201).json({ message: "Unable to get Advance Amount Details" })
                 } else {
 
                     // Get Rent Amounts
-                    var sql3 = "SELECT * FROM transactions WHERE user_id='" + user_id + "';";
+                    var sql3 = "SELECT * FROM transactions WHERE user_id='" + user_id + "' ORDER BY id DESC;";
                     connection.query(sql3, function (trans_err, trans_res) {
                         if (trans_err) {
                             response.status(201).json({ message: "Unable to get Transactions Details" })
