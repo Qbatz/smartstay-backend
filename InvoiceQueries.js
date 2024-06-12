@@ -12,6 +12,8 @@ const request = require('request');
 const sharp = require('sharp');
 const util = require('util');
 
+const puppeteer = require('puppeteer');
+
 AWS.config.update({
     accessKeyId: AWS_ACCESS_KEY_ID,
     secretAccessKey: AWS_SECRET_ACCESS_KEY,
@@ -20,6 +22,7 @@ AWS.config.update({
 const s3 = new AWS.S3();
 
 const https = require('https');
+const conn = require('./config/connection');
 
 
 async function calculateAndInsertInvoice(connection, user, users) {
@@ -41,9 +44,11 @@ async function calculateAndInsertInvoice(connection, user, users) {
                 hstl.Hostel_Id AS hosHostel_Id,
                 hstl.Rooms AS hosRoom,
                 hstl.Floor AS hosFloor,
+                hstl.ID as hosUser_Id,
                 hstl.Bed,
                 hstl.RoomRent,
                 hstl.CheckoutDate,
+
                 CASE 
                     WHEN dtls.isHostelBased = true THEN 
                         (
@@ -112,6 +117,7 @@ async function calculateAndInsertInvoice(connection, user, users) {
             WHERE 
                 hstl.isActive = 1 AND hstl.id = ?
         `, [user.ID]);
+        console.log("existingData", existingData);
 
         if (existingData.length != 0) {
             let roomPrice = existingData[0].RoomRent;
@@ -312,7 +318,7 @@ async function calculateAndInsertInvoice(connection, user, users) {
             };
 
 
-            await query(`INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Amnities_deduction_Amount, Hostel_Based, Room_Based, Bed,numberofdays) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${tempObj.AdvanceAmount}, '${user.Address}', '${tempObj.invoiceDate}', '${tempObj.dueDate}', '${tempObj.invoiceNo}', '${user.Status}', '${user.User_Id}', ${tempObj.roomPrice}, ${tempObj.ebBill}, ${tempObj.totalAmenitiesAmount},${tempObj.dedctAmenitiesAmount}, ${tempObj.HostelBasedEb}, ${tempObj.roomBasedEb},${user.Bed},${tempObj.numberOfDays})`, {
+            await query(`INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Amnities_deduction_Amount, Hostel_Based, Room_Based, Bed,numberofdays,hos_user_id) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${tempObj.AdvanceAmount}, '${user.Address}', '${tempObj.invoiceDate}', '${tempObj.dueDate}', '${tempObj.invoiceNo}', '${user.Status}', '${user.User_Id}', ${tempObj.roomPrice}, ${tempObj.ebBill}, ${tempObj.totalAmenitiesAmount},${tempObj.dedctAmenitiesAmount}, ${tempObj.HostelBasedEb}, ${tempObj.roomBasedEb},${user.Bed},${tempObj.numberOfDays},${user.ID})`, {
 
             });
 
@@ -1198,523 +1204,661 @@ async function convertImage(imageBuffer) {
 }
 
 function InvoicePDf(connection, reqBodyData, response) {
-    // console.log("reqBodyData", reqBodyData)
-    connection.query(`SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND DATE(invoice.Date) = ? AND invoice.id = ?`,
-        [reqBodyData.User_Id, reqBodyData.Date, reqBodyData.id], function (error, data) {
-            if (error) {
-                console.log(error);
-                response.status(500).json({ message: 'Internal server error' });
-            } else if (data.length > 0) {
-                let totalPDFs = data.length;
-                let uploadedPDFs = 0;
-                let filenames = [];
-                let pdfDetails = [];
+    console.log("reqBodyData", reqBodyData)
 
-                data.forEach((hostel, index) => {
-                    console.log("hostelData **", hostel);
-                    let breakUpTable = []
-                    const JoiningDate = hostel.Date
-                    const DueDate = hostel.DueDate
-                    const numberOfDays = moment(DueDate).diff(moment(JoiningDate), 'days') + 1;
-                    console.log("numberOfDays", numberOfDays)
+    var invocice_type = reqBodyData.invocice_type;
 
-                    const currentDate = moment().format('YYYY-MM-DD');
-                    const currentMonth = moment(currentDate).month() + 1;
-                    const currentYear = moment(currentDate).year();
+    if (!invocice_type || invocice_type == undefined) {
+        var invocice_type = 1
+    }
 
-                    const JoiningWiseRoomRent = (hostel.RoomRent / moment(DueDate).daysInMonth()) * numberOfDays
-                    let RoomRent = {
-                        Rent: Math.round(JoiningWiseRoomRent),
+    // if (invocice_type == 2) {
+    //     // Advance Invoice
+    //     var sql1 = "SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND invoice.id=?";
+    //     connection.query(sql1, [reqBodyData.User_Id, reqBodyData.id], function (err, data) {
+    //         if (err) {
+    //             console.log(err);
+    //             return;
+    //         } else if (data.length != 0) {
 
-                    }
-                    console.log("RoomRent", RoomRent)
-                    breakUpTable.push(RoomRent)
-                    connection.query(`select * from Amenities AmeList INNER JOIN AmnitiesName AmeName ON AmeList.Amnities_Id = AmeName.id  where AmeList.Hostel_Id = \'${hostel.Hostel_Id} \'`, function (error, Amenitiesdata) {
-                        console.log("Amenitiesdata", Amenitiesdata)
+    //             var inv_data = data[0];
+    //             // console.log(inv_data);
 
-                        if (Amenitiesdata.length > 0) {
-                            for (let i = 0; i < Amenitiesdata.length; i++) {
-                                const tempObj = {};
-                                if (Amenitiesdata[i].setAsDefault == 0 && Amenitiesdata[i].Status == 1) {
-                                    tempObj[Amenitiesdata[i].Amnities_Name] = Amenitiesdata[i].Amount
-                                } else if (Amenitiesdata[i].setAsDefault == 1 && Amenitiesdata[i].Status == 1) {
-                                    tempObj[Amenitiesdata[i].Amnities_Name] = Amenitiesdata[i].Amount;
-                                    RoomRent.Rent -= Amenitiesdata[i].Amount;
+    //             const logoURL = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg'; // Replace with Smart Stay Logo
+
+    //             const htmlFilePath = path.join(__dirname, '/mail_templates', 'invoicepdf.html');
+
+    //             let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
+
+    //             htmlContent = htmlContent.replace('{{hostal_name}}', inv_data.Hostel_Name).replace('{{city}}', inv_data.HostelAddress).replace('{{Phone}}', inv_data.hostel_PhoneNo).replace('{{email}}', inv_data.HostelEmail_Id).replace('{{user_name}}', inv_data.UserName).replace('{{user_address}}', inv_data.UserAddress).replace('{{invoice_number}}', inv_data.Invoices).replace('{{invoice_date}}', inv_data.Date).replace('{{advance_amount}}', inv_data.Amount).replace('{{advance_amount}}', inv_data.Amount);
+
+    //             const currentDate = moment().format('YYYY-MM-DD');
+    //             const currentMonth = moment(currentDate).month() + 1;
+    //             const currentYear = moment(currentDate).year();
+
+    //             const filename = `AD_INV${currentMonth}${currentYear}${inv_data.User_Id}.pdf`;
+
+    //             console.log(filename);
+
+    //             const doc = new PDFDocument({ font: 'Times-Roman' });
+    //             const stream = doc.pipe(fs.createWriteStream(filename));
+
+    //             stream.on('finish', function () {
+    //                 console.log(`PDF generated successfully`);
+
+    //                 var pdfDetails = ({
+    //                     filename: filename,
+    //                     fileContent: fs.readFileSync(filename),
+    //                     user: inv_data.User_Id
+    //                 });
+
+    //                 deletePDfs(1);
+    //                 uploadToS3(1, response, pdfDetails, connection);
+    //             });
+    //         }
+    //     })
+
+
+    // }
+
+    // Assuming required libraries are imported at the beginning of the script
+
+    if (invocice_type == 2) {
+        const sql1 = `
+        SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No, invoice.Hostel_Id as Inv_Hostel_Id, 
+        hostel.id as Hostel_Id, invoice.RoomRent, invoice.EbAmount, invoice.id, invoice.Name as UserName, 
+        invoice.User_Id, invoice.UserAddress, invoice.Invoices, invoice.DueDate, invoice.Date, 
+        hostel.hostel_PhoneNo, hostel.Address as HostelAddress, hostel.Name as Hostel_Name, 
+        hostel.email_id as HostelEmail_Id, hostel.profile as Hostel_Logo, invoice.Amount 
+        FROM invoicedetails invoice 
+        INNER JOIN hosteldetails hostel ON hostel.id = invoice.Hostel_Id 
+        WHERE invoice.User_Id = ? AND invoice.id = ?`;
+
+        connection.query(sql1, [reqBodyData.User_Id, reqBodyData.id], async (err, data) => {
+            if (err) {
+                console.error('SQL query error:', err);
+                return;
+            }
+
+            if (data.length === 0) {
+                console.log('No data found');
+                return;
+            }
+
+            try {
+                const inv_data = data[0];
+                const logoURL = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg';
+                const htmlFilePath = path.join(__dirname, 'mail_templates', 'invoicepdf.html');
+                let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
+
+                htmlContent = htmlContent
+                    .replace('{{hostal_name}}', inv_data.Hostel_Name)
+                    .replace('{{city}}', inv_data.HostelAddress)
+                    .replace('{{Phone}}', inv_data.hostel_PhoneNo)
+                    .replace('{{email}}', inv_data.HostelEmail_Id)
+                    .replace('{{user_name}}', inv_data.UserName)
+                    .replace('{{user_address}}', inv_data.UserAddress)
+                    .replace('{{invoice_number}}', inv_data.Invoices)
+                    .replace('{{invoice_date}}', inv_data.Date)
+                    .replace(/{{advance_amount}}/g, inv_data.Amount);
+
+                const currentDate = moment().format('YYYY-MM-DD');
+                const currentMonth = moment(currentDate).month() + 1;
+                const currentYear = moment(currentDate).year();
+                const filename = `AD_INV${currentMonth}${currentYear}${inv_data.User_Id}.pdf`;
+
+                console.log('Generating PDF:', filename);
+
+                const browser = await puppeteer.launch({ headless: true });
+                const page = await browser.newPage();
+                // page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+
+                await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
+                await page.pdf({ path: filename, format: 'A4', printBackground: true });
+
+                console.log('PDF generated successfully:', filename);
+
+                await browser.close();
+
+                const pdfDetails = {
+                    filename: filename,
+                    fileContent: fs.readFileSync(filename),
+                    user: inv_data.User_Id
+                };
+
+                console.log(pdfDetails,"==============");
+
+                // Clean up the generated PDF file
+                fs.unlinkSync(filename);
+
+                // Proceed with uploading to S3
+                uploadToS3([pdfDetails], response, connection);
+            } catch (pdfErr) {
+                console.error('Error generating PDF:', pdfErr);
+            }
+        });
+    }
+
+    else {
+        connection.query(`SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND DATE(invoice.Date) = ? AND invoice.id = ?`,
+            [reqBodyData.User_Id, reqBodyData.Date, reqBodyData.id], function (error, data) {
+                if (error) {
+                    console.log(error);
+                    response.status(500).json({ message: 'Internal server error' });
+                } else if (data.length > 0) {
+                    let totalPDFs = data.length;
+                    let uploadedPDFs = 0;
+                    let filenames = [];
+                    let pdfDetails = [];
+
+                    data.forEach((hostel, index) => {
+                        console.log("hostelData **", hostel);
+                        let breakUpTable = []
+                        const JoiningDate = hostel.Date
+                        const DueDate = hostel.DueDate
+                        const numberOfDays = moment(DueDate).diff(moment(JoiningDate), 'days') + 1;
+                        console.log("numberOfDays", numberOfDays)
+
+                        const currentDate = moment().format('YYYY-MM-DD');
+                        const currentMonth = moment(currentDate).month() + 1;
+                        const currentYear = moment(currentDate).year();
+
+                        const JoiningWiseRoomRent = (hostel.RoomRent / moment(DueDate).daysInMonth()) * numberOfDays
+                        let RoomRent = {
+                            Rent: Math.round(JoiningWiseRoomRent),
+
+                        }
+                        console.log("RoomRent", RoomRent)
+                        breakUpTable.push(RoomRent)
+                        connection.query(`select * from Amenities AmeList INNER JOIN AmnitiesName AmeName ON AmeList.Amnities_Id = AmeName.id  where AmeList.Hostel_Id = \'${hostel.Hostel_Id} \'`, function (error, Amenitiesdata) {
+                            console.log("Amenitiesdata", Amenitiesdata)
+
+                            if (Amenitiesdata.length > 0) {
+                                for (let i = 0; i < Amenitiesdata.length; i++) {
+                                    const tempObj = {};
+                                    if (Amenitiesdata[i].setAsDefault == 0 && Amenitiesdata[i].Status == 1) {
+                                        tempObj[Amenitiesdata[i].Amnities_Name] = Amenitiesdata[i].Amount
+                                    } else if (Amenitiesdata[i].setAsDefault == 1 && Amenitiesdata[i].Status == 1) {
+                                        tempObj[Amenitiesdata[i].Amnities_Name] = Amenitiesdata[i].Amount;
+                                        RoomRent.Rent -= Amenitiesdata[i].Amount;
+                                    }
+                                    breakUpTable.push(tempObj);
                                 }
-                                breakUpTable.push(tempObj);
                             }
-                        }
-                        else {
-                        }
+                            else {
+                            }
 
-                        let hostelbasedEb = 0;
-                        let roombasedEb = 0;
+                            let hostelbasedEb = 0;
+                            let roombasedEb = 0;
 
-                        if (hostel.isHostelBased == 1) {
-                            connection.query(`SELECT * from hostel WHERE Hostel_Id = ${hostel.Hostel_Id} and isActive=true`, function (error, resultDataForIsHostelbased) {
-                                console.log("resultDataForIsHostelbased", resultDataForIsHostelbased.length)
+                            if (hostel.isHostelBased == 1) {
+                                connection.query(`SELECT * from hostel WHERE Hostel_Id = ${hostel.Hostel_Id} and isActive=true`, function (error, resultDataForIsHostelbased) {
+                                    console.log("resultDataForIsHostelbased", resultDataForIsHostelbased.length)
 
-                                if (resultDataForIsHostelbased.length > 0) {
+                                    if (resultDataForIsHostelbased.length > 0) {
 
-                                    let totalNumberOfDays = 0;
-
-
-                                    let isHostelBasedUserArray = resultDataForIsHostelbased.map((userArray) => {
-                                        console.log("userArray", userArray)
-
-                                        const joinDate = moment(userArray.createdAt).format('YYYY-MM-DD');
-                                        const createdAtMonth = moment(joinDate).month() + 1;
-                                        const createdAtYear = moment(joinDate).year();
-                                        let dueDate, invoiceDate;
-
-                                        if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
-                                            dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
-                                            invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-                                        } else {
-                                            dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
-                                            invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
-                                        }
-
-                                        const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-                                        const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-                                        const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
-                                        console.log("numberOfDaysEach", numberOfDays)
-
-                                        totalNumberOfDays += numberOfDays;
-
-                                        console.log("totalNumberOfDays", totalNumberOfDays)
-
-                                        return { numberOfDays: numberOfDays, hostel_Id: userArray.Hostel_Id, user_Id: userArray.User_Id };
-                                    })
-
-                                    const toDivideEbAmountForAll = hostel.EbAmount / totalNumberOfDays
-
-                                    console.log("toDivideEbAmountForAll", toDivideEbAmountForAll)
-                                    console.log("hostel.EbAmount", hostel.EbAmount)
-                                    let userAmounts = isHostelBasedUserArray.map(user => ({
-                                        user_id: user.user_Id,
-                                        hostel_id: user.hostel_Id,
-                                        amount: toDivideEbAmountForAll * user.numberOfDays
-                                    }));
-
-                                    console.log("User Amounts:", userAmounts);
-
-                                    let userAmount = userAmounts.find(user_id => user_id.user_id === hostel.User_Id);
-
-                                    hostelbasedEb = userAmount ? userAmount.amount.toFixed() : 0;
-
-                                    breakUpTable.push({ EbAmount: hostelbasedEb })
-
-                                    // const Is_EbAmount_Hostel_Based = hostel.EbAmount / resultDataForIsHostelbased.length
-                                    // const rounded_Is_EbAmount_Hostel_Based = Math.round(Is_EbAmount_Hostel_Based)
+                                        let totalNumberOfDays = 0;
 
 
-                                }
-                            });
+                                        let isHostelBasedUserArray = resultDataForIsHostelbased.map((userArray) => {
+                                            console.log("userArray", userArray)
 
-                        } else {
-                            hostelbasedEb = 0;
-                        }
-                        if (hostel.isHostelBased == 0) {
-                            connection.query(`SELECT * FROM hostel WHERE Hostel_Id = ${hostel.Hostel_Id} 
+                                            const joinDate = moment(userArray.createdAt).format('YYYY-MM-DD');
+                                            const createdAtMonth = moment(joinDate).month() + 1;
+                                            const createdAtYear = moment(joinDate).year();
+                                            let dueDate, invoiceDate;
+
+                                            if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+                                                dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+                                                invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+                                            } else {
+                                                dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+                                                invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
+                                            }
+
+                                            const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+                                            const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+                                            const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+                                            console.log("numberOfDaysEach", numberOfDays)
+
+                                            totalNumberOfDays += numberOfDays;
+
+                                            console.log("totalNumberOfDays", totalNumberOfDays)
+
+                                            return { numberOfDays: numberOfDays, hostel_Id: userArray.Hostel_Id, user_Id: userArray.User_Id };
+                                        })
+
+                                        const toDivideEbAmountForAll = hostel.EbAmount / totalNumberOfDays
+
+                                        console.log("toDivideEbAmountForAll", toDivideEbAmountForAll)
+                                        console.log("hostel.EbAmount", hostel.EbAmount)
+                                        let userAmounts = isHostelBasedUserArray.map(user => ({
+                                            user_id: user.user_Id,
+                                            hostel_id: user.hostel_Id,
+                                            amount: toDivideEbAmountForAll * user.numberOfDays
+                                        }));
+
+                                        console.log("User Amounts:", userAmounts);
+
+                                        let userAmount = userAmounts.find(user_id => user_id.user_id === hostel.User_Id);
+
+                                        hostelbasedEb = userAmount ? userAmount.amount.toFixed() : 0;
+
+                                        breakUpTable.push({ EbAmount: hostelbasedEb })
+
+                                        // const Is_EbAmount_Hostel_Based = hostel.EbAmount / resultDataForIsHostelbased.length
+                                        // const rounded_Is_EbAmount_Hostel_Based = Math.round(Is_EbAmount_Hostel_Based)
+
+
+                                    }
+                                });
+
+                            } else {
+                                hostelbasedEb = 0;
+                            }
+                            if (hostel.isHostelBased == 0) {
+                                connection.query(`SELECT * FROM hostel WHERE Hostel_Id = ${hostel.Hostel_Id} 
                                         AND Floor = ${hostel.Floor_Id} 
                                         AND Rooms = ${hostel.Room_No} and isActive=true`, function (error, resultDataForRoomBased) {
-                                console.log("resultDataForRoomBased", resultDataForRoomBased.length)
-                                if (resultDataForRoomBased.length > 0) {
+                                    console.log("resultDataForRoomBased", resultDataForRoomBased.length)
+                                    if (resultDataForRoomBased.length > 0) {
 
-                                    let totalNumberOfDays = 0;
-
-
-                                    let isRoomBasedUserArray = resultDataForRoomBased.map((userArray) => {
-                                        console.log("userArray", userArray)
-
-                                        const joinDate = moment(userArray.createdAt).format('YYYY-MM-DD');
-                                        const createdAtMonth = moment(joinDate).month() + 1;
-                                        const createdAtYear = moment(joinDate).year();
-                                        let dueDate, invoiceDate;
-
-                                        if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
-                                            dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
-                                            invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-                                        } else {
-                                            dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
-                                            invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
-                                        }
-
-                                        const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-                                        const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-                                        const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
-                                        console.log("numberOfDaysEach", numberOfDays)
-
-                                        totalNumberOfDays += numberOfDays;
-
-                                        console.log("totalNumberOfDays", totalNumberOfDays)
-
-                                        return { numberOfDays: numberOfDays, hostel_Id: userArray.Hostel_Id, user_Id: userArray.User_Id };
-                                    })
-
-                                    const toDivideEbAmountForAll = hostel.EbAmount / totalNumberOfDays
-
-                                    console.log("toDivideEbAmountForAll", toDivideEbAmountForAll)
-                                    console.log("hostel.EbAmount", hostel.EbAmount)
-                                    let userAmounts = isRoomBasedUserArray.map(user => ({
-                                        user_id: user.user_Id,
-                                        hostel_id: user.hostel_Id,
-                                        amount: toDivideEbAmountForAll * user.numberOfDays
-                                    }));
-
-                                    console.log("User Amounts:", userAmounts);
-
-                                    let userAmount = userAmounts.find(user_id => user_id.user_id === hostel.User_Id);
-
-                                    roombasedEb = userAmount ? userAmount.amount.toFixed() : 0;
-
-                                    breakUpTable.push({ EbAmount: roombasedEb })
-                                }
-                            })
-                        } else {
-                            roombasedEb = 0
-
-                        }
-                        breakUpTable = breakUpTable.filter(obj => Object.keys(obj).length !== 0);
-                        console.log(" breakUpTable", breakUpTable)
-                                              const filename = `Invoice${currentMonth}${currentYear}${hostel.User_Id}.pdf`;
-                        filenames.push(filename);
-
-                        const doc = new PDFDocument({ font: 'Times-Roman' });
-                        const stream = doc.pipe(fs.createWriteStream(filename));
-
-                        let isFirstPage = true;
-
-                        if (!isFirstPage) {
-                            doc.addPage();
-                        } else {
-                            isFirstPage = false;
-                        }
-
-                        const hostelNameWidth = doc.widthOfString(hostel.Hostel_Name);
-                        const leftMargin = doc.page.width - hostelNameWidth - 1000;
-                        const textWidth = doc.widthOfString('Invoice Receipt');
-                        const textX = doc.page.width - textWidth - 500;
-                        const invoiceNoWidth = doc.widthOfString('Invoice No');
-                        const invoiceDateWidth = doc.widthOfString('Invoice Date');
-
-                        const rightMargin = doc.page.width - invoiceNoWidth - 50;
-                        const marginLeft = 30;
-                        const marginRight = doc.page.width / 2;
-                        const logoWidth = 100;
-                        const logoHeight = 100;
-                        const logoStartX = marginLeft;
-                        const logoStartY = doc.y;
-                        const textStartX = doc.page.width - rightMargin - textWidth;
-                        const textStartY = doc.y;
-                        const logoPath = './Asset/Logo.jpeg';
-                        if (hostel.Hostel_Logo) {
-                            embedImage(doc, hostel.Hostel_Logo, logoPath, (error, body) => {
-                                if (error) {
-                                    console.error(error);
-                                } else {
-
-                                    doc.fontSize(10).font('Times-Roman')
-                                        .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
-                                        .moveDown(0.1);
-                                    doc.fontSize(10).font('Times-Roman')
-                                        .text(hostel.HostelAddress, textStartX, doc.y, { align: 'right' })
-                                        .text(hostel.hostel_PhoneNo, textStartX, doc.y, { align: 'right' })
-                                        .text(`Email : ${hostel.HostelEmail_Id}`, textStartX, doc.y, { align: 'right' })
-                                        .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
-                                        .text('GSTIN:', textStartX, doc.y, { align: 'right' })
-                                        .moveDown(2);
+                                        let totalNumberOfDays = 0;
 
 
-                                    doc.fontSize(14).font('Helvetica')
-                                        .text('Invoice Receipt', textX, doc.y, { align: 'center' })
-                                        .moveDown(0.5);
+                                        let isRoomBasedUserArray = resultDataForRoomBased.map((userArray) => {
+                                            console.log("userArray", userArray)
 
-                                    const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
+                                            const joinDate = moment(userArray.createdAt).format('YYYY-MM-DD');
+                                            const createdAtMonth = moment(joinDate).month() + 1;
+                                            const createdAtYear = moment(joinDate).year();
+                                            let dueDate, invoiceDate;
 
-                                    doc.fontSize(10).font('Times-Roman')
-                                        .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
-                                        .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
-                                        .moveDown(0.5);
-
-                                    doc.fontSize(10).font('Times-Roman')
-                                        .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
-                                        .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
-                                        .moveDown(0.5);
-
-
-
-
-
-                                    const headers = ['SNo', 'Description', 'Amount'];
-                                    const tableTop = 250;
-                                    const startX = 50;
-                                    const startY = tableTop;
-                                    const cellPadding = 30;
-                                    const tableWidth = 500;
-                                    const columnWidth = tableWidth / headers.length;
-                                    const marginTop = 80;
-                                    const borderWidth = 1;
-
-                                    const marginTopForAmount = 80;
-
-
-                                    doc.rect(startX, startY, tableWidth, cellPadding)
-                                        .fillColor('#b2b5b8')
-                                        .fill()
-                                        .stroke();
-
-
-                                    let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
-                                    headers.forEach((header, index) => {
-                                        const headerX = startX + columnWidth * index + (columnWidth - doc.widthOfString(header)) / 2;
-                                        doc.fontSize(10)
-                                            .fillColor('#000000')
-                                            .text(header, headerX, headerY + 5);
-                                    });
-
-
-                                    doc.rect(startX, startY, tableWidth, (breakUpTable.length + 1) * cellPadding)
-                                        .stroke();
-
-
-                                    for (let rowIndex = 0; rowIndex < breakUpTable.length + 1; rowIndex++) {
-                                        for (let colIndex = 0; colIndex < headers.length; colIndex++) {
-                                            const cellX = startX + columnWidth * colIndex;
-                                            const cellY = startY + cellPadding * rowIndex;
-
-                                            doc.rect(cellX, cellY, columnWidth, cellPadding)
-                                                .stroke();
-                                        }
-                                    }
-
-
-                                    let serialNumber = 1;
-                                    let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
-                                    breakUpTable.forEach((row, rowIndex) => {
-                                        let isEmptyRow = true;
-
-                                        const serialX = startX + (columnWidth - doc.widthOfString(serialNumber.toString())) / 2;
-                                        doc.fontSize(10)
-                                            .fillColor('#000000')
-                                            .text(serialNumber.toString(), serialX, dataY + 5);
-
-                                        serialNumber++;
-
-                                        Object.entries(row).forEach(([description, price], colIndex) => {
-                                            if (price !== undefined) {
-                                                isEmptyRow = false;
-                                                const cellX = startX + columnWidth * (colIndex + 1) + (columnWidth - doc.widthOfString(description)) / 2;
-                                                doc.fontSize(10)
-                                                    .text(description, cellX, dataY + 5);
-                                                const priceX = startX + columnWidth * (colIndex + 2) + (columnWidth - doc.widthOfString(price.toString())) / 2;
-                                                doc.fontSize(10)
-                                                    .text(price.toString(), priceX, dataY + 5);
+                                            if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+                                                dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+                                                invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+                                            } else {
+                                                dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+                                                invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
                                             }
-                                        });
-                                        if (!isEmptyRow) {
-                                            dataY += cellPadding;
-                                        }
-                                    });
 
-                                    dataY += cellPadding;
+                                            const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+                                            const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+                                            const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+                                            console.log("numberOfDaysEach", numberOfDays)
 
+                                            totalNumberOfDays += numberOfDays;
 
-                                    const gapWidth = 120;
-                                    doc.fontSize(10).font('Times-Roman')
-                                        .text('Total Amount', textX, doc.y + 20, { align: 'center', continued: true })
-                                        .text(' '.repeat(gapWidth), { continued: true })
-                                        .text(hostel.Amount.toFixed(2));
+                                            console.log("totalNumberOfDays", totalNumberOfDays)
 
+                                            return { numberOfDays: numberOfDays, hostel_Id: userArray.Hostel_Id, user_Id: userArray.User_Id };
+                                        })
 
-                                    doc.fontSize(10)
-                                        .text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, dataY + 20, { align: 'left', wordSpacing: 1.5 });
+                                        const toDivideEbAmountForAll = hostel.EbAmount / totalNumberOfDays
 
-                                    dataY += 20;
+                                        console.log("toDivideEbAmountForAll", toDivideEbAmountForAll)
+                                        console.log("hostel.EbAmount", hostel.EbAmount)
+                                        let userAmounts = isRoomBasedUserArray.map(user => ({
+                                            user_id: user.user_Id,
+                                            hostel_id: user.hostel_Id,
+                                            amount: toDivideEbAmountForAll * user.numberOfDays
+                                        }));
 
-                                    doc.fontSize(9)
-                                        .text('This is a system generated receipt and no signature is required.', startX, dataY + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
+                                        console.log("User Amounts:", userAmounts);
 
-                                    doc.end();
+                                        let userAmount = userAmounts.find(user_id => user_id.user_id === hostel.User_Id);
 
+                                        roombasedEb = userAmount ? userAmount.amount.toFixed() : 0;
 
+                                        breakUpTable.push({ EbAmount: roombasedEb })
+                                    }
+                                })
+                            } else {
+                                roombasedEb = 0
 
-                                    stream.on('finish', function () {
-                                        console.log(`PDF generated successfully for ${hostel.UserName}`);
-                                        const fileContent = fs.readFileSync(filename);
-                                        pdfDetails.push({
-                                            filename: filename,
-                                            fileContent: fs.readFileSync(filename),
-                                            user: hostel.User_Id
-                                        });
-
-                                        uploadedPDFs++;
-                                        if (uploadedPDFs === totalPDFs) {
-                                            deletePDfs(filenames);
-                                            uploadToS3(filenames, response, pdfDetails, connection);
-                                        }
-                                    });
-
-
-                                }
-                            });
-                        } else {
-                            doc.image(logoPath, {
-                                fit: [80, 100],
-                                align: 'center',
-                                valign: 'top',
-                                margin: 50
-                            });
-
-                            doc.fontSize(10).font('Times-Roman')
-                                .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
-                                .moveDown(0.1);
-                            doc.fontSize(10).font('Times-Roman')
-                                .text(hostel.HostelAddress, textStartX, doc.y, { align: 'right' })
-                                .text(hostel.hostel_PhoneNo, textStartX, doc.y, { align: 'right' })
-                                .text(`Email : ${hostel.HostelEmail_Id}`, textStartX, doc.y, { align: 'right' })
-                                .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
-                                .text('GSTIN:', textStartX, doc.y, { align: 'right' })
-                                .moveDown(2);
-
-
-                            doc.fontSize(14).font('Helvetica')
-                                .text('Invoice Receipt', textX, doc.y, { align: 'center' })
-                                .moveDown(0.5);
-
-                            const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
-
-                            doc.fontSize(10).font('Times-Roman')
-                                .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
-                                .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
-                                .moveDown(0.5);
-
-                            doc.fontSize(10).font('Times-Roman')
-                                .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
-                                .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
-                                .moveDown(0.5);
-
-
-                            const headers = ['SNo', 'Description', 'Amount'];
-                            const tableTop = 250;
-                            const startX = 50;
-                            const startY = tableTop;
-                            const cellPadding = 30;
-                            const tableWidth = 500;
-                            const columnWidth = tableWidth / headers.length;
-                            const marginTop = 80;
-                            const borderWidth = 1;
-
-                            const marginTopForAmount = 80;
-
-
-                            doc.rect(startX, startY, tableWidth, cellPadding)
-                                .fillColor('#b2b5b8')
-                                .fill()
-                                .stroke();
-
-
-                            let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
-                            headers.forEach((header, index) => {
-                                const headerX = startX + columnWidth * index + (columnWidth - doc.widthOfString(header)) / 2;
-                                doc.fontSize(10)
-                                    .fillColor('#000000')
-                                    .text(header, headerX, headerY + 5);
-                            });
-
-
-                            doc.rect(startX, startY, tableWidth, (breakUpTable.length + 1) * cellPadding)
-                                .stroke();
-
-
-                            for (let rowIndex = 0; rowIndex < breakUpTable.length + 1; rowIndex++) {
-                                for (let colIndex = 0; colIndex < headers.length; colIndex++) {
-                                    const cellX = startX + columnWidth * colIndex;
-                                    const cellY = startY + cellPadding * rowIndex;
-
-                                    doc.rect(cellX, cellY, columnWidth, cellPadding)
-                                        .stroke();
-                                }
                             }
 
 
-                            let serialNumber = 1;
-                            let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
-                            breakUpTable.forEach((row, rowIndex) => {
-                                let isEmptyRow = true;
+                            breakUpTable = breakUpTable.filter(obj => Object.keys(obj).length !== 0);
+                            console.log(" breakUpTable", breakUpTable)
+                            const filename = `Invoice${currentMonth}${currentYear}${hostel.User_Id}.pdf`;
+                            filenames.push(filename);
 
-                                const serialX = startX + (columnWidth - doc.widthOfString(serialNumber.toString())) / 2;
-                                doc.fontSize(10)
-                                    .fillColor('#000000')
-                                    .text(serialNumber.toString(), serialX, dataY + 5);
+                            const doc = new PDFDocument({ font: 'Times-Roman' });
+                            const stream = doc.pipe(fs.createWriteStream(filename));
 
-                                serialNumber++;
+                            let isFirstPage = true;
 
-                                Object.entries(row).forEach(([description, price], colIndex) => {
-                                    if (price !== undefined) {
-                                        isEmptyRow = false;
-                                        const cellX = startX + columnWidth * (colIndex + 1) + (columnWidth - doc.widthOfString(description)) / 2;
+                            if (!isFirstPage) {
+                                doc.addPage();
+                            } else {
+                                isFirstPage = false;
+                            }
+
+                            const hostelNameWidth = doc.widthOfString(hostel.Hostel_Name);
+                            const leftMargin = doc.page.width - hostelNameWidth - 1000;
+                            const textWidth = doc.widthOfString('Invoice Receipt');
+                            const textX = doc.page.width - textWidth - 500;
+                            const invoiceNoWidth = doc.widthOfString('Invoice No');
+                            const invoiceDateWidth = doc.widthOfString('Invoice Date');
+
+                            const rightMargin = doc.page.width - invoiceNoWidth - 50;
+                            const marginLeft = 30;
+                            const marginRight = doc.page.width / 2;
+                            const logoWidth = 100;
+                            const logoHeight = 100;
+                            const logoStartX = marginLeft;
+                            const logoStartY = doc.y;
+                            const textStartX = doc.page.width - rightMargin - textWidth;
+                            const textStartY = doc.y;
+                            const logoPath = './Asset/Logo.jpeg';
+                            if (hostel.Hostel_Logo) {
+                                embedImage(doc, hostel.Hostel_Logo, logoPath, (error, body) => {
+                                    if (error) {
+                                        console.error(error);
+                                    } else {
+
+                                        doc.fontSize(10).font('Times-Roman')
+                                            .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
+                                            .moveDown(0.1);
+                                        doc.fontSize(10).font('Times-Roman')
+                                            .text(hostel.HostelAddress, textStartX, doc.y, { align: 'right' })
+                                            .text(hostel.hostel_PhoneNo, textStartX, doc.y, { align: 'right' })
+                                            .text(`Email : ${hostel.HostelEmail_Id}`, textStartX, doc.y, { align: 'right' })
+                                            .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
+                                            .text('GSTIN:', textStartX, doc.y, { align: 'right' })
+                                            .moveDown(2);
+
+
+                                        doc.fontSize(14).font('Helvetica')
+                                            .text('Invoice Receipt', textX, doc.y, { align: 'center' })
+                                            .moveDown(0.5);
+
+                                        const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
+
+                                        doc.fontSize(10).font('Times-Roman')
+                                            .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
+                                            .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
+                                            .moveDown(0.5);
+
+                                        doc.fontSize(10).font('Times-Roman')
+                                            .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
+                                            .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
+                                            .moveDown(0.5);
+
+
+
+
+
+                                        const headers = ['SNo', 'Description', 'Amount'];
+                                        const tableTop = 250;
+                                        const startX = 50;
+                                        const startY = tableTop;
+                                        const cellPadding = 30;
+                                        const tableWidth = 500;
+                                        const columnWidth = tableWidth / headers.length;
+                                        const marginTop = 80;
+                                        const borderWidth = 1;
+
+                                        const marginTopForAmount = 80;
+
+
+                                        doc.rect(startX, startY, tableWidth, cellPadding)
+                                            .fillColor('#b2b5b8')
+                                            .fill()
+                                            .stroke();
+
+
+                                        let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+                                        headers.forEach((header, index) => {
+                                            const headerX = startX + columnWidth * index + (columnWidth - doc.widthOfString(header)) / 2;
+                                            doc.fontSize(10)
+                                                .fillColor('#000000')
+                                                .text(header, headerX, headerY + 5);
+                                        });
+
+
+                                        doc.rect(startX, startY, tableWidth, (breakUpTable.length + 1) * cellPadding)
+                                            .stroke();
+
+
+                                        for (let rowIndex = 0; rowIndex < breakUpTable.length + 1; rowIndex++) {
+                                            for (let colIndex = 0; colIndex < headers.length; colIndex++) {
+                                                const cellX = startX + columnWidth * colIndex;
+                                                const cellY = startY + cellPadding * rowIndex;
+
+                                                doc.rect(cellX, cellY, columnWidth, cellPadding)
+                                                    .stroke();
+                                            }
+                                        }
+
+
+                                        let serialNumber = 1;
+                                        let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+                                        breakUpTable.forEach((row, rowIndex) => {
+                                            let isEmptyRow = true;
+
+                                            const serialX = startX + (columnWidth - doc.widthOfString(serialNumber.toString())) / 2;
+                                            doc.fontSize(10)
+                                                .fillColor('#000000')
+                                                .text(serialNumber.toString(), serialX, dataY + 5);
+
+                                            serialNumber++;
+
+                                            Object.entries(row).forEach(([description, price], colIndex) => {
+                                                if (price !== undefined) {
+                                                    isEmptyRow = false;
+                                                    const cellX = startX + columnWidth * (colIndex + 1) + (columnWidth - doc.widthOfString(description)) / 2;
+                                                    doc.fontSize(10)
+                                                        .text(description, cellX, dataY + 5);
+                                                    const priceX = startX + columnWidth * (colIndex + 2) + (columnWidth - doc.widthOfString(price.toString())) / 2;
+                                                    doc.fontSize(10)
+                                                        .text(price.toString(), priceX, dataY + 5);
+                                                }
+                                            });
+                                            if (!isEmptyRow) {
+                                                dataY += cellPadding;
+                                            }
+                                        });
+
+                                        dataY += cellPadding;
+
+
+                                        const gapWidth = 120;
+                                        doc.fontSize(10).font('Times-Roman')
+                                            .text('Total Amount', textX, doc.y + 20, { align: 'center', continued: true })
+                                            .text(' '.repeat(gapWidth), { continued: true })
+                                            .text(hostel.Amount.toFixed(2));
+
+
                                         doc.fontSize(10)
-                                            .text(description, cellX, dataY + 5);
-                                        const priceX = startX + columnWidth * (colIndex + 2) + (columnWidth - doc.widthOfString(price.toString())) / 2;
-                                        doc.fontSize(10)
-                                            .text(price.toString(), priceX, dataY + 5);
+                                            .text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, dataY + 20, { align: 'left', wordSpacing: 1.5 });
+
+                                        dataY += 20;
+
+                                        doc.fontSize(9)
+                                            .text('This is a system generated receipt and no signature is required.', startX, dataY + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
+
+                                        doc.end();
+
+
+
+                                        stream.on('finish', function () {
+                                            console.log(`PDF generated successfully for ${hostel.UserName}`);
+                                            const fileContent = fs.readFileSync(filename);
+                                            pdfDetails.push({
+                                                filename: filename,
+                                                fileContent: fs.readFileSync(filename),
+                                                user: hostel.User_Id
+                                            });
+
+                                            uploadedPDFs++;
+                                            if (uploadedPDFs === totalPDFs) {
+                                                deletePDfs(filenames);
+                                                uploadToS3(filenames, response, pdfDetails, connection);
+                                            }
+                                        });
+
+
                                     }
                                 });
-                                if (!isEmptyRow) {
-                                    dataY += cellPadding;
-                                }
-                            });
-
-                            dataY += cellPadding;
-
-
-                            const gapWidth = 120;
-                            doc.fontSize(10).font('Times-Roman')
-                                .text('Total Amount', textX, doc.y + 20, { align: 'center', continued: true })
-                                .text(' '.repeat(gapWidth), { continued: true })
-                                .text(hostel.Amount.toFixed(2));
-
-
-
-                            doc.fontSize(10)
-                                .text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, dataY + 20, { align: 'left', wordSpacing: 1.5 });
-
-                            dataY += 20;
-
-                            doc.fontSize(9)
-                                .text('This is a system generated receipt and no signature is required.', startX, dataY + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
-
-                            doc.end();
-
-                            stream.on('finish', function () {
-                                console.log(`PDF generated successfully for ${hostel.UserName}`);
-                                const fileContent = fs.readFileSync(filename);
-                                pdfDetails.push({
-                                    filename: filename,
-                                    fileContent: fs.readFileSync(filename),
-                                    user: hostel.User_Id
+                            } else {
+                                doc.image(logoPath, {
+                                    fit: [80, 100],
+                                    align: 'center',
+                                    valign: 'top',
+                                    margin: 50
                                 });
 
-                                uploadedPDFs++;
-                                if (uploadedPDFs === totalPDFs) {
-                                    deletePDfs(filenames);
-                                    uploadToS3(filenames, response, pdfDetails, connection);
-                                }
-                            });
+                                doc.fontSize(10).font('Times-Roman')
+                                    .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
+                                    .moveDown(0.1);
+                                doc.fontSize(10).font('Times-Roman')
+                                    .text(hostel.HostelAddress, textStartX, doc.y, { align: 'right' })
+                                    .text(hostel.hostel_PhoneNo, textStartX, doc.y, { align: 'right' })
+                                    .text(`Email : ${hostel.HostelEmail_Id}`, textStartX, doc.y, { align: 'right' })
+                                    .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
+                                    .text('GSTIN:', textStartX, doc.y, { align: 'right' })
+                                    .moveDown(2);
 
-                        }
+
+                                doc.fontSize(14).font('Helvetica')
+                                    .text('Invoice Receipt', textX, doc.y, { align: 'center' })
+                                    .moveDown(0.5);
+
+                                const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
+
+                                doc.fontSize(10).font('Times-Roman')
+                                    .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
+                                    .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
+                                    .moveDown(0.5);
+
+                                doc.fontSize(10).font('Times-Roman')
+                                    .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
+                                    .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
+                                    .moveDown(0.5);
+
+
+                                const headers = ['SNo', 'Description', 'Amount'];
+                                const tableTop = 250;
+                                const startX = 50;
+                                const startY = tableTop;
+                                const cellPadding = 30;
+                                const tableWidth = 500;
+                                const columnWidth = tableWidth / headers.length;
+                                const marginTop = 80;
+                                const borderWidth = 1;
+
+                                const marginTopForAmount = 80;
+
+
+                                doc.rect(startX, startY, tableWidth, cellPadding)
+                                    .fillColor('#b2b5b8')
+                                    .fill()
+                                    .stroke();
+
+
+                                let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+                                headers.forEach((header, index) => {
+                                    const headerX = startX + columnWidth * index + (columnWidth - doc.widthOfString(header)) / 2;
+                                    doc.fontSize(10)
+                                        .fillColor('#000000')
+                                        .text(header, headerX, headerY + 5);
+                                });
+
+
+                                doc.rect(startX, startY, tableWidth, (breakUpTable.length + 1) * cellPadding)
+                                    .stroke();
+
+
+                                for (let rowIndex = 0; rowIndex < breakUpTable.length + 1; rowIndex++) {
+                                    for (let colIndex = 0; colIndex < headers.length; colIndex++) {
+                                        const cellX = startX + columnWidth * colIndex;
+                                        const cellY = startY + cellPadding * rowIndex;
+
+                                        doc.rect(cellX, cellY, columnWidth, cellPadding)
+                                            .stroke();
+                                    }
+                                }
+
+
+                                let serialNumber = 1;
+                                let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+                                breakUpTable.forEach((row, rowIndex) => {
+                                    let isEmptyRow = true;
+
+                                    const serialX = startX + (columnWidth - doc.widthOfString(serialNumber.toString())) / 2;
+                                    doc.fontSize(10)
+                                        .fillColor('#000000')
+                                        .text(serialNumber.toString(), serialX, dataY + 5);
+
+                                    serialNumber++;
+
+                                    Object.entries(row).forEach(([description, price], colIndex) => {
+                                        if (price !== undefined) {
+                                            isEmptyRow = false;
+                                            const cellX = startX + columnWidth * (colIndex + 1) + (columnWidth - doc.widthOfString(description)) / 2;
+                                            doc.fontSize(10)
+                                                .text(description, cellX, dataY + 5);
+                                            const priceX = startX + columnWidth * (colIndex + 2) + (columnWidth - doc.widthOfString(price.toString())) / 2;
+                                            doc.fontSize(10)
+                                                .text(price.toString(), priceX, dataY + 5);
+                                        }
+                                    });
+                                    if (!isEmptyRow) {
+                                        dataY += cellPadding;
+                                    }
+                                });
+
+                                dataY += cellPadding;
+
+
+                                const gapWidth = 120;
+                                doc.fontSize(10).font('Times-Roman')
+                                    .text('Total Amount', textX, doc.y + 20, { align: 'center', continued: true })
+                                    .text(' '.repeat(gapWidth), { continued: true })
+                                    .text(hostel.Amount.toFixed(2));
+
+
+
+                                doc.fontSize(10)
+                                    .text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, dataY + 20, { align: 'left', wordSpacing: 1.5 });
+
+                                dataY += 20;
+
+                                doc.fontSize(9)
+                                    .text('This is a system generated receipt and no signature is required.', startX, dataY + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
+
+                                doc.end();
+
+                                stream.on('finish', function () {
+                                    console.log(`PDF generated successfully for ${hostel.UserName}`);
+                                    const fileContent = fs.readFileSync(filename);
+                                    pdfDetails.push({
+                                        filename: filename,
+                                        fileContent: fs.readFileSync(filename),
+                                        user: hostel.User_Id
+                                    });
+
+                                    uploadedPDFs++;
+                                    if (uploadedPDFs === totalPDFs) {
+                                        deletePDfs(filenames);
+                                        uploadToS3(filenames, response, pdfDetails, connection);
+                                    }
+                                });
+
+                            }
+
+                        })
+
 
                     })
 
-
-                })
-
-            } else {
-                response.status(404).json({ message: 'No data found' });
-            }
-        });
+                } else {
+                    response.status(404).json({ message: 'No data found' });
+                }
+            });
+    }
 }
 
 
@@ -1793,13 +1937,73 @@ async function convertImage(imageBuffer) {
 
 
 
-function uploadToS3(filenames, response, pdfDetails, connection) {
-    let totalPDFs = filenames.length;
+// function uploadToS3(filenames, response, pdfDetails, connection) {
+//     console.log(pdfDetails);
+//     let totalPDFs = filenames.length;
+//     let uploadedPDFs = 0;
+//     let pdfInfo = [];
+//     let errorMessage;
+//     pdfDetails.forEach(pdf => {
+//         const { filename, fileContent, user } = pdf;
+//         const key = `Invoice/${filename}`;
+//         const BucketName = 'smartstaydevs';
+//         const params = {
+//             Bucket: BucketName,
+//             Key: key,
+//             Body: fileContent,
+//             ContentType: 'application/pdf'
+//         };
+
+//         s3.upload(params, function (err, uploadData) {
+//             if (err) {
+//                 console.error("Error uploading PDF", err);
+//                 response.status(500).json({ message: 'Error uploading PDF to S3' });
+//             } else {
+//                 console.log("PDF uploaded successfully");
+//                 uploadedPDFs++;
+
+//                 const pdfInfoItem = {
+//                     user: user,
+//                     url: uploadData.Location
+//                 };
+//                 pdfInfo.push(pdfInfoItem);
+
+//                 if (uploadedPDFs === totalPDFs) {
+//                     // response.status(200).json({message: 'All PDFs uploaded to S3 bucket successfully', pdfInfoList: pdfInfo});
+
+//                     pdfInfo.forEach(pdf => {
+//                         console.log(pdf.url);
+//                         const query = `UPDATE invoicedetails SET invoicePDF = '${pdf.url}' where User_Id = '${pdf.user}'`
+//                         connection.query(query, function (error, pdfData) {
+//                             console.log("pdfData", pdfData)
+//                             console.log("error pdfData", error)
+//                             if (error) {
+//                                 errorMessage = error;
+//                             }
+
+//                         })
+//                     });
+//                     if (errorMessage) {
+//                         response.status(201).json({ message: 'Cannot Insert Pdf to Database' })
+//                     }
+//                     else {
+//                         response.status(200).json({ message: 'Insert PDf successfully' })
+//                     }
+
+//                 }
+//             }
+//         });
+//     });
+// }
+
+function uploadToS3(pdfDetailsArray, response, connection) {
+    let totalPDFs = pdfDetailsArray.length;
     let uploadedPDFs = 0;
     let pdfInfo = [];
     let errorMessage;
-    pdfDetails.forEach(pdf => {
-        const { filename, fileContent, user } = pdf;
+
+    pdfDetailsArray.forEach(pdfDetails => {
+        const { filename, fileContent, user } = pdfDetails;
         const key = `Invoice/${filename}`;
         const BucketName = 'smartstaydevs';
         const params = {
@@ -1814,7 +2018,7 @@ function uploadToS3(filenames, response, pdfDetails, connection) {
                 console.error("Error uploading PDF", err);
                 response.status(500).json({ message: 'Error uploading PDF to S3' });
             } else {
-                console.log("PDF uploaded successfully");
+                console.log("PDF uploaded successfully", uploadData.Location);
                 uploadedPDFs++;
 
                 const pdfInfoItem = {
@@ -1824,27 +2028,22 @@ function uploadToS3(filenames, response, pdfDetails, connection) {
                 pdfInfo.push(pdfInfoItem);
 
                 if (uploadedPDFs === totalPDFs) {
-                    // response.status(200).json({message: 'All PDFs uploaded to S3 bucket successfully', pdfInfoList: pdfInfo});
-
                     pdfInfo.forEach(pdf => {
                         console.log(pdf.url);
-                        const query = `UPDATE invoicedetails SET invoicePDF = '${pdf.url}' where User_Id = '${pdf.user}'`
+                        const query = `UPDATE invoicedetails SET invoicePDF = '${pdf.url}' WHERE User_Id = '${pdf.user}'`;
                         connection.query(query, function (error, pdfData) {
-                            console.log("pdfData", pdfData)
-                            console.log("error pdfData", error)
                             if (error) {
+                                console.error('Error updating database', error);
                                 errorMessage = error;
                             }
-
-                        })
+                        });
                     });
-                    if (errorMessage) {
-                        response.status(201).json({ message: 'Cannot Insert Pdf to Database' })
-                    }
-                    else {
-                        response.status(200).json({ message: 'Insert PDf successfully' })
-                    }
 
+                    if (errorMessage) {
+                        response.status(201).json({ message: 'Cannot Insert PDF to Database' });
+                    } else {
+                        response.status(200).json({ message: 'Insert PDF successfully' });
+                    }
                 }
             }
         });
@@ -1853,6 +2052,7 @@ function uploadToS3(filenames, response, pdfDetails, connection) {
 
 
 function deletePDfs(filenames) {
+    console.log(filenames);
     filenames.forEach(filename => {
         fs.unlink(filename, function (err) {
             if (err) {
