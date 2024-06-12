@@ -146,6 +146,7 @@ async function calculateAndInsertInvoice(connection, user, users) {
 
             let eb_amount_total;
             let eb_Hostel = 0
+            let AdvanceAmount = 0;
 
             if (existingData[0].isHostelBased == 1) {
                 let filteredArray = users.filter(item => item.Hostel_Id == existingData[0].roomHostel_Id);
@@ -202,6 +203,7 @@ async function calculateAndInsertInvoice(connection, user, users) {
                 }
 
                 eb_amount_total = 0;
+
             }
             else {
                 let tempArray = users.filter(item =>
@@ -258,7 +260,7 @@ async function calculateAndInsertInvoice(connection, user, users) {
                 eb_Hostel = 0;
             }
 
-            console.log(eb_Hostel, "Ending Eb AMount");
+            // console.log(eb_Hostel, "Ending Eb AMount");
 
             const amenitiesData = await query(`SELECT * FROM Amenities WHERE Hostel_Id = ?`, [existingData[0].hosHostel_Id]);
             if (amenitiesData.length > 0) {
@@ -270,9 +272,12 @@ async function calculateAndInsertInvoice(connection, user, users) {
                     }
                 }
             }
+            console.log("eb_Hostel....?", eb_Hostel)
+            //  AdvanceAmount = ((roomPrice / moment(dueDate).daysInMonth()) * Number(numberOfDays)) + totalAmenitiesAmount +  Number(eb_Hostel);
 
-            let AdvanceAmount = ((roomPrice / moment(dueDate).daysInMonth()) * Number(numberOfDays)) + totalAmenitiesAmount + HostelBasedEb + roomBasedEb;
+            AdvanceAmount = ((roomPrice / moment(dueDate).daysInMonth()) * Number(numberOfDays)) + totalAmenitiesAmount + parseInt(eb_amount_total) + parseInt(eb_Hostel);
 
+            console.log(AdvanceAmount);
 
             let invoiceNo;
 

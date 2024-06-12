@@ -51,7 +51,7 @@ function createUser(connection, request, response) {
     const Circle = FirstNameInitial + LastNameInitial;
     const Status = atten.BalanceDue < 0 ? 'Pending' : 'Success';
     const Name = atten.firstname + ' ' + atten.lastname;
-
+ 
     const created_by = request.user_details.id;
 
     if (atten.ID) {
@@ -67,10 +67,12 @@ function createUser(connection, request, response) {
 
                 var paid_advance1 = atten.paid_advance ? atten.paid_advance : 0;
 
-                var overall_advance = sel_res[0].AdvanceAmount;
+                var overall_advance = atten.AdvanceAmount;
 
                 var paid_advance = paid_advance1;
                 var pending_advance = overall_advance - paid_advance;
+
+                console.log(pending_advance,"==================");
 
                 connection.query(`UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${atten.Phone}', Email='${atten.Email}', Address='${atten.Address}', AadharNo='${atten.AadharNo}', PancardNo='${atten.PancardNo}',licence='${atten.licence}',HostelName='${atten.HostelName}',Hostel_Id='${atten.hostel_Id}', Floor='${atten.Floor}', Rooms='${atten.Rooms}', Bed='${atten.Bed}', AdvanceAmount='${atten.AdvanceAmount}', RoomRent='${atten.RoomRent}', BalanceDue='${atten.BalanceDue}', PaymentType='${atten.PaymentType}', Status='${Status}',paid_advance='${paid_advance}',pending_advance='${pending_advance}' WHERE ID='${atten.ID}'`, function (updateError, updateData) {
                     if (updateError) {
@@ -148,8 +150,15 @@ function createUser(connection, request, response) {
                                 })
                             } else {
 
-                                insert_rent_invoice(connection, user_ids, paid_amount, balance_rent);
-
+                                insert_rent_invoice(connection, user_ids, paid_amount, balance_rent).then(() => {
+                                    return insert_advance_invoice(connection, user_ids);
+                                }).then(() => {
+                                    response.status(200).json({ message: "Save Successfully", statusCode: 200 });
+                                })
+                                    .catch(error => {
+                                        console.error("Error:", error);
+                                        response.status(500).json({ message: "Error processing invoices", statusCode: 500 });
+                                    });
                             }
                         })
 
@@ -249,9 +258,10 @@ function createUser(connection, request, response) {
 
                                     if (atten.AdvanceAmount != undefined && atten.AdvanceAmount != 0) {
 
-                                        var sqL_12 = "INSERT INTO advance_amount_transactions (user_id,inv_id,advance_amouunt,created_by) VALUES ('" + user_ids + "',0,'" + atten.paid_advance + "','" + created_by + "')";
+                                        var sqL_12 = "INSERT INTO advance_amount_transactions (user_id,inv_id,advance_amount,created_by) VALUES ('" + user_ids + "',0,'" + atten.paid_advance + "','" + created_by + "')";
                                         connection.query(sqL_12, function (err, data) {
                                             if (err) {
+                                                console.log(err);
                                                 response.status(201).json({ message: "Unable to add Advance Amount Transactions", statusCode: 201 });
                                             } else {
 
