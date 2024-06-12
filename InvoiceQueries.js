@@ -5,12 +5,16 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 const { Console, log } = require('console');
+var connection = require('./config/connection');
+
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 const AWS_REGION = process.env.AWS_REGION;
 const request = require('request');
 const sharp = require('sharp');
 const util = require('util');
+
+const pdf = require('html-pdf');
 
 const puppeteer = require('puppeteer');
 
@@ -1212,54 +1216,90 @@ function InvoicePDf(connection, reqBodyData, response) {
         var invocice_type = 1
     }
 
-    // if (invocice_type == 2) {
-    //     // Advance Invoice
-    //     var sql1 = "SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND invoice.id=?";
-    //     connection.query(sql1, [reqBodyData.User_Id, reqBodyData.id], function (err, data) {
-    //         if (err) {
-    //             console.log(err);
-    //             return;
-    //         } else if (data.length != 0) {
 
-    //             var inv_data = data[0];
-    //             // console.log(inv_data);
+    const generatePDF = async (inv_data) => {
+        try {
+            const htmlFilePath = path.join(__dirname, 'mail_templates', 'invoicepdf.html');
+            let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
 
-    //             const logoURL = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg'; // Replace with Smart Stay Logo
+            htmlContent = htmlContent
+                .replace('{{hostal_name}}', inv_data.Hostel_Name)
+                .replace('{{city}}', inv_data.HostelAddress)
+                .replace('{{Phone}}', inv_data.hostel_PhoneNo)
+                .replace('{{email}}', inv_data.HostelEmail_Id)
+                .replace('{{user_name}}', inv_data.UserName)
+                .replace('{{user_address}}', inv_data.UserAddress)
+                .replace('{{invoice_number}}', inv_data.Invoices)
+                .replace('{{invoice_date}}', inv_data.Date)
+                .replace(/{{amount}}/g, inv_data.Amount);
 
-    //             const htmlFilePath = path.join(__dirname, '/mail_templates', 'invoicepdf.html');
+            if (inv_data.invoice_type == 1) {
+                htmlContent=htmlContent.replace('{{Amount_name}}', "Rent Amount")
+            } else {
+                htmlContent=htmlContent.replace('{{Amount_name}}', "Advance Amount")
+            }
 
-    //             let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
+            const currentDate = moment().format('YYYY-MM-DD');
+            const currentMonth = moment(currentDate).month() + 1;
+            const currentYear = moment(currentDate).year();
+            const currentTime = moment().format('HHmmss'); 
 
-    //             htmlContent = htmlContent.replace('{{hostal_name}}', inv_data.Hostel_Name).replace('{{city}}', inv_data.HostelAddress).replace('{{Phone}}', inv_data.hostel_PhoneNo).replace('{{email}}', inv_data.HostelEmail_Id).replace('{{user_name}}', inv_data.UserName).replace('{{user_address}}', inv_data.UserAddress).replace('{{invoice_number}}', inv_data.Invoices).replace('{{invoice_date}}', inv_data.Date).replace('{{advance_amount}}', inv_data.Amount).replace('{{advance_amount}}', inv_data.Amount);
+            const filename = `INV${currentMonth}${currentYear}${currentTime}${inv_data.User_Id}.pdf`;
+            const outputPath = path.join(__dirname, filename);
 
-    //             const currentDate = moment().format('YYYY-MM-DD');
-    //             const currentMonth = moment(currentDate).month() + 1;
-    //             const currentYear = moment(currentDate).year();
+            // Generate the PDF
+            pdf.create(htmlContent).toFile(outputPath, async (err, res) => {
+                if (err) {
+                    console.error('Error generating PDF:', err);
+                    return;
+                }
 
-    //             const filename = `AD_INV${currentMonth}${currentYear}${inv_data.User_Id}.pdf`;
+                console.log('PDF generated:', res.filename);
 
-    //             console.log(filename);
+                var inv_id = inv_data.id;
 
-    //             const doc = new PDFDocument({ font: 'Times-Roman' });
-    //             const stream = doc.pipe(fs.createWriteStream(filename));
+                // Upload the PDF to S3
+                await uploadToS3(outputPath, filename, inv_id);
 
-    //             stream.on('finish', function () {
-    //                 console.log(`PDF generated successfully`);
+                // Remove the local PDF file after upload
+                fs.unlinkSync(outputPath);
+            });
 
-    //                 var pdfDetails = ({
-    //                     filename: filename,
-    //                     fileContent: fs.readFileSync(filename),
-    //                     user: inv_data.User_Id
-    //                 });
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    };
 
-    //                 deletePDfs(1);
-    //                 uploadToS3(1, response, pdfDetails, connection);
-    //             });
-    //         }
-    //     })
+    const uploadToS3 = async (filePath, filename, inv_id) => {
+        try {
+            const fileContent = fs.readFileSync(filePath);
 
+            const key = `Invoice/${filename}`;
+            const bucketName = 'smartstaydevs';
 
-    // }
+            const params = {
+                Bucket: bucketName,
+                Key: key,
+                Body: fileContent,
+                ContentType: 'application/pdf',
+            };
+
+            const data = await s3.upload(params).promise();
+            console.log('PDF uploaded successfully:', data.Location);
+
+            var sql_query = "UPDATE invoicedetails SET invoicePDF='" + data.Location + "' WHERE id='" + inv_id + "';";
+            connection.query(sql_query, function (err, data) {
+                if (err) {
+                    console.log(err);
+                    return
+                }
+            })
+
+            return data.Location; // This is the URL of the uploaded PDF
+        } catch (err) {
+            console.error('Error uploading PDF:', err);
+        }
+    };
 
     // Assuming required libraries are imported at the beginning of the script
 
@@ -1285,67 +1325,20 @@ function InvoicePDf(connection, reqBodyData, response) {
                 return;
             }
 
-            try {
-                const inv_data = data[0];
-                const logoURL = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg';
-                const htmlFilePath = path.join(__dirname, 'mail_templates', 'invoicepdf.html');
-                let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
-
-                htmlContent = htmlContent
-                    .replace('{{hostal_name}}', inv_data.Hostel_Name)
-                    .replace('{{city}}', inv_data.HostelAddress)
-                    .replace('{{Phone}}', inv_data.hostel_PhoneNo)
-                    .replace('{{email}}', inv_data.HostelEmail_Id)
-                    .replace('{{user_name}}', inv_data.UserName)
-                    .replace('{{user_address}}', inv_data.UserAddress)
-                    .replace('{{invoice_number}}', inv_data.Invoices)
-                    .replace('{{invoice_date}}', inv_data.Date)
-                    .replace(/{{advance_amount}}/g, inv_data.Amount);
-
-                const currentDate = moment().format('YYYY-MM-DD');
-                const currentMonth = moment(currentDate).month() + 1;
-                const currentYear = moment(currentDate).year();
-                const filename = `AD_INV${currentMonth}${currentYear}${inv_data.User_Id}.pdf`;
-
-                console.log('Generating PDF:', filename);
-
-                const browser = await puppeteer.launch({ headless: true });
-                const page = await browser.newPage();
-                // page.on('console', msg => console.log('PAGE LOG:', msg.text()));
-
-                await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
-                await page.pdf({ path: filename, format: 'A4', printBackground: true });
-
-                console.log('PDF generated successfully:', filename);
-
-                await browser.close();
-
-                const pdfDetails = {
-                    filename: filename,
-                    fileContent: fs.readFileSync(filename),
-                    user: inv_data.User_Id
-                };
-
-                console.log(pdfDetails,"==============");
-
-                // Clean up the generated PDF file
-                fs.unlinkSync(filename);
-
-                // Proceed with uploading to S3
-                uploadToS3([pdfDetails], response, connection);
-            } catch (pdfErr) {
-                console.error('Error generating PDF:', pdfErr);
-            }
+            generatePDF(data[0]);
         });
-    }
-
-    else {
-        connection.query(`SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND DATE(invoice.Date) = ? AND invoice.id = ?`,
+    } else {
+        connection.query(`SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount,invoice.invoice_type, invoice.id, invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate, invoice.AmnitiesAmount AS amt_amount,invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND DATE(invoice.Date) = ? AND invoice.id = ?`,
             [reqBodyData.User_Id, reqBodyData.Date, reqBodyData.id], function (error, data) {
                 if (error) {
                     console.log(error);
                     response.status(500).json({ message: 'Internal server error' });
                 } else if (data.length > 0) {
+
+                    if (data[0].EbAmount == 0 && data[0].amt_amount == 0 && data[0].invoice_type == 1) {
+                        generatePDF(data[0]);
+                    }
+
                     let totalPDFs = data.length;
                     let uploadedPDFs = 0;
                     let filenames = [];
@@ -1930,71 +1923,6 @@ async function convertImage(imageBuffer) {
     return convertedImageBuffer;
 }
 
-
-
-
-
-
-
-
-// function uploadToS3(filenames, response, pdfDetails, connection) {
-//     console.log(pdfDetails);
-//     let totalPDFs = filenames.length;
-//     let uploadedPDFs = 0;
-//     let pdfInfo = [];
-//     let errorMessage;
-//     pdfDetails.forEach(pdf => {
-//         const { filename, fileContent, user } = pdf;
-//         const key = `Invoice/${filename}`;
-//         const BucketName = 'smartstaydevs';
-//         const params = {
-//             Bucket: BucketName,
-//             Key: key,
-//             Body: fileContent,
-//             ContentType: 'application/pdf'
-//         };
-
-//         s3.upload(params, function (err, uploadData) {
-//             if (err) {
-//                 console.error("Error uploading PDF", err);
-//                 response.status(500).json({ message: 'Error uploading PDF to S3' });
-//             } else {
-//                 console.log("PDF uploaded successfully");
-//                 uploadedPDFs++;
-
-//                 const pdfInfoItem = {
-//                     user: user,
-//                     url: uploadData.Location
-//                 };
-//                 pdfInfo.push(pdfInfoItem);
-
-//                 if (uploadedPDFs === totalPDFs) {
-//                     // response.status(200).json({message: 'All PDFs uploaded to S3 bucket successfully', pdfInfoList: pdfInfo});
-
-//                     pdfInfo.forEach(pdf => {
-//                         console.log(pdf.url);
-//                         const query = `UPDATE invoicedetails SET invoicePDF = '${pdf.url}' where User_Id = '${pdf.user}'`
-//                         connection.query(query, function (error, pdfData) {
-//                             console.log("pdfData", pdfData)
-//                             console.log("error pdfData", error)
-//                             if (error) {
-//                                 errorMessage = error;
-//                             }
-
-//                         })
-//                     });
-//                     if (errorMessage) {
-//                         response.status(201).json({ message: 'Cannot Insert Pdf to Database' })
-//                     }
-//                     else {
-//                         response.status(200).json({ message: 'Insert PDf successfully' })
-//                     }
-
-//                 }
-//             }
-//         });
-//     });
-// }
 
 function uploadToS3(pdfDetailsArray, response, connection) {
     let totalPDFs = pdfDetailsArray.length;
