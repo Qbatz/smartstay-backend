@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt');
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
+const conn = require('./config/connection');
 
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
@@ -349,12 +350,12 @@ function sendResponseOtp(connection, response, requestData) {
 
 // Forgot Password Otp Response
 function forgotpassword_otp_response(connection, response, requestData) {
-    
+
     connection.query(`SELECT * FROM createaccount WHERE email_id= \'${requestData.Email_Id}\' `, function (error, resData) {
         if (resData.length > 0 && resData[0].Otp == requestData.OTP) {
             // const token = generateToken(resData[0]); // token is generated
             // console.log(`token`, token);
-            response.status(200).json({ message: "OTP Verified Success", statusCode: 200})
+            response.status(200).json({ message: "OTP Verified Success", statusCode: 200 })
         } else {
             response.status(201).json({ message: "Enter Valid Otp", statusCode: 201 })
         }
@@ -362,7 +363,33 @@ function forgotpassword_otp_response(connection, response, requestData) {
     })
 }
 
+// Get Payment History
+
+function payment_history(connection, response, request) {
+
+    var user_id = request.user_id;
+
+    if (!user_id) {
+        response.status(201).json({ message: "Missing User Id" })
+    }
+
+    var sql1 = "SELECT * FROM hostel WHERE ID=?;";
+    connection.query(sql1, [user_id], function (sel_err, sel_res) {
+        if (sel_err) {
+            response.status(201).json({ message: "Unable to get User Details" })
+        } else if (sel_res.length != 0) {
+
+            // Get Paid Advance Amount
+            var sql2="SELECT * FROM "
+
+        } else {
+            response.status(201).json({ message: "Inavlid User Details" })
+        }
+    })
+
+
+}
 
 
 
-module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount,get_user_details,forgotpassword_otp_response }
+module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount, get_user_details, forgotpassword_otp_response, payment_history }

@@ -48,8 +48,7 @@ app.post('/users/user-list', (request, response) => {
 
 app.post('/add/adduser-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    var atten = request.body;
-    userQueries.createUser(connection, atten, response)
+    userQueries.createUser(connection, request, response)
 })
 
 app.get('/user-list/bill-payment', (request, response) => {
@@ -390,10 +389,15 @@ app.post('/transaction/list', (request, response) => {
     userQueries.transitionlist(connection, request, response)
 })
 
-
 // Forgot Password Otp Response
 app.post('/forgot_otp_response', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const requestData = request.body;
     accountManagement.forgotpassword_otp_response(connection, response, requestData)
+})
+
+// Payment History
+app.post('/payment_history', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    accountManagement.payment_history(connection, response, request)
 })
