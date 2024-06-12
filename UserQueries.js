@@ -1,6 +1,9 @@
 const moment = require('moment');
 const conn = require('./config/connection');
+
+
 function getUsers(connection, response, request) {
+
     // Get values in middleware
     const userDetails = request.user_details;
     const query = `SELECT * FROM hosteldetails hstlDetails inner join hostel hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true WHERE hstlDetails.created_By ='${userDetails.id}'`;
@@ -9,10 +12,31 @@ function getUsers(connection, response, request) {
             console.error(error);
             response.status(403).json({ message: 'Error  hostel data' });
             return;
+        } else if (hostelData.length != 0) {
+
+            // Add Paid Rent Amounts
+            for (let i = 0; i < hostelData.length; i++) {
+                let temp = hostelData[i];
+
+                temp['paid_rent'] = '';
+
+                let sql1 = "SELECT COALESCE(SUM(amount), 0) AS paid_amount FROM transactions WHERE user_id = ? AND MONTH(createdAt) = MONTH(CURDATE()) AND YEAR(createdAt) = YEAR(CURDATE())";
+                connection.query(sql1, [temp.ID], function (err, data) {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        temp['paid_rent'] = data[0].paid_amount;
+                        hostelData[i] = temp;
+
+                        if (i === hostelData.length - 1) {
+                            response.status(200).json({ hostelData: hostelData });
+                        }
+                    }
+                });
+            }
         } else {
             response.status(200).json({ hostelData: hostelData });
         }
-
     });
 }
 
@@ -55,10 +79,28 @@ function createUser(connection, request, response) {
 
                         if (paid_rent != undefined && paid_rent != 0) {
 
-                            var sql_1 = "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by) VALUES(?,?,?,?,?);";
-                            connection.query(sql_1, [user_ids, 0, paid_rent, 1,created_by], function (ins_err, ins_res) {
-                                if (ins_err) {
-                                    console.log(ins_err, ins_err);
+                            var sql2 = "SELECT * FROM transactions WHERE user_id='" + user_ids + "' AND invoice_id=0 AND MONTH(createdAt) = MONTH(CURDATE()) AND YEAR(createdAt) = YEAR(CURDATE());";
+                            connection.query(sql2, function (trans_err, trans_res) {
+                                if (trans_err) {
+                                    console.log(trans_err);
+                                } else if (trans_res.length != 0) {
+
+                                    var trans_id = trans_res[0].id;
+
+                                    var sql3 = "UPDATE transactions SET amount='" + paid_rent + "' WHERE id='" + trans_id + "';";
+                                    connection.query(sql3, function (err, data) {
+                                        if (err) {
+                                            console.log(err);
+                                        }
+                                    })
+
+                                } else {
+                                    var sql_1 = "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by) VALUES(?,?,?,?,?);";
+                                    connection.query(sql_1, [user_ids, 0, paid_rent, 1, created_by], function (ins_err, ins_res) {
+                                        if (ins_err) {
+                                            console.log(ins_err);
+                                        }
+                                    })
                                 }
                             })
                         }
