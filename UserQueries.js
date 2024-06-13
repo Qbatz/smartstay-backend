@@ -200,7 +200,7 @@ function createUser(connection, request, response) {
             else {
                 userID = User_Id
             }
-            
+
             connection.query(`SELECT * FROM hostel WHERE Phone='${atten.Phone}' OR Email='${atten.Email}' AND isActive = 1`, function (error, data) {
                 if (data.length > 0) {
                     response.status(202).json({ message: "Phone Number Already Exists", statusCode: 202 });
@@ -256,10 +256,10 @@ function createUser(connection, request, response) {
                                     }).then(() => {
                                         response.status(200).json({ message: "Save Successfully", statusCode: 200 });
                                     })
-                                    .catch(error => {
-                                        console.error("Error:", error);
-                                        response.status(205).json({ message: "Error processing invoices", statusCode: 205 });
-                                    });
+                                        .catch(error => {
+                                            console.error("Error:", error);
+                                            response.status(205).json({ message: "Error processing invoices", statusCode: 205 });
+                                        });
                                 }
                             });
                         }
@@ -448,28 +448,45 @@ function transitionlist(connection, request, response) {
                     response.status(201).json({ message: 'Unable to Get User Details' });
                 } else if (check_res.length != 0) {
 
-                    var already_paid_amount = check_res[0].PaidAmount;
-                    var new_amount = already_paid_amount + amount;
+                    var new_user_id = check_res[0].User_Id;
 
-                    var sql2 = "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=? WHERE id=?";
-                    connection.query(sql2, [balance_due, new_amount, id], function (up_err, up_res) {
-                        if (up_err) {
-                            response.status(201).json({ message: 'Unable to Update User Details' });
+                    var sql3 = "SELECT * FROM hostel WHERE User_Id=?";
+                    connection.query(sql3, new_user_id, function (sel1_err, sel1_res) {
+                        if (sel1_err) {
+                            response.status(201).json({ message: 'Unable to Get User Details' });
+                        } else if (sel1_res.length != 0) {
+
+                            var user_id = sel1_res[0].ID;
+                            var already_paid_amount = check_res[0].PaidAmount;
+
+                            var new_amount = already_paid_amount + amount;
+
+                            if (new_amount > already_paid_amount) {
+                                response.status(201).json({ message: "Pay Amount More than Rent Amount, Kindly Check Advance Amount" })
+                            } else {
+
+                                var sql2 = "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=? WHERE id=?";
+                                connection.query(sql2, [balance_due, new_amount, id], function (up_err, up_res) {
+                                    if (up_err) {
+                                        response.status(201).json({ message: 'Unable to Update User Details' });
+                                    } else {
+
+                                        var sql3 = "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by) VALUES (?,?,?,1,?)";
+                                        connection.query(sql3, [user_id, invoice_id, amount, created_by], function (ins_err, ins_res) {
+                                            if (ins_err) {
+                                                response.status(201).json({ message: 'Unable to Add Transactions Details' });
+                                            } else {
+                                                response.status(200).json({ message: "Update Successfully" });
+                                            }
+                                        })
+
+                                    }
+                                })
+                            }
                         } else {
-
-
-                            var sql3 = "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by) VALUES (?,?,?,1,?)";
-                            connection.query(sql3, [id, invoice_id, amount, created_by], function (ins_err, ins_res) {
-                                if (ins_err) {
-                                    response.status(201).json({ message: 'Unable to Add Transactions Details' });
-                                } else {
-                                    response.status(200).json({ message: "Update Successfully" });
-                                }
-                            })
-
+                            response.status(201).json({ message: 'Invalid User Id' });
                         }
                     })
-
                 } else {
                     response.status(201).json({ message: 'Invalid User Id' });
                 }
