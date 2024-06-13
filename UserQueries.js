@@ -249,17 +249,19 @@ function createUser(connection, request, response) {
                                                 }
                                             })
                                         }
-                                    }
 
-                                    insert_rent_invoice(connection, user_ids, paid_amount, balance_rent).then(() => {
-                                        return insert_advance_invoice(connection, user_ids);
-                                    }).then(() => {
+                                        insert_rent_invoice(connection, user_ids, paid_amount, balance_rent).then(() => {
+                                            return insert_advance_invoice(connection, user_ids);
+                                        }).then(() => {
+                                            response.status(200).json({ message: "Save Successfully", statusCode: 200 });
+                                        })
+                                            .catch(error => {
+                                                console.error("Error:", error);
+                                                response.status(205).json({ message: "Error processing invoices", statusCode: 205 });
+                                            });
+                                    } else {
                                         response.status(200).json({ message: "Save Successfully", statusCode: 200 });
-                                    })
-                                        .catch(error => {
-                                            console.error("Error:", error);
-                                            response.status(205).json({ message: "Error processing invoices", statusCode: 205 });
-                                        });
+                                    }
                                 }
                             });
                         }
@@ -457,6 +459,7 @@ function transitionlist(connection, request, response) {
                         } else if (sel1_res.length != 0) {
 
                             var user_id = sel1_res[0].ID;
+                            
                             var already_paid_amount = check_res[0].PaidAmount;
 
                             var new_amount = already_paid_amount + amount;
@@ -465,8 +468,14 @@ function transitionlist(connection, request, response) {
                                 response.status(201).json({ message: "Pay Amount More than Rent Amount, Kindly Check Advance Amount" })
                             } else {
 
-                                var sql2 = "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=? WHERE id=?";
-                                connection.query(sql2, [balance_due, new_amount, id], function (up_err, up_res) {
+                                if (new_amount == already_paid_amount) {
+                                    var Status = 'Success';
+                                } else {
+                                    var Status = 'Pending';
+                                }
+
+                                var sql2 = "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=?,Status=? WHERE id=?";
+                                connection.query(sql2, [balance_due, new_amount, Status, id], function (up_err, up_res) {
                                     if (up_err) {
                                         response.status(201).json({ message: 'Unable to Update User Details' });
                                     } else {
@@ -521,8 +530,15 @@ function transitionlist(connection, request, response) {
                             if (new_amount > total_advance) {
                                 response.status(201).json({ message: "Pay Amount More than Advance Amount, Kindly Check Advance Amount" })
                             } else {
-                                var sql2 = "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=? WHERE id=?";
-                                connection.query(sql2, [balance_due, new_amount, id], function (up_err, up_res) {
+
+                                if (new_amount == total_advance) {
+                                    var Status = 'Success';
+                                } else {
+                                    var Status = 'Pending';
+                                }
+
+                                var sql2 = "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=?,Status=? WHERE id=?";
+                                connection.query(sql2, [balance_due, new_amount, Status, id], function (up_err, up_res) {
                                     if (up_err) {
                                         response.status(201).json({ message: 'Unable to Update User Details' });
                                     } else {
