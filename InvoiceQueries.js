@@ -1331,23 +1331,17 @@ function InvoicePDf(connection, reqBodyData, response) {
         });
     } 
     else {
-        connection.query(`SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount,invoice.invoice_type, invoice.id, invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate, invoice.AmnitiesAmount AS amt_amount,invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND DATE(invoice.Date) = ? AND invoice.id = ?`,
+        connection.query(`SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND DATE(invoice.Date) = ? AND invoice.id = ?`,
             [reqBodyData.User_Id, reqBodyData.Date, reqBodyData.id], function (error, data) {
                 if (error) {
                     console.log(error);
                     response.status(500).json({ message: 'Internal server error' });
                 } else if (data.length > 0) {
-
-                    if (data[0].EbAmount == 0 && data[0].amt_amount == 0 && data[0].invoice_type == 1) {
-                        generatePDF(data[0]);
-                        response.status(200).json({ message: 'Insert PDF successfully' });
-                    }
-
                     let totalPDFs = data.length;
                     let uploadedPDFs = 0;
                     let filenames = [];
                     let pdfDetails = [];
-
+    
                     data.forEach((hostel, index) => {
                         console.log("hostelData **", hostel);
                         let breakUpTable = []
@@ -1355,21 +1349,21 @@ function InvoicePDf(connection, reqBodyData, response) {
                         const DueDate = hostel.DueDate
                         const numberOfDays = moment(DueDate).diff(moment(JoiningDate), 'days') + 1;
                         console.log("numberOfDays", numberOfDays)
-
+    
                         const currentDate = moment().format('YYYY-MM-DD');
                         const currentMonth = moment(currentDate).month() + 1;
                         const currentYear = moment(currentDate).year();
-
+    
                         const JoiningWiseRoomRent = (hostel.RoomRent / moment(DueDate).daysInMonth()) * numberOfDays
                         let RoomRent = {
                             Rent: Math.round(JoiningWiseRoomRent),
-
+    
                         }
                         console.log("RoomRent", RoomRent)
                         breakUpTable.push(RoomRent)
                         connection.query(`select * from Amenities AmeList INNER JOIN AmnitiesName AmeName ON AmeList.Amnities_Id = AmeName.id  where AmeList.Hostel_Id = \'${hostel.Hostel_Id} \'`, function (error, Amenitiesdata) {
                             console.log("Amenitiesdata", Amenitiesdata)
-
+    
                             if (Amenitiesdata.length > 0) {
                                 for (let i = 0; i < Amenitiesdata.length; i++) {
                                     const tempObj = {};
@@ -1384,27 +1378,27 @@ function InvoicePDf(connection, reqBodyData, response) {
                             }
                             else {
                             }
-
+    
                             let hostelbasedEb = 0;
                             let roombasedEb = 0;
-
+    
                             if (hostel.isHostelBased == 1) {
                                 connection.query(`SELECT * from hostel WHERE Hostel_Id = ${hostel.Hostel_Id} and isActive=true`, function (error, resultDataForIsHostelbased) {
                                     console.log("resultDataForIsHostelbased", resultDataForIsHostelbased.length)
-
+    
                                     if (resultDataForIsHostelbased.length > 0) {
-
+    
                                         let totalNumberOfDays = 0;
-
-
+    
+    
                                         let isHostelBasedUserArray = resultDataForIsHostelbased.map((userArray) => {
                                             console.log("userArray", userArray)
-
+    
                                             const joinDate = moment(userArray.createdAt).format('YYYY-MM-DD');
                                             const createdAtMonth = moment(joinDate).month() + 1;
                                             const createdAtYear = moment(joinDate).year();
                                             let dueDate, invoiceDate;
-
+    
                                             if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
                                                 dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
                                                 invoiceDate = moment(joinDate).format('YYYY-MM-DD');
@@ -1412,21 +1406,21 @@ function InvoicePDf(connection, reqBodyData, response) {
                                                 dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
                                                 invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
                                             }
-
+    
                                             const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
                                             const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
                                             const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
                                             console.log("numberOfDaysEach", numberOfDays)
-
+    
                                             totalNumberOfDays += numberOfDays;
-
+    
                                             console.log("totalNumberOfDays", totalNumberOfDays)
-
+    
                                             return { numberOfDays: numberOfDays, hostel_Id: userArray.Hostel_Id, user_Id: userArray.User_Id };
                                         })
-
+    
                                         const toDivideEbAmountForAll = hostel.EbAmount / totalNumberOfDays
-
+    
                                         console.log("toDivideEbAmountForAll", toDivideEbAmountForAll)
                                         console.log("hostel.EbAmount", hostel.EbAmount)
                                         let userAmounts = isHostelBasedUserArray.map(user => ({
@@ -1434,43 +1428,43 @@ function InvoicePDf(connection, reqBodyData, response) {
                                             hostel_id: user.hostel_Id,
                                             amount: toDivideEbAmountForAll * user.numberOfDays
                                         }));
-
+    
                                         console.log("User Amounts:", userAmounts);
-
+    
                                         let userAmount = userAmounts.find(user_id => user_id.user_id === hostel.User_Id);
-
+    
                                         hostelbasedEb = userAmount ? userAmount.amount.toFixed() : 0;
-
+    
                                         breakUpTable.push({ EbAmount: hostelbasedEb })
-
+    
                                         // const Is_EbAmount_Hostel_Based = hostel.EbAmount / resultDataForIsHostelbased.length
                                         // const rounded_Is_EbAmount_Hostel_Based = Math.round(Is_EbAmount_Hostel_Based)
-
-
+    
+    
                                     }
                                 });
-
+    
                             } else {
                                 hostelbasedEb = 0;
                             }
                             if (hostel.isHostelBased == 0) {
                                 connection.query(`SELECT * FROM hostel WHERE Hostel_Id = ${hostel.Hostel_Id} 
-                                        AND Floor = ${hostel.Floor_Id} 
-                                        AND Rooms = ${hostel.Room_No} and isActive=true`, function (error, resultDataForRoomBased) {
+                                            AND Floor = ${hostel.Floor_Id} 
+                                            AND Rooms = ${hostel.Room_No} and isActive=true`, function (error, resultDataForRoomBased) {
                                     console.log("resultDataForRoomBased", resultDataForRoomBased.length)
                                     if (resultDataForRoomBased.length > 0) {
-
+    
                                         let totalNumberOfDays = 0;
-
-
+    
+    
                                         let isRoomBasedUserArray = resultDataForRoomBased.map((userArray) => {
                                             console.log("userArray", userArray)
-
+    
                                             const joinDate = moment(userArray.createdAt).format('YYYY-MM-DD');
                                             const createdAtMonth = moment(joinDate).month() + 1;
                                             const createdAtYear = moment(joinDate).year();
                                             let dueDate, invoiceDate;
-
+    
                                             if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
                                                 dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
                                                 invoiceDate = moment(joinDate).format('YYYY-MM-DD');
@@ -1478,21 +1472,21 @@ function InvoicePDf(connection, reqBodyData, response) {
                                                 dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
                                                 invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
                                             }
-
+    
                                             const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
                                             const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
                                             const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
                                             console.log("numberOfDaysEach", numberOfDays)
-
+    
                                             totalNumberOfDays += numberOfDays;
-
+    
                                             console.log("totalNumberOfDays", totalNumberOfDays)
-
+    
                                             return { numberOfDays: numberOfDays, hostel_Id: userArray.Hostel_Id, user_Id: userArray.User_Id };
                                         })
-
+    
                                         const toDivideEbAmountForAll = hostel.EbAmount / totalNumberOfDays
-
+    
                                         console.log("toDivideEbAmountForAll", toDivideEbAmountForAll)
                                         console.log("hostel.EbAmount", hostel.EbAmount)
                                         let userAmounts = isRoomBasedUserArray.map(user => ({
@@ -1500,45 +1494,43 @@ function InvoicePDf(connection, reqBodyData, response) {
                                             hostel_id: user.hostel_Id,
                                             amount: toDivideEbAmountForAll * user.numberOfDays
                                         }));
-
+    
                                         console.log("User Amounts:", userAmounts);
-
+    
                                         let userAmount = userAmounts.find(user_id => user_id.user_id === hostel.User_Id);
-
+    
                                         roombasedEb = userAmount ? userAmount.amount.toFixed() : 0;
-
+    
                                         breakUpTable.push({ EbAmount: roombasedEb })
                                     }
                                 })
                             } else {
                                 roombasedEb = 0
-
+    
                             }
-
-
                             breakUpTable = breakUpTable.filter(obj => Object.keys(obj).length !== 0);
                             console.log(" breakUpTable", breakUpTable)
-                            const filename = `Invoice${currentMonth}${currentYear}${hostel.User_Id}.pdf`;
+                                                  const filename = `Invoice${currentMonth}${currentYear}${hostel.User_Id}.pdf`;
                             filenames.push(filename);
-
+    
                             const doc = new PDFDocument({ font: 'Times-Roman' });
                             const stream = doc.pipe(fs.createWriteStream(filename));
-
+    
                             let isFirstPage = true;
-
+    
                             if (!isFirstPage) {
                                 doc.addPage();
                             } else {
                                 isFirstPage = false;
                             }
-
+    
                             const hostelNameWidth = doc.widthOfString(hostel.Hostel_Name);
                             const leftMargin = doc.page.width - hostelNameWidth - 1000;
                             const textWidth = doc.widthOfString('Invoice Receipt');
                             const textX = doc.page.width - textWidth - 500;
                             const invoiceNoWidth = doc.widthOfString('Invoice No');
                             const invoiceDateWidth = doc.widthOfString('Invoice Date');
-
+    
                             const rightMargin = doc.page.width - invoiceNoWidth - 50;
                             const marginLeft = 30;
                             const marginRight = doc.page.width / 2;
@@ -1554,7 +1546,7 @@ function InvoicePDf(connection, reqBodyData, response) {
                                     if (error) {
                                         console.error(error);
                                     } else {
-
+    
                                         doc.fontSize(10).font('Times-Roman')
                                             .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
                                             .moveDown(0.1);
@@ -1565,28 +1557,28 @@ function InvoicePDf(connection, reqBodyData, response) {
                                             .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
                                             .text('GSTIN:', textStartX, doc.y, { align: 'right' })
                                             .moveDown(2);
-
-
+    
+    
                                         doc.fontSize(14).font('Helvetica')
                                             .text('Invoice Receipt', textX, doc.y, { align: 'center' })
                                             .moveDown(0.5);
-
+    
                                         const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
-
+    
                                         doc.fontSize(10).font('Times-Roman')
                                             .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
                                             .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
                                             .moveDown(0.5);
-
+    
                                         doc.fontSize(10).font('Times-Roman')
                                             .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
                                             .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
                                             .moveDown(0.5);
-
-
-
-
-
+    
+    
+    
+    
+    
                                         const headers = ['SNo', 'Description', 'Amount'];
                                         const tableTop = 250;
                                         const startX = 50;
@@ -1596,16 +1588,16 @@ function InvoicePDf(connection, reqBodyData, response) {
                                         const columnWidth = tableWidth / headers.length;
                                         const marginTop = 80;
                                         const borderWidth = 1;
-
+    
                                         const marginTopForAmount = 80;
-
-
+    
+    
                                         doc.rect(startX, startY, tableWidth, cellPadding)
                                             .fillColor('#b2b5b8')
                                             .fill()
                                             .stroke();
-
-
+    
+    
                                         let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
                                         headers.forEach((header, index) => {
                                             const headerX = startX + columnWidth * index + (columnWidth - doc.widthOfString(header)) / 2;
@@ -1613,35 +1605,35 @@ function InvoicePDf(connection, reqBodyData, response) {
                                                 .fillColor('#000000')
                                                 .text(header, headerX, headerY + 5);
                                         });
-
-
+    
+    
                                         doc.rect(startX, startY, tableWidth, (breakUpTable.length + 1) * cellPadding)
                                             .stroke();
-
-
+    
+    
                                         for (let rowIndex = 0; rowIndex < breakUpTable.length + 1; rowIndex++) {
                                             for (let colIndex = 0; colIndex < headers.length; colIndex++) {
                                                 const cellX = startX + columnWidth * colIndex;
                                                 const cellY = startY + cellPadding * rowIndex;
-
+    
                                                 doc.rect(cellX, cellY, columnWidth, cellPadding)
                                                     .stroke();
                                             }
                                         }
-
-
+    
+    
                                         let serialNumber = 1;
                                         let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
                                         breakUpTable.forEach((row, rowIndex) => {
                                             let isEmptyRow = true;
-
+    
                                             const serialX = startX + (columnWidth - doc.widthOfString(serialNumber.toString())) / 2;
                                             doc.fontSize(10)
                                                 .fillColor('#000000')
                                                 .text(serialNumber.toString(), serialX, dataY + 5);
-
+    
                                             serialNumber++;
-
+    
                                             Object.entries(row).forEach(([description, price], colIndex) => {
                                                 if (price !== undefined) {
                                                     isEmptyRow = false;
@@ -1657,29 +1649,29 @@ function InvoicePDf(connection, reqBodyData, response) {
                                                 dataY += cellPadding;
                                             }
                                         });
-
+    
                                         dataY += cellPadding;
-
-
+    
+    
                                         const gapWidth = 120;
                                         doc.fontSize(10).font('Times-Roman')
                                             .text('Total Amount', textX, doc.y + 20, { align: 'center', continued: true })
                                             .text(' '.repeat(gapWidth), { continued: true })
                                             .text(hostel.Amount.toFixed(2));
-
-
+    
+    
                                         doc.fontSize(10)
                                             .text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, dataY + 20, { align: 'left', wordSpacing: 1.5 });
-
+    
                                         dataY += 20;
-
+    
                                         doc.fontSize(9)
                                             .text('This is a system generated receipt and no signature is required.', startX, dataY + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
-
+    
                                         doc.end();
-
-
-
+    
+    
+    
                                         stream.on('finish', function () {
                                             console.log(`PDF generated successfully for ${hostel.UserName}`);
                                             const fileContent = fs.readFileSync(filename);
@@ -1688,13 +1680,15 @@ function InvoicePDf(connection, reqBodyData, response) {
                                                 fileContent: fs.readFileSync(filename),
                                                 user: hostel.User_Id
                                             });
-
+    
                                             uploadedPDFs++;
                                             if (uploadedPDFs === totalPDFs) {
                                                 deletePDfs(filenames);
-                                                uploadTo_S3(filenames, response, pdfDetails, connection);
+                                                uploadToS3(filenames, response, pdfDetails, connection);
                                             }
                                         });
+    
+    
                                     }
                                 });
                             } else {
@@ -1704,7 +1698,7 @@ function InvoicePDf(connection, reqBodyData, response) {
                                     valign: 'top',
                                     margin: 50
                                 });
-
+    
                                 doc.fontSize(10).font('Times-Roman')
                                     .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
                                     .moveDown(0.1);
@@ -1715,25 +1709,25 @@ function InvoicePDf(connection, reqBodyData, response) {
                                     .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
                                     .text('GSTIN:', textStartX, doc.y, { align: 'right' })
                                     .moveDown(2);
-
-
+    
+    
                                 doc.fontSize(14).font('Helvetica')
                                     .text('Invoice Receipt', textX, doc.y, { align: 'center' })
                                     .moveDown(0.5);
-
+    
                                 const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
-
+    
                                 doc.fontSize(10).font('Times-Roman')
                                     .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
                                     .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
                                     .moveDown(0.5);
-
+    
                                 doc.fontSize(10).font('Times-Roman')
                                     .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
                                     .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
                                     .moveDown(0.5);
-
-
+    
+    
                                 const headers = ['SNo', 'Description', 'Amount'];
                                 const tableTop = 250;
                                 const startX = 50;
@@ -1743,16 +1737,16 @@ function InvoicePDf(connection, reqBodyData, response) {
                                 const columnWidth = tableWidth / headers.length;
                                 const marginTop = 80;
                                 const borderWidth = 1;
-
+    
                                 const marginTopForAmount = 80;
-
-
+    
+    
                                 doc.rect(startX, startY, tableWidth, cellPadding)
                                     .fillColor('#b2b5b8')
                                     .fill()
                                     .stroke();
-
-
+    
+    
                                 let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
                                 headers.forEach((header, index) => {
                                     const headerX = startX + columnWidth * index + (columnWidth - doc.widthOfString(header)) / 2;
@@ -1760,35 +1754,35 @@ function InvoicePDf(connection, reqBodyData, response) {
                                         .fillColor('#000000')
                                         .text(header, headerX, headerY + 5);
                                 });
-
-
+    
+    
                                 doc.rect(startX, startY, tableWidth, (breakUpTable.length + 1) * cellPadding)
                                     .stroke();
-
-
+    
+    
                                 for (let rowIndex = 0; rowIndex < breakUpTable.length + 1; rowIndex++) {
                                     for (let colIndex = 0; colIndex < headers.length; colIndex++) {
                                         const cellX = startX + columnWidth * colIndex;
                                         const cellY = startY + cellPadding * rowIndex;
-
+    
                                         doc.rect(cellX, cellY, columnWidth, cellPadding)
                                             .stroke();
                                     }
                                 }
-
-
+    
+    
                                 let serialNumber = 1;
                                 let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
                                 breakUpTable.forEach((row, rowIndex) => {
                                     let isEmptyRow = true;
-
+    
                                     const serialX = startX + (columnWidth - doc.widthOfString(serialNumber.toString())) / 2;
                                     doc.fontSize(10)
                                         .fillColor('#000000')
                                         .text(serialNumber.toString(), serialX, dataY + 5);
-
+    
                                     serialNumber++;
-
+    
                                     Object.entries(row).forEach(([description, price], colIndex) => {
                                         if (price !== undefined) {
                                             isEmptyRow = false;
@@ -1804,28 +1798,28 @@ function InvoicePDf(connection, reqBodyData, response) {
                                         dataY += cellPadding;
                                     }
                                 });
-
+    
                                 dataY += cellPadding;
-
-
+    
+    
                                 const gapWidth = 120;
                                 doc.fontSize(10).font('Times-Roman')
                                     .text('Total Amount', textX, doc.y + 20, { align: 'center', continued: true })
                                     .text(' '.repeat(gapWidth), { continued: true })
                                     .text(hostel.Amount.toFixed(2));
-
-
-
+    
+    
+    
                                 doc.fontSize(10)
                                     .text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, dataY + 20, { align: 'left', wordSpacing: 1.5 });
-
+    
                                 dataY += 20;
-
+    
                                 doc.fontSize(9)
                                     .text('This is a system generated receipt and no signature is required.', startX, dataY + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
-
+    
                                 doc.end();
-
+    
                                 stream.on('finish', function () {
                                     console.log(`PDF generated successfully for ${hostel.UserName}`);
                                     const fileContent = fs.readFileSync(filename);
@@ -1834,25 +1828,547 @@ function InvoicePDf(connection, reqBodyData, response) {
                                         fileContent: fs.readFileSync(filename),
                                         user: hostel.User_Id
                                     });
-
+    
                                     uploadedPDFs++;
                                     if (uploadedPDFs === totalPDFs) {
                                         deletePDfs(filenames);
-                                        uploadTo_S3(filenames, response, pdfDetails, connection);
+                                        uploadToS3(filenames, response, pdfDetails, connection);
                                     }
                                 });
-
+    
                             }
-
+    
                         })
-
-
+    
+    
                     })
-
+    
                 } else {
                     response.status(404).json({ message: 'No data found' });
                 }
             });
+        // connection.query(`SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount,invoice.invoice_type, invoice.id, invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate, invoice.AmnitiesAmount AS amt_amount,invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND DATE(invoice.Date) = ? AND invoice.id = ?`,
+        //     [reqBodyData.User_Id, reqBodyData.Date, reqBodyData.id], function (error, data) {
+        //         if (error) {
+        //             console.log(error);
+        //             response.status(500).json({ message: 'Internal server error' });
+        //         } else if (data.length > 0) {
+
+        //             if (data[0].EbAmount == 0 && data[0].amt_amount == 0 && data[0].invoice_type == 1) {
+        //                 generatePDF(data[0]);
+        //                 response.status(200).json({ message: 'Insert PDF successfully' });
+        //             }
+
+        //             let totalPDFs = data.length;
+        //             let uploadedPDFs = 0;
+        //             let filenames = [];
+        //             let pdfDetails = [];
+
+        //             data.forEach((hostel, index) => {
+        //                 console.log("hostelData **", hostel);
+        //                 let breakUpTable = []
+        //                 const JoiningDate = hostel.Date
+        //                 const DueDate = hostel.DueDate
+        //                 const numberOfDays = moment(DueDate).diff(moment(JoiningDate), 'days') + 1;
+        //                 console.log("numberOfDays", numberOfDays)
+
+        //                 const currentDate = moment().format('YYYY-MM-DD');
+        //                 const currentMonth = moment(currentDate).month() + 1;
+        //                 const currentYear = moment(currentDate).year();
+
+        //                 const JoiningWiseRoomRent = (hostel.RoomRent / moment(DueDate).daysInMonth()) * numberOfDays
+        //                 let RoomRent = {
+        //                     Rent: Math.round(JoiningWiseRoomRent),
+
+        //                 }
+        //                 console.log("RoomRent", RoomRent)
+        //                 breakUpTable.push(RoomRent)
+        //                 connection.query(`select * from Amenities AmeList INNER JOIN AmnitiesName AmeName ON AmeList.Amnities_Id = AmeName.id  where AmeList.Hostel_Id = \'${hostel.Hostel_Id} \'`, function (error, Amenitiesdata) {
+        //                     console.log("Amenitiesdata", Amenitiesdata)
+
+        //                     if (Amenitiesdata.length > 0) {
+        //                         for (let i = 0; i < Amenitiesdata.length; i++) {
+        //                             const tempObj = {};
+        //                             if (Amenitiesdata[i].setAsDefault == 0 && Amenitiesdata[i].Status == 1) {
+        //                                 tempObj[Amenitiesdata[i].Amnities_Name] = Amenitiesdata[i].Amount
+        //                             } else if (Amenitiesdata[i].setAsDefault == 1 && Amenitiesdata[i].Status == 1) {
+        //                                 tempObj[Amenitiesdata[i].Amnities_Name] = Amenitiesdata[i].Amount;
+        //                                 RoomRent.Rent -= Amenitiesdata[i].Amount;
+        //                             }
+        //                             breakUpTable.push(tempObj);
+        //                         }
+        //                     }
+        //                     else {
+        //                     }
+
+        //                     let hostelbasedEb = 0;
+        //                     let roombasedEb = 0;
+
+        //                     if (hostel.isHostelBased == 1) {
+        //                         connection.query(`SELECT * from hostel WHERE Hostel_Id = ${hostel.Hostel_Id} and isActive=true`, function (error, resultDataForIsHostelbased) {
+        //                             console.log("resultDataForIsHostelbased", resultDataForIsHostelbased.length)
+
+        //                             if (resultDataForIsHostelbased.length > 0) {
+
+        //                                 let totalNumberOfDays = 0;
+
+
+        //                                 let isHostelBasedUserArray = resultDataForIsHostelbased.map((userArray) => {
+        //                                     console.log("userArray", userArray)
+
+        //                                     const joinDate = moment(userArray.createdAt).format('YYYY-MM-DD');
+        //                                     const createdAtMonth = moment(joinDate).month() + 1;
+        //                                     const createdAtYear = moment(joinDate).year();
+        //                                     let dueDate, invoiceDate;
+
+        //                                     if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+        //                                         dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+        //                                         invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+        //                                     } else {
+        //                                         dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+        //                                         invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
+        //                                     }
+
+        //                                     const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+        //                                     const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+        //                                     const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+        //                                     console.log("numberOfDaysEach", numberOfDays)
+
+        //                                     totalNumberOfDays += numberOfDays;
+
+        //                                     console.log("totalNumberOfDays", totalNumberOfDays)
+
+        //                                     return { numberOfDays: numberOfDays, hostel_Id: userArray.Hostel_Id, user_Id: userArray.User_Id };
+        //                                 })
+
+        //                                 const toDivideEbAmountForAll = hostel.EbAmount / totalNumberOfDays
+
+        //                                 console.log("toDivideEbAmountForAll", toDivideEbAmountForAll)
+        //                                 console.log("hostel.EbAmount", hostel.EbAmount)
+        //                                 let userAmounts = isHostelBasedUserArray.map(user => ({
+        //                                     user_id: user.user_Id,
+        //                                     hostel_id: user.hostel_Id,
+        //                                     amount: toDivideEbAmountForAll * user.numberOfDays
+        //                                 }));
+
+        //                                 console.log("User Amounts:", userAmounts);
+
+        //                                 let userAmount = userAmounts.find(user_id => user_id.user_id === hostel.User_Id);
+
+        //                                 hostelbasedEb = userAmount ? userAmount.amount.toFixed() : 0;
+
+        //                                 breakUpTable.push({ EbAmount: hostelbasedEb })
+
+        //                                 // const Is_EbAmount_Hostel_Based = hostel.EbAmount / resultDataForIsHostelbased.length
+        //                                 // const rounded_Is_EbAmount_Hostel_Based = Math.round(Is_EbAmount_Hostel_Based)
+
+
+        //                             }
+        //                         });
+
+        //                     } else {
+        //                         hostelbasedEb = 0;
+        //                     }
+        //                     if (hostel.isHostelBased == 0) {
+        //                         connection.query(`SELECT * FROM hostel WHERE Hostel_Id = ${hostel.Hostel_Id} 
+        //                                 AND Floor = ${hostel.Floor_Id} 
+        //                                 AND Rooms = ${hostel.Room_No} and isActive=true`, function (error, resultDataForRoomBased) {
+        //                             console.log("resultDataForRoomBased", resultDataForRoomBased.length)
+        //                             if (resultDataForRoomBased.length > 0) {
+
+        //                                 let totalNumberOfDays = 0;
+
+
+        //                                 let isRoomBasedUserArray = resultDataForRoomBased.map((userArray) => {
+        //                                     console.log("userArray", userArray)
+
+        //                                     const joinDate = moment(userArray.createdAt).format('YYYY-MM-DD');
+        //                                     const createdAtMonth = moment(joinDate).month() + 1;
+        //                                     const createdAtYear = moment(joinDate).year();
+        //                                     let dueDate, invoiceDate;
+
+        //                                     if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+        //                                         dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+        //                                         invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+        //                                     } else {
+        //                                         dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+        //                                         invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
+        //                                     }
+
+        //                                     const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+        //                                     const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+        //                                     const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+        //                                     console.log("numberOfDaysEach", numberOfDays)
+
+        //                                     totalNumberOfDays += numberOfDays;
+
+        //                                     console.log("totalNumberOfDays", totalNumberOfDays)
+
+        //                                     return { numberOfDays: numberOfDays, hostel_Id: userArray.Hostel_Id, user_Id: userArray.User_Id };
+        //                                 })
+
+        //                                 const toDivideEbAmountForAll = hostel.EbAmount / totalNumberOfDays
+
+        //                                 console.log("toDivideEbAmountForAll", toDivideEbAmountForAll)
+        //                                 console.log("hostel.EbAmount", hostel.EbAmount)
+        //                                 let userAmounts = isRoomBasedUserArray.map(user => ({
+        //                                     user_id: user.user_Id,
+        //                                     hostel_id: user.hostel_Id,
+        //                                     amount: toDivideEbAmountForAll * user.numberOfDays
+        //                                 }));
+
+        //                                 console.log("User Amounts:", userAmounts);
+
+        //                                 let userAmount = userAmounts.find(user_id => user_id.user_id === hostel.User_Id);
+
+        //                                 roombasedEb = userAmount ? userAmount.amount.toFixed() : 0;
+
+        //                                 breakUpTable.push({ EbAmount: roombasedEb })
+        //                             }
+        //                         })
+        //                     } else {
+        //                         roombasedEb = 0
+
+        //                     }
+
+
+        //                     breakUpTable = breakUpTable.filter(obj => Object.keys(obj).length !== 0);
+        //                     console.log(" breakUpTable", breakUpTable)
+        //                     const filename = `Invoice${currentMonth}${currentYear}${hostel.User_Id}.pdf`;
+        //                     filenames.push(filename);
+
+        //                     const doc = new PDFDocument({ font: 'Times-Roman' });
+        //                     const stream = doc.pipe(fs.createWriteStream(filename));
+
+        //                     let isFirstPage = true;
+
+        //                     if (!isFirstPage) {
+        //                         doc.addPage();
+        //                     } else {
+        //                         isFirstPage = false;
+        //                     }
+
+        //                     const hostelNameWidth = doc.widthOfString(hostel.Hostel_Name);
+        //                     const leftMargin = doc.page.width - hostelNameWidth - 1000;
+        //                     const textWidth = doc.widthOfString('Invoice Receipt');
+        //                     const textX = doc.page.width - textWidth - 500;
+        //                     const invoiceNoWidth = doc.widthOfString('Invoice No');
+        //                     const invoiceDateWidth = doc.widthOfString('Invoice Date');
+
+        //                     const rightMargin = doc.page.width - invoiceNoWidth - 50;
+        //                     const marginLeft = 30;
+        //                     const marginRight = doc.page.width / 2;
+        //                     const logoWidth = 100;
+        //                     const logoHeight = 100;
+        //                     const logoStartX = marginLeft;
+        //                     const logoStartY = doc.y;
+        //                     const textStartX = doc.page.width - rightMargin - textWidth;
+        //                     const textStartY = doc.y;
+        //                     const logoPath = './Asset/Logo.jpeg';
+        //                     if (hostel.Hostel_Logo) {
+        //                         embedImage(doc, hostel.Hostel_Logo, logoPath, (error, body) => {
+        //                             if (error) {
+        //                                 console.error(error);
+        //                             } else {
+
+        //                                 doc.fontSize(10).font('Times-Roman')
+        //                                     .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
+        //                                     .moveDown(0.1);
+        //                                 doc.fontSize(10).font('Times-Roman')
+        //                                     .text(hostel.HostelAddress, textStartX, doc.y, { align: 'right' })
+        //                                     .text(hostel.hostel_PhoneNo, textStartX, doc.y, { align: 'right' })
+        //                                     .text(`Email : ${hostel.HostelEmail_Id}`, textStartX, doc.y, { align: 'right' })
+        //                                     .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
+        //                                     .text('GSTIN:', textStartX, doc.y, { align: 'right' })
+        //                                     .moveDown(2);
+
+
+        //                                 doc.fontSize(14).font('Helvetica')
+        //                                     .text('Invoice Receipt', textX, doc.y, { align: 'center' })
+        //                                     .moveDown(0.5);
+
+        //                                 const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
+
+        //                                 doc.fontSize(10).font('Times-Roman')
+        //                                     .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
+        //                                     .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
+        //                                     .moveDown(0.5);
+
+        //                                 doc.fontSize(10).font('Times-Roman')
+        //                                     .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
+        //                                     .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
+        //                                     .moveDown(0.5);
+
+
+
+
+
+        //                                 const headers = ['SNo', 'Description', 'Amount'];
+        //                                 const tableTop = 250;
+        //                                 const startX = 50;
+        //                                 const startY = tableTop;
+        //                                 const cellPadding = 30;
+        //                                 const tableWidth = 500;
+        //                                 const columnWidth = tableWidth / headers.length;
+        //                                 const marginTop = 80;
+        //                                 const borderWidth = 1;
+
+        //                                 const marginTopForAmount = 80;
+
+
+        //                                 doc.rect(startX, startY, tableWidth, cellPadding)
+        //                                     .fillColor('#b2b5b8')
+        //                                     .fill()
+        //                                     .stroke();
+
+
+        //                                 let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+        //                                 headers.forEach((header, index) => {
+        //                                     const headerX = startX + columnWidth * index + (columnWidth - doc.widthOfString(header)) / 2;
+        //                                     doc.fontSize(10)
+        //                                         .fillColor('#000000')
+        //                                         .text(header, headerX, headerY + 5);
+        //                                 });
+
+
+        //                                 doc.rect(startX, startY, tableWidth, (breakUpTable.length + 1) * cellPadding)
+        //                                     .stroke();
+
+
+        //                                 for (let rowIndex = 0; rowIndex < breakUpTable.length + 1; rowIndex++) {
+        //                                     for (let colIndex = 0; colIndex < headers.length; colIndex++) {
+        //                                         const cellX = startX + columnWidth * colIndex;
+        //                                         const cellY = startY + cellPadding * rowIndex;
+
+        //                                         doc.rect(cellX, cellY, columnWidth, cellPadding)
+        //                                             .stroke();
+        //                                     }
+        //                                 }
+
+
+        //                                 let serialNumber = 1;
+        //                                 let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+        //                                 breakUpTable.forEach((row, rowIndex) => {
+        //                                     let isEmptyRow = true;
+
+        //                                     const serialX = startX + (columnWidth - doc.widthOfString(serialNumber.toString())) / 2;
+        //                                     doc.fontSize(10)
+        //                                         .fillColor('#000000')
+        //                                         .text(serialNumber.toString(), serialX, dataY + 5);
+
+        //                                     serialNumber++;
+
+        //                                     Object.entries(row).forEach(([description, price], colIndex) => {
+        //                                         if (price !== undefined) {
+        //                                             isEmptyRow = false;
+        //                                             const cellX = startX + columnWidth * (colIndex + 1) + (columnWidth - doc.widthOfString(description)) / 2;
+        //                                             doc.fontSize(10)
+        //                                                 .text(description, cellX, dataY + 5);
+        //                                             const priceX = startX + columnWidth * (colIndex + 2) + (columnWidth - doc.widthOfString(price.toString())) / 2;
+        //                                             doc.fontSize(10)
+        //                                                 .text(price.toString(), priceX, dataY + 5);
+        //                                         }
+        //                                     });
+        //                                     if (!isEmptyRow) {
+        //                                         dataY += cellPadding;
+        //                                     }
+        //                                 });
+
+        //                                 dataY += cellPadding;
+
+
+        //                                 const gapWidth = 120;
+        //                                 doc.fontSize(10).font('Times-Roman')
+        //                                     .text('Total Amount', textX, doc.y + 20, { align: 'center', continued: true })
+        //                                     .text(' '.repeat(gapWidth), { continued: true })
+        //                                     .text(hostel.Amount.toFixed(2));
+
+
+        //                                 doc.fontSize(10)
+        //                                     .text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, dataY + 20, { align: 'left', wordSpacing: 1.5 });
+
+        //                                 dataY += 20;
+
+        //                                 doc.fontSize(9)
+        //                                     .text('This is a system generated receipt and no signature is required.', startX, dataY + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
+
+        //                                 doc.end();
+
+
+
+        //                                 stream.on('finish', function () {
+        //                                     console.log(`PDF generated successfully for ${hostel.UserName}`);
+        //                                     const fileContent = fs.readFileSync(filename);
+        //                                     pdfDetails.push({
+        //                                         filename: filename,
+        //                                         fileContent: fs.readFileSync(filename),
+        //                                         user: hostel.User_Id
+        //                                     });
+
+        //                                     uploadedPDFs++;
+        //                                     if (uploadedPDFs === totalPDFs) {
+        //                                         deletePDfs(filenames);
+        //                                         uploadTo_S3(filenames, response, pdfDetails, connection);
+        //                                     }
+        //                                 });
+        //                             }
+        //                         });
+        //                     } else {
+        //                         doc.image(logoPath, {
+        //                             fit: [80, 100],
+        //                             align: 'center',
+        //                             valign: 'top',
+        //                             margin: 50
+        //                         });
+
+        //                         doc.fontSize(10).font('Times-Roman')
+        //                             .text(hostel.Hostel_Name.toUpperCase(), textStartX, textStartY, { align: 'right' })
+        //                             .moveDown(0.1);
+        //                         doc.fontSize(10).font('Times-Roman')
+        //                             .text(hostel.HostelAddress, textStartX, doc.y, { align: 'right' })
+        //                             .text(hostel.hostel_PhoneNo, textStartX, doc.y, { align: 'right' })
+        //                             .text(`Email : ${hostel.HostelEmail_Id}`, textStartX, doc.y, { align: 'right' })
+        //                             .text('Website: example@smartstay.ae', textStartX, doc.y, { align: 'right' })
+        //                             .text('GSTIN:', textStartX, doc.y, { align: 'right' })
+        //                             .moveDown(2);
+
+
+        //                         doc.fontSize(14).font('Helvetica')
+        //                             .text('Invoice Receipt', textX, doc.y, { align: 'center' })
+        //                             .moveDown(0.5);
+
+        //                         const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
+
+        //                         doc.fontSize(10).font('Times-Roman')
+        //                             .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
+        //                             .text(`Invoice No: ${hostel.Invoices}`, { align: 'right', indent: marginRight })
+        //                             .moveDown(0.5);
+
+        //                         doc.fontSize(10).font('Times-Roman')
+        //                             .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
+        //                             .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
+        //                             .moveDown(0.5);
+
+
+        //                         const headers = ['SNo', 'Description', 'Amount'];
+        //                         const tableTop = 250;
+        //                         const startX = 50;
+        //                         const startY = tableTop;
+        //                         const cellPadding = 30;
+        //                         const tableWidth = 500;
+        //                         const columnWidth = tableWidth / headers.length;
+        //                         const marginTop = 80;
+        //                         const borderWidth = 1;
+
+        //                         const marginTopForAmount = 80;
+
+
+        //                         doc.rect(startX, startY, tableWidth, cellPadding)
+        //                             .fillColor('#b2b5b8')
+        //                             .fill()
+        //                             .stroke();
+
+
+        //                         let headerY = startY + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+        //                         headers.forEach((header, index) => {
+        //                             const headerX = startX + columnWidth * index + (columnWidth - doc.widthOfString(header)) / 2;
+        //                             doc.fontSize(10)
+        //                                 .fillColor('#000000')
+        //                                 .text(header, headerX, headerY + 5);
+        //                         });
+
+
+        //                         doc.rect(startX, startY, tableWidth, (breakUpTable.length + 1) * cellPadding)
+        //                             .stroke();
+
+
+        //                         for (let rowIndex = 0; rowIndex < breakUpTable.length + 1; rowIndex++) {
+        //                             for (let colIndex = 0; colIndex < headers.length; colIndex++) {
+        //                                 const cellX = startX + columnWidth * colIndex;
+        //                                 const cellY = startY + cellPadding * rowIndex;
+
+        //                                 doc.rect(cellX, cellY, columnWidth, cellPadding)
+        //                                     .stroke();
+        //                             }
+        //                         }
+
+
+        //                         let serialNumber = 1;
+        //                         let dataY = startY + cellPadding + (cellPadding / 2) - (doc.currentLineHeight() / 2);
+        //                         breakUpTable.forEach((row, rowIndex) => {
+        //                             let isEmptyRow = true;
+
+        //                             const serialX = startX + (columnWidth - doc.widthOfString(serialNumber.toString())) / 2;
+        //                             doc.fontSize(10)
+        //                                 .fillColor('#000000')
+        //                                 .text(serialNumber.toString(), serialX, dataY + 5);
+
+        //                             serialNumber++;
+
+        //                             Object.entries(row).forEach(([description, price], colIndex) => {
+        //                                 if (price !== undefined) {
+        //                                     isEmptyRow = false;
+        //                                     const cellX = startX + columnWidth * (colIndex + 1) + (columnWidth - doc.widthOfString(description)) / 2;
+        //                                     doc.fontSize(10)
+        //                                         .text(description, cellX, dataY + 5);
+        //                                     const priceX = startX + columnWidth * (colIndex + 2) + (columnWidth - doc.widthOfString(price.toString())) / 2;
+        //                                     doc.fontSize(10)
+        //                                         .text(price.toString(), priceX, dataY + 5);
+        //                                 }
+        //                             });
+        //                             if (!isEmptyRow) {
+        //                                 dataY += cellPadding;
+        //                             }
+        //                         });
+
+        //                         dataY += cellPadding;
+
+
+        //                         const gapWidth = 120;
+        //                         doc.fontSize(10).font('Times-Roman')
+        //                             .text('Total Amount', textX, doc.y + 20, { align: 'center', continued: true })
+        //                             .text(' '.repeat(gapWidth), { continued: true })
+        //                             .text(hostel.Amount.toFixed(2));
+
+
+
+        //                         doc.fontSize(10)
+        //                             .text('We have received your payment of ' + convertAmountToWords(hostel.Amount.toFixed(0)) + ' Rupees and Zero Paise at ' + moment().format('hh:mm A'), startX, dataY + 20, { align: 'left', wordSpacing: 1.5 });
+
+        //                         dataY += 20;
+
+        //                         doc.fontSize(9)
+        //                             .text('This is a system generated receipt and no signature is required.', startX, dataY + marginTop, { align: 'center', wordSpacing: 1, characterSpacing: 0.5 });
+
+        //                         doc.end();
+
+        //                         stream.on('finish', function () {
+        //                             console.log(`PDF generated successfully for ${hostel.UserName}`);
+        //                             const fileContent = fs.readFileSync(filename);
+        //                             pdfDetails.push({
+        //                                 filename: filename,
+        //                                 fileContent: fs.readFileSync(filename),
+        //                                 user: hostel.User_Id
+        //                             });
+
+        //                             uploadedPDFs++;
+        //                             if (uploadedPDFs === totalPDFs) {
+        //                                 deletePDfs(filenames);
+        //                                 uploadTo_S3(filenames, response, pdfDetails, connection);
+        //                             }
+        //                         });
+
+        //                     }
+
+        //                 })
+
+
+        //             })
+
+        //         } else {
+        //             response.status(404).json({ message: 'No data found' });
+        //         }
+        //     });
     }
 }
 
