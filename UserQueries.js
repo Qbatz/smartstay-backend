@@ -172,7 +172,7 @@ function createUser(connection, request, response) {
                                 })
                                     .catch(error => {
                                         console.error("Error:", error);
-                                        response.status(204).json({ message: "Error processing invoices", statusCode: 204 });
+                                        response.status(205).json({ message: "Error processing invoices", statusCode: 205 });
                                     });
                             }
                         })
@@ -184,7 +184,7 @@ function createUser(connection, request, response) {
                             connection.query(sqlAdvance, [atten.ID], function (advanceErr, advanceData) {
                                 if (advanceErr) {
                                     console.log(`Error checking advance:`, advanceErr);
-                                    response.status(204).json({ message: "Error processing invoices", statusCode: 204 });
+                                    response.status(205).json({ message: "Error processing invoices", statusCode: 205 });
                                     return;
                                 }
 
@@ -196,7 +196,7 @@ function createUser(connection, request, response) {
                                     var updateAdvanceQuery = "UPDATE invoicedetails SET Name=?, phoneNo=?, EmailID=?, Hostel_Name=?, Hostel_Id=?, Floor_Id=?, Room_No=?, Amount=?, UserAddress=?, Date=?, RoomRent=?, Bed=?, BalanceDue=?, PaidAmount=? WHERE id=?";
                                     connection.query(updateAdvanceQuery, [Name, atten.Phone, atten.Email, atten.HostelName, atten.hostel_Id, atten.Floor, atten.Rooms, atten.AdvanceAmount, atten.Address, currentDate, atten.RoomRent, atten.Bed, balance_amount, atten.paid_advance, invoiceId], function (updateAdvanceErr, updateAdvanceRes) {
                                         if (updateAdvanceErr) {
-                                            response.status(204).json({ message: "Error processing invoices", statusCode: 204 });
+                                            response.status(205).json({ message: "Error processing invoices", statusCode: 205 });
                                             return;
                                         }
                                         response.status(200).json({ message: "Update Successfully", statusCode: 200 });
@@ -289,22 +289,21 @@ function createUser(connection, request, response) {
                                         connection.query(sqL_12, function (err, data) {
                                             if (err) {
                                                 console.log(err);
-                                                response.status(201).json({ message: "Unable to add Advance Amount Transactions", statusCode: 201 });
-                                            } else {
-
-                                                insert_rent_invoice(connection, user_ids, paid_amount, balance_rent).then(() => {
-                                                    return insert_advance_invoice(connection, user_ids);
-                                                }).then(() => {
-                                                    response.status(200).json({ message: "Save Successfully", statusCode: 200 });
-                                                })
-                                                    .catch(error => {
-                                                        console.error("Error:", error);
-                                                        response.status(500).json({ message: "Error processing invoices", statusCode: 500 });
-                                                    });
                                             }
                                         })
-                                    } else {
-                                        response.status(200).json({ message: "Save Successfully", statusCode: 200 });
+                                    }
+
+                                    if (atten.AdvanceAmount != undefined && atten.AdvanceAmount != 0) {
+
+                                        insert_rent_invoice(connection, user_ids, paid_amount, balance_rent).then(() => {
+                                            return insert_advance_invoice(connection, user_ids);
+                                        }).then(() => {
+                                            response.status(200).json({ message: "Save Successfully", statusCode: 200 });
+                                        })
+                                        .catch(error => {
+                                            console.error("Error:", error);
+                                            response.status(205).json({ message: "Error processing invoices", statusCode: 205 });
+                                        });
                                     }
                                 }
                             });
