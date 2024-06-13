@@ -120,8 +120,8 @@ function createUser(connection, request, response) {
                                     })
 
                                 } else {
-                                    var sql_1 = "INSERT INTO advance_amount_transactions (user_id,inv_id,amount,status) VALUES(?,?,?,?);";
-                                    connection.query(sql_1, [user_ids, 0, paid_rent, 1], function (ins_err, ins_res) {
+                                    var sql_1 = "INSERT INTO advance_amount_transactions (user_id,inv_id,advance_amount,payment_status,created_by) VALUES(?,?,?,?,?);";
+                                    connection.query(sql_1, [user_ids, 0, paid_advance, 1,created_by], function (ins_err, ins_res) {
                                         if (ins_err) {
                                             console.log(ins_err);
                                         }
@@ -272,6 +272,18 @@ function createUser(connection, request, response) {
                                     var balance_rent = total_rent - paid_amount;
 
                                     if (atten.AdvanceAmount != undefined && atten.AdvanceAmount != 0) {
+
+                                        if (paid_rent != undefined || paid_rent != 0) {
+
+                                            var sqL_12 = "INSERT INTO transactions (user_id,invoice_id,amount,created_by,status) VALUES ('" + user_ids + "',0,'" + paid_rent + "','" + created_by + "',1)";
+                                            connection.query(sqL_12, function (err, data) {
+                                                if (err) {
+                                                    console.log(err);
+                                                } else {
+                                                }
+                                            });
+                                        }
+
 
                                         var sqL_12 = "INSERT INTO advance_amount_transactions (user_id,inv_id,advance_amount,created_by) VALUES ('" + user_ids + "',0,'" + atten.paid_advance + "','" + created_by + "')";
                                         connection.query(sqL_12, function (err, data) {
