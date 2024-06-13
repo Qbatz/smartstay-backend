@@ -1210,7 +1210,7 @@ async function convertImage(imageBuffer) {
 function InvoicePDf(connection, reqBodyData, response) {
     console.log("reqBodyData", reqBodyData)
 
-    var invocice_type = reqBodyData.invocice_type;
+    var invocice_type = reqBodyData.invoice_type;
 
     if (!invocice_type || invocice_type == undefined) {
         var invocice_type = 1
@@ -1234,15 +1234,15 @@ function InvoicePDf(connection, reqBodyData, response) {
                 .replace(/{{amount}}/g, inv_data.Amount);
 
             if (inv_data.invoice_type == 1) {
-                htmlContent=htmlContent.replace('{{Amount_name}}', "Rent Amount")
+                htmlContent = htmlContent.replace('{{Amount_name}}', "Rent Amount")
             } else {
-                htmlContent=htmlContent.replace('{{Amount_name}}', "Advance Amount")
+                htmlContent = htmlContent.replace('{{Amount_name}}', "Advance Amount")
             }
 
             const currentDate = moment().format('YYYY-MM-DD');
             const currentMonth = moment(currentDate).month() + 1;
             const currentYear = moment(currentDate).year();
-            const currentTime = moment().format('HHmmss'); 
+            const currentTime = moment().format('HHmmss');
 
             const filename = `INV${currentMonth}${currentYear}${currentTime}${inv_data.User_Id}.pdf`;
             const outputPath = path.join(__dirname, filename);
@@ -1263,6 +1263,7 @@ function InvoicePDf(connection, reqBodyData, response) {
 
                 // Remove the local PDF file after upload
                 fs.unlinkSync(outputPath);
+
             });
 
         } catch (error) {
@@ -1326,8 +1327,10 @@ function InvoicePDf(connection, reqBodyData, response) {
             }
 
             generatePDF(data[0]);
+            response.status(200).json({ message: 'Insert PDF successfully' });
         });
-    } else {
+    } 
+    else {
         connection.query(`SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount,invoice.invoice_type, invoice.id, invoice.Name as UserName,invoice.User_Id,invoice.UserAddress, invoice.Invoices,invoice.DueDate, invoice.AmnitiesAmount AS amt_amount,invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND DATE(invoice.Date) = ? AND invoice.id = ?`,
             [reqBodyData.User_Id, reqBodyData.Date, reqBodyData.id], function (error, data) {
                 if (error) {
@@ -1337,6 +1340,7 @@ function InvoicePDf(connection, reqBodyData, response) {
 
                     if (data[0].EbAmount == 0 && data[0].amt_amount == 0 && data[0].invoice_type == 1) {
                         generatePDF(data[0]);
+                        response.status(200).json({ message: 'Insert PDF successfully' });
                     }
 
                     let totalPDFs = data.length;
@@ -1688,11 +1692,9 @@ function InvoicePDf(connection, reqBodyData, response) {
                                             uploadedPDFs++;
                                             if (uploadedPDFs === totalPDFs) {
                                                 deletePDfs(filenames);
-                                                uploadToS3(filenames, response, pdfDetails, connection);
+                                                uploadTo_S3(filenames, response, pdfDetails, connection);
                                             }
                                         });
-
-
                                     }
                                 });
                             } else {
@@ -1836,7 +1838,7 @@ function InvoicePDf(connection, reqBodyData, response) {
                                     uploadedPDFs++;
                                     if (uploadedPDFs === totalPDFs) {
                                         deletePDfs(filenames);
-                                        uploadToS3(filenames, response, pdfDetails, connection);
+                                        uploadTo_S3(filenames, response, pdfDetails, connection);
                                     }
                                 });
 
@@ -1924,12 +1926,11 @@ async function convertImage(imageBuffer) {
 }
 
 
-function uploadToS3(pdfDetailsArray, response, connection) {
+function uploadTo_S3(pdfDetailsArray, response, connection) {
     let totalPDFs = pdfDetailsArray.length;
     let uploadedPDFs = 0;
     let pdfInfo = [];
     let errorMessage;
-
     pdfDetailsArray.forEach(pdfDetails => {
         const { filename, fileContent, user } = pdfDetails;
         const key = `Invoice/${filename}`;
