@@ -463,9 +463,7 @@ function transitionlist(connection, request, response) {
 
                             var new_amount = already_paid_amount + amount;
 
-                            if (new_amount > already_paid_amount) {
-                                response.status(201).json({ message: "Pay Amount More than Rent Amount, Kindly Check Advance Amount" })
-                            } else {
+                            
 
                                 if (new_amount == already_paid_amount) {
                                     var Status = 'Success';
@@ -491,7 +489,7 @@ function transitionlist(connection, request, response) {
                                     }
                                 })
                             }
-                        } else {
+                         else {
                             response.status(201).json({ message: 'Invalid User Id' });
                         }
                     })
