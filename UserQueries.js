@@ -184,93 +184,92 @@ function createUser(connection, request, response) {
             }
         })
     } else {
-        function generateUserId(firstName) {
-            const userIdPrefix = firstName.substring(0, 4).toUpperCase();
-            const randomNum = Math.floor(100 + Math.random() * 900);
-            const userId = userIdPrefix + randomNum;
-            return userId;
-        }
-        const User_Id = generateUserId(atten.firstname);
-        console.log(" User_Id", User_Id)
-        let userID;
-        connection.query(`SELECT * FROM hostel WHERE User_Id='${User_Id}'`, function (error, data) {
+        
+        connection.query(`SELECT * FROM hostel WHERE Phone='${atten.Phone}' OR Email='${atten.Email}' AND isActive = 1`, function (error, data) {
             if (data.length > 0) {
-                userID = generateUserId(firstName)
-            }
-            else {
-                userID = User_Id
-            }
+                response.status(202).json({ message: "Phone Number Already Exists", statusCode: 202 });
+            } else {
+                // Need to Check for the Mail Exist Error
+                connection.query(`SELECT * FROM hostel WHERE Email='${atten.Email}' AND isActive = 1`, function (error, data) {
+                    if (data.length > 0) {
+                        response.status(203).json({ message: "Email Already Exists", statusCode: 203 });
+                    } else {
 
-            connection.query(`SELECT * FROM hostel WHERE Phone='${atten.Phone}' OR Email='${atten.Email}' AND isActive = 1`, function (error, data) {
-                if (data.length > 0) {
-                    response.status(202).json({ message: "Phone Number Already Exists", statusCode: 202 });
-                } else {
-                    // Need to Check for the Mail Exist Error
-                    connection.query(`SELECT * FROM hostel WHERE Email='${atten.Email}' AND isActive = 1`, function (error, data) {
-                        if (data.length > 0) {
-                            response.status(203).json({ message: "Email Already Exists", statusCode: 203 });
-                        } else {
+                        // Check and Update Advance Amount and first month rent Amount;
 
-                            // Check and Update Advance Amount and first month rent Amount;
+                        var paid_advance = atten.paid_advance ? atten.paid_advance : 0;
+                        var pending_advance = atten.AdvanceAmount - paid_advance;
 
-                            var paid_advance = atten.paid_advance ? atten.paid_advance : 0;
-                            var pending_advance = atten.AdvanceAmount - paid_advance;
+                        connection.query(`INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance) VALUES ('${Circle}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}','${paid_advance}','${pending_advance}')`, function (insertError, insertData) {
+                            if (insertError) {
+                                console.log(insertError);
+                                response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
+                            } else {
 
-                            connection.query(`INSERT INTO hostel (Circle,User_Id, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance) VALUES ('${Circle}','${userID}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}','${paid_advance}','${pending_advance}')`, function (insertError, insertData) {
-                                if (insertError) {
-                                    console.log(insertError);
-                                    response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
-                                } else {
+                                var user_ids = insertData.insertId;
 
-                                    var paid_rent = atten.paid_rent;
-                                    var user_ids = insertData.insertId;
-                                    var paid_amount = paid_rent || 0; // Use logical OR to provide default value
-                                    var total_rent = atten.RoomRent;
-                                    var balance_rent = total_rent - paid_amount;
+                                const gen_user_id = generateUserId(atten.firstname, user_ids);
 
-                                    if (atten.AdvanceAmount != undefined && atten.AdvanceAmount > 0) {
-
-                                        if (paid_rent > 0) {
-
-                                            var sqL_12 = "INSERT INTO transactions (user_id,invoice_id,amount,created_by,status) VALUES ('" + user_ids + "',0,'" + paid_rent + "','" + created_by + "',1)";
-                                            connection.query(sqL_12, function (err, data) {
-                                                if (err) {
-                                                    console.log(err);
-                                                } else {
-                                                }
-                                            });
-                                        }
-
-                                        if (paid_advance > 0) {
-                                            var sqL_12 = "INSERT INTO advance_amount_transactions (user_id,inv_id,advance_amount,created_by) VALUES ('" + user_ids + "',0,'" + atten.paid_advance + "','" + created_by + "')";
-                                            connection.query(sqL_12, function (err, data) {
-                                                if (err) {
-                                                    console.log(err);
-                                                }
-                                            })
-                                        }
-
-                                        insert_rent_invoice(connection, user_ids, paid_amount, balance_rent).then(() => {
-                                            return insert_advance_invoice(connection, user_ids);
-                                        }).then(() => {
-                                            response.status(200).json({ message: "Save Successfully", statusCode: 200 });
-                                        })
-                                            .catch(error => {
-                                                console.error("Error:", error);
-                                                response.status(205).json({ message: "Error processing invoices", statusCode: 205 });
-                                            });
+                                var update_user_id = "UPDATE hostel SET User_Id=? WHERE ID=?";
+                                connection.query(update_user_id, [gen_user_id, user_ids], function (up_id_err, up_id_res) {
+                                    if (up_id_err) {
+                                        response.status(201).json({ message: "Unable to add User Id", statusCode: 201 });
                                     } else {
-                                        response.status(200).json({ message: "Save Successfully", statusCode: 200 });
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }
-            });
-        })
+                                        var paid_rent = atten.paid_rent;
+                                        var paid_amount = paid_rent || 0; // Use logical OR to provide default value
+                                        var total_rent = atten.RoomRent;
+                                        var balance_rent = total_rent - paid_amount;
 
+                                        if (atten.AdvanceAmount != undefined && atten.AdvanceAmount > 0) {
+
+                                            if (paid_rent > 0) {
+
+                                                var sqL_12 = "INSERT INTO transactions (user_id,invoice_id,amount,created_by,status) VALUES ('" + user_ids + "',0,'" + paid_rent + "','" + created_by + "',1)";
+                                                connection.query(sqL_12, function (err, data) {
+                                                    if (err) {
+                                                        console.log(err);
+                                                    } else {
+                                                    }
+                                                });
+                                            }
+
+                                            if (paid_advance > 0) {
+                                                var sqL_12 = "INSERT INTO advance_amount_transactions (user_id,inv_id,advance_amount,created_by) VALUES ('" + user_ids + "',0,'" + atten.paid_advance + "','" + created_by + "')";
+                                                connection.query(sqL_12, function (err, data) {
+                                                    if (err) {
+                                                        console.log(err);
+                                                    }
+                                                })
+                                            }
+
+                                            insert_rent_invoice(connection, user_ids, paid_amount, balance_rent).then(() => {
+                                                return insert_advance_invoice(connection, user_ids);
+                                            }).then(() => {
+                                                response.status(200).json({ message: "Save Successfully", statusCode: 200 });
+                                            })
+                                                .catch(error => {
+                                                    console.error("Error:", error);
+                                                    response.status(205).json({ message: "Error processing invoices", statusCode: 205 });
+                                                });
+                                        } else {
+                                            response.status(200).json({ message: "Save Successfully", statusCode: 200 });
+                                        }
+                                    }
+                                })
+                            }
+                        });
+                    }
+                });
+            }
+        });
     }
+}
+
+function generateUserId(firstName, user_id) {
+    const userIdPrefix = firstName.substring(0, 4).toUpperCase();
+    const user_ids = user_id.toString().padStart(3, '0');
+    const userId = userIdPrefix + user_ids;
+    return userId;
 }
 
 // Insert Rent Amount
@@ -385,8 +384,8 @@ function insert_advance_invoice(connection, user_id) {
                     }
                 })
             } else {
-                console.log("Invalid User Details");
-                reject("Invalid User Details");
+                console.log("Invalid Advance User Details");
+                reject("Invalid User Advance Details");
             }
         })
     })
@@ -459,7 +458,7 @@ function transitionlist(connection, request, response) {
                         } else if (sel1_res.length != 0) {
 
                             var user_id = sel1_res[0].ID;
-                            
+
                             var already_paid_amount = check_res[0].PaidAmount;
 
                             var new_amount = already_paid_amount + amount;
