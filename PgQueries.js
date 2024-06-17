@@ -556,8 +556,79 @@ function get_room_details(connection, request, response) {
 
     if ((!hostel_id && hostel_id == undefined) || (!room_id && room_id == undefined)) {
         response.status(201).json({ message: "Missing Parameter Values", statusCode: 201 });
+    } else {
+        var sql1 = "SELECT * FROM hosteldetails WHERE id='" + hostel_id + "' AND isActive =1;";
+        connection.query(sql1, function (sq_err, sq_res) {
+            if (sq_err) {
+                response.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 });
+            } else if (sq_res.length != 0) {
+
+                var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Room_Id=? AND isActive=1;";
+                connection.query(sql2, [hostel_id, room_id], function (room_err, room_res) {
+                    if (room_err) {
+                        response.status(201).json({ message: "Unable to Get Room Details", statusCode: 201 });
+                    } else if (room_res.length != 0) {
+                        response.status(200).json({ message: "Room Details", statusCode: 200, room_details: room_res[0] });
+                    } else {
+                        response.status(201).json({ message: "Invalid Or Inactive Room ID", statusCode: 201 });
+                    }
+                })
+
+            } else {
+                response.status(201).json({ message: "Invalid or Inactive Hostel Details", statusCode: 201 });
+            }
+        })
+    }
+}
+
+// Update Particular Room Details
+function update_room_details(connection, request, response) {
+    var { hostel_id, room_id, amount } = request.body;
+
+    if ((!hostel_id && hostel_id == undefined) || (!room_id && room_id == undefined) || (!amount && amount < 0)) {
+        response.status(201).json({ message: "Missing Parameter Values", statusCode: 201 });
+    } else {
+        var sql1 = "SELECT * FROM hosteldetails WHERE id='" + hostel_id + "' AND isActive =1;";
+        connection.query(sql1, function (sq_err, sq_res) {
+            if (sq_err) {
+                response.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 });
+            } else if (sq_res.length != 0) {
+
+                var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Room_Id=?";
+                connection.query(sql2, [hostel_id, room_id], function (room_err, room_res) {
+                    if (room_err) {
+                        response.status(201).json({ message: "Unable to Get Room Details", statusCode: 201 });
+                    } else if (room_res.length != 0) {
+
+                        var id = room_res[0].id;
+
+                        var update_query = "UPDATE hostelrooms SET Price=? WHERE id=?";
+                        connection.query(update_query, [amount, id], function (up_err, up_res) {
+                            if (up_err) {
+                                response.status(201).json({ message: "Unable to Update Room Details", statusCode: 201 });
+                            } else {
+
+                                var update_user_query = "UPDATE hostel SET RoomRent=? WHERE Hostel_Id=? AND Rooms=? AND isActive=1";
+                                connection.query(update_user_query, [amount, hostel_id, room_id], function (err, data) {
+                                    if (err) {
+                                        response.status(201).json({ message: "Unable to Update Users Rent", statusCode: 201 });
+                                    } else {
+                                        response.status(200).json({ message: "Update Successfully", statusCode: 200 });
+                                    }
+                                })
+
+                            }
+                        })
+                    } else {
+                        response.status(201).json({ message: "Invalid Room ID", statusCode: 201 });
+                    }
+                })
+            } else {
+                response.status(201).json({ message: "Invalid or Inactive Hostel Details", statusCode: 201 });
+            }
+        })
     }
 }
 
 
-module.exports = { getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteFloor, deleteRoom, deleteBed, get_room_details }
+module.exports = { getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details }

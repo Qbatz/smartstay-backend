@@ -402,8 +402,16 @@ app.post('/payment_history', (request, response) => {
     accountManagement.payment_history(connection, response, request)
 })
 
+// ************* Use it Later ***********//
 // Get Room Details
 app.post('/get_room_details', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     pgQueries.get_room_details(connection, request,response)
 })
+
+// Update Particular Room Details
+app.post('/update_room_details', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    pgQueries.update_room_details(connection, request,response)
+})
+// ************* Use it Later ***********//
