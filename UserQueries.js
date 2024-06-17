@@ -69,6 +69,7 @@ function createUser(connection, request, response) {
                 var overall_advance = atten.AdvanceAmount;
                 var paid_advance = paid_advance1;
                 var pending_advance = overall_advance - paid_advance;
+                var payable_rent = atten.payable_rent;  // Number of days rent amount
 
                 connection.query(`UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${atten.Phone}', Email='${atten.Email}', Address='${atten.Address}', AadharNo='${atten.AadharNo}', PancardNo='${atten.PancardNo}',licence='${atten.licence}',HostelName='${atten.HostelName}',Hostel_Id='${atten.hostel_Id}', Floor='${atten.Floor}', Rooms='${atten.Rooms}', Bed='${atten.Bed}', AdvanceAmount='${atten.AdvanceAmount}', RoomRent='${atten.RoomRent}', BalanceDue='${atten.BalanceDue}', PaymentType='${atten.PaymentType}', Status='${Status}',paid_advance='${paid_advance}',pending_advance='${pending_advance}' WHERE ID='${atten.ID}'`, function (updateError, updateData) {
                     if (updateError) {
@@ -145,11 +146,11 @@ function createUser(connection, request, response) {
 
                                 var total_rent = atten.RoomRent;
                                 var paid_amount = paid_rent != undefined ? paid_rent : 0;
-                                var balance_rent = total_rent - paid_amount;
+                                var balance_rent = payable_rent - paid_amount;
 
                                 if (rent_res.length == 0) {
                                     // Insert rent invoice if not exists
-                                    insert_rent_invoice(connection, user_ids, paid_amount, balance_rent).then(() => {
+                                    insert_rent_invoice(connection, user_ids, paid_amount, balance_rent, payable_rent).then(() => {
 
                                         if (paid_rent != undefined && paid_rent != 0) {
                                             var sql2 = "SELECT * FROM transactions WHERE user_id=? AND invoice_id=0 AND MONTH(createdAt) = MONTH(CURDATE()) AND YEAR(createdAt) = YEAR(CURDATE())";
@@ -200,6 +201,8 @@ function createUser(connection, request, response) {
                         var paid_advance = atten.paid_advance ? atten.paid_advance : 0;
                         var pending_advance = atten.AdvanceAmount - paid_advance;
 
+                        var payable_rent = atten.payable_rent;  // Number of days rent amount
+
                         connection.query(`INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance) VALUES ('${Circle}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}','${paid_advance}','${pending_advance}')`, function (insertError, insertData) {
                             if (insertError) {
                                 console.log(insertError);
@@ -218,7 +221,7 @@ function createUser(connection, request, response) {
                                         var paid_rent = atten.paid_rent;
                                         var paid_amount = paid_rent || 0; // Use logical OR to provide default value
                                         var total_rent = atten.RoomRent;
-                                        var balance_rent = total_rent - paid_amount;
+                                        var balance_rent = payable_rent - paid_amount;
 
                                         if (atten.AdvanceAmount != undefined && atten.AdvanceAmount > 0) {
 
@@ -242,7 +245,7 @@ function createUser(connection, request, response) {
                                                 })
                                             }
 
-                                            insert_rent_invoice(connection, user_ids, paid_amount, balance_rent).then(() => {
+                                            insert_rent_invoice(connection, user_ids, paid_amount, balance_rent, payable_rent).then(() => {
                                                 return insert_advance_invoice(connection, user_ids);
                                             }).then(() => {
                                                 response.status(200).json({ message: "Save Successfully", statusCode: 200 });
@@ -273,7 +276,7 @@ function generateUserId(firstName, user_id) {
 }
 
 // Insert Rent Amount
-function insert_rent_invoice(connection, user_id, paid_amount, balance_rent) {
+function insert_rent_invoice(connection, user_id, paid_amount, balance_rent, payable_rent) {
 
     return new Promise((resolve, reject) => {
 
@@ -308,14 +311,14 @@ function insert_rent_invoice(connection, user_id, paid_amount, balance_rent) {
 
                 // console.log(`invoiceNo`, invoiceNo);
 
-                if (inv_data.RoomRent == inv_data.paid_advance) {
+                if (payable_rent == paid_amount) {
                     var status = "Success";
                 } else {
                     var status = "Pending";
                 }
 
                 var sql2 = "INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Amnities_deduction_Amount, Hostel_Based, Room_Based, Bed,BalanceDue,PaidAmount,numberofdays,hos_user_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?)"
-                connection.query(sql2, [inv_data.user_name, inv_data.Phone, inv_data.Email, inv_data.Name, inv_data.detHostel_Id, inv_data.hosFloor, inv_data.hosRoom, inv_data.RoomRent, inv_data.Address, currentDate, dueDate, invoiceNo, status, inv_data.User_Id, 0, 0, 0, 0, 0, 0, inv_data.Bed, balance_rent, paid_amount, inv_data.hos_user_id], function (ins_err, ins_res) {
+                connection.query(sql2, [inv_data.user_name, inv_data.Phone, inv_data.Email, inv_data.Name, inv_data.detHostel_Id, inv_data.hosFloor, inv_data.hosRoom, payable_rent, inv_data.Address, currentDate, dueDate, invoiceNo, status, inv_data.User_Id, 0, 0, 0, 0, 0, 0, inv_data.Bed, balance_rent, paid_amount, inv_data.hos_user_id], function (ins_err, ins_res) {
                     if (ins_err) {
                         console.log('Insert Error', ins_err);
                         reject(ins_err);
