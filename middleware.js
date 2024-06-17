@@ -7,6 +7,7 @@ module.exports = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
+    // Not Need to Token
     const openEndpoints = [
         '/login/login',
         '/otp-send/response',
@@ -30,7 +31,7 @@ module.exports = (req, res, next) => {
                 const timeToExpire = decoded.exp - currentTime;
 
                 let newToken = null;
-                console.log(`timeToExpire`, timeToExpire);
+
                 // Refresh the token
                 if (timeToExpire <= 300) {
                     newToken = jwt.sign(

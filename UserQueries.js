@@ -6,7 +6,7 @@ function getUsers(connection, response, request) {
 
     // Get values in middleware
     const userDetails = request.user_details;
-    const query = `SELECT * FROM hosteldetails hstlDetails inner join hostel hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true WHERE hstlDetails.created_By ='${userDetails.id}'`;
+    const query = `SELECT hstlDetails.*,hstl.*,CONVERT_TZ(hstl.createdAt, '+00:00', 'Asia/Kolkata') AS added_date FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true WHERE hstlDetails.created_By ='${userDetails.id}'`;
     connection.query(query, function (error, hostelData) {
         if (error) {
             console.error(error);
@@ -184,7 +184,7 @@ function createUser(connection, request, response) {
             }
         })
     } else {
-        
+
         connection.query(`SELECT * FROM hostel WHERE Phone='${atten.Phone}' OR Email='${atten.Email}' AND isActive = 1`, function (error, data) {
             if (data.length > 0) {
                 response.status(202).json({ message: "Phone Number Already Exists", statusCode: 202 });
@@ -463,33 +463,33 @@ function transitionlist(connection, request, response) {
 
                             var new_amount = already_paid_amount + amount;
 
-                            
 
-                                if (new_amount == already_paid_amount) {
-                                    var Status = 'Success';
-                                } else {
-                                    var Status = 'Pending';
-                                }
 
-                                var sql2 = "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=?,Status=? WHERE id=?";
-                                connection.query(sql2, [balance_due, new_amount, Status, id], function (up_err, up_res) {
-                                    if (up_err) {
-                                        response.status(201).json({ message: 'Unable to Update User Details' });
-                                    } else {
-
-                                        var sql3 = "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by) VALUES (?,?,?,1,?)";
-                                        connection.query(sql3, [user_id, invoice_id, amount, created_by], function (ins_err, ins_res) {
-                                            if (ins_err) {
-                                                response.status(201).json({ message: 'Unable to Add Transactions Details' });
-                                            } else {
-                                                response.status(200).json({ message: "Update Successfully" });
-                                            }
-                                        })
-
-                                    }
-                                })
+                            if (new_amount == already_paid_amount) {
+                                var Status = 'Success';
+                            } else {
+                                var Status = 'Pending';
                             }
-                         else {
+
+                            var sql2 = "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=?,Status=? WHERE id=?";
+                            connection.query(sql2, [balance_due, new_amount, Status, id], function (up_err, up_res) {
+                                if (up_err) {
+                                    response.status(201).json({ message: 'Unable to Update User Details' });
+                                } else {
+
+                                    var sql3 = "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by) VALUES (?,?,?,1,?)";
+                                    connection.query(sql3, [user_id, invoice_id, amount, created_by], function (ins_err, ins_res) {
+                                        if (ins_err) {
+                                            response.status(201).json({ message: 'Unable to Add Transactions Details' });
+                                        } else {
+                                            response.status(200).json({ message: "Update Successfully" });
+                                        }
+                                    })
+
+                                }
+                            })
+                        }
+                        else {
                             response.status(201).json({ message: 'Invalid User Id' });
                         }
                     })

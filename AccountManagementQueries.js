@@ -381,7 +381,7 @@ function payment_history(connection, response, request) {
             response.status(201).json({ message: "Unable to get User Details", statusCode: 201 })
         } else if (sel_res.length != 0) {
 
-            var sql2 = "SELECT 'advance' AS type, id, user_id, advance_amount AS amount, createdAt AS created_at FROM advance_amount_transactions WHERE user_id =? UNION ALL SELECT 'rent' AS type, id, user_id, amount, createdAt AS created_at FROM transactions WHERE user_id =? ORDER BY created_at DESC";
+            var sql2 = "SELECT 'advance' AS type, id, user_id, advance_amount AS amount,payment_status AS status, createdAt AS created_at FROM advance_amount_transactions WHERE user_id =? UNION ALL SELECT 'rent' AS type, id, user_id, amount,status, createdAt AS created_at FROM transactions WHERE user_id =? ORDER BY created_at DESC";
             connection.query(sql2, [user_id, user_id], function (err, results) {
                 if (err) {
                     response.status(201).json({ message: "Unable to get Payment History", statusCode: 201 });
