@@ -44,7 +44,7 @@ function hostelListDetails(connection, response) {
 function createPG(connection, request, response) {
     const userDetails = request.user_details;
     const reqData = request.body;
-    
+
     let hostelID, errorMessage
     if (reqData) {
         const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) values (\'${reqData.name}\',\'${reqData.phoneNo}\',\'${reqData.number_of_floors}\',\'${reqData.email_Id}\',\'${reqData.location}\',\'${userDetails.id}\')`
@@ -374,7 +374,7 @@ function CreateFloor(connection, reqDataFloor, response) {
                 hostel_ID = data[0].id
                 const index = reqDataFloor.hostelDetails.length - 1
                 const floor = data[0].number_Of_Floor + reqDataFloor.hostelDetails.length
-                
+
                 const query2 = `UPDATE hosteldetails SET number_Of_Floor='${floor}' WHERE id='${hostel_ID}'`
                 connection.query(query2, function (error, create_floor) {
                     if (error) {
@@ -487,9 +487,9 @@ function listDashBoard(connection, response, request) {
 
 function deleteFloor(connection, response, reqData) {
     if (reqData) {
-        connection.query(`select number_Of_Floor from hosteldetails where id='${reqData.id}'`,function(err,floorData){
-            if(floorData && floorData.length > 0){
-                let floor = Number(floorData[0].number_Of_Floor)-1
+        connection.query(`select number_Of_Floor from hosteldetails where id='${reqData.id}'`, function (err, floorData) {
+            if (floorData && floorData.length > 0) {
+                let floor = Number(floorData[0].number_Of_Floor) - 1
                 connection.query(`UPDATE hosteldetails SET number_Of_Floor= ${floor} WHERE id='${reqData.id}'`, function (error, data) {
                     if (error) {
                         response.status(201).json({ message: "doesn't update" });
@@ -502,13 +502,14 @@ function deleteFloor(connection, response, reqData) {
                 response.status(201).json({ message: "Invalid Credential" });
             }
         })
-        
+
     }
     else {
         response.status(201).json({ message: "Missing parameter" });
     }
 
 }
+
 function deleteRoom(connection, response, reqData) {
     if (reqData.floorId && reqData.roomNo) {
         connection.query(`UPDATE hostelrooms SET isActive = 0 WHERE Hostel_Id='${reqData.hostelId}' AND Room_Id= ${reqData.roomNo} AND Floor_Id=${reqData.floorId}`, function (error, data) {
@@ -549,5 +550,14 @@ function deleteBed(connection, response, reqData) {
 
 }
 
+// Get Particular Room Details
+function get_room_details(connection, request, response) {
+    var { hostel_id, room_id } = request.body;
 
-module.exports = { getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteFloor,deleteRoom,deleteBed }
+    if ((!hostel_id && hostel_id == undefined) || (!room_id && room_id == undefined)) {
+        response.status(201).json({ message: "Missing Parameter Values", statusCode: 201 });
+    }
+}
+
+
+module.exports = { getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteFloor, deleteRoom, deleteBed, get_room_details }

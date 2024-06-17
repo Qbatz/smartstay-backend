@@ -356,9 +356,9 @@ app.post('/list/dashboard', (request, response) => {
     pgQueries.listDashBoard(connection, response, request)
 })
 
-app.post('/get_user_details',(request,response)=>{
+app.post('/get_user_details', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    accountManagement.get_user_details(connection,request,response);
+    accountManagement.get_user_details(connection, request, response);
 })
 
 app.post('/invoice/invoiceUpdate', (request, response) => {
@@ -400,4 +400,10 @@ app.post('/forgot_otp_response', (request, response) => {
 app.post('/payment_history', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     accountManagement.payment_history(connection, response, request)
+})
+
+// Get Room Details
+app.post('/get_room_details', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    pgQueries.get_room_details(connection, request,response)
 })
