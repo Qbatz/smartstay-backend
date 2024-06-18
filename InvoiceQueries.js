@@ -1021,7 +1021,7 @@ function getInvoiceListForAll(connection, response) {
 
 function getInvoiceList(connection, response, request) {
     const userDetails = request.user_details;
-    const query = `SELECT * FROM hosteldetails  hstlDetails inner join invoicedetails  invoice  on invoice.Hostel_Id=hstlDetails.id  WHERE hstlDetails.created_By ='${userDetails.id}'`;
+    const query = `SELECT * FROM hosteldetails  hstlDetails inner join invoicedetails  invoice  on invoice.Hostel_Id=hstlDetails.id  WHERE hstlDetails.created_By ='${userDetails.id}' ORDER BY invoice.id DESC`;
     connection.query(query, function (error, data) {
         if (error) {
             response.status(403).json({ message: 'not connected' })
