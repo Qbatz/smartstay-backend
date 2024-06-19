@@ -552,7 +552,7 @@ function deleteBed(connection, response, reqData) {
 
 // Get Particular Room Details
 function get_room_details(connection, request, response) {
-    var { hostel_id, room_id } = request.body;
+    var { hostel_id, floor_id, room_id } = request.body;
 
     if ((!hostel_id && hostel_id == undefined) || (!room_id && room_id == undefined)) {
         response.status(201).json({ message: "Missing Parameter Values", statusCode: 201 });
@@ -563,8 +563,8 @@ function get_room_details(connection, request, response) {
                 response.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 });
             } else if (sq_res.length != 0) {
 
-                var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Room_Id=? AND isActive=1;";
-                connection.query(sql2, [hostel_id, room_id], function (room_err, room_res) {
+                var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND Room_Id=? AND isActive=1;";
+                connection.query(sql2, [hostel_id, floor_id, room_id], function (room_err, room_res) {
                     if (room_err) {
                         response.status(201).json({ message: "Unable to Get Room Details", statusCode: 201 });
                     } else if (room_res.length != 0) {
@@ -583,7 +583,7 @@ function get_room_details(connection, request, response) {
 
 // Update Particular Room Details
 function update_room_details(connection, request, response) {
-    var { hostel_id, room_id, amount } = request.body;
+    var { hostel_id, room_id, floor_id, amount } = request.body;
 
     if ((!hostel_id && hostel_id == undefined) || (!room_id && room_id == undefined) || (!amount && amount < 0)) {
         response.status(201).json({ message: "Missing Parameter Values", statusCode: 201 });
@@ -594,8 +594,8 @@ function update_room_details(connection, request, response) {
                 response.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 });
             } else if (sq_res.length != 0) {
 
-                var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Room_Id=?";
-                connection.query(sql2, [hostel_id, room_id], function (room_err, room_res) {
+                var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND Room_Id=?";
+                connection.query(sql2, [hostel_id, floor_id, room_id], function (room_err, room_res) {
                     if (room_err) {
                         response.status(201).json({ message: "Unable to Get Room Details", statusCode: 201 });
                     } else if (room_res.length != 0) {
@@ -608,8 +608,8 @@ function update_room_details(connection, request, response) {
                                 response.status(201).json({ message: "Unable to Update Room Details", statusCode: 201 });
                             } else {
 
-                                var update_user_query = "UPDATE hostel SET RoomRent=? WHERE Hostel_Id=? AND Rooms=? AND isActive=1";
-                                connection.query(update_user_query, [amount, hostel_id, room_id], function (err, data) {
+                                var update_user_query = "UPDATE hostel SET RoomRent=? WHERE Hostel_Id=? AND Floor=? AND Rooms=? AND isActive=1";
+                                connection.query(update_user_query, [amount, hostel_id, floor_id, room_id], function (err, data) {
                                     if (err) {
                                         response.status(201).json({ message: "Unable to Update Users Rent", statusCode: 201 });
                                     } else {

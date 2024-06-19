@@ -33,7 +33,7 @@ module.exports = (req, res, next) => {
                 let newToken = null;
 
                 // Refresh the token
-                if (timeToExpire <= 300) {
+                if (timeToExpire <= 600) {
                     newToken = jwt.sign(
                         { id: decoded.id, sub: decoded.id, username: decoded.username }, process.env.JWT_SECRET, { expiresIn: '30m' }
                     );

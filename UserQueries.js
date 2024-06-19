@@ -69,7 +69,7 @@ function createUser(connection, request, response) {
                 var overall_advance = atten.AdvanceAmount;
                 var paid_advance = paid_advance1;
                 var pending_advance = overall_advance - paid_advance;
-                var payable_rent = atten.payable_rent;  // Number of days rent amount
+                // var payable_rent = atten.payable_rent;  // Number of days rent amount
 
                 connection.query(`UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${atten.Phone}', Email='${atten.Email}', Address='${atten.Address}', AadharNo='${atten.AadharNo}', PancardNo='${atten.PancardNo}',licence='${atten.licence}',HostelName='${atten.HostelName}',Hostel_Id='${atten.hostel_Id}', Floor='${atten.Floor}', Rooms='${atten.Rooms}', Bed='${atten.Bed}', AdvanceAmount='${atten.AdvanceAmount}', RoomRent='${atten.RoomRent}', BalanceDue='${atten.BalanceDue}', PaymentType='${atten.PaymentType}', Status='${Status}',paid_advance='${paid_advance}',pending_advance='${pending_advance}' WHERE ID='${atten.ID}'`, function (updateError, updateData) {
                     if (updateError) {
@@ -150,6 +150,23 @@ function createUser(connection, request, response) {
 
                                 if (rent_res.length == 0) {
                                     // Insert rent invoice if not exists
+                                    var currentDate = moment().format('YYYY-MM-DD');
+                                    var joinDate = moment(currentDate).format('YYYY-MM-DD');
+
+                                    var dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+                                    var invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+
+                                    var formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+                                    var formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+                                    var numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+
+                                    var totalDaysInCurrentMonth = moment(currentDate).daysInMonth();
+
+                                    var oneday_amount = total_rent / totalDaysInCurrentMonth
+
+                                    var payableamount = oneday_amount * numberOfDays
+                                    var payable_rent = Math.round(payableamount);
+
                                     insert_rent_invoice(connection, user_ids, paid_amount, balance_rent, payable_rent).then(() => {
 
                                         if (paid_rent != undefined && paid_rent != 0) {
@@ -201,8 +218,6 @@ function createUser(connection, request, response) {
                         var paid_advance = atten.paid_advance ? atten.paid_advance : 0;
                         var pending_advance = atten.AdvanceAmount - paid_advance;
 
-                        var payable_rent = atten.payable_rent;  // Number of days rent amount
-
                         connection.query(`INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance) VALUES ('${Circle}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}','${paid_advance}','${pending_advance}')`, function (insertError, insertData) {
                             if (insertError) {
                                 console.log(insertError);
@@ -221,7 +236,6 @@ function createUser(connection, request, response) {
                                         var paid_rent = atten.paid_rent;
                                         var paid_amount = paid_rent || 0; // Use logical OR to provide default value
                                         var total_rent = atten.RoomRent;
-                                        var balance_rent = payable_rent - paid_amount;
 
                                         if (atten.AdvanceAmount != undefined && atten.AdvanceAmount > 0) {
 
@@ -244,6 +258,19 @@ function createUser(connection, request, response) {
                                                     }
                                                 })
                                             }
+
+                                            var currentDate = moment().format('YYYY-MM-DD');
+                                            var joinDate = moment(currentDate).format('YYYY-MM-DD');
+                                            var dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+                                            var invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+                                            var formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+                                            var formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+                                            var numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+                                            var totalDaysInCurrentMonth = moment(currentDate).daysInMonth();
+                                            var oneday_amount = total_rent / totalDaysInCurrentMonth;
+                                            var payableamount = oneday_amount * numberOfDays;
+                                            var payable_rent = Math.round(payableamount);
+                                            var balance_rent = payable_rent - paid_amount;
 
                                             insert_rent_invoice(connection, user_ids, paid_amount, balance_rent, payable_rent).then(() => {
                                                 return insert_advance_invoice(connection, user_ids);
