@@ -138,6 +138,9 @@ async function calculateAndInsertInvoice(connection, user, users) {
             const createdAtMonth = moment(joinDate).month() + 1;
             const createdAtYear = moment(joinDate).year();
             let dueDate, invoiceDate;
+            let  invoiceDatebe,duedateeb
+            
+            
 
             if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
                 dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
@@ -149,7 +152,9 @@ async function calculateAndInsertInvoice(connection, user, users) {
 
 
             const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+            console.log("formattedJoinDate",formattedJoinDate)
             const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+            console.log("formattedDueDate",formattedDueDate)
             const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
             // console.log("numberOfDays", numberOfDays)
 
@@ -159,139 +164,16 @@ async function calculateAndInsertInvoice(connection, user, users) {
             let totalDays = 0;
 
             let eb_amount_total;
+           
             let eb_Hostel = 0
             let AdvanceAmount = 0;
             const previousMonthDate = moment().subtract(1, 'months');
             const previousMonth = previousMonthDate.month() + 1; // month() is zero-based
             const previousYear = previousMonthDate.year();
 
-            // if (existingData[0].isHostelBased == 1) {
-            //     let filteredArray = users.filter(item => item.Hostel_Id == existingData[0].roomHostel_Id);
-
-            //     console.log("filteredArray.length", filteredArray);
-
-            //     if (filteredArray.length > 0) {
-            //         let totalNumberOfDays = 0;
-
-            //         let userDayAmounts = filteredArray.map(user => {
-            //             const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-            //             const createdAtMonth = moment(joinDate).month()+ 1;
-            //             console.log("createdAtMonth",createdAtMonth)
-            //             const createdAtYear = moment(joinDate).year();
-            //             let dueDate, invoiceDate;
-
-            //             if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
-            //                 dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
-            //                 invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-            //             } else {
-            //                 dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
-            //                 invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
-            //             }
-
-            //             const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-            //             const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-            //             const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
-            //             const prevcurrentMonth = moment(currentDate).month() - 1; 
-
-
-            //             totalNumberOfDays += numberOfDays;
-
-            //             return { numberOfDays: numberOfDays, hostel_id: user.Hostel_Id, user_id: user.User_Id };
-            //         });
-
-
-            //         const roombase = existingData[0].ebBill / totalNumberOfDays;
-
-            //         console.log(userDayAmounts, "<<<<<<<<<<<<<<<<<<.............>>>>>>>>>>>>>>>>>>>>>");
-
-
-            //         let userAmounts = userDayAmounts.map(user => ({
-            //             user_id: user.user_id,
-            //             hostel_id: user.hostel_id,
-            //             amount: roombase * user.numberOfDays
-            //         }));
-
-            //         console.log("User Amounts:", userAmounts);
-
-            //         let userAmount = userAmounts.find(user_id => user_id.user_id === user.User_Id);
-
-            //         eb_Hostel = userAmount ? userAmount.amount.toFixed() : 0;
-
-            //         // console.log(eb_Hostel,"/////////////////////////////");
-            //     } else {
-            //         eb_Hostel = 0;
-            //     }
-
-            //     eb_amount_total = 0;
-
-            // }
-            //  const currentDateprev = moment().format('YYYY-MM-DD');
-            //      const currentMonthprev = moment(currentDateprev).month();
-            //      console.log("currentDate....'''",currentMonthprev)
-
-            //     if (existingData[0].isHostelBased == 1) {
-            //         // Filter users based on the Hostel_Id
-            //         let filteredArray = users.filter(item => item.Hostel_Id == existingData[0].roomHostel_Id);
-
-            //         console.log("filteredArray.length", filteredArray.length);
-
-            //         if (filteredArray.length > 0) {
-            //             let totalNumberOfDays = 0;
-
-            //             // Map through filtered users to calculate the number of days and amounts
-            //             let userDayAmounts = filteredArray.map(user => {
-            //                 const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-            //                 const createdAtMonth = moment(joinDate).month() + 1;
-            //                 const createdAtYear = moment(joinDate).year();
-            //                 const currentDate = moment();
-            //                 const currentMonth = currentDate.month() + 1;
-            //                 const currentYear = currentDate.year();
-            //                 let dueDate, invoiceDate;
-
-            //                 // Check if the user joined in the current month and year
-            //                 if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
-            //                     dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
-            //                     invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-            //                 } else {
-            //                     dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
-            //                     invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
-            //                 }
-
-            //                 const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-            //                 const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-            //                 const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
-
-            //                 totalNumberOfDays += numberOfDays;
-
-            //                 return { numberOfDays: numberOfDays, hostel_id: user.Hostel_Id, user_id: user.User_Id };
-            //             });
-
-            //             // Calculate the room base cost per day
-            //             const roombase = existingData[0].ebBill / totalNumberOfDays;
-
-            //             console.log(userDayAmounts, "<<<<<<<<<<<<<<<<<<.............>>>>>>>>>>>>>>>>>>>>>");
-
-            //             // Calculate the amount each user owes
-            //             let userAmounts = userDayAmounts.map(user => ({
-            //                 user_id: user.user_id,
-            //                 hostel_id: user.hostel_id,
-            //                 amount: roombase * user.numberOfDays
-            //             }));
-
-            //             console.log("User Amounts:", userAmounts);
-
-            //             let userAmount = userAmounts.find(user => user.user_id === user.User_Id);
-
-            //             eb_Hostel = userAmount ? userAmount.amount.toFixed() : 0;
-
-            //             console.log("EB Hostel:", eb_Hostel);
-            //         } else {
-            //             eb_Hostel = 0;
-            //         }
-
-            //         eb_amount_total = 0;
-            //     }
+      
             if (existingData[0].isHostelBased == 1) {
+                
                 // Get the previous month's date
                 const previousMonthDate = moment().subtract(1, 'months');
                 const previousMonth = previousMonthDate.month() + 1; // month() is zero-based
@@ -311,21 +193,22 @@ async function calculateAndInsertInvoice(connection, user, users) {
 
                 if (filteredArray.length > 0) {
                     let totalNumberOfDays = 0;
+                    
 
                     // Map through filtered users to calculate the number of days and amounts
                     let userDayAmounts = filteredArray.map(user => {
                         const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
                         console.log("joinDate", joinDate)
-                        const dueDate = previousMonthDate.endOf('month').format('YYYY-MM-DD');
+                        const dueDateeb = previousMonthDate.endOf('month').format('YYYY-MM-DD');
 
                         // const invoiceDate = previousMonthDate.startOf('month').format('YYYY-MM-DD');
 
-                        invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-                        const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+                        invoiceDatebe = moment(joinDate).format('YYYY-MM-DD');
+                        const formattedJoinDateeb = moment(invoiceDatebe).format('YYYY-MM-DD');
 
-                        const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+                        const formattedDueDateeb = moment(dueDateeb).format('YYYY-MM-DD');
                         console.log("formattedDueDate", formattedDueDate)
-                        const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+                        const numberOfDays = moment(formattedDueDateeb).diff(moment(formattedJoinDateeb), 'days') + 1;
                         console.log("numberOfDays,,,", numberOfDays)
 
                         totalNumberOfDays += numberOfDays;
@@ -365,11 +248,7 @@ async function calculateAndInsertInvoice(connection, user, users) {
                 eb_amount_total = 0;
             }
             else {
-                // let tempArray = users.filter(item =>
-                //     item.Hostel_Id == existingData[0].roomHostel_Id &&
-                //     item.Floor == existingData[0].roomFloor_Id &&
-                //     item.Rooms == existingData[0].roomRoom_Id
-                // );
+              
 
                 let tempArray = users.filter(item => {
                     const createdAtDate = moment(item.createdAt);
@@ -382,46 +261,34 @@ async function calculateAndInsertInvoice(connection, user, users) {
                 if (tempArray.length > 0) {
                     let totalNumberOfDays = 0;
 
-                    // Calculate number of days each user stayed and total number of days
-                    // let userDayAmounts = tempArray.map(user => {
-                    //     const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-                    //     const createdAtMonth = moment(joinDate).month() + 1;
-                    //     const createdAtYear = moment(joinDate).year();
-
-
-
-                    //     let dueDate, invoiceDate;
-
-                    //     if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
-                    //         dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
-                    //         invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-                    //     } else {
-                    //         dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
-                    //         invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
-                    //     }
-
-                    //     const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-                    //     const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-                    //     const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
-
-                    //     totalNumberOfDays += numberOfDays;
-
-                    //     return { numberOfDays: numberOfDays, user_id: user.User_Id };
-                    // });
+                  
                     let userDayAmounts = tempArray.map(user => {
+                        // const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
+                        // console.log("joinDate", joinDate)
+                        // const dueDateeb = previousMonthDate.endOf('month').format('YYYY-MM-DD');
+
+                        // // const invoiceDate = previousMonthDate.startOf('month').format('YYYY-MM-DD');
+
+                        // invoiceDateeb = moment(joinDate).format('YYYY-MM-DD');
+                        // const formattedJoinDateing = moment(invoiceDateeb).format('YYYY-MM-DD');
+
+                        // const formattedDueDateeb = moment(duedateeb).format('YYYY-MM-DD');
+                        // console.log("formattedDueDate", formattedDueDate)
+                        // const numberOfDays = moment(formattedDueDateeb).diff(moment(formattedJoinDateing), 'days') + 1;
+                        // console.log("numberOfDays..}]]]]]]]", numberOfDays)
                         const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
                         console.log("joinDate", joinDate)
-                        const dueDate = previousMonthDate.endOf('month').format('YYYY-MM-DD');
+                        const dueDateeb = previousMonthDate.endOf('month').format('YYYY-MM-DD');
 
                         // const invoiceDate = previousMonthDate.startOf('month').format('YYYY-MM-DD');
 
-                        invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-                        const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+                        invoiceDatebe = moment(joinDate).format('YYYY-MM-DD');
+                        const formattedJoinDateeb = moment(invoiceDatebe).format('YYYY-MM-DD');
 
-                        const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+                        const formattedDueDateeb = moment(dueDateeb).format('YYYY-MM-DD');
                         console.log("formattedDueDate", formattedDueDate)
-                        const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
-                        console.log("numberOfDays..}]]]]]]]", numberOfDays)
+                        const numberOfDays = moment(formattedDueDateeb).diff(moment(formattedJoinDateeb), 'days') + 1;
+                        console.log("numberOfDays,,,", numberOfDays)
 
                         totalNumberOfDays += numberOfDays;
                         // console.log(" totalNumberOfDays += numberOfDays;", totalNumberOfDays += numberOfDays);
@@ -1202,7 +1069,7 @@ function InvoicePDf(connection, reqBodyData, response) {
                 }
             })
 
-            return data.Location; // This is the URL of the uploaded PDF
+            return data.Location; 
         } catch (err) {
             console.error('Error uploading PDF:', err);
         }
@@ -1239,7 +1106,9 @@ function InvoicePDf(connection, reqBodyData, response) {
     }
     else {
         // connection.query(`SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.invoice_type,invoice.User_Id,invoice.UserAddress,invoice.PaidAmount, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount FROM invoicedetails invoice INNER JOIN hosteldetails hostel on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND DATE(invoice.Date) = ? AND invoice.id = ?`,
-        connection.query(`SELECT hos.User_Id,hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.invoice_type,invoice.User_Id,invoice.UserAddress,invoice.PaidAmount, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount,hstlroom.Hostel_Id AS roomHostel_Id ,hstlroom.Floor_Id AS roomFloor_Id,hstlroom.Room_Id AS roomRoom_Id,hos.Hostel_Id AS hoshostel_id,hos.Floor AS hosfloor,hos.Rooms AS hosrooms,hos.createdAt,hos.User_Id FROM invoicedetails invoice INNER JOIN hosteldetails hostel INNER JOIN hostelrooms hstlroom INNER JOIN hostel hos on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND DATE(invoice.Date) = ? AND invoice.id = ? AND hos.isActive = 1 group by hos.id`,
+        // connection.query(`SELECT hos.User_Id,hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.invoice_type,invoice.User_Id,invoice.UserAddress,invoice.PaidAmount, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount,hstlroom.Hostel_Id AS roomHostel_Id ,hstlroom.Floor_Id AS roomFloor_Id,hstlroom.Room_Id AS roomRoom_Id,hos.Hostel_Id AS hoshostel_id,hos.Floor AS hosfloor,hos.Rooms AS hosrooms,hos.createdAt,hos.User_Id FROM invoicedetails invoice INNER JOIN hosteldetails hostel INNER JOIN hostelrooms hstlroom INNER JOIN hostel hos on hostel.id = invoice.Hostel_Id WHERE invoice.User_Id = ? AND DATE(invoice.Date) = ? AND invoice.id = ? AND hos.isActive = 1 group by hos.id`,
+        connection.query(`SELECT hos.User_Id,hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.invoice_type,invoice.User_Id,invoice.UserAddress,invoice.PaidAmount, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount,hstlroom.Hostel_Id AS roomHostel_Id ,hstlroom.Floor_Id AS roomFloor_Id,hstlroom.Room_Id AS roomRoom_Id,hos.Hostel_Id AS hoshostel_id,hos.Floor AS hosfloor,hos.Rooms AS hosrooms,hos.createdAt,hos.User_Id FROM invoicedetails invoice INNER JOIN hosteldetails hostel INNER JOIN hostelrooms hstlroom INNER JOIN hostel hos on hostel.id = invoice.Hostel_Id WHERE hos.User_Id =? AND DATE(invoice.Date) = ? AND invoice.id = ? AND hos.isActive = 1 group by hos.id`,
+
 
             [reqBodyData.User_Id, reqBodyData.Date, reqBodyData.id], function (error, data) {
                 // console.log("data", data)
@@ -1256,23 +1125,49 @@ function InvoicePDf(connection, reqBodyData, response) {
                     }
                     else {
                         data.forEach((hostel, index) => {
-                            console.log("hostelData **", hostel);
-                            let breakUpTable = []
-                            const JoiningDate = hostel.Date
-                            const DueDate = hostel.DueDate
-                            const numberOfDays = moment(DueDate).diff(moment(JoiningDate), 'days') + 1;
-                            console.log("numberOfDays", numberOfDays)
+                            // console.log("hostelData **", hostel);
+                            // let breakUpTable = []
+                            // const JoiningDate = hostel.Date
+                            // console.log("JoiningDate",JoiningDate)
+                            // const DueDate = hostel.DueDate
+                            // console.log("DueDate",DueDate)
+                            // const numberOfDays = moment(DueDate).diff(moment(JoiningDate), 'days') + 1;
+                            // console.log("numberOfDays", numberOfDays)
 
+                            // const currentDate = moment().format('YYYY-MM-DD');
+                            // const currentMonth = moment(currentDate).month() + 1;
+                            // const currentYear = moment(currentDate).year();
+                            // console.log("hostel.RoomRent",hostel.RoomRent)
+                            let breakUpTable = []
                             const currentDate = moment().format('YYYY-MM-DD');
+                            const joinDate = moment(hostel.createdAt).format('YYYY-MM-DD');
                             const currentMonth = moment(currentDate).month() + 1;
                             const currentYear = moment(currentDate).year();
+                            const createdAtMonth = moment(joinDate).month() + 1;
+                            const createdAtYear = moment(joinDate).year();
+                            let dueDate, invoiceDate;
+                
+                            if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+                                dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+                                invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+                            } else {
+                                dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+                                invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
+                            }
+                
+                
+                            const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+                            const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+                            const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') +1;
+                            console.log("numberOfDays,,,,,,ere",numberOfDays) 
 
-                            const JoiningWiseRoomRent = (hostel.RoomRent / moment(DueDate).daysInMonth()) * numberOfDays
+                            const JoiningWiseRoomRent = (hostel.RoomRent / moment(dueDate).daysInMonth()) * numberOfDays
+                            console.log("JoiningWiseRoomRent",JoiningWiseRoomRent)
                             let RoomRent = {
                                 Rent: Math.round(JoiningWiseRoomRent),
 
                             }
-                            console.log("RoomRent", RoomRent)
+                            console.log("RoomRent....?112", RoomRent)
                             breakUpTable.push(RoomRent)
                             connection.query(`select * from Amenities AmeList INNER JOIN AmnitiesName AmeName ON AmeList.Amnities_Id = AmeName.id  where AmeList.Hostel_Id = \'${hostel.Hostel_Id} \'`, async function (error, Amenitiesdata) {
                                 // console.log("Amenitiesdata", Amenitiesdata)
@@ -2858,6 +2753,7 @@ async function convertImage(imageBuffer) {
 
 function uploadToS31(pdfDetailsArray, response, connection) { //filenames, response, pdfDetails, connection
     let totalPDFs = pdfDetailsArray.length;
+    console.log("totalPDFs",totalPDFs)
     let uploadedPDFs = 0;
     let pdfInfo = [];
     let errorMessage;
