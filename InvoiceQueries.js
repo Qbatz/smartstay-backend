@@ -1107,9 +1107,8 @@ function InvoicePDf(connection, reqBodyData, response) {
     else {
         connection.query(`SELECT hos.User_Id,hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.invoice_type,invoice.User_Id,invoice.UserAddress,invoice.PaidAmount, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount,hstlroom.Hostel_Id AS roomHostel_Id ,hstlroom.Floor_Id AS roomFloor_Id,hstlroom.Room_Id AS roomRoom_Id,hos.Hostel_Id AS hoshostel_id,hos.Floor AS hosfloor,hos.Rooms AS hosrooms,hos.createdAt,hos.User_Id FROM invoicedetails invoice INNER JOIN hosteldetails hostel INNER JOIN hostelrooms hstlroom INNER JOIN hostel hos on hostel.id = invoice.Hostel_Id WHERE hos.User_Id =? AND DATE(invoice.Date) = ? AND invoice.id = ? AND hos.isActive = 1 group by hos.id`,
 
-
             [reqBodyData.User_Id, reqBodyData.Date, reqBodyData.id], function (error, data) {
-
+                // console.log("data", data)
                 if (error) {
                     console.log(error);
                     response.status(500).json({ message: 'Internal server error' });
@@ -1123,6 +1122,7 @@ function InvoicePDf(connection, reqBodyData, response) {
                     }
                     else {
                         data.forEach((hostel, index) => {
+
                             let breakUpTable = []
                             const currentDate = moment().format('YYYY-MM-DD');
                             const joinDate = moment(hostel.createdAt).format('YYYY-MM-DD');
@@ -1156,6 +1156,7 @@ function InvoicePDf(connection, reqBodyData, response) {
                             breakUpTable.push(RoomRent)
                             connection.query(`select * from Amenities AmeList INNER JOIN AmnitiesName AmeName ON AmeList.Amnities_Id = AmeName.id  where AmeList.Hostel_Id = \'${hostel.Hostel_Id} \'`, async function (error, Amenitiesdata) {
 
+
                                 if (Amenitiesdata.length > 0) {
                                     for (let i = 0; i < Amenitiesdata.length; i++) {
                                         const tempObj = {};
@@ -1164,8 +1165,10 @@ function InvoicePDf(connection, reqBodyData, response) {
                                         } else if (Amenitiesdata[i].setAsDefault == 1 && Amenitiesdata[i].Status == 1) {
                                             tempObj[Amenitiesdata[i].Amnities_Name] = Amenitiesdata[i].Amount;
                                             RoomRent.Rent -= Amenitiesdata[i].Amount;
+                                            console.log("Amenitiesdata[i].Amount", Amenitiesdata[i].Amount)
                                         }
                                         breakUpTable.push(tempObj);
+
                                     }
                                 }
                                 else {
@@ -1190,7 +1193,7 @@ function InvoicePDf(connection, reqBodyData, response) {
 
                                         console.log("Previous Month:", previousMonth, "Previous Year:", previousYear);
 
-
+                                        // Filter users based on the Hostel_Id and createdAt month/year being the previous month/year
                                         let filteredArray = hosdata.filter(item => {
                                             const createdAtDate = moment(item.createdAt);
                                             if (!createdAtDate.isValid()) {
@@ -1198,7 +1201,7 @@ function InvoicePDf(connection, reqBodyData, response) {
                                                 return false;
                                             }
 
-                                            const createdAtMonth = createdAtDate.month() + 1;
+                                            const createdAtMonth = createdAtDate.month() + 1; // moment.js months are 0-based
                                             const createdAtYear = createdAtDate.year();
 
                                             return item.Hostel_Id == data[0].Hostel_Id && createdAtMonth === previousMonth && createdAtYear === previousYear;
