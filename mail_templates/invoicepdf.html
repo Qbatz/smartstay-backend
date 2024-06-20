@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -12,6 +12,10 @@
             padding: 0;
             box-sizing: border-box;
         }
+        .logo{
+            margin-top: 30px;
+            padding-left: 50px;  
+        }
         .invoice-container {
             width: 90%;
             max-width: 800px;
@@ -24,6 +28,7 @@
             text-align: center;
             margin-bottom: 20px;
         }
+        
         .invoice-header {
             display: flex;
             flex-wrap: wrap;
@@ -90,7 +95,7 @@
 <body>
     <div class="invoice-container">
         <div class="invoice-header">
-            <img src="your-logo-url.png" alt="Logo">
+            <img src='{{logo}}'alt="Logo" class="logo" style="width: 100px; height: 40px;">
             <div class="line1">
                 <p>{{hostal_name}}</p>
                 <p>{{city}}</p>
