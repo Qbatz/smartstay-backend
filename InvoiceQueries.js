@@ -17,10 +17,6 @@ const util = require('util');
 
 const pdf = require('html-pdf');
 
-// const puppeteer = require('puppeteer');
-
-
-
 
 AWS.config.update({
     accessKeyId: AWS_ACCESS_KEY_ID,
@@ -1780,8 +1776,11 @@ function uploadToS31(pdfDetailsArray, response, connection) { //filenames, respo
                 pdfInfo.push(pdfInfoItem);
 
                 if (uploadedPDFs === totalPDFs) {
+
+                    var pdf_url=[]
                     pdfInfo.forEach(pdf => {
                         console.log(pdf.url);
+                        pdf_url.push(pdf.url)
                         const query = `UPDATE invoicedetails SET invoicePDF = '${pdf.url}' WHERE User_Id = '${pdf.user}'`;
                         console.log(query, ";;;;;;;;;;;;;;;;;;;;;;");
                         connection.query(query, function (error, pdfData) {
@@ -1795,7 +1794,7 @@ function uploadToS31(pdfDetailsArray, response, connection) { //filenames, respo
                     if (errorMessage) {
                         response.status(201).json({ message: 'Cannot Insert PDF to Database' });
                     } else {
-                        response.status(200).json({ message: 'Insert PDF successfully' });
+                        response.status(200).json({ message: 'Insert PDF successfully',pdf_url:pdf_url[0]});
                     }
                 }
             }
