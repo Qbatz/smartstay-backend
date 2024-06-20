@@ -378,6 +378,7 @@ function insert_advance_invoice(connection, user_id) {
                 var inv_data = sel_res[0];
 
                 var currentDate = moment().format('YYYY-MM-DD');
+                var dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
 
                 if (inv_data.prefix && inv_data.suffix) {
                     let numericSuffix;
@@ -406,7 +407,7 @@ function insert_advance_invoice(connection, user_id) {
                 var pending_advance = inv_data.advance_amount - inv_data.paid_advance;
 
                 var sql2 = "INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Amnities_deduction_Amount, Hostel_Based, Room_Based, Bed,BalanceDue,PaidAmount,numberofdays,invoice_type,hos_user_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,2,?)"
-                connection.query(sql2, [inv_data.user_name, inv_data.Phone, inv_data.Email, inv_data.Name, inv_data.detHostel_Id, inv_data.hosFloor, inv_data.hosRoom, inv_data.advance_amount, inv_data.Address, currentDate, 0, invoiceNo, status, inv_data.User_Id, 0, 0, 0, 0, 0, 0, inv_data.Bed, pending_advance, inv_data.paid_advance, inv_data.hos_user_id], function (ins_err, ins_res) {
+                connection.query(sql2, [inv_data.user_name, inv_data.Phone, inv_data.Email, inv_data.Name, inv_data.detHostel_Id, inv_data.hosFloor, inv_data.hosRoom, inv_data.advance_amount, inv_data.Address, currentDate, dueDate, invoiceNo, status, inv_data.User_Id, 0, 0, 0, 0, 0, 0, inv_data.Bed, pending_advance, inv_data.paid_advance, inv_data.hos_user_id], function (ins_err, ins_res) {
                     if (ins_err) {
                         console.log('Insert Error', ins_err);
                         reject(ins_err);
