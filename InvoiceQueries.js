@@ -983,6 +983,7 @@ function InvoicePDf(connection, reqBodyData, response) {
             const amountInWords = converter.toWords(inv_data.PaidAmount);
             console.log("amountInWords", amountInWords)
             const currentTimeFormatted = moment().format('hh:mm A');
+            console.log("currentTimeFormatted", currentTimeFormatted)
             const defaultLogoPath = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg';
             var logoPathimage = inv_data.Hostel_Logo ? inv_data.Hostel_Logo : defaultLogoPath;
             console.log(logoPathimage);
