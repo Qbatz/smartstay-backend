@@ -7,6 +7,7 @@ const path = require('path');
 const { Console, log } = require('console');
 var connection = require('./config/connection');
 const converter = require('number-to-words');
+const phantomjs = require('phantomjs-prebuilt');
 
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
@@ -1017,7 +1018,7 @@ function InvoicePDf(connection, reqBodyData, response) {
             const outputPath = path.join(__dirname, filename);
 
             // Generate the PDF
-            pdf.create(htmlContent).toFile(outputPath, async (err, res) => {
+            pdf.create(htmlContent, { phantomPath: phantomjs.path }).toFile(outputPath, async (err, res) => {
                 if (err) {
                     console.error('Error generating PDF:', err);
                     return;
