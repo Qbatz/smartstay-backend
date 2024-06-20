@@ -1090,7 +1090,7 @@ function InvoicePDf(connection, reqBodyData, response) {
                         }
                         breakUpTable = breakUpTable.filter(obj => Object.keys(obj).length !== 0);
                         console.log(" breakUpTable", breakUpTable)
-                                              const filename = `Invoice${currentMonth}${currentYear}${hostel.User_Id}.pdf`;
+                        const filename = `Invoice${currentMonth}${currentYear}${hostel.User_Id}.pdf`;
                         filenames.push(filename);
 
                         const doc = new PDFDocument({ font: 'Times-Roman' });
@@ -1774,7 +1774,239 @@ function UpdateInvoice(connection, response, atten) {
     }
 }
 
+function UpdateAmenitiesHistory(connection, response, reqData) {
+    if (reqData) {
+        connection.query(`select * from AmenitiesHistory where user_Id ='${reqData.userID}' and amenity_Id = ${reqData.amenityID} ORDER BY id DESC`, function (err, data) {
+            if (data.length > 0) {
+                if (data[0].status === 1) {
+                    connection.query(`UPDATE AmenitiesHistory SET status = ${reqData.status} where user_Id ='${reqData.userID}' and amenity_Id = ${reqData.amenityID}`, function (updateError, updateData) {
+                        if (updateError) {
+                            response.status(201).json({ message: "Does not Update" });
+                        }
+                        else {
+                            response.status(200).json({ message: "Update Successfully" });
+                        }
+                    })
+                }
+                else {
+                    connection.query(`insert into AmenitiesHistory(user_Id,amenity_Id,hostel_Id,created_By) values('${reqData.userID}',${reqData.amenityID},${reqData.hostelID},${reqData.created_By})`, function (error, insertData) {
+                        if (error) {
+                            response.status(201).json({ message: "Does not Insert" });
+                        }
+                        else {
+                            response.status(200).json({ message: "Insert successful" });
+                        }
+
+                    })
+                }
+            }
+            else {
+                if (err) {
+                    response.status(201).json({ message: "Does not Insert" });
+                }
+                else {
+                    connection.query(`insert into AmenitiesHistory(user_Id,amenity_Id,hostel_Id,created_By) values('${reqData.userID}',${reqData.amenityID},${reqData.hostelID},${reqData.created_By})`, function (error, insertData) {
+                        if (error) {
+                            response.status(201).json({ message: "Does not Insert" });
+                        }
+                        else {
+                            response.status(200).json({ message: "Insert successful" });
+                        }
+
+                    })
+                }
+            }
+        })
+
+    }
+    else {
+        response.status(201).json({ message: 'Missing Parameter' })
+    }
+}
+// function GetAmenitiesHistory(connection, response, reqdata) {
+//     connection.query(`select * from AmenitiesHistory where user_Id ='${reqdata.userID}'`, function (err, data) {
+//         if (data.length > 0) {
+//             console.log("data",data)
+//             // let amenity = {}
+//             // for (let i = 0; i < data.length; i++) {
+//             //     let tempObj = {
+//             //         user_Id: data[i].user_Id,
+//             //         amenity_Id: data[i].amenity_Id,
+//             //         status: data[i].status,
+//             //         created_At: data[i].created_At,
+//             //         created_By: data[i].created_By,
+//             //         updated_At: data[i].updated_At,
+//             //         updated_By: data[i].updated_By
+//             //     }
+//             //     amenity = { ...amenity, ...tempObj }
+//             // }
 
 
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice }
+// // const amenity = data.map(item => ({
+// //     user_Id: item.user_Id,
+// //     amenity_Id: item.amenity_Id,
+// //     status: item.status,
+// //     created_At: item.created_At,
+// //     created_By: item.created_By,
+// //     updated_At: item.updated_At,
+// //     updated_By: item.updated_By
+// // }));
+
+
+
+// const groupedAmenities = data.reduce((acc, curr) => {
+//     const userId = curr.user_Id;
+//     if (!acc[userId]) {
+//         acc[userId] = { ...curr, amenitystatus: [] };
+//     }
+//     acc[userId].amenitystatus.push({
+//         created_At: curr.created_At,
+//         updated_At: curr.updated_At,
+//         updated_By: curr.updated_By
+//     });
+//     return acc;
+// }, {});
+
+
+// const formattedAmenities = Object.values(groupedAmenities).map(amenity => ({
+//     user_Id: amenity.user_Id,
+//     amenity_Id: amenity.amenity_Id,
+//     hostel_Id: amenity.hostel_Id,
+//     created_By: amenity.created_By,
+//     amenitystatus: amenity.amenitystatus
+// }));
+
+// console.log("Formatted amenities:", formattedAmenities);
+//             if (formattedAmenities) {
+//                 response.status(200).json({ amenities: formattedAmenities });
+//             }
+
+
+
+
+//             // console.log("amenity", amenity);
+//             // if (amenity) {
+//             //     response.status(200).json({ amenity: amenity });
+//             // }
+
+
+//         }
+//         else {
+//             response.status(201).json({ message: 'Data Not Found' })
+//         }
+//     })
+// }
+
+function GetAmenitiesHistory(connection, response, reqdata) {
+    // Adjust your SQL query to include a JOIN with Amenities table
+    //     const query = `
+    //     SELECT AH.*, A.AmenitiesName,A.Amount, H.RoomRent
+    //     FROM AmenitiesHistory AH
+    //     LEFT JOIN Amenities A ON AH.amenity_Id = A.Amnities_Id
+    //     LEFT JOIN hostel H ON AH.user_Id = H.User_Id
+    //     WHERE AH.user_Id = '${reqdata.userID}' and H.User_Id='${reqdata.userID}'
+    // `;
+    //     const query = `
+    // SELECT AH.user_Id, AH.created_At,AH.created_By,AH.updated_At,AH.updated_By,AH.status,A.AmenitiesName, A.Amount, H.RoomRent,
+    // Inv.PaidAmount AS roomRentPaidAmount
+    // FROM AmenitiesHistory AH
+    // LEFT JOIN Amenities A ON AH.amenity_Id = A.Amnities_Id
+    // LEFT JOIN hostel H ON AH.user_Id = H.User_Id
+    // LEFT JOIN invoicedetails Inv ON H.User_Id = Inv.User_Id
+    // WHERE AH.user_Id = '${reqdata.userID}'
+    // GROUP BY AH.user_Id,
+    //  A.AmenitiesName, A.Amount, H.RoomRent, Inv.PaidAmount
+    // ;`
+    const query = `
+SELECT AH.user_Id, AH.created_At,AH.created_By,AH.updated_At,AH.updated_By,AH.status,A.AmenitiesName, A.Amount, H.RoomRent,
+Inv.PaidAmount AS roomRentPaidAmount
+FROM AmenitiesHistory AH
+LEFT JOIN Amenities A ON AH.amenity_Id = A.Amnities_Id
+LEFT JOIN hostel H ON AH.user_Id = H.User_Id
+LEFT JOIN invoicedetails Inv ON H.User_Id = Inv.User_Id
+WHERE AH.user_Id = '${reqdata.userID}'
+GROUP BY AH.id
+ORDER BY AH.created_At ;
+`
+
+    console.log("query", query);
+    connection.query(query, function (err, data) {
+        if (err) {
+            console.error("err", err);
+            response.status(201).json({ error: 'Database error' });
+            return;
+        }
+
+        if (data.length > 0) {
+            console.log("Data found:", data);
+
+
+            let formattedAmenities = {};
+
+
+            data.forEach(record => {
+
+                let amenityMonth = new Date(record.created_At).getMonth();
+
+
+                const monthNames = ["January", "February", "March", "April", "May", "June",
+                    "July", "August", "September", "October", "November", "December"];
+                let monthName = monthNames[amenityMonth];
+
+                // console.log("monthName",monthName);
+                let amenity = 0;
+                amenity += record.status == 0 ? 0 : Number(record.Amount)
+
+                if (!formattedAmenities[monthName]) {
+                    let total = Number(record.RoomRent) + Number(amenity)
+                    formattedAmenities[monthName] = {
+                        Rent: record.RoomRent || 0,
+                        roomRentPaidAmount: record.roomRentPaidAmount,
+                        roomRentBalanceDue: Number(record.RoomRent) - Number(record.roomRentPaidAmount),
+                        Total: total || 0,
+                        amenity_details: []
+                    };
+                }
+                else {
+                    console.log("length", formattedAmenities[monthName].amenity_details.length);
+                    if (formattedAmenities[monthName].amenity_details.length > 0 && record.status != 0) {
+                        for (let i = 0; i < formattedAmenities[monthName].amenity_details.length; i++) {
+                            amenity += formattedAmenities[monthName].amenity_details[i].amenity_fees;
+                        }
+                        console.log("amenity", amenity);
+                        let total = Number(record.RoomRent) + Number(amenity)
+                        formattedAmenities[monthName] = { ...formattedAmenities[monthName], Total: total }
+
+                    }
+                }
+
+
+                formattedAmenities[monthName].amenity_details.push({
+                    Month: monthName,
+                    amenity_name: record.AmenitiesName,
+                    amenity_fees: record.status == 0 ? 0 : record.Amount,
+                    amenity_status: record.status,
+                    created_At: record.created_At,
+                    updated_At: record.updated_At,
+                    updated_By: record.updated_By
+                });
+            });
+
+
+            const result = Object.values(formattedAmenities);
+
+            // console.log("Formatted amenities:", result);
+
+
+            // console.log("Formatted amenities:", result);
+            response.status(200).json({ amenities: result });
+        } else {
+            console.log("No data found for user ID:", reqdata.userID);
+            response.status(201).json({ message: 'Data Not Found' });
+        }
+    });
+}
+
+
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory }

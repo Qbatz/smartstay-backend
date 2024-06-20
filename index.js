@@ -401,3 +401,16 @@ app.post('/payment_history', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     accountManagement.payment_history(connection, response, request)
 })
+
+app.post('/add/amenity-history',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    const reqData = request.body;
+    invoiceQueries.UpdateAmenitiesHistory(connection, response, reqData) 
+})
+
+
+app.post('/amenity/list-amenity-history',(req,res)=>{
+    res.set('Access-Control-Allow-Origin', '*');
+    const reqdata = req.body;
+    invoiceQueries.GetAmenitiesHistory(connection,res,reqdata)
+})
