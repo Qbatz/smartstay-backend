@@ -146,7 +146,6 @@ function createUser(connection, request, response) {
 
                                 var total_rent = atten.RoomRent;
                                 var paid_amount = paid_rent != undefined ? paid_rent : 0;
-                                var balance_rent = payable_rent - paid_amount;
 
                                 if (rent_res.length == 0) {
                                     // Insert rent invoice if not exists
@@ -166,6 +165,7 @@ function createUser(connection, request, response) {
 
                                     var payableamount = oneday_amount * numberOfDays
                                     var payable_rent = Math.round(payableamount);
+                                    var balance_rent = payable_rent - paid_amount;
 
                                     insert_rent_invoice(connection, user_ids, paid_amount, balance_rent, payable_rent).then(() => {
 
