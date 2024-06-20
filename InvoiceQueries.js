@@ -1521,7 +1521,7 @@ function generatePDFFor(breakUpTable, hosdata, hostel, data, response, connectio
 
                     uploadedPDFs++;
                     if (uploadedPDFs === totalPDFs) {
-                        uploadToS31(filenames, response, pdfDetails, connection);
+                        uploadToS31(response, pdfDetails, connection);
                         deletePDfs(filenames);
                     }
                 });
@@ -1672,7 +1672,7 @@ function generatePDFFor(breakUpTable, hosdata, hostel, data, response, connectio
 
             uploadedPDFs++;
             if (uploadedPDFs === totalPDFs) {
-                uploadToS31(pdfDetails, response, connection);
+                uploadToS31(response, pdfDetails, connection);
                 deletePDfs(filenames);
             }
         });
@@ -1750,7 +1750,7 @@ async function convertImage(imageBuffer) {
 }
 
 
-function uploadToS31(pdfDetailsArray, response, connection) { //filenames, response, pdfDetails, connection
+function uploadToS31(response, pdfDetailsArray, connection) { //filenames, response, pdfDetails, connection
     let totalPDFs = pdfDetailsArray.length;
     console.log("totalPDFs", totalPDFs)
     let uploadedPDFs = 0;
