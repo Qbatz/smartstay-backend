@@ -406,12 +406,39 @@ app.post('/payment_history', (request, response) => {
 // Get Room Details
 app.post('/get_room_details', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    pgQueries.get_room_details(connection, request,response)
+    pgQueries.get_room_details(connection, request, response)
 })
 
 // Update Particular Room Details
 app.post('/update_room_details', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    pgQueries.update_room_details(connection, request,response)
+    pgQueries.update_room_details(connection, request, response)
 })
 // ************* Use it Later ***********//
+
+// Truncate all tables
+app.get('/truncate_tables', (request, response) => {
+
+    var sql1 = "SHOW TABLES";
+    connection.query(sql1, function (err, tables) {
+        if (err) {
+            response.status(201).json({ message: "Unable to Connect Database", statusCode: 201 });
+        } else {
+            var tableNames = tables.map(row => Object.values(row)[0]);
+            if (tableNames.length === 0) {
+                console.log('No tables found in the database.');
+                response.status(201).json({ message: "No tables found in the database", statusCode: 201 });
+            } else {
+                const truncateQueries = tableNames.map(name => `TRUNCATE TABLE \`${name}\`;`).join('');
+                connection.query(truncateQueries, err => {
+                    if (err) {
+                        response.status(201).json({ message: "No tables found in the database", statusCode: 201 });
+                    } else {
+                        console.log('All tables truncated successfully.');
+                        response.status(200).json({ message: "All tables truncated successfully", statusCode: 200 });
+                    }
+                });
+            }
+        }
+    })
+})

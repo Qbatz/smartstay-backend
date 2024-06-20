@@ -6,7 +6,7 @@ function getUsers(connection, response, request) {
 
     // Get values in middleware
     const userDetails = request.user_details;
-    const query = `SELECT * FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true WHERE hstlDetails.created_By ='${userDetails.id}'`;
+    const query = `SELECT * FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true WHERE hstlDetails.created_By ='${userDetails.id}' ORDER BY hstl.ID desc`;
     connection.query(query, function (error, hostelData) {
         if (error) {
             console.error(error);
