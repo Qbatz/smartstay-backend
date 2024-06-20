@@ -165,7 +165,9 @@ function createUser(connection, request, response) {
 
                                     var payableamount = oneday_amount * numberOfDays
                                     var payable_rent = Math.round(payableamount);
+                                    console.log("payable_rent",payable_rent)
                                     var balance_rent = payable_rent - paid_amount;
+                                    console.log("balance_rent",balance_rent)
 
                                     insert_rent_invoice(connection, user_ids, paid_amount, balance_rent, payable_rent).then(() => {
 
@@ -345,7 +347,7 @@ function insert_rent_invoice(connection, user_id, paid_amount, balance_rent, pay
                 }
 
                 var sql2 = "INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Amnities_deduction_Amount, Hostel_Based, Room_Based, Bed,BalanceDue,PaidAmount,numberofdays,hos_user_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?)"
-                connection.query(sql2, [inv_data.user_name, inv_data.Phone, inv_data.Email, inv_data.Name, inv_data.detHostel_Id, inv_data.hosFloor, inv_data.hosRoom, payable_rent, inv_data.Address, currentDate, dueDate, invoiceNo, status, inv_data.User_Id, 0, 0, 0, 0, 0, 0, inv_data.Bed, balance_rent, paid_amount, inv_data.hos_user_id], function (ins_err, ins_res) {
+                connection.query(sql2, [inv_data.user_name, inv_data.Phone, inv_data.Email, inv_data.Name, inv_data.detHostel_Id, inv_data.hosFloor, inv_data.hosRoom, payable_rent, inv_data.Address, currentDate, dueDate, invoiceNo, status, inv_data.User_Id, payable_rent, 0, 0, 0, 0, 0, inv_data.Bed, balance_rent, paid_amount, inv_data.hos_user_id], function (ins_err, ins_res) {
                     if (ins_err) {
                         console.log('Insert Error', ins_err);
                         reject(ins_err);

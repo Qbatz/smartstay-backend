@@ -1102,24 +1102,28 @@ function InvoicePDf(connection, reqBodyData, response) {
         });
     }
     else {
-        connection.query(`SELECT hos.User_Id,hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.invoice_type,invoice.User_Id,invoice.UserAddress,invoice.PaidAmount, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount,hstlroom.Hostel_Id AS roomHostel_Id ,hstlroom.Floor_Id AS roomFloor_Id,hstlroom.Room_Id AS roomRoom_Id,hos.Hostel_Id AS hoshostel_id,hos.Floor AS hosfloor,hos.Rooms AS hosrooms,hos.createdAt,hos.User_Id FROM invoicedetails invoice INNER JOIN hosteldetails hostel INNER JOIN hostelrooms hstlroom INNER JOIN hostel hos on hostel.id = invoice.Hostel_Id WHERE hos.User_Id =? AND DATE(invoice.Date) = ? AND invoice.id = ? AND hos.isActive = 1 group by hos.id`,
+        connection.query(`SELECT hos.User_Id,hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,hostel.id as Hostel_Id,invoice.RoomRent,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.invoice_type,invoice.AmnitiesAmount,invoice.User_Id,invoice.UserAddress,invoice.PaidAmount, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount,hstlroom.Hostel_Id AS roomHostel_Id ,hstlroom.Floor_Id AS roomFloor_Id,hstlroom.Room_Id AS roomRoom_Id,hos.Hostel_Id AS hoshostel_id,hos.Floor AS hosfloor,hos.Rooms AS hosrooms,hos.createdAt,hos.User_Id FROM invoicedetails invoice INNER JOIN hosteldetails hostel INNER JOIN hostelrooms hstlroom INNER JOIN hostel hos on hostel.id = invoice.Hostel_Id WHERE hos.User_Id =? AND DATE(invoice.Date) = ? AND invoice.id = ? AND hos.isActive = 1 group by hos.id`,
 
             [reqBodyData.User_Id, reqBodyData.Date, reqBodyData.id], function (error, data) {
-                // console.log("data", data)
+                console.log("data", data)
                 if (error) {
                     console.log(error);
                     response.status(500).json({ message: 'Internal server error' });
                 } else if (data.length > 0) {
+                    console.log("data[0].AmnitiesAmount",data[0].invoice_type)
+                    // return
 
-
-                    if ((data[0].EbAmount == 0 || data[0].EbAmount == undefined) && data[0].invoice_type == 1) {
+                    if (data[0].EbAmount == 0 && data[0].invoice_type == 1 && data[0].AmnitiesAmount == 0) {
                         generatePDF(data[0]);
                         response.status(200).json({ message: 'Insert PDF successfully' });
-
+                      
+                 console.log("vghghjhjh")
                     }
+                   
+
                     else {
                         data.forEach((hostel, index) => {
-
+                         console.log("hostel",hostel)
                             let breakUpTable = []
                             const currentDate = moment().format('YYYY-MM-DD');
                             const joinDate = moment(hostel.createdAt).format('YYYY-MM-DD');
@@ -1144,7 +1148,8 @@ function InvoicePDf(connection, reqBodyData, response) {
                             console.log("numberOfDays,,,,,,ere", numberOfDays)
 
                             const JoiningWiseRoomRent = (hostel.RoomRent / moment(dueDate).daysInMonth()) * numberOfDays
-                            console.log("JoiningWiseRoomRent", JoiningWiseRoomRent)
+                            console.log("JoiningWiseRoomRent", hostel.RoomRent)
+                            
                             let RoomRent = {
                                 Rent: Math.round(JoiningWiseRoomRent),
 
@@ -1318,7 +1323,6 @@ function InvoicePDf(connection, reqBodyData, response) {
             });
     }
 }
-
 
 function generatePDFFor(breakUpTable, hosdata, hostel, data, response, connection) {
     const currentDate = moment().format('YYYY-MM-DD');
