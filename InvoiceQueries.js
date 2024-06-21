@@ -1404,7 +1404,9 @@ function generatePDFFor(breakUpTable, hosdata, hostel, data, response, connectio
                     .text('Invoice Receipt', textX, doc.y, { align: 'center' })
                     .moveDown(0.5);
 
-                const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
+                    const formattedTodayDate = moment().format('DD/MM/YYYY');
+
+                    console.log("formattedTodayDate ",formattedTodayDate )
 
                 doc.fontSize(10).font('Times-Roman')
                     .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
@@ -1413,7 +1415,7 @@ function generatePDFFor(breakUpTable, hosdata, hostel, data, response, connectio
 
                 doc.fontSize(10).font('Times-Roman')
                     .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
-                    .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
+                    .text(`Invoice Date: ${formattedTodayDate}`, { align: 'right', indent: marginRight })
                     .moveDown(0.5);
 
 
@@ -1558,7 +1560,7 @@ function generatePDFFor(breakUpTable, hosdata, hostel, data, response, connectio
             .text('Invoice Receipt', textX, doc.y, { align: 'center' })
             .moveDown(0.5);
 
-        const formattedDueDate = moment(hostel.DueDate).format('DD/MM/YYYY');
+            const formattedTodayDate = moment().format('DD/MM/YYYY');
 
         doc.fontSize(10).font('Times-Roman')
             .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
@@ -1567,7 +1569,7 @@ function generatePDFFor(breakUpTable, hosdata, hostel, data, response, connectio
 
         doc.fontSize(10).font('Times-Roman')
             .text(`Address: ${hostel.UserAddress}`, { align: 'left', continued: true, indent: marginLeft, })
-            .text(`Invoice Date: ${formattedDueDate}`, { align: 'right', indent: marginRight })
+            .text(`Invoice Date: ${formattedTodayDate}`, { align: 'right', indent: marginRight })
             .moveDown(0.5);
 
 
