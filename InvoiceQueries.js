@@ -1712,7 +1712,7 @@ function embedImage(doc, imageUrl, fallbackPath, callback) {
             callback(error);
         } else if (response && response.statusCode === 200) {
             try {
-                const imageBuffer = Buffer.from(body, 'base64');
+                const imageBuffer = Buffer.from(body);
                 const convertedImageBuffer = await convertImage(imageBuffer);
 
                 doc.image(convertedImageBuffer, {
@@ -1748,7 +1748,7 @@ function embedImage(doc, imageUrl, fallbackPath, callback) {
 
 async function convertImage(imageBuffer) {
     const convertedImageBuffer = await sharp(imageBuffer)
-        .jpeg()
+         .toFormat('png')
         .toBuffer();
 
     return convertedImageBuffer;
