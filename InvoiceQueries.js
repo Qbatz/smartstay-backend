@@ -1065,6 +1065,11 @@ function InvoicePDf(connection, reqBodyData, response) {
                     console.log(err);
                     return
                 }
+                else{
+                    response.status(200).json({ message: 'Insert PDF successfully' });
+                
+                }
+                
             })
 
             return data.Location;
@@ -1099,7 +1104,7 @@ function InvoicePDf(connection, reqBodyData, response) {
             }
 
             generatePDF(data[0]);
-            response.status(200).json({ message: 'Insert PDF successfully' });
+            // response.status(200).json({ message: 'Insert PDF successfully' });
         });
     }
     else {
@@ -1116,7 +1121,7 @@ function InvoicePDf(connection, reqBodyData, response) {
 
                     if (data[0].EbAmount == 0 && data[0].invoice_type == 1 && data[0].AmnitiesAmount == 0) {
                         generatePDF(data[0]);
-                        response.status(200).json({ message: 'Insert PDF successfully' });
+                        // response.status(200).json({ message: 'Insert PDF successfully' });
                       
                  console.log("vghghjhjh")
                     }
