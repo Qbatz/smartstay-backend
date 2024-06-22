@@ -9,16 +9,13 @@
             font-family: Arial, sans-serif;
             font-size: 12px;
             margin: 0;
-            padding: 0;
+            padding: 0px;
             box-sizing: border-box;
         }
-        .logo{
-            margin-top: 30px;
-            padding-left: 50px;  
-        }
+       
         .invoice-container {
             width: 90%;
-            max-width: 800px;
+            max-width: 1000px;
             margin: auto;
             border: 1px solid #ddd;
             padding: 20px;
@@ -31,27 +28,16 @@
         
         .invoice-header {
             display: flex;
-            flex-wrap: wrap;
+           
             justify-content: space-between;
             align-items: center;
         }
-        .invoice-header img {
-            width: 80px;
-            height: 80px;
-        }
-        .invoice-details, .customer-details {
-            margin-bottom: 20px;
-        }
-        .customer-details, .invoice-details {
-            line-height: 1.5;
-        }
-        .invoice-details {
-            text-align: right;
-        }
+      
+      
         .invoice-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-top: 30px;
         }
         .invoice-table th, .invoice-table td {
             border: 2px solid #030303;
@@ -63,12 +49,16 @@
         }
         .line1 {
             text-align: right;
+            padding-right: 30px;
+            margin-bottom: 20px;
+            font-size: larger;
+            line-height: 5px;
         }
-        .detail {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
+        .logo{
+            padding-left: 30px;
+            text-align: left;
         }
+     
         .header {
             font-size: 20px;
             font-weight: 700;
@@ -81,6 +71,30 @@
             border-right: none !important;
             border-bottom: none !important;
         }
+        /* .customer-info {
+            flex: 1;
+            text-align: left;
+          
+         
+        } */
+         .invoicerow{
+           
+            display: flex;
+            justify-content: space-between;
+            flex-direction: row;
+            padding-bottom: 20px;
+            padding-left: 23px;
+            padding-right: 23px;
+            font-size: larger;
+           
+           
+        }
+        .invoice-info {
+            flex: 1;
+            text-align: right;
+            margin-top: -30px;    
+        } 
+       
         @media (max-width: 600px) {
             .invoice-header {
                 flex-direction: column;
@@ -95,27 +109,35 @@
 <body>
     <div class="invoice-container">
         <div class="invoice-header">
-            <img src='{{logo}}'alt="Logo" class="logo" style="width: 100px; height: 40px;">
-            <div class="line1">
-                <p>{{hostal_name}}</p>
-                <p>{{city}}</p>
-                <p>Phone: {{Phone}}</p>
-                <p>Email: {{email}}</p>
-            </div>
+           
+                <div>
+                    <img src='{{logo}}'alt="Logo" class="logo" style="width: 100px; height: auto; margin-top: 100px;">
+
+                </div>
+                <div class="line1">
+                    <p>{{hostal_name}}</p>
+                    <p>{{city}}</p>
+                    <p>Phone: {{Phone}}</p>
+                    <p>Email: {{email}}</p>
+                </div>
+           
+            <!-- <img src='{{logo}}'alt="Logo" class="logo" style="width: 100px; height: 40px;"> -->
+           
         </div>
         <div class="header">
             <p>Invoice Receipt</p>
         </div>
-        <div class="detail">
-            <div class="customer-details">
-                <p>Name: {{user_name}}</p>
-                <p>Address: {{user_address}}</p>
+        <div class="invoicerow">
+            <div class="cus-info">
+                <div>Name: {{user_name}}</div>
+                <div>Address: {{user_address}}</div>
             </div>
-            <div class="invoice-details">
-                <p>Invoice No: {{invoice_number}}</p>
-                <p>Invoice Date: {{invoice_date}}</p>
+            <div class="invoice-info">
+                <div>Invoice No: {{invoice_number}}</div>
+                <div>Invoice Date: {{invoice_date}}</div>
             </div>
         </div>
+        
         <table class="invoice-table">
             <tr>
                 <th>SNo</th>
@@ -129,7 +151,7 @@
             </tr>
             
             <tr class="tblbor">
-                <td colspan="2">Total</td>
+                <td colspan="2" style="padding-left: 120px;">Total</td>
                 <td>{{amount}}</td>
             </tr>
         </table>

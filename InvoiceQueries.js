@@ -987,6 +987,7 @@ function InvoicePDf(connection, reqBodyData, response) {
             const defaultLogoPath = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg';
             var logoPathimage = inv_data.Hostel_Logo ? inv_data.Hostel_Logo : defaultLogoPath;
             console.log(logoPathimage);
+            const invdate = moment(inv_data.Date).format('DD/MM/YYYY');
             htmlContent = htmlContent
                 .replace('{{hostal_name}}', inv_data.Hostel_Name)
                 .replace('{{city}}', inv_data.HostelAddress)
@@ -995,7 +996,7 @@ function InvoicePDf(connection, reqBodyData, response) {
                 .replace('{{user_name}}', inv_data.UserName)
                 .replace('{{user_address}}', inv_data.UserAddress)
                 .replace('{{invoice_number}}', inv_data.Invoices)
-                .replace('{{invoice_date}}', inv_data.Date)
+                .replace('{{invoice_date}}', invdate)
                 .replace(/{{amount}}/g, inv_data.PaidAmount)
                 .replace('{{amount_in_words}}', amountInWords)
                 .replace('{{current_time}}', currentTimeFormatted)
