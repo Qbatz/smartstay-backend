@@ -133,7 +133,7 @@ function createnewAccount(connection, reqBodyData, response) {
 
 // Generate JWT Token
 const generateToken = (user) => {
-    return jwt.sign({ id: user.id, sub: user.id, username: user.Name }, process.env.JWT_SECRET, { expiresIn: '30m' });
+    return jwt.sign({ id: user.id, sub: user.id,user_type:1,username: user.Name }, process.env.JWT_SECRET, { expiresIn: '30m' });
 };
 
 // Login API

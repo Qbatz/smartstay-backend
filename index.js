@@ -3,6 +3,7 @@ var cors = require('cors');
 const cron = require('node-cron');
 const middleware = require('./middleware');
 const connection = require('./config/connection');
+const notifications = require('./notifications');
 
 const app = express()
 const userQueries = require('./UserQueries');
@@ -442,3 +443,21 @@ app.get('/truncate_tables', (request, response) => {
         }
     })
 })
+
+// ****************** Notification Start ***************** //
+// Get all Notifications
+app.get('/all_notifications', (req, res) => {
+    notifications.all_notifications(req, res);
+})
+
+// Add New Notification
+app.post('/add_notification', (req, res) => {
+    notifications.add_notification(req, res);
+})
+
+// Update Notification
+app.post('/update_notification', (req, res) => {
+    notifications.update_notification_status(req, res);
+})
+
+// ****************** Notification End ***************** //
