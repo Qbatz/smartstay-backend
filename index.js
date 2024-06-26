@@ -11,6 +11,7 @@ const invoiceQueries = require('./InvoiceQueries')
 const profileQueries = require('./ProfileQueries')
 const complianceQueries = require('./ComplianceQueries')
 const pgQueries = require('./PgQueries')
+const vendorQueries = require('./vendorQueries')
 
 const multer = require('multer');
 const request = require('request');
@@ -441,4 +442,26 @@ app.get('/truncate_tables', (request, response) => {
             }
         }
     })
+})
+
+
+app.post('/add/update_vendor',  upload.single('profile'),(request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+       const reqInvoice = {
+        profile: request.file,
+        firstName: request.body.first_Name,
+        LastName: request.body.Last_Name,
+        Vendor_Mobile: request.body. Vendor_Mobile,
+        Vendor_Email: request.body.Vendor_Email,
+        Vendor_Address: request.body.Vendor_Address,
+        Status: request.body.Status,
+        Vendor_Id : request.body.Vendor_Id
+            };
+            console.log("reqInvoice",reqInvoice)
+    vendorQueries.ToAddAndUpdateVendor(connection, reqInvoice, response, request)
+})
+
+app.post('/get/vendor_list',(request, response) =>{
+    response.set('Access-Control-Allow-Origin', '*');
+    vendorQueries.GetVendorList(connection, response, request)
 })
