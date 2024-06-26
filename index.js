@@ -465,24 +465,6 @@ app.post('/update_notification', (req, res) => {
 
 // ****************** Notification End ***************** //
 
-// ****************** Notification Start ***************** //
-// Get all Notifications
-app.get('/all_notifications', (req, res) => {
-    notifications.all_notifications(req, res);
-})
-
-// Add New Notification
-app.post('/add_notification', (req, res) => {
-    notifications.add_notification(req, res);
-})
-
-// Update Notification
-app.post('/update_notification', (req, res) => {
-    notifications.update_notification_status(req, res);
-})
-
-// ****************** Notification End ***************** //
-
 
 app.post('/add/update_vendor',  upload.single('profile'),(request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
