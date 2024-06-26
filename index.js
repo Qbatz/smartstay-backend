@@ -12,6 +12,7 @@ const invoiceQueries = require('./InvoiceQueries')
 const profileQueries = require('./ProfileQueries')
 const complianceQueries = require('./ComplianceQueries')
 const pgQueries = require('./PgQueries')
+const vendorQueries = require('./vendorQueries')
 
 const multer = require('multer');
 const request = require('request');
@@ -463,3 +464,43 @@ app.post('/update_notification', (req, res) => {
 })
 
 // ****************** Notification End ***************** //
+
+// ****************** Notification Start ***************** //
+// Get all Notifications
+app.get('/all_notifications', (req, res) => {
+    notifications.all_notifications(req, res);
+})
+
+// Add New Notification
+app.post('/add_notification', (req, res) => {
+    notifications.add_notification(req, res);
+})
+
+// Update Notification
+app.post('/update_notification', (req, res) => {
+    notifications.update_notification_status(req, res);
+})
+
+// ****************** Notification End ***************** //
+
+
+app.post('/add/update_vendor',  upload.single('profile'),(request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+       const reqInvoice = {
+        profile: request.file,
+        firstName: request.body.first_Name,
+        LastName: request.body.Last_Name,
+        Vendor_Mobile: request.body. Vendor_Mobile,
+        Vendor_Email: request.body.Vendor_Email,
+        Vendor_Address: request.body.Vendor_Address,
+        Status: request.body.Status,
+        Vendor_Id : request.body.Vendor_Id
+            };
+            console.log("reqInvoice",reqInvoice)
+    vendorQueries.ToAddAndUpdateVendor(connection, reqInvoice, response, request)
+})
+
+app.post('/get/vendor_list',(request, response) =>{
+    response.set('Access-Control-Allow-Origin', '*');
+    vendorQueries.GetVendorList(connection, response, request)
+})
