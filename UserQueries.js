@@ -1,5 +1,7 @@
 const moment = require('moment');
 const conn = require('./config/connection');
+const addNotification = require('./components/add_notification');
+
 
 
 function getUsers(connection, response, request) {
@@ -109,7 +111,7 @@ function createUser(connection, request, response) {
                                     if (paid_advance != undefined && paid_advance != 0) {
 
                                         var sql4 = "SELECT * FROM advance_amount_transactions WHERE user_id=? ORDER BY id ASC";
-                                        connection.query(sql4, [user_ids], function (ad_err, ad_res) {
+                                        connection.query(sql4, [user_ids], async function (ad_err, ad_res) {
                                             if (ad_err) {
                                                 console.log(ad_err);
                                             } else if (ad_res.length == 0) {
@@ -119,6 +121,12 @@ function createUser(connection, request, response) {
                                                         console.log(ins_err);
                                                     }
                                                 });
+
+                                                var title = "Paid Advance Amount";
+                                                var user_type = 0;
+                                                var message = "Your Advance Amount " + paid_advance + " Received Successfully";
+
+                                                await addNotification.add_notification(user_ids, title, user_type, message)
                                             }
                                         });
                                     }
@@ -165,15 +173,15 @@ function createUser(connection, request, response) {
 
                                     var payableamount = oneday_amount * numberOfDays
                                     var payable_rent = Math.round(payableamount);
-                                    console.log("payable_rent",payable_rent)
+                                    // console.log("payable_rent", payable_rent)
                                     var balance_rent = payable_rent - paid_amount;
-                                    console.log("balance_rent",balance_rent)
+                                    // console.log("balance_rent", balance_rent)
 
                                     insert_rent_invoice(connection, user_ids, paid_amount, balance_rent, payable_rent).then(() => {
 
                                         if (paid_rent != undefined && paid_rent != 0) {
                                             var sql2 = "SELECT * FROM transactions WHERE user_id=? AND invoice_id=0 AND MONTH(createdAt) = MONTH(CURDATE()) AND YEAR(createdAt) = YEAR(CURDATE())";
-                                            connection.query(sql2, [user_ids], function (trans_err, trans_res) {
+                                            connection.query(sql2, [user_ids], async function (trans_err, trans_res) {
                                                 if (trans_err) {
                                                     console.log(trans_err);
                                                 } else if (trans_res.length == 0) {
@@ -183,6 +191,12 @@ function createUser(connection, request, response) {
                                                             console.log(ins_err);
                                                         }
                                                     });
+
+                                                    var title = "Paid Rent Amount";
+                                                    var user_type = 0;
+                                                    var message = "Your Rent Amount " + paid_rent + " Received Successfully";
+
+                                                    await addNotification.add_notification(user_ids, title, user_type, message)
                                                 }
                                             });
                                         }
@@ -231,7 +245,7 @@ function createUser(connection, request, response) {
                                 const gen_user_id = generateUserId(atten.firstname, user_ids);
 
                                 var update_user_id = "UPDATE hostel SET User_Id=? WHERE ID=?";
-                                connection.query(update_user_id, [gen_user_id, user_ids], function (up_id_err, up_id_res) {
+                                connection.query(update_user_id, [gen_user_id, user_ids], async function (up_id_err, up_id_res) {
                                     if (up_id_err) {
                                         response.status(201).json({ message: "Unable to add User Id", statusCode: 201 });
                                     } else {
@@ -250,6 +264,12 @@ function createUser(connection, request, response) {
                                                     } else {
                                                     }
                                                 });
+
+                                                var title = "Paid Rent Amount";
+                                                var user_type = 0;
+                                                var message = "Your Rent Amount " + paid_rent + " Received Successfully";
+
+                                                await addNotification.add_notification(user_ids, title, user_type, message)
                                             }
 
                                             if (paid_advance > 0) {
@@ -259,6 +279,12 @@ function createUser(connection, request, response) {
                                                         console.log(err);
                                                     }
                                                 })
+
+                                                var title = "Paid Advance Amount";
+                                                var user_type = 0;
+                                                var message = "Your Advance Amount " + paid_advance + " Received Successfully";
+
+                                                await addNotification.add_notification(user_ids, title, user_type, message)
                                             }
 
                                             var currentDate = moment().format('YYYY-MM-DD');

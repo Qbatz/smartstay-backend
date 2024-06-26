@@ -3,6 +3,7 @@ var cors = require('cors');
 const cron = require('node-cron');
 const middleware = require('./middleware');
 const connection = require('./config/connection');
+const notifications = require('./notifications');
 
 const app = express()
 const userQueries = require('./UserQueries');
@@ -115,8 +116,10 @@ cron.schedule("0 0 1 * * ", function () {
             console.error("Error fetching users:", err);
             return;
         } else {
+            let isFirstTime = true;
             for (const user of users) {
-                await invoiceQueries.calculateAndInsertInvoice(connection, user, users);
+                await invoiceQueries.calculateAndInsertInvoice(connection, user, users,isFirstTime);
+                isFirstTime = false;
             }
         }
     });
@@ -443,6 +446,42 @@ app.get('/truncate_tables', (request, response) => {
         }
     })
 })
+
+// ****************** Notification Start ***************** //
+// Get all Notifications
+app.get('/all_notifications', (req, res) => {
+    notifications.all_notifications(req, res);
+})
+
+// Add New Notification
+app.post('/add_notification', (req, res) => {
+    notifications.add_notification(req, res);
+})
+
+// Update Notification
+app.post('/update_notification', (req, res) => {
+    notifications.update_notification_status(req, res);
+})
+
+// ****************** Notification End ***************** //
+
+// ****************** Notification Start ***************** //
+// Get all Notifications
+app.get('/all_notifications', (req, res) => {
+    notifications.all_notifications(req, res);
+})
+
+// Add New Notification
+app.post('/add_notification', (req, res) => {
+    notifications.add_notification(req, res);
+})
+
+// Update Notification
+app.post('/update_notification', (req, res) => {
+    notifications.update_notification_status(req, res);
+})
+
+// ****************** Notification End ***************** //
 
 
 app.post('/add/update_vendor',  upload.single('profile'),(request, response) => {

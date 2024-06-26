@@ -8,6 +8,8 @@ const { Console, log } = require('console');
 var connection = require('./config/connection');
 const converter = require('number-to-words');
 const phantomjs = require('phantomjs-prebuilt');
+const addNotification = require('./components/add_notification');
+
 
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
@@ -30,7 +32,7 @@ const https = require('https');
 const conn = require('./config/connection');
 
 
-async function calculateAndInsertInvoice(connection, user, users) {
+async function calculateAndInsertInvoice(connection, user, users,isFirstTime) {
     const query = util.promisify(connection.query).bind(connection);
 
     try {
@@ -125,6 +127,7 @@ async function calculateAndInsertInvoice(connection, user, users) {
         console.log("existingData", existingData);
 
         if (existingData.length != 0) {
+
             let roomPrice = existingData[0].RoomRent;
             let totalAmenitiesAmount = 0;
             let dedctAmenitiesAmount = 0;
@@ -260,19 +263,7 @@ async function calculateAndInsertInvoice(connection, user, users) {
 
 
                     let userDayAmounts = tempArray.map(user => {
-                        // const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-                        // console.log("joinDate", joinDate)
-                        // const dueDateeb = previousMonthDate.endOf('month').format('YYYY-MM-DD');
 
-                        // // const invoiceDate = previousMonthDate.startOf('month').format('YYYY-MM-DD');
-
-                        // invoiceDateeb = moment(joinDate).format('YYYY-MM-DD');
-                        // const formattedJoinDateing = moment(invoiceDateeb).format('YYYY-MM-DD');
-
-                        // const formattedDueDateeb = moment(duedateeb).format('YYYY-MM-DD');
-                        // console.log("formattedDueDate", formattedDueDate)
-                        // const numberOfDays = moment(formattedDueDateeb).diff(moment(formattedJoinDateing), 'days') + 1;
-                        // console.log("numberOfDays..}]]]]]]]", numberOfDays)
                         const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
                         console.log("joinDate", joinDate)
                         const dueDateeb = previousMonthDate.endOf('month').format('YYYY-MM-DD');
@@ -314,8 +305,6 @@ async function calculateAndInsertInvoice(connection, user, users) {
             }
 
             console.log(eb_Hostel, "Ending Eb AMount");
-
-
 
             const amenitiesData = await query(`SELECT * FROM Amenities WHERE Hostel_Id = ?`, [existingData[0].hosHostel_Id]);
             if (amenitiesData.length > 0) {
@@ -367,9 +356,42 @@ async function calculateAndInsertInvoice(connection, user, users) {
             };
 
 
-            await query(`INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Amnities_deduction_Amount, Hostel_Based, Room_Based, Bed,numberofdays,hos_user_id) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${tempObj.AdvanceAmount}, '${user.Address}', '${tempObj.invoiceDate}', '${tempObj.dueDate}', '${tempObj.invoiceNo}', '${user.Status}', '${user.User_Id}', ${tempObj.roomPrice}, ${tempObj.ebBill}, ${tempObj.totalAmenitiesAmount},${tempObj.dedctAmenitiesAmount}, ${tempObj.HostelBasedEb}, ${tempObj.roomBasedEb},${user.Bed},${tempObj.numberOfDays},${user.ID})`, {
+            await query(`INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Amnities_deduction_Amount, Hostel_Based, Room_Based, Bed,numberofdays,hos_user_id) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${tempObj.AdvanceAmount}, '${user.Address}', '${tempObj.invoiceDate}', '${tempObj.dueDate}', '${tempObj.invoiceNo}', '${user.Status}', '${user.User_Id}', ${tempObj.roomPrice}, ${tempObj.ebBill}, ${tempObj.totalAmenitiesAmount},${tempObj.dedctAmenitiesAmount}, ${tempObj.HostelBasedEb}, ${tempObj.roomBasedEb},${user.Bed},${tempObj.numberOfDays},${user.ID})`)
+            if (isFirstTime) {
+                var sql1 = "SELECT * FROM createaccount";
+                connection.query(sql1, async function (err, data) {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        var unseen_users = data.map(x => x.id)
+                        console.log(unseen_users);
 
-            });
+                        var title = "Invoice Generation";
+                        var user_type = 1;
+                        var user_id = 0;
+                        var message = "New Invoice Generate for All Users";
+
+                        await addNotification.add_notification(user_id, title, user_type, message, unseen_users)
+                    }
+                })
+
+                var sql1 = "SELECT * FROM hostel WHERE isActive=1";
+                connection.query(sql1, async function (err, data) {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        var unseen_users = data.map(x => x.ID)
+                        console.log(unseen_users);
+
+                        var title = "Invoice Generation";
+                        var user_type = 0;
+                        var user_id = 0;
+                        var message = "New Month Invoice Generated";
+
+                        await addNotification.add_notification(user_id, title, user_type, message, unseen_users)
+                    }
+                })
+            }
 
         } else {
             console.log("No existing data found for the given user ID");
@@ -1065,11 +1087,11 @@ function InvoicePDf(connection, reqBodyData, response) {
                     console.log(err);
                     return
                 }
-                else{
+                else {
                     response.status(200).json({ message: 'Insert PDF successfully' });
-                
+
                 }
-                
+
             })
 
             return data.Location;
@@ -1116,20 +1138,20 @@ function InvoicePDf(connection, reqBodyData, response) {
                     console.log(error);
                     response.status(500).json({ message: 'Internal server error' });
                 } else if (data.length > 0) {
-                    console.log("data[0].AmnitiesAmount",data[0].invoice_type)
+                    console.log("data[0].AmnitiesAmount", data[0].invoice_type)
                     // return
 
                     if (data[0].EbAmount == 0 && data[0].invoice_type == 1 && data[0].AmnitiesAmount == 0) {
                         generatePDF(data[0]);
                         // response.status(200).json({ message: 'Insert PDF successfully' });
-                      
-                 console.log("vghghjhjh")
+
+                        console.log("vghghjhjh")
                     }
-                   
+
 
                     else {
                         data.forEach((hostel, index) => {
-                         console.log("hostel",hostel)
+                            console.log("hostel", hostel)
                             let breakUpTable = []
                             const currentDate = moment().format('YYYY-MM-DD');
                             const joinDate = moment(hostel.createdAt).format('YYYY-MM-DD');
@@ -1155,7 +1177,7 @@ function InvoicePDf(connection, reqBodyData, response) {
 
                             const JoiningWiseRoomRent = (hostel.RoomRent / moment(dueDate).daysInMonth()) * numberOfDays
                             console.log("JoiningWiseRoomRent", hostel.RoomRent)
-                            
+
                             let RoomRent = {
                                 Rent: Math.round(JoiningWiseRoomRent),
 
@@ -1404,9 +1426,9 @@ function generatePDFFor(breakUpTable, hosdata, hostel, data, response, connectio
                     .text('Invoice Receipt', textX, doc.y, { align: 'center' })
                     .moveDown(0.5);
 
-                    const formattedTodayDate = moment().format('DD/MM/YYYY');
+                const formattedTodayDate = moment().format('DD/MM/YYYY');
 
-                    console.log("formattedTodayDate ",formattedTodayDate )
+                console.log("formattedTodayDate ", formattedTodayDate)
 
                 doc.fontSize(10).font('Times-Roman')
                     .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
@@ -1560,7 +1582,7 @@ function generatePDFFor(breakUpTable, hosdata, hostel, data, response, connectio
             .text('Invoice Receipt', textX, doc.y, { align: 'center' })
             .moveDown(0.5);
 
-            const formattedTodayDate = moment().format('DD/MM/YYYY');
+        const formattedTodayDate = moment().format('DD/MM/YYYY');
 
         doc.fontSize(10).font('Times-Roman')
             .text(`Name: ${hostel.UserName}`, { align: 'left', continued: true, indent: marginLeft, })
@@ -1750,7 +1772,7 @@ function embedImage(doc, imageUrl, fallbackPath, callback) {
 
 async function convertImage(imageBuffer) {
     const convertedImageBuffer = await sharp(imageBuffer)
-         .toFormat('png')
+        .toFormat('png')
         .toBuffer();
 
     return convertedImageBuffer;
@@ -1790,7 +1812,7 @@ function uploadToS31(response, pdfDetailsArray, connection) { //filenames, respo
 
                 if (uploadedPDFs === totalPDFs) {
 
-                    var pdf_url=[]
+                    var pdf_url = []
                     pdfInfo.forEach(pdf => {
                         console.log(pdf.url);
                         pdf_url.push(pdf.url)
@@ -1807,7 +1829,7 @@ function uploadToS31(response, pdfDetailsArray, connection) { //filenames, respo
                     if (errorMessage) {
                         response.status(201).json({ message: 'Cannot Insert PDF to Database' });
                     } else {
-                        response.status(200).json({ message: 'Insert PDF successfully',pdf_url:pdf_url[0]});
+                        response.status(200).json({ message: 'Insert PDF successfully', pdf_url: pdf_url[0] });
                     }
                 }
             }
