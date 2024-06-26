@@ -115,8 +115,10 @@ cron.schedule("0 0 1 * * ", function () {
             console.error("Error fetching users:", err);
             return;
         } else {
+            let isFirstTime = true;
             for (const user of users) {
-                await invoiceQueries.calculateAndInsertInvoice(connection, user, users);
+                await invoiceQueries.calculateAndInsertInvoice(connection, user, users,isFirstTime);
+                isFirstTime = false;
             }
         }
     });
