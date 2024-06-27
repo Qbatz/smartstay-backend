@@ -122,7 +122,7 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                                 Vendor_Address = '${reqInvoice.Vendor_Address}',
                                 Vendor_profile = '${vendor_profile}',
                                 UpdatedAt = NOW(), 
-                                Status  = '${reqInvoice.Status}'
+                             Business_Name = '${reqInvoice.Business_Name}'
                                 WHERE Vendor_Id = '${reqInvoice.Vendor_Id}' AND id = '${reqInvoice.id}'`;
                             connection.query(updateVendor, function (error, updateResult) {
                                 if (error) {
@@ -141,7 +141,7 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                         Vendor_Email = '${reqInvoice.Vendor_Email}',
                         Vendor_Address = '${reqInvoice.Vendor_Address}',
                         UpdatedAt = NOW(), 
-                        Status  = '${reqInvoice.Status}'
+                        Business_Name = '${reqInvoice.Business_Name}'
                         WHERE Vendor_Id = '${reqInvoice.Vendor_Id}' AND id = '${reqInvoice.id}'`;
                     connection.query(updateVendor, function (error, updateResult) {
                         if (error) {
@@ -157,8 +157,8 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                         if (err) {
                             response.status(202).json({ message: 'Database error' });
                         } else {
-                            const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, Vendor_profile, CreatedBy) 
-                            VALUES ('${Vendor_Name}', '${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}', '${vendor_profile}','${created_by}')`;
+                            const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, Vendor_profile, CreatedBy,  Business_Name) 
+                            VALUES ('${Vendor_Name}', '${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}', '${vendor_profile}','${created_by}' ,'${reqInvoice.Business_Name}')`;
 
                             connection.query(insertVendor, function (error, insertVendorData) {
                                 if (error) {
@@ -183,8 +183,8 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                         }
                     });
                 } else {
-                    const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, CreatedBy) 
-                    VALUES ('${Vendor_Name}', '${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}','${created_by}')`;
+                    const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, CreatedBy,  Business_Name ) 
+                    VALUES ('${Vendor_Name}','${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}','${created_by}','${reqInvoice.Business_Name}')`;
 
                     connection.query(insertVendor, function (error, insertVendorData) {
                         if (error) {
@@ -247,7 +247,7 @@ function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileDa
 
 function GetVendorList(connection, response, request){
     const admin_Id = request.user_details.id
-    connection.query(`select * from Vendor where createdBy = '${admin_Id}'`,function(error, getVendorList){
+    connection.query(`select * from Vendor where Status = true and  createdBy = '${admin_Id}' ORDER BY CreatedAt DESC`,function(error, getVendorList){
         if(error){
             response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
         }else{
@@ -259,6 +259,25 @@ function GetVendorList(connection, response, request){
 
 
 
+function TodeleteVendorList(connection, response, request,reqVendor){
+if(reqVendor){
+    const query = `UPDATE Vendor SET Status = '${reqVendor.Status}' where id = '${reqVendor.id}'`
+    connection.query(query,function(error, updateData){
+        if (error) {
+            response.status(201).json({ message: "Internal Server Error", statusCode: 201, updateError: error });
+        } else {
+            response.status(200).json({ message: "Update Successfully", statusCode: 200 });
+        }
+    })
+}else{
+    response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
+}
+
+
+
+
+
+}
 
 
 
@@ -266,5 +285,4 @@ function GetVendorList(connection, response, request){
 
 
 
-
-module.exports = { ToAddAndUpdateVendor ,GetVendorList}
+module.exports = { ToAddAndUpdateVendor ,GetVendorList,TodeleteVendorList}
