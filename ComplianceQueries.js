@@ -1,3 +1,4 @@
+const addNotification = require('./components/add_notification')
 
 function AddCompliance(connection, atten, response) {
     if (!atten) {
@@ -53,11 +54,25 @@ function AddCompliance(connection, atten, response) {
                         });
                     }
 
-                    connection.query(`INSERT INTO compliance(date, Name, Phone, Requestid, Roomdetail, Complainttype, Assign, Status, Hostel_id, Floor_id, Room, hostelname, Description, User_id) VALUES ('${atten.date}', '${atten.Name}', '${atten.Phone}', '${nextRequestId}', '${atten.Roomdetail}', '${atten.Complainttype}', '${atten.Assign}', '${atten.Status}', '${atten.Hostel_id}', '${atten.Floor_id}', '${atten.Room}', '${atten.hostelname}', '${atten.Description}','${atten.User_id}')`, function (error, data) {
+                    connection.query(`INSERT INTO compliance(date, Name, Phone, Requestid, Roomdetail, Complainttype, Assign, Status, Hostel_id, Floor_id, Room, hostelname, Description, User_id) VALUES ('${atten.date}', '${atten.Name}', '${atten.Phone}', '${nextRequestId}', '${atten.Roomdetail}', '${atten.Complainttype}', '${atten.Assign}', '${atten.Status}', '${atten.Hostel_id}', '${atten.Floor_id}', '${atten.Room}', '${atten.hostelname}', '${atten.Description}','${atten.User_id}')`, async function (error, data) {
                         if (error) {
                             console.error(error);
                             response.status(500).json({ message: "Error inserting record", statusCode: 500 });
                         } else {
+                            var user_id = req.user_details.id;
+                            var user_type = req.user_details.user_type;
+
+                            if (user_type != 0) {
+
+                                var title = "New Complaint";
+                                var user_type = 0;
+                                var message = "New Complaint Created by " + atten.Name + "";
+                                var unseen_users = 0;
+
+                                await addNotification.add_notification(user_id, title, user_type, message, unseen_users)
+
+                            }
+
                             response.status(200).json({ message: "Save Successfully", statusCode: 200 });
                         }
                     });

@@ -48,6 +48,10 @@ function createUser(connection, request, response) {
 
     var atten = request.body;
 
+    var profile = request.file;
+
+    console.log(profile);
+
     const FirstNameInitial = atten.firstname.charAt(0).toUpperCase();
     const LastNameInitial = atten.lastname.charAt(0).toUpperCase();
     const Circle = FirstNameInitial + LastNameInitial;
@@ -224,7 +228,7 @@ function createUser(connection, request, response) {
                 response.status(202).json({ message: "Phone Number Already Exists", statusCode: 202 });
             } else {
                 // Need to Check for the Mail Exist Error
-                connection.query(`SELECT * FROM hostel WHERE Email='${atten.Email}' AND isActive = 1`, function (error, data) {
+                connection.query(`SELECT * FROM hostel WHERE Email='${atten.Email}' AND isActive = 1`,async function (error, data) {
                     if (data.length > 0) {
                         response.status(203).json({ message: "Email Already Exists", statusCode: 203 });
                     } else {
@@ -234,16 +238,32 @@ function createUser(connection, request, response) {
                         var paid_advance = atten.paid_advance ? atten.paid_advance : 0;
                         var pending_advance = atten.AdvanceAmount - paid_advance;
 
-                        connection.query(`INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance) VALUES ('${Circle}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}','${paid_advance}','${pending_advance}')`, function (insertError, insertData) {
-                            if (insertError) {
-                                console.log(insertError);
-                                response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
-                            } else {
+                        // connection.query(`INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance) VALUES ('${Circle}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}','${paid_advance}','${pending_advance}')`,async function (insertError, insertData) {
+                        //     if (insertError) {
+                        //         console.log(insertError);
+                        //         response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
+                        //     } else {
 
-                                var user_ids = insertData.insertId;
+                                
+                        //         var user_ids = insertData.insertId;
+                                
+                        //         const gen_user_id = generateUserId(atten.firstname, user_ids);
 
-                                const gen_user_id = generateUserId(atten.firstname, user_ids);
+                                let profile_url;
 
+                                if (profile) {
+                                    const timestamp = Date.now();
+                                   await uploadProfilePictureToS3('smartstaydevs', 'users/', 'profile' + gen_user_id + `${timestamp}` + '.jpg', profile, (err, s3Url) => {
+                                        if(err){
+                                            console.log(err);
+                                        }
+                                        profile_url=s3Url;
+                                    })
+                                }else{
+                                    profile_url=0;
+                                }
+                                console.log(profile_url);
+                                return;
                                 var update_user_id = "UPDATE hostel SET User_Id=? WHERE ID=?";
                                 connection.query(update_user_id, [gen_user_id, user_ids], async function (up_id_err, up_id_res) {
                                     if (up_id_err) {
@@ -319,8 +339,8 @@ function createUser(connection, request, response) {
                     }
                 });
             }
-        });
-    }
+//         });
+//     }
 }
 
 function generateUserId(firstName, user_id) {
