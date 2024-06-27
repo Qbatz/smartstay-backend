@@ -4,6 +4,7 @@ const cron = require('node-cron');
 const middleware = require('./middleware');
 const connection = require('./config/connection');
 const notifications = require('./notifications');
+const assets = require('./assets');
 
 const app = express()
 const userQueries = require('./UserQueries');
@@ -118,7 +119,7 @@ cron.schedule("0 0 1 * * ", function () {
         } else {
             let isFirstTime = true;
             for (const user of users) {
-                await invoiceQueries.calculateAndInsertInvoice(connection, user, users,isFirstTime);
+                await invoiceQueries.calculateAndInsertInvoice(connection, user, users, isFirstTime);
                 isFirstTime = false;
             }
         }
@@ -466,23 +467,41 @@ app.post('/update_notification', (req, res) => {
 // ****************** Notification End ***************** //
 
 
-app.post('/add/update_vendor',  upload.single('profile'),(request, response) => {
+app.post('/add/update_vendor', upload.single('profile'), (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-       const reqInvoice = {
+    const reqInvoice = {
         profile: request.file,
         firstName: request.body.first_Name,
         LastName: request.body.Last_Name,
-        Vendor_Mobile: request.body. Vendor_Mobile,
+        Vendor_Mobile: request.body.Vendor_Mobile,
         Vendor_Email: request.body.Vendor_Email,
         Vendor_Address: request.body.Vendor_Address,
         Status: request.body.Status,
-        Vendor_Id : request.body.Vendor_Id
-            };
-            console.log("reqInvoice",reqInvoice)
+        Vendor_Id: request.body.Vendor_Id
+    };
+    console.log("reqInvoice", reqInvoice)
     vendorQueries.ToAddAndUpdateVendor(connection, reqInvoice, response, request)
 })
 
-app.post('/get/vendor_list',(request, response) =>{
+app.post('/get/vendor_list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     vendorQueries.GetVendorList(connection, response, request)
 })
+
+// ****************** Assets Start ***************** //
+
+// All Asset Details
+app.get('/all_assets', (req, res) => {
+    assets.all_assets(req, res);
+})
+
+app.post('/add_asset', (req, res) => {
+    assets.add_asset(req, res);
+})
+
+app.delete('/remove_asset', (req, res) => {
+    assets.remove_asset(req, res);
+})
+
+
+// ****************** Assets End ******************* //
