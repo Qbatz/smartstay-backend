@@ -49,7 +49,7 @@ app.post('/users/user-list', (request, response) => {
 });
 
 
-app.post('/add/adduser-list', (request, response) => {
+app.post('/add/adduser-list', upload.single('profile'), (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     userQueries.createUser(connection, request, response)
 })

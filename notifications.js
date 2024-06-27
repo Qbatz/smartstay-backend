@@ -7,9 +7,6 @@ function all_notifications(req, res) {
     var user_id = req.body.user_id;
     var user_type = req.body.user_type;
 
-    // var user_id =  req.query.user_id;
-    // var user_type = req.query.user_type;
-
     if (!user_type || user_type == undefined) {
         var user_type = 0;
     }
@@ -19,15 +16,16 @@ function all_notifications(req, res) {
         var user_type = req.user_details.user_type;
     }
     var page = parseInt(req.body.page) || 1;
-    var limit = 20;
+    var limit = 2;
     var offset = (page - 1) * limit;
 
-    var sql1 = "SELECT id,user_id,title,user_type,message,createdat,updatedat,CASE WHEN (seen_users LIKE '%," + user_id + ",%' OR seen_users LIKE '" + user_id + ",%' OR seen_users LIKE '%," + user_id + "' OR seen_users = '" + user_id + "') THEN 0 ELSE status END AS status FROM notifications WHERE (user_id = '" + user_id + "' OR FIND_IN_SET('" + user_id + "', unseen_users) OR FIND_IN_SET('" + user_id + "', seen_users))  AND user_type = '" + user_type + "' ORDER  BY id DESC LIMIT '" + limit + "' OFFSET " + offset + ";"
+    var sql1 = "SELECT id,user_id,title,user_type,message,createdat,updatedat,CASE WHEN (seen_users LIKE '%," + user_id + ",%' OR seen_users LIKE '" + user_id + ",%' OR seen_users LIKE '%," + user_id + "' OR seen_users = '" + user_id + "') THEN 0 ELSE status END AS status FROM notifications WHERE (user_id = '" + user_id + "' OR FIND_IN_SET('" + user_id + "', unseen_users) OR FIND_IN_SET('" + user_id + "', seen_users))  AND user_type = '" + user_type + "' ORDER  BY id DESC LIMIT " + limit + " OFFSET " + offset + ";"
+    // console.log(sql1);
     connection.query(sql1, (sql_err, sql_res) => {
         if (sql_err) {
             res.status(201).json({ message: "Unable to get Notifications Details", statusCode: 201 })
         } else {
-            res.status(200).json({ message: "Notifications Details", statusCode: 200, notification: sql_res })
+            res.status(200).json({ message: "Notifications Details", statusCode: 200, page: page, notification: sql_res })
         }
     })
 }
