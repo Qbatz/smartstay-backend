@@ -467,27 +467,34 @@ app.post('/update_notification', (req, res) => {
 // ****************** Notification End ***************** //
 
 
-app.post('/add/update_vendor', upload.single('profile'), (request, response) => {
+app.post('/add/update_vendor',  upload.single('profile'),(request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const reqInvoice = {
+       const reqInvoice = {
         profile: request.file,
         firstName: request.body.first_Name,
         LastName: request.body.Last_Name,
-        Vendor_Mobile: request.body.Vendor_Mobile,
+        Vendor_Mobile: request.body. Vendor_Mobile,
         Vendor_Email: request.body.Vendor_Email,
         Vendor_Address: request.body.Vendor_Address,
-        Status: request.body.Status,
-        Vendor_Id: request.body.Vendor_Id
-    };
-    console.log("reqInvoice", reqInvoice)
+        Vendor_Id : request.body.Vendor_Id,
+        Business_Name:request.body.Business_Name,
+        id:request.body.id
+            };
+            console.log("reqInvoice",reqInvoice)
     vendorQueries.ToAddAndUpdateVendor(connection, reqInvoice, response, request)
 })
 
-app.post('/get/vendor_list', (request, response) => {
+app.post('/get/vendor_list',(request, response) =>{
     response.set('Access-Control-Allow-Origin', '*');
     vendorQueries.GetVendorList(connection, response, request)
 })
 
+
+app.post('/delete-vendor-list', (request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    const reqVendor = request.body;
+    vendorQueries.TodeleteVendorList(connection, response, request,reqVendor )
+})
 // ****************** Assets Start ***************** //
 
 // All Asset Details
