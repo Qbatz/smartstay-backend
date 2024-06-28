@@ -11,6 +11,7 @@ const AWS_REGION = process.env.AWS_REGION;
 const request = require('request');
 const sharp = require('sharp');
 const util = require('util');
+const phantomjs = require('phantomjs-prebuilt');
 
 AWS.config.update({
     accessKeyId: AWS_ACCESS_KEY_ID,
@@ -20,7 +21,7 @@ AWS.config.update({
 const s3 = new AWS.S3();
 
 const https = require('https');
-
+const pdf = require('html-pdf');
 
 async function calculateAndInsertInvoice(connection, user, users) {
     const query = util.promisify(connection.query).bind(connection);
@@ -1823,190 +1824,318 @@ function UpdateAmenitiesHistory(connection, response, reqData) {
         response.status(201).json({ message: 'Missing Parameter' })
     }
 }
-// function GetAmenitiesHistory(connection, response, reqdata) {
-//     connection.query(`select * from AmenitiesHistory where user_Id ='${reqdata.userID}'`, function (err, data) {
-//         if (data.length > 0) {
-//             console.log("data",data)
-//             // let amenity = {}
-//             // for (let i = 0; i < data.length; i++) {
-//             //     let tempObj = {
-//             //         user_Id: data[i].user_Id,
-//             //         amenity_Id: data[i].amenity_Id,
-//             //         status: data[i].status,
-//             //         created_At: data[i].created_At,
-//             //         created_By: data[i].created_By,
-//             //         updated_At: data[i].updated_At,
-//             //         updated_By: data[i].updated_By
-//             //     }
-//             //     amenity = { ...amenity, ...tempObj }
-//             // }
+// startdate to enddate
+function GetAmenitiesHistory(connection, res, req) {
+    console.log("req", moment(req.endingDate).format('DD/MM/YYYY'));
+    let endMonth = req.endingDate ? new Date(req.endingDate).getMonth() + 1 : new Date(req.startingDate).getMonth() + 1;
+    console.log("endMonth", endMonth);
+    let endYear = req.endingDate ? new Date(req.endingDate).getFullYear() : new Date(req.startingDate).getFullYear();
+    console.log("endYear", endYear);
+    let startYear = new Date(req.startingDate).getFullYear();
+    console.log("startYear", startYear);
+    let startMonth = new Date(req.startingDate).getMonth() + 1;
+    console.log("startMonth", startMonth);
+    // let endMonth = currentMonth;
+    let user_id = req.user_id;
+    let hostelDetails = {};
+
+    if (!user_id) {
+        return res.status(201).json({ message: "User ID is required" });
+    }
+
+    var sql = `
+        SELECT amen.*,trans.amount as PaidAmount,trans.createdAt as PaidDate,hostel.Name as userName,hostel.Address as UserAddress,hos.Name as hostel_Name,hos.hostel_PhoneNo, hos.email_id,hos.Address, hostel.RoomRent, amenityNm.Amnities_Name as AmenitiesName, am.Amount,inv.PaidAmount as roomrentPaidAmount,inv.BalanceDue as roomrentBalanceAmount
+        FROM AmenitiesHistory AS amen
+        JOIN hostel ON hostel.User_Id = amen.user_Id 
+        JOIN Amenities AS am ON am.Amnities_Id = amen.amenity_Id
+        JOIN AmnitiesName as amenityNm on am.Amnities_Id = amenityNm.id
+         LEFT JOIN transactions as trans on trans.user_id = hostel.ID
+         AND MONTH(trans.createdAt) = MONTH(amen.created_At)
+        AND YEAR(trans.createdAt) = YEAR(amen.created_At)
+        JOIN hosteldetails as hos on hos.id =${req.hostel_id}
+        LEFT JOIN invoicedetails AS inv ON inv.user_id = amen.user_Id
+        AND MONTH(inv.Date) = MONTH(amen.created_At)
+        AND YEAR(inv.Date) = YEAR(amen.created_At)
+        WHERE amen.user_Id = '${user_id}' 
+        AND (
+            (YEAR(amen.created_At) = ${startYear} AND MONTH(amen.created_At) BETWEEN ${startMonth} AND 12)
+            OR
+            (YEAR(amen.created_At) = ${endYear} AND MONTH(amen.created_At) BETWEEN 1 AND ${endMonth})
+        )
+        ORDER BY amen.created_At ASC;
+    `;
+    console.log("sql", sql);
+    connection.query(sql, function (am_err, am_data) {
+        if (am_err) {
+            console.error("Error fetching amenities history:", am_err);
+            return res.status(201).json({ message: "Unable to get Amenities History" });
+        }
+
+        if (am_data.length === 0) {
+            return res.status(202).json({ message: "No data found" });
+        }
+
+
+        let groupedData = {};
+        am_data.forEach(item => {
+            hostelDetails = {
+                hostelName: item.hostel_Name,
+                hostelPhoneNo: item.hostel_PhoneNo,
+                hostelEmailID: item.email_id,
+                hostelAddress: item.Address,
+                userAddress: item.UserAddress,
+                userName: item.userName
+            }
+            let key = `${item.user_Id}-${item.amenity_Id}-${item.hostel_Id}`;
+            if (!groupedData[key]) {
+                groupedData[key] = {
+                    user_Id: item.user_Id,
+                    amenity_Id: item.amenity_Id,
+                    hostel_Id: item.hostel_Id,
+                    name: item.AmenitiesName,
+                    rent: item.RoomRent,
+                    // rentPaidAmount: item.roomrentPaidAmount || 0,
+                    // rentBalanceAmount: item.roomrentBalanceAmount || 0,
+                    ebAmount: item.EbAmount,
+                    charges: item.Amount,
+                    PaidAmount: item.PaidAmount || 0,
+                    PaidDate: item.PaidDate || 0,
+                    history: []
+                };
+            }
+            groupedData[key].history.push({
+                status: item.status,
+                created_At: item.created_At,
+                created_By: item.created_By,
+            });
+        });
+
+        let result = Object.values(groupedData);
+
+
+        let monthData = [];
 
 
 
-// // const amenity = data.map(item => ({
-// //     user_Id: item.user_Id,
-// //     amenity_Id: item.amenity_Id,
-// //     status: item.status,
-// //     created_At: item.created_At,
-// //     created_By: item.created_By,
-// //     updated_At: item.updated_At,
-// //     updated_By: item.updated_By
-// // }));
+
+        for (let month = startMonth; month <= endMonth; month++) {
+            let ebAmount = 0;
+
+            connection.query(`
+        SELECT inv.EbAmount
+        FROM invoicedetails AS inv
+        WHERE MONTH(inv.Date) = ${month}
+          AND YEAR(inv.Date) = ${endYear}  
+          AND inv.user_id = '${user_id}';
+    `, function (ebErr, ebData) {
+                if (ebErr) {
+                    console.error("Error fetching EB Amount:", ebErr);
+                    return res.status(201).json({ message: "Error fetching EB Amount" });
+                } else if (ebData.length > 0) {
+                    console.log("ebData", ebData);
+                    ebAmount = ebData[0].EbAmount;
+                }
+
+                let currentMonthData = {
+                    Month: getMonthName(month),
+                    amenity_name: [],
+                    amenity_fees: [],
+                    room_rent: 0,
+                    // room_rent_PaidAmount:0,
+                    // room_rent_BalanceAmount: 0,
+                    eb_amount: ebAmount,
+                    total_amount: 0,
+                    paid_amount: []
+                };
+
+
+                result.forEach(amenity => {
+                    let lastStatus = null;
+                    let exclude = false;
+
+                    amenity.history.forEach(entry => {
+                        let entryDate = new Date(entry.created_At);
+                        if (entryDate.getFullYear() === startYear && entryDate.getMonth() + 1 === month && entry.status === 0) {
+                            exclude = true;
+                        }
+                        if (entryDate.getFullYear() < endYear || (entryDate.getFullYear() === endYear && entryDate.getMonth() + 1 <= month)) {
+                            lastStatus = entry;
+                        }
+                    });
+
+                    if (!exclude && lastStatus && lastStatus.status === 1) {
+                        // console.log("amenity.charges",amenity.charges);
+                        // let amenityFees = 0;
+                        // amenityFees += amenity.charges 
+                        // console.log("amenityFees",amenityFees);
+
+                        currentMonthData.amenity_name.push(amenity.name);
+                        currentMonthData.amenity_fees.push(amenity.charges);
+                        currentMonthData.room_rent = amenity.rent;
+                        if (amenity.PaidAmount != 0) {
+                            currentMonthData.paid_amount.push({ PaidAmount: amenity.PaidAmount, PaidDate: amenity.PaidDate });
+                            console.log("currentMonthData.paid_amount", currentMonthData.paid_amount);
+                        }
+                        // else{
+                        //     currentMonthData.paid_amount=[]
+                        // }
+
+                        // currentMonthData.paid_amount = amenity.PaidAmount;
+                        // currentMonthData.room_rent_PaidAmount = amenity.rentPaidAmount;
+                        // currentMonthData.room_rent_BalanceAmount = amenity.rentBalanceAmount;
+                        // currentMonthData.total_amount += (amenity.charges + currentMonthData.eb_amount);
+                        let amenityFees = currentMonthData.amenity_fees.reduce((a, b) => Number(a) + Number(b), 0)
+                        // .split(',').reduce((a, b) => Number(a) + Number(b), 0)
+                        // console.log("amenityFees",amenityFees);
+                        let totalAmount = amenityFees + currentMonthData.eb_amount + amenity.rent
+                        // - amenity.PaidAmount
+                        //  - amenity.PaidAmount
+                        // console.log("totalAmount",totalAmount);
+                        currentMonthData.total_amount = totalAmount
+                    } else {
+                        currentMonthData.room_rent = amenity.rent;
+                        // currentMonthData.total_amount += (amenity.charges + currentMonthData.eb_amount);
+                    }
+                });
+
+
+                if (currentMonthData.amenity_name.length > 0) {
+                    // currentMonthData.total_amount += currentMonthData.room_rent;
+                    // currentMonthData.total_amount += currentMonthData.eb_amount;
+                    currentMonthData.amenity_name = currentMonthData.amenity_name.join(',');
+                    currentMonthData.amenity_fees = currentMonthData.amenity_fees.join(',');
+                    monthData.push(currentMonthData);
+                } else {
+                    let totalAmount = (currentMonthData.eb_amount) + currentMonthData.room_rent
+                    console.log("totalAmount", totalAmount);
+                    currentMonthData.total_amount = totalAmount
+                    // currentMonthData.total_amount += currentMonthData.room_rent;
+                    // currentMonthData.total_amount += currentMonthData.eb_amount;
+                    currentMonthData.amenity_name = currentMonthData.amenity_name.join(',');
+                    currentMonthData.amenity_fees = currentMonthData.amenity_fees.join(',');
+                    monthData.push(currentMonthData);
+                }
+                // console.log("monthData",monthData);
+                if (month === endMonth) {
+                    if (monthData.length > 0) {
+                        AmenitiesPDF(hostelDetails, monthData, res)
+                        // res.status(200).json({ message: "Amenities History", amenity_details: monthData });
+                    } else {
+                        res.status(202).json({ message: "No active amenities found for the specified months and year" });
+                    }
+                }
+            })
+        }
 
 
 
-// const groupedAmenities = data.reduce((acc, curr) => {
-//     const userId = curr.user_Id;
-//     if (!acc[userId]) {
-//         acc[userId] = { ...curr, amenitystatus: [] };
-//     }
-//     acc[userId].amenitystatus.push({
-//         created_At: curr.created_At,
-//         updated_At: curr.updated_At,
-//         updated_By: curr.updated_By
-//     });
-//     return acc;
-// }, {});
+        // if (monthData.length > 0) {
+        //     res.status(200).json({ message: "Amenities History", amenity_details: monthData });
+        // } else {
+        //     res.status(202).json({ message: "No active amenities found for the specified months and year" });
+        // }
+    });
+}
+
+function getMonthName(month) {
+    const date = new Date();
+    date.setMonth(month - 1);
+    return date.toLocaleString('default', { month: 'long' });
+}
+
+function AmenitiesPDF(hostelDetails, monthData, response) {
+    const htmlFilePath = path.join(__dirname, 'mail_templates', 'amenityHistory_template.html');
+    let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
+
+    function calculateTotalAmount(data) {
+        let total = 0;
+        for (let i = 0; i < data.length; i++) {
+            total += parseFloat(data[i].total_amount);
+        }
+        return total.toFixed(2);
+    }
 
 
-// const formattedAmenities = Object.values(groupedAmenities).map(amenity => ({
-//     user_Id: amenity.user_Id,
-//     amenity_Id: amenity.amenity_Id,
-//     hostel_Id: amenity.hostel_Id,
-//     created_By: amenity.created_By,
-//     amenitystatus: amenity.amenitystatus
-// }));
+    let invoiceRows = '';
+    let paidamountRows = '';
+    for (let i = 0; i < monthData.length; i++) {
+        let amenityFees = monthData[i].amenity_fees.split(',').reduce((a, b) => Number(a) + Number(b), 0)
+        if (monthData[i].paid_amount.length > 0) {
+            for (let paid = 0; paid < monthData[i].paid_amount.length; paid++) {
+                if (monthData[i].paid_amount[paid].PaidAmount != 0 && monthData[i].paid_amount[paid].PaidAmount != []) {
+                    //     paidamountRows += `
+                    // <td>you have paid ${monthData[i].paid_amount[paid].PaidAmount} on ${monthData[i].paid_amount[paid].PaidDate} </td>
+                    //  `
+                    invoiceRows += `
+             <tr>
+                 <td>${monthData[i].Month}</td>
+                 <td>Room Rent : ${monthData[i].room_rent}<br/>${monthData[i].amenity_fees && monthData[i].amenity_name + " : " + amenityFees + '<br/>'}  EB Amount : ${monthData[i].eb_amount}</td>
+                 <td>you have paid ${monthData[i].paid_amount[paid].PaidAmount} on ${monthData[i].paid_amount[paid].PaidDate} </td>
+                 <td>${monthData[i].total_amount}</td>
+             </tr>
+         `;
+                }
 
-// console.log("Formatted amenities:", formattedAmenities);
-//             if (formattedAmenities) {
-//                 response.status(200).json({ amenities: formattedAmenities });
-//             }
+            }
+
+        }
+        else {
+            invoiceRows += `
+            <tr>
+                <td>${monthData[i].Month}</td>
+                <td>Room Rent : ${monthData[i].room_rent}<br/>${monthData[i].amenity_fees && monthData[i].amenity_name + " : " + amenityFees + '<br/>'}  EB Amount : ${monthData[i].eb_amount}</td>
+                <td>you have not Paid for this month</td>
+                <td>${monthData[i].total_amount}</td>
+            </tr>
+        `;
+        }
+
+        // }
+    }
 
 
+    htmlContent = htmlContent
+        .replace('{{hostal_name}}', hostelDetails.hostelName)
+        .replace('{{Phone}}', hostelDetails.hostelPhoneNo)
+        .replace('{{email}}', hostelDetails.hostelEmailID)
+        .replace('{{user_address}}', hostelDetails.userAddress)
+        .replace('{{user_name}}', hostelDetails.userName)
+        .replace('{{city}}', hostelDetails.hostelAddress)
+        .replace('{{invoice_rows}}', invoiceRows)
+        .replace('{{total_amount}}', calculateTotalAmount(monthData))
 
+    // Write the modified HTML content to a PDF or any other output
+    const outputPath = path.join(__dirname, 'amenity.pdf');
 
-//             // console.log("amenity", amenity);
-//             // if (amenity) {
-//             //     response.status(200).json({ amenity: amenity });
-//             // }
-
-
-//         }
-//         else {
-//             response.status(201).json({ message: 'Data Not Found' })
-//         }
-//     })
-// }
-
-function GetAmenitiesHistory(connection, response, reqdata) {
-    // Adjust your SQL query to include a JOIN with Amenities table
-    //     const query = `
-    //     SELECT AH.*, A.AmenitiesName,A.Amount, H.RoomRent
-    //     FROM AmenitiesHistory AH
-    //     LEFT JOIN Amenities A ON AH.amenity_Id = A.Amnities_Id
-    //     LEFT JOIN hostel H ON AH.user_Id = H.User_Id
-    //     WHERE AH.user_Id = '${reqdata.userID}' and H.User_Id='${reqdata.userID}'
-    // `;
-    //     const query = `
-    // SELECT AH.user_Id, AH.created_At,AH.created_By,AH.updated_At,AH.updated_By,AH.status,A.AmenitiesName, A.Amount, H.RoomRent,
-    // Inv.PaidAmount AS roomRentPaidAmount
-    // FROM AmenitiesHistory AH
-    // LEFT JOIN Amenities A ON AH.amenity_Id = A.Amnities_Id
-    // LEFT JOIN hostel H ON AH.user_Id = H.User_Id
-    // LEFT JOIN invoicedetails Inv ON H.User_Id = Inv.User_Id
-    // WHERE AH.user_Id = '${reqdata.userID}'
-    // GROUP BY AH.user_Id,
-    //  A.AmenitiesName, A.Amount, H.RoomRent, Inv.PaidAmount
-    // ;`
-    const query = `
-SELECT AH.user_Id, AH.created_At,AH.created_By,AH.updated_At,AH.updated_By,AH.status,A.AmenitiesName, A.Amount, H.RoomRent,
-Inv.PaidAmount AS roomRentPaidAmount
-FROM AmenitiesHistory AH
-LEFT JOIN Amenities A ON AH.amenity_Id = A.Amnities_Id
-LEFT JOIN hostel H ON AH.user_Id = H.User_Id
-LEFT JOIN invoicedetails Inv ON H.User_Id = Inv.User_Id
-WHERE AH.user_Id = '${reqdata.userID}'
-GROUP BY AH.id
-ORDER BY AH.created_At ;
-`
-
-    console.log("query", query);
-    connection.query(query, function (err, data) {
+    // Generate the PDF
+    pdf.create(htmlContent, { phantomPath: phantomjs.path }).toFile(outputPath, async (err, res) => {
         if (err) {
-            console.error("err", err);
-            response.status(201).json({ error: 'Database error' });
+            console.error('Error generating PDF:', err);
             return;
         }
 
-        if (data.length > 0) {
-            console.log("Data found:", data);
-
-
-            let formattedAmenities = {};
-
-
-            data.forEach(record => {
-
-                let amenityMonth = new Date(record.created_At).getMonth();
-
-
-                const monthNames = ["January", "February", "March", "April", "May", "June",
-                    "July", "August", "September", "October", "November", "December"];
-                let monthName = monthNames[amenityMonth];
-
-                // console.log("monthName",monthName);
-                let amenity = 0;
-                amenity += record.status == 0 ? 0 : Number(record.Amount)
-
-                if (!formattedAmenities[monthName]) {
-                    let total = Number(record.RoomRent) + Number(amenity)
-                    formattedAmenities[monthName] = {
-                        Rent: record.RoomRent || 0,
-                        roomRentPaidAmount: record.roomRentPaidAmount,
-                        roomRentBalanceDue: Number(record.RoomRent) - Number(record.roomRentPaidAmount),
-                        Total: total || 0,
-                        amenity_details: []
-                    };
-                }
-                else {
-                    console.log("length", formattedAmenities[monthName].amenity_details.length);
-                    if (formattedAmenities[monthName].amenity_details.length > 0 && record.status != 0) {
-                        for (let i = 0; i < formattedAmenities[monthName].amenity_details.length; i++) {
-                            amenity += formattedAmenities[monthName].amenity_details[i].amenity_fees;
-                        }
-                        console.log("amenity", amenity);
-                        let total = Number(record.RoomRent) + Number(amenity)
-                        formattedAmenities[monthName] = { ...formattedAmenities[monthName], Total: total }
-
-                    }
-                }
-
-
-                formattedAmenities[monthName].amenity_details.push({
-                    Month: monthName,
-                    amenity_name: record.AmenitiesName,
-                    amenity_fees: record.status == 0 ? 0 : record.Amount,
-                    amenity_status: record.status,
-                    created_At: record.created_At,
-                    updated_At: record.updated_At,
-                    updated_By: record.updated_By
-                });
-            });
-
-
-            const result = Object.values(formattedAmenities);
-
-            // console.log("Formatted amenities:", result);
-
-
-            // console.log("Formatted amenities:", result);
-            response.status(200).json({ amenities: result });
-        } else {
-            console.log("No data found for user ID:", reqdata.userID);
-            response.status(201).json({ message: 'Data Not Found' });
+        console.log('PDF generated:', res.filename);
+        if (res.filename) {
+            console.log("res", res);
+            response.status(200).json({ message: "Amenities History", filepath: res.filename, amenity_details: monthData });
         }
+        // var inv_id = inv_data.id;
+
+        // Upload the PDF to S3
+        // await uploadToS3(outputPath, 'amenity.pdf', inv_id);
+
+        // Remove the local PDF file after upload
+        // fs.unlinkSync(res.filename);
+
     });
+
+
 }
+
+
+
+
+
 
 
 module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory }

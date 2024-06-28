@@ -31,7 +31,7 @@ app.use(function (req, res, next) {
     next();
 })
 
-app.use(middleware);
+// app.use(middleware);
 
 app.listen('2001', function () {
     console.log("node is started at 2001")
