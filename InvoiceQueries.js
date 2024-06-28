@@ -17,7 +17,6 @@ const AWS_REGION = process.env.AWS_REGION;
 const request = require('request');
 const sharp = require('sharp');
 const util = require('util');
-const phantomjs = require('phantomjs-prebuilt');
 
 const pdf = require('html-pdf');
 
@@ -2336,7 +2335,7 @@ function AmenitiesPDF(hostelDetails, monthData, response) {
 
 
     let invoiceRows = '';
-    let paidamountRows = '';
+    // let paidamountRows = '';
     for (let i = 0; i < monthData.length; i++) {
         let amenityFees = monthData[i].amenity_fees.split(',').reduce((a, b) => Number(a) + Number(b), 0)
         if (monthData[i].paid_amount.length > 0) {
@@ -2349,7 +2348,7 @@ function AmenitiesPDF(hostelDetails, monthData, response) {
              <tr>
                  <td>${monthData[i].Month}</td>
                  <td>Room Rent : ${monthData[i].room_rent}<br/>${monthData[i].amenity_fees && monthData[i].amenity_name + " : " + amenityFees + '<br/>'}  EB Amount : ${monthData[i].eb_amount}</td>
-                 <td>you have paid ${monthData[i].paid_amount[paid].PaidAmount} on ${monthData[i].paid_amount[paid].PaidDate} </td>
+                 <td> you have paid ${monthData[i].paid_amount[paid].PaidAmount} on ${monthData[i].paid_amount[paid].PaidDate} </td>
                  <td>${monthData[i].total_amount}</td>
              </tr>
          `;
