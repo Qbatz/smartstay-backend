@@ -34,7 +34,7 @@ app.use(function (req, res, next) {
     next();
 })
 
-app.use(middleware);
+// app.use(middleware);
 
 app.listen('2001', function () {
     console.log("node is started at 2001")
@@ -407,6 +407,20 @@ app.post('/payment_history', (request, response) => {
     accountManagement.payment_history(connection, response, request)
 })
 
+
+app.post('/add/amenity-history',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    const reqData = request.body;
+    invoiceQueries.UpdateAmenitiesHistory(connection, response, reqData) 
+})
+
+
+app.post('/amenity/list-amenity-history',(req,res)=>{
+    res.set('Access-Control-Allow-Origin', '*');
+    const reqdata = req.body;
+    invoiceQueries.GetAmenitiesHistory(connection,res,reqdata)
+})
+
 // ************* Use it Later ***********//
 // Get Room Details
 app.post('/get_room_details', (request, response) => {
@@ -512,3 +526,4 @@ app.delete('/remove_asset', (req, res) => {
 
 
 // ****************** Assets End ******************* //
+
