@@ -44,7 +44,7 @@ function hostelListDetails(connection, response) {
 function createPG(connection, request, response) {
     const userDetails = request.user_details;
     const reqData = request.body;
-    
+
     let hostelID, errorMessage
     if (reqData) {
         const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) values (\'${reqData.name}\',\'${reqData.phoneNo}\',\'${reqData.number_of_floors}\',\'${reqData.email_Id}\',\'${reqData.location}\',\'${userDetails.id}\')`
@@ -374,7 +374,7 @@ function CreateFloor(connection, reqDataFloor, response) {
                 hostel_ID = data[0].id
                 const index = reqDataFloor.hostelDetails.length - 1
                 const floor = data[0].number_Of_Floor + reqDataFloor.hostelDetails.length
-                
+
                 const query2 = `UPDATE hosteldetails SET number_Of_Floor='${floor}' WHERE id='${hostel_ID}'`
                 connection.query(query2, function (error, create_floor) {
                     if (error) {
@@ -487,9 +487,9 @@ function listDashBoard(connection, response, request) {
 
 function deleteFloor(connection, response, reqData) {
     if (reqData) {
-        connection.query(`select number_Of_Floor from hosteldetails where id='${reqData.id}'`,function(err,floorData){
-            if(floorData && floorData.length > 0){
-                let floor = Number(floorData[0].number_Of_Floor)-1
+        connection.query(`select number_Of_Floor from hosteldetails where id='${reqData.id}'`, function (err, floorData) {
+            if (floorData && floorData.length > 0) {
+                let floor = Number(floorData[0].number_Of_Floor) - 1
                 connection.query(`UPDATE hosteldetails SET number_Of_Floor= ${floor} WHERE id='${reqData.id}'`, function (error, data) {
                     if (error) {
                         response.status(201).json({ message: "doesn't update" });
@@ -502,13 +502,14 @@ function deleteFloor(connection, response, reqData) {
                 response.status(201).json({ message: "Invalid Credential" });
             }
         })
-        
+
     }
     else {
         response.status(201).json({ message: "Missing parameter" });
     }
 
 }
+
 function deleteRoom(connection, response, reqData) {
     if (reqData.floorId && reqData.roomNo) {
         connection.query(`UPDATE hostelrooms SET isActive = 0 WHERE Hostel_Id='${reqData.hostelId}' AND Room_Id= ${reqData.roomNo} AND Floor_Id=${reqData.floorId}`, function (error, data) {
@@ -549,5 +550,85 @@ function deleteBed(connection, response, reqData) {
 
 }
 
+// Get Particular Room Details
+function get_room_details(connection, request, response) {
+    var { hostel_id, floor_id, room_id } = request.body;
 
-module.exports = { getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteFloor,deleteRoom,deleteBed }
+    if ((!hostel_id && hostel_id == undefined) || (!room_id && room_id == undefined)) {
+        response.status(201).json({ message: "Missing Parameter Values", statusCode: 201 });
+    } else {
+        var sql1 = "SELECT * FROM hosteldetails WHERE id='" + hostel_id + "' AND isActive =1;";
+        connection.query(sql1, function (sq_err, sq_res) {
+            if (sq_err) {
+                response.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 });
+            } else if (sq_res.length != 0) {
+
+                var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND Room_Id=? AND isActive=1;";
+                connection.query(sql2, [hostel_id, floor_id, room_id], function (room_err, room_res) {
+                    if (room_err) {
+                        response.status(201).json({ message: "Unable to Get Room Details", statusCode: 201 });
+                    } else if (room_res.length != 0) {
+                        response.status(200).json({ message: "Room Details", statusCode: 200, room_details: room_res[0] });
+                    } else {
+                        response.status(201).json({ message: "Invalid Or Inactive Room ID", statusCode: 201 });
+                    }
+                })
+
+            } else {
+                response.status(201).json({ message: "Invalid or Inactive Hostel Details", statusCode: 201 });
+            }
+        })
+    }
+}
+
+// Update Particular Room Details
+function update_room_details(connection, request, response) {
+    var { hostel_id, room_id, floor_id, amount } = request.body;
+
+    if ((!hostel_id && hostel_id == undefined) || (!room_id && room_id == undefined) || (!amount && amount < 0)) {
+        response.status(201).json({ message: "Missing Parameter Values", statusCode: 201 });
+    } else {
+        var sql1 = "SELECT * FROM hosteldetails WHERE id='" + hostel_id + "' AND isActive =1;";
+        connection.query(sql1, function (sq_err, sq_res) {
+            if (sq_err) {
+                response.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 });
+            } else if (sq_res.length != 0) {
+
+                var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND Room_Id=?";
+                connection.query(sql2, [hostel_id, floor_id, room_id], function (room_err, room_res) {
+                    if (room_err) {
+                        response.status(201).json({ message: "Unable to Get Room Details", statusCode: 201 });
+                    } else if (room_res.length != 0) {
+
+                        var id = room_res[0].id;
+
+                        var update_query = "UPDATE hostelrooms SET Price=? WHERE id=?";
+                        connection.query(update_query, [amount, id], function (up_err, up_res) {
+                            if (up_err) {
+                                response.status(201).json({ message: "Unable to Update Room Details", statusCode: 201 });
+                            } else {
+
+                                var update_user_query = "UPDATE hostel SET RoomRent=? WHERE Hostel_Id=? AND Floor=? AND Rooms=? AND isActive=1";
+                                connection.query(update_user_query, [amount, hostel_id, floor_id, room_id], function (err, data) {
+                                    if (err) {
+                                        response.status(201).json({ message: "Unable to Update Users Rent", statusCode: 201 });
+                                    } else {
+                                        response.status(200).json({ message: "Update Successfully", statusCode: 200 });
+                                    }
+                                })
+
+                            }
+                        })
+                    } else {
+                        response.status(201).json({ message: "Invalid Room ID", statusCode: 201 });
+                    }
+                })
+            } else {
+                response.status(201).json({ message: "Invalid or Inactive Hostel Details", statusCode: 201 });
+            }
+        })
+    }
+}
+
+
+module.exports = { getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details }

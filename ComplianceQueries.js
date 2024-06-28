@@ -69,7 +69,7 @@ function AddCompliance(connection, atten, response) {
 
 function GetComplianceList(connection, response, request) {
     const userDetails = request.user_details;
-    const query = `SELECT * FROM hosteldetails hstlDetails inner join compliance comp  on comp.Hostel_id=hstlDetails.id  WHERE hstlDetails.created_By ='${userDetails.id}'`;
+    const query = `SELECT * FROM hosteldetails hstlDetails inner join compliance comp  on comp.Hostel_id=hstlDetails.id  WHERE hstlDetails.created_By ='${userDetails.id}' ORDER BY comp.ID DESC`;
     connection.query(query, function (error, hostelData) {
         if (error) {
             console.error(error);

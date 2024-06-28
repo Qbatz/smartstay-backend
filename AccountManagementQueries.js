@@ -133,7 +133,7 @@ function createnewAccount(connection, reqBodyData, response) {
 
 // Generate JWT Token
 const generateToken = (user) => {
-    return jwt.sign({ id: user.id, sub: user.id, username: user.Name }, process.env.JWT_SECRET, { expiresIn: '30m' });
+    return jwt.sign({ id: user.id, sub: user.id,user_type:1,username: user.Name }, process.env.JWT_SECRET, { expiresIn: '30m' });
 };
 
 // Login API
@@ -378,28 +378,18 @@ function payment_history(connection, response, request) {
     var sql1 = "SELECT * FROM hostel WHERE ID=?;";
     connection.query(sql1, [user_id], function (sel_err, sel_res) {
         if (sel_err) {
-            response.status(201).json({ message: "Unable to get User Details" })
+            response.status(201).json({ message: "Unable to get User Details", statusCode: 201 })
         } else if (sel_res.length != 0) {
 
-            // Get Paid Advance Amount
-            var sql2 = "SELECT * FROM advance_amount_transactions WHERE user_id='" + user_id + "' ORDER BY id DESC;";
-            connection.query(sql2, function (ad_err, ad_res) {
-                if (ad_err) {
-                    response.status(201).json({ message: "Unable to get Advance Amount Details" })
+            var sql2 = "SELECT 'advance' AS type, id, user_id, advance_amount AS amount,payment_status AS status, createdAt AS created_at FROM advance_amount_transactions WHERE user_id =? UNION ALL SELECT 'rent' AS type, id, user_id, amount,status, createdAt AS created_at FROM transactions WHERE user_id =? ORDER BY created_at DESC";
+            connection.query(sql2, [user_id, user_id], function (err, results) {
+                if (err) {
+                    response.status(201).json({ message: "Unable to get Payment History", statusCode: 201 });
                 } else {
-
-                    // Get Rent Amounts
-                    var sql3 = "SELECT * FROM transactions WHERE user_id='" + user_id + "' ORDER BY id DESC;";
-                    connection.query(sql3, function (trans_err, trans_res) {
-                        if (trans_err) {
-                            response.status(201).json({ message: "Unable to get Transactions Details" })
-                        } else {
-                            response.status(200).json({ message: "Payment History", advance_history: ad_res, rent_history: trans_res })
-                        }
-                    })
-
+                    response.status(200).json({ message: "Payment History", statusCode: 200, history: results });
                 }
-            })
+            });
+
 
         } else {
             response.status(201).json({ message: "Inavlid User Details" })

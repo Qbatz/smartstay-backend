@@ -7,19 +7,21 @@ module.exports = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
+    // Not Need to Token
     const openEndpoints = [
         '/login/login',
         '/otp-send/response',
         '/otp-send/send-mail',
         '/forget/select-list',
-        '/forgot_otp_response'
+        '/forgot_otp_response',
+        '/newaccount/create-account'
     ];
 
     if (openEndpoints.includes(req.originalUrl) || req.originalUrl.startsWith('/login/login?')) {
         return next();
     } else {
         if (!token) {
-            res.status(206).json({ message: "Access denied. No token provided",statusCode:206 });
+            res.status(206).json({ message: "Access denied. No token provided", statusCode: 206 });
         } else {
             try {
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -29,11 +31,11 @@ module.exports = (req, res, next) => {
                 const timeToExpire = decoded.exp - currentTime;
 
                 let newToken = null;
-                console.log(`timeToExpire`, timeToExpire);
+
                 // Refresh the token
-                if (timeToExpire <= 300) {
+                if (timeToExpire <= 600) {
                     newToken = jwt.sign(
-                        { id: decoded.id, sub: decoded.id, username: decoded.username }, process.env.JWT_SECRET, { expiresIn: '30m' }
+                        { id: decoded.id, sub: decoded.id, user_type: 1, username: decoded.username }, process.env.JWT_SECRET, { expiresIn: '30m' }
                     );
                     res.locals.refresh_token = newToken;
                 }
@@ -50,7 +52,7 @@ module.exports = (req, res, next) => {
                 next();
 
             } catch (err) {
-                res.status(206).json({ message: "Access denied. Invalid Token or Token Expired",statusCode:206 });
+                res.status(206).json({ message: "Access denied. Invalid Token or Token Expired", statusCode: 206 });
             }
         }
     }
