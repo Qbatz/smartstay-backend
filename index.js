@@ -520,7 +520,7 @@ app.post('/add_asset', (req, res) => {
     assets.add_asset(req, res);
 })
 
-app.delete('/remove_asset', (req, res) => {
+app.post('/remove_asset', (req, res) => {
     assets.remove_asset(req, res);
 })
 
