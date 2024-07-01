@@ -78,7 +78,7 @@ function add_asset(req, res) {
                         if (ins_err) {
                             return res.status(201).json({ message: "Unable to Add Asset Details", statusCode: 201 })
                         } else {
-                            return res.status(200).json({ message: "Add New Asset Details", statusCode: 200 })
+                            return res.status(200).json({ message: "To create asset is successfully", statusCode: 200 })
                         }
                     })
                 } else {
