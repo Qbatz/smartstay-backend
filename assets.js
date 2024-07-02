@@ -97,6 +97,8 @@ function remove_asset(req, res) {
     var asset_id = req.body.asset_id;
     var user_id = req.user_details.id;
 
+console.log("req.body.asset_id",req.body.asset_id)
+
     if (!asset_id) {
         return res.status(201).json({ message: "Missing Asset Details", statusCode: 201 })
     }
