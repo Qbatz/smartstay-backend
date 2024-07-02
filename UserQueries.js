@@ -635,7 +635,9 @@ function transitionlist(connection, request, response) {
 
 function customer_details(req, res) {
     var user_id = req.body.user_id;
-    // if(!user_id)
+    // if(!user_id || user_id == undefined){
+        
+    // }
 }
 
 module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details }
