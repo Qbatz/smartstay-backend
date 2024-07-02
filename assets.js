@@ -122,6 +122,78 @@ function remove_asset(req, res) {
 
 }
 
+function asseign_asset(req, res) {
+
+    var user_id = req.user_details.id;
+    var asset_id = req.body.asset_id;
+
+    if (!asset_id) {
+        return res.status(201).json({ message: "Missing Asset Details", statusCode: 201 })
+    }
+    var data = req.body;
+
+    var validationResult = assign_validations(data);
+
+    if (validationResult.statusCode == 200) {
+
+        // Check Assets
+        var sql1 = "SELECT * FROM assets WHERE id=?";
+        connection.query(sql1, [asset_id], (err, Data) => {
+            if (err) {
+                return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
+            } else if (Data.length != 0) {
+
+                // Asset Id Valid Check add or edit 
+                var sql2 = "SELECT * FROM assigned_assets WHERE asset_id=?";
+                connection.query(sql2, [asset_id], (as_err, as_res) => {
+                    if (as_err) {
+                        return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
+                    } else if (as_res.length == 0) {
+
+                        // Assign Asset
+                        var sql3 = "INSERT INTO assigned_assets (asset_id,hostel_id,floor_id,room_id,assigned_date,created_by) VALUES (?,?,?,?,?,?)";
+                        connection.query(sql3, [asset_id, data.hostel_id, data.floor_id, data.room_id, data.asseign_date, user_id], (ins_err, ins_res) => {
+                            if (ins_err) {
+                                console.log(ins_err);
+                                return res.status(201).json({ message: "Unable to Add Assign Asset Details", statusCode: 201 })
+                            } else {
+                                return res.status(200).json({ message: "Asset Assigned Sucessfully", statusCode: 200 })
+                            }
+                        })
+                    } else {
+
+                        // Reassign Asset
+                        var sql4 = "UPDATE assigned_assets SET hostel_id=?,floor_id=?,room_id=?,assigned_date=?,updated_by=? WHERE asset_id=?";
+                        connection.query(sql4, [data.hostel_id, data.floor_id, data.room_id, data.asseign_date, user_id, asset_id], (up_err, up_res) => {
+                            if (up_err) {
+                                return res.status(201).json({ message: "Unable to Update Assign Asset Details", statusCode: 201 })
+                            } else {
+                                return res.status(200).json({ message: "Asset Re Assigned Sucessfully", statusCode: 200 })
+                            }
+                        })
+                    }
+                })
+            } else {
+                return res.status(201).json({ message: "Invalid Asset Details", statusCode: 201 })
+            }
+        })
+    } else {
+        res.status(201).send(validationResult);
+    }
+}
+
+function assign_validations(data) {
+    if (!data.hostel_id) {
+        return { message: "Please Add Hostel Name", statusCode: 201 };
+    } else if (!data.room_id) {
+        return { message: "Please Add Room Details", statusCode: 201 };
+    } else if (!data.asseign_date) {
+        return { message: "Please Add Assigned Date", statusCode: 201 };
+    } else {
+        return { message: "Validation passed", statusCode: 200 };
+    }
+}
+
 
 function input_validations(data) {
 
@@ -141,4 +213,4 @@ function input_validations(data) {
 }
 
 
-module.exports = { all_assets, add_asset, remove_asset }
+module.exports = { all_assets, add_asset, remove_asset, asseign_asset }
