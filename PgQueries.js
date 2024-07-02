@@ -115,8 +115,9 @@ function FloorList(connection, requestData, response) {
 
 
 function RoomList(connection, reqData, response) {
+    
     if (reqData) {
-        connection.query(`select * from hostelrooms where Hostel_Id = \'${reqData.hostel_Id}\' and Floor_Id = \'${reqData.floor_Id}\' and isActive=1`, function (error, data) {
+        connection.query(`select * from hostelrooms where Hostel_Id = \'${reqData.hostel_Id}\'  and isActive=1`, function (error, data) {
             if (data) {
                 response.status(200).json({ data: data })
             }
