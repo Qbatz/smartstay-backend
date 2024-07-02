@@ -530,6 +530,10 @@ app.post('/assign_asset', (req, res) => {
 })
 
 
-
 // ****************** Assets End ******************* //
+
+// Get Customer all details
+app.post('/customer_details', (req, res) => {
+    userQueries.customer_details(req, res);
+})
 

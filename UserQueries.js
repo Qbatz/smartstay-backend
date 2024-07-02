@@ -1,5 +1,5 @@
 const moment = require('moment');
-const conn = require('./config/connection');
+const connection = require('./config/connection');
 const addNotification = require('./components/add_notification');
 
 
@@ -631,4 +631,11 @@ function transitionlist(connection, request, response) {
     }
 }
 
-module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist }
+// Get Customer Details
+
+function customer_details(req, res) {
+    var user_id = req.body.user_id;
+    // if(!user_id)
+}
+
+module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details }
