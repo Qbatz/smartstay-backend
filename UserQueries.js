@@ -662,15 +662,38 @@ function customer_details(req, res) {
                     temp['amentites'] = am_data;
                     user_data[0] = temp;
                 }
-                res.json({ data: user_data })
+                // Get Eb Details
+                var sql3 = "SELECT inv.Name,inv.Hostel_Id,inv.Floor_Id,inv.Room_No,inv.EbAmount,eb.start_Meter_Reading,eb.end_Meter_Reading,eb.Eb_Unit,eb.EbAmount AS total_ebamount,inv.Date, CASE WHEN inv.Hostel_Based != 0 THEN inv.Hostel_Based ELSE inv.Room_Based END AS pay_eb_amount FROM invoicedetails AS inv INNER JOIN EbAmount AS eb ON inv.Hostel_Id = eb.Hostel_Id INNER JOIN (SELECT Hostel_Id,MAX(createAt) as latestCreateAt FROM EbAmount GROUP BY Hostel_Id ) as latestEb ON eb.Hostel_Id = latestEb.Hostel_Id AND eb.createAt = latestEb.latestCreateAt WHERE inv.User_Id=? AND inv.invoice_type=1 ORDER BY inv.id DESC"
+                connection.query(sql3, [amenn_user_id], (eb_err, eb_data) => {
+                    if (eb_err) {
+                        return res.status(201).json({ message: "Unable to Eb Details", statusCode: 201 })
+                    } else {
+
+                        // Get Invoice Details
+                        var sql4 = "SELECT * FROM invoicedetails WHERE User_id=? ORDER BY id DESC";
+                        connection.query(sql4, [amenn_user_id], (inv_err, inv_res) => {
+                            if (inv_err) {
+                                return res.status(201).json({ message: "Unable to  Get Invoice Details", statusCode: 201 })
+                            } else {
+
+                                // Get Transactions Details
+                                var sql5 = "SELECT 'advance' AS type, id, user_id, advance_amount AS amount,payment_status AS status, createdAt AS created_at FROM advance_amount_transactions WHERE user_id =? UNION ALL SELECT 'rent' AS type, id, user_id, amount,status, createdAt AS created_at FROM transactions WHERE user_id =? ORDER BY created_at DESC";
+                                connection.query(sql5, [user_id, user_id], (trans_err, trans_res) => {
+                                    if (trans_err) {
+                                        return res.status(201).json({ message: "Unable to Get Transactions Details", statusCode: 201 })
+                                    } else {
+                                        res.status(200).json({ statusCode: 200, message: "View Customer Details", data: user_data, eb_data: eb_data, invoice_details: inv_res, transactions: trans_res })
+                                    }
+                                })
+                            }
+                        })
+                    }
+                })
             })
-
-
         } else {
             return res.status(201).json({ message: "Invalid or Inactive User", statusCode: 201 })
         }
     })
-
 }
 
 module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details }
