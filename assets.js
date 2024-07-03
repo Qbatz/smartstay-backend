@@ -170,7 +170,7 @@ function asseign_asset(req, res) {
                             if (up_err) {
                                 return res.status(201).json({ message: "Unable to Update Assign Asset Details", statusCode: 201 })
                             } else {
-                                return res.status(200).json({ message: "Asset Re Assigned Sucessfully", statusCode: 200 })
+                                return res.status(200).json({ message: "Asset Reassigned Sucessfully", statusCode: 200 })
                             }
                         })
                     }
