@@ -3,6 +3,8 @@ var cors = require('cors');
 const cron = require('node-cron');
 const middleware = require('./middleware');
 const connection = require('./config/connection');
+const notifications = require('./notifications');
+const assets = require('./assets');
 
 const app = express()
 const userQueries = require('./UserQueries');
@@ -11,6 +13,7 @@ const invoiceQueries = require('./InvoiceQueries')
 const profileQueries = require('./ProfileQueries')
 const complianceQueries = require('./ComplianceQueries')
 const pgQueries = require('./PgQueries')
+const vendorQueries = require('./vendorQueries')
 
 const multer = require('multer');
 const request = require('request');
@@ -114,8 +117,10 @@ cron.schedule("0 0 1 * * ", function () {
             console.error("Error fetching users:", err);
             return;
         } else {
+            let isFirstTime = true;
             for (const user of users) {
-                await invoiceQueries.calculateAndInsertInvoice(connection, user, users);
+                await invoiceQueries.calculateAndInsertInvoice(connection, user, users, isFirstTime);
+                isFirstTime = false;
             }
         }
     });
@@ -402,6 +407,20 @@ app.post('/payment_history', (request, response) => {
     accountManagement.payment_history(connection, response, request)
 })
 
+
+app.post('/add/amenity-history', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    const reqData = request.body;
+    invoiceQueries.UpdateAmenitiesHistory(connection, response, reqData)
+})
+
+
+app.post('/amenity/list-amenity-history', (req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    const reqdata = req.body;
+    invoiceQueries.GetAmenitiesHistory(connection, res, reqdata)
+})
+
 // ************* Use it Later ***********//
 // Get Room Details
 app.post('/get_room_details', (request, response) => {
@@ -441,4 +460,94 @@ app.get('/truncate_tables', (request, response) => {
             }
         }
     })
+})
+
+// ****************** Notification Start ***************** //
+// Get all Notifications
+app.get('/all_notifications', (req, res) => {
+    notifications.all_notifications(req, res);
+})
+
+// Add New Notification
+app.post('/add_notification', (req, res) => {
+    notifications.add_notification(req, res);
+})
+
+// Update Notification
+app.post('/update_notification', (req, res) => {
+    notifications.update_notification_status(req, res);
+})
+
+// ****************** Notification End ***************** //
+
+
+app.post('/add/update_vendor', upload.single('profile'), (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    const reqInvoice = {
+        profile: request.file,
+        firstName: request.body.first_Name,
+        LastName: request.body.Last_Name,
+        Vendor_Mobile: request.body.Vendor_Mobile,
+        Vendor_Email: request.body.Vendor_Email,
+        Vendor_Address: request.body.Vendor_Address,
+        Vendor_Id: request.body.Vendor_Id,
+        Business_Name: request.body.Business_Name,
+        id: request.body.id
+    };
+    console.log("reqInvoice", reqInvoice)
+    vendorQueries.ToAddAndUpdateVendor(connection, reqInvoice, response, request)
+})
+
+app.post('/get/vendor_list', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    vendorQueries.GetVendorList(connection, response, request)
+})
+
+
+app.post('/delete-vendor-list', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    const reqVendor = request.body;
+    vendorQueries.TodeleteVendorList(connection, response, request, reqVendor)
+})
+// ****************** Assets Start ***************** //
+
+// All Asset Details
+app.get('/all_assets', (req, res) => {
+    assets.all_assets(req, res);
+})
+
+app.post('/add_asset', (req, res) => {
+    assets.add_asset(req, res);
+})
+
+app.post('/remove_asset', (req, res) => {
+    assets.remove_asset(req, res);
+})
+
+// Assign Asset
+app.post('/assign_asset', (req, res) => {
+    assets.asseign_asset(req, res);
+})
+
+
+// ****************** Assets End ******************* //
+
+// Get Customer all details
+app.post('/customer_details', (req, res) => {
+    userQueries.customer_details(req, res);
+})
+
+// ****************** Expenses Start ******************* //
+
+// Add Expenses
+app.post('/add_expenses', (req, res) => {
+    assets.add_expenses(req, res);
+})
+
+app.post('/remove_expenses', (req, res) => {
+    assets.remove_expenses(req, res);
+})
+
+app.get('/all_expenses',(req,res)=>{
+    assets.all_expenses(req, res);
 })

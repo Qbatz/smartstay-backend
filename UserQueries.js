@@ -1,5 +1,8 @@
 const moment = require('moment');
-const conn = require('./config/connection');
+const connection = require('./config/connection');
+const addNotification = require('./components/add_notification');
+const { dash } = require('pdfkit');
+
 
 
 function getUsers(connection, response, request) {
@@ -109,7 +112,7 @@ function createUser(connection, request, response) {
                                     if (paid_advance != undefined && paid_advance != 0) {
 
                                         var sql4 = "SELECT * FROM advance_amount_transactions WHERE user_id=? ORDER BY id ASC";
-                                        connection.query(sql4, [user_ids], function (ad_err, ad_res) {
+                                        connection.query(sql4, [user_ids], async function (ad_err, ad_res) {
                                             if (ad_err) {
                                                 console.log(ad_err);
                                             } else if (ad_res.length == 0) {
@@ -119,6 +122,12 @@ function createUser(connection, request, response) {
                                                         console.log(ins_err);
                                                     }
                                                 });
+
+                                                var title = "Paid Advance Amount";
+                                                var user_type = 0;
+                                                var message = "Your Advance Amount " + paid_advance + " Received Successfully";
+
+                                                await addNotification.add_notification(user_ids, title, user_type, message)
                                             }
                                         });
                                     }
@@ -165,15 +174,15 @@ function createUser(connection, request, response) {
 
                                     var payableamount = oneday_amount * numberOfDays
                                     var payable_rent = Math.round(payableamount);
-                                    console.log("payable_rent",payable_rent)
+                                    // console.log("payable_rent", payable_rent)
                                     var balance_rent = payable_rent - paid_amount;
-                                    console.log("balance_rent",balance_rent)
+                                    // console.log("balance_rent", balance_rent)
 
                                     insert_rent_invoice(connection, user_ids, paid_amount, balance_rent, payable_rent).then(() => {
 
                                         if (paid_rent != undefined && paid_rent != 0) {
                                             var sql2 = "SELECT * FROM transactions WHERE user_id=? AND invoice_id=0 AND MONTH(createdAt) = MONTH(CURDATE()) AND YEAR(createdAt) = YEAR(CURDATE())";
-                                            connection.query(sql2, [user_ids], function (trans_err, trans_res) {
+                                            connection.query(sql2, [user_ids], async function (trans_err, trans_res) {
                                                 if (trans_err) {
                                                     console.log(trans_err);
                                                 } else if (trans_res.length == 0) {
@@ -183,6 +192,12 @@ function createUser(connection, request, response) {
                                                             console.log(ins_err);
                                                         }
                                                     });
+
+                                                    var title = "Paid Rent Amount";
+                                                    var user_type = 0;
+                                                    var message = "Your Rent Amount " + paid_rent + " Received Successfully";
+
+                                                    await addNotification.add_notification(user_ids, title, user_type, message)
                                                 }
                                             });
                                         }
@@ -231,7 +246,7 @@ function createUser(connection, request, response) {
                                 const gen_user_id = generateUserId(atten.firstname, user_ids);
 
                                 var update_user_id = "UPDATE hostel SET User_Id=? WHERE ID=?";
-                                connection.query(update_user_id, [gen_user_id, user_ids], function (up_id_err, up_id_res) {
+                                connection.query(update_user_id, [gen_user_id, user_ids], async function (up_id_err, up_id_res) {
                                     if (up_id_err) {
                                         response.status(201).json({ message: "Unable to add User Id", statusCode: 201 });
                                     } else {
@@ -250,6 +265,12 @@ function createUser(connection, request, response) {
                                                     } else {
                                                     }
                                                 });
+
+                                                var title = "Paid Rent Amount";
+                                                var user_type = 0;
+                                                var message = "Your Rent Amount " + paid_rent + " Received Successfully";
+
+                                                await addNotification.add_notification(user_ids, title, user_type, message)
                                             }
 
                                             if (paid_advance > 0) {
@@ -259,6 +280,12 @@ function createUser(connection, request, response) {
                                                         console.log(err);
                                                     }
                                                 })
+
+                                                var title = "Paid Advance Amount";
+                                                var user_type = 0;
+                                                var message = "Your Advance Amount " + paid_advance + " Received Successfully";
+
+                                                await addNotification.add_notification(user_ids, title, user_type, message)
                                             }
 
                                             var currentDate = moment().format('YYYY-MM-DD');
@@ -605,4 +632,68 @@ function transitionlist(connection, request, response) {
     }
 }
 
-module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist }
+// Get Customer Details
+
+function customer_details(req, res) {
+
+    var user_id = req.body.user_id;
+
+    if (!user_id || user_id == undefined) {
+        return res.status(201).json({ message: "Missing User Details", statusCode: 201 })
+    }
+
+    // Check User Id valid or Invalid
+    var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
+    connection.query(sql1, [user_id], (user_err, user_data) => {
+        if (user_err) {
+            return res.status(201).json({ message: "Unable to Get User Details", statusCode: 201 })
+        } else if (user_data.length != 0) {
+
+            var temp = user_data[0];
+
+            var amenn_user_id = user_data[0].User_Id;
+            // All Amenties
+            var sql2 = "SELECT amname.Amnities_Name AS Amnities_Name FROM AmenitiesHistory AS amhis JOIN AmnitiesName AS amname ON amname.id = amhis.amenity_Id WHERE amhis.created_At <= CURDATE() AND amhis.status = 1 AND amhis.user_id = '" + amenn_user_id + "' UNION SELECT amname.Amnities_Name AS Amnities_Name FROM Amenities AS amen JOIN AmnitiesName AS amname ON amname.id = amen.Amnities_Id WHERE amen.setAsDefault = 1 GROUP BY Amnities_Name";
+            connection.query(sql2, (am_err, am_data) => {
+                if (am_err) {
+                    // console.log(am_err);
+                    temp['amentites'] = 0;
+                } else {
+                    temp['amentites'] = am_data;
+                    user_data[0] = temp;
+                }
+                // Get Eb Details
+                var sql3 = "SELECT inv.Name,inv.Hostel_Id,inv.Floor_Id,inv.Room_No,inv.EbAmount,eb.start_Meter_Reading,eb.end_Meter_Reading,eb.Eb_Unit,eb.EbAmount AS total_ebamount,inv.Date, CASE WHEN inv.Hostel_Based != 0 THEN inv.Hostel_Based ELSE inv.Room_Based END AS pay_eb_amount FROM invoicedetails AS inv INNER JOIN EbAmount AS eb ON inv.Hostel_Id = eb.Hostel_Id INNER JOIN (SELECT Hostel_Id,MAX(createAt) as latestCreateAt FROM EbAmount GROUP BY Hostel_Id ) as latestEb ON eb.Hostel_Id = latestEb.Hostel_Id AND eb.createAt = latestEb.latestCreateAt WHERE inv.User_Id=? AND inv.invoice_type=1 ORDER BY inv.id DESC"
+                connection.query(sql3, [amenn_user_id], (eb_err, eb_data) => {
+                    if (eb_err) {
+                        return res.status(201).json({ message: "Unable to Eb Details", statusCode: 201 })
+                    } else {
+
+                        // Get Invoice Details
+                        var sql4 = "SELECT * FROM invoicedetails WHERE User_id=? ORDER BY id DESC";
+                        connection.query(sql4, [amenn_user_id], (inv_err, inv_res) => {
+                            if (inv_err) {
+                                return res.status(201).json({ message: "Unable to  Get Invoice Details", statusCode: 201 })
+                            } else {
+
+                                // Get Transactions Details
+                                var sql5 = "SELECT 'advance' AS type, id, user_id, advance_amount AS amount,payment_status AS status, createdAt AS created_at FROM advance_amount_transactions WHERE user_id =? UNION ALL SELECT 'rent' AS type, id, user_id, amount,status, createdAt AS created_at FROM transactions WHERE user_id =? ORDER BY created_at DESC";
+                                connection.query(sql5, [user_id, user_id], (trans_err, trans_res) => {
+                                    if (trans_err) {
+                                        return res.status(201).json({ message: "Unable to Get Transactions Details", statusCode: 201 })
+                                    } else {
+                                        res.status(200).json({ statusCode: 200, message: "View Customer Details", data: user_data, eb_data: eb_data, invoice_details: inv_res, transactions: trans_res })
+                                    }
+                                })
+                            }
+                        })
+                    }
+                })
+            })
+        } else {
+            return res.status(201).json({ message: "Invalid or Inactive User", statusCode: 201 })
+        }
+    })
+}
+
+module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details }

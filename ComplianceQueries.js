@@ -5,6 +5,8 @@ function AddCompliance(connection, atten, response) {
         return;
     }
 
+    var created_by = request.user_details.id;
+
     connection.query(`SELECT * FROM compliance WHERE User_id = '${atten.User_id}' and date='${atten.date}'`, function (err, hostelData) {
         if (err) {
             console.error("Error querying hostel data:", err);
@@ -53,7 +55,7 @@ function AddCompliance(connection, atten, response) {
                         });
                     }
 
-                    connection.query(`INSERT INTO compliance(date, Name, Phone, Requestid, Roomdetail, Complainttype, Assign, Status, Hostel_id, Floor_id, Room, hostelname, Description, User_id) VALUES ('${atten.date}', '${atten.Name}', '${atten.Phone}', '${nextRequestId}', '${atten.Roomdetail}', '${atten.Complainttype}', '${atten.Assign}', '${atten.Status}', '${atten.Hostel_id}', '${atten.Floor_id}', '${atten.Room}', '${atten.hostelname}', '${atten.Description}','${atten.User_id}')`, function (error, data) {
+                    connection.query(`INSERT INTO compliance(date, Name, Phone, Requestid, Roomdetail, Complainttype, Assign, Status, Hostel_id, Floor_id, Room, hostelname, Description, User_id,Bed,created_by) VALUES ('${atten.date}', '${atten.Name}', '${atten.Phone}', '${nextRequestId}', '${atten.Roomdetail}', '${atten.Complainttype}', '${atten.Assign}', '${atten.Status}', '${atten.Hostel_id}', '${atten.Floor_id}', '${atten.Room}', '${atten.hostelname}', '${atten.Description}','${atten.User_id}','${atten.Bed}','${created_by}')`, function (error, data) {
                         if (error) {
                             console.error(error);
                             response.status(500).json({ message: "Error inserting record", statusCode: 500 });
