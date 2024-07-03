@@ -1,6 +1,7 @@
 const moment = require('moment');
 const connection = require('./config/connection');
 const addNotification = require('./components/add_notification');
+const { dash } = require('pdfkit');
 
 
 
@@ -634,10 +635,42 @@ function transitionlist(connection, request, response) {
 // Get Customer Details
 
 function customer_details(req, res) {
+
     var user_id = req.body.user_id;
-    // if(!user_id || user_id == undefined){
-        
-    // }
+
+    if (!user_id || user_id == undefined) {
+        return res.status(201).json({ message: "Missing User Details", statusCode: 201 })
+    }
+
+    // Check User Id valid or Invalid
+    var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
+    connection.query(sql1, [user_id], (user_err, user_data) => {
+        if (user_err) {
+            return res.status(201).json({ message: "Unable to Get User Details", statusCode: 201 })
+        } else if (user_data.length != 0) {
+
+            var temp = user_data[0];
+
+            var amenn_user_id = user_data[0].User_Id;
+            // All Amenties
+            var sql2 = "SELECT amname.Amnities_Name AS Amnities_Name FROM AmenitiesHistory AS amhis JOIN AmnitiesName AS amname ON amname.id = amhis.amenity_Id WHERE amhis.created_At <= CURDATE() AND amhis.status = 1 AND amhis.user_id = '" + amenn_user_id + "' UNION SELECT amname.Amnities_Name AS Amnities_Name FROM Amenities AS amen JOIN AmnitiesName AS amname ON amname.id = amen.Amnities_Id WHERE amen.setAsDefault = 1 GROUP BY Amnities_Name";
+            connection.query(sql2, (am_err, am_data) => {
+                if (am_err) {
+                    // console.log(am_err);
+                    temp['amentites'] = 0;
+                } else {
+                    temp['amentites'] = am_data;
+                    user_data[0] = temp;
+                }
+                res.json({ data: user_data })
+            })
+
+
+        } else {
+            return res.status(201).json({ message: "Invalid or Inactive User", statusCode: 201 })
+        }
+    })
+
 }
 
 module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details }

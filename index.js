@@ -537,3 +537,17 @@ app.post('/customer_details', (req, res) => {
     userQueries.customer_details(req, res);
 })
 
+// ****************** Expenses Start ******************* //
+
+// Add Expenses
+app.post('/add_expenses', (req, res) => {
+    assets.add_expenses(req, res);
+})
+
+app.post('/remove_expenses', (req, res) => {
+    assets.remove_expenses(req, res);
+})
+
+app.get('/all_expenses',(req,res)=>{
+    assets.all_expenses(req, res);
+})
