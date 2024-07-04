@@ -662,15 +662,288 @@ function customer_details(req, res) {
                     temp['amentites'] = am_data;
                     user_data[0] = temp;
                 }
-                res.json({ data: user_data })
+                // Get Eb Details
+                var sql3 = "SELECT inv.Name,inv.Hostel_Id,inv.Floor_Id,inv.Room_No,inv.EbAmount,eb.start_Meter_Reading,eb.end_Meter_Reading,eb.Eb_Unit,eb.EbAmount AS total_ebamount,inv.Date, CASE WHEN inv.Hostel_Based != 0 THEN inv.Hostel_Based ELSE inv.Room_Based END AS pay_eb_amount FROM invoicedetails AS inv INNER JOIN EbAmount AS eb ON inv.Hostel_Id = eb.Hostel_Id INNER JOIN (SELECT Hostel_Id,MAX(createAt) as latestCreateAt FROM EbAmount GROUP BY Hostel_Id ) as latestEb ON eb.Hostel_Id = latestEb.Hostel_Id AND eb.createAt = latestEb.latestCreateAt WHERE inv.User_Id=? AND inv.invoice_type=1 ORDER BY inv.id DESC"
+                connection.query(sql3, [amenn_user_id], (eb_err, eb_data) => {
+                    if (eb_err) {
+                        return res.status(201).json({ message: "Unable to Eb Details", statusCode: 201 })
+                    } else {
+
+                        // Get Invoice Details
+                        var sql4 = "SELECT * FROM invoicedetails WHERE User_id=? ORDER BY id DESC";
+                        connection.query(sql4, [amenn_user_id], (inv_err, inv_res) => {
+                            if (inv_err) {
+                                return res.status(201).json({ message: "Unable to  Get Invoice Details", statusCode: 201 })
+                            } else {
+
+                                // Get Transactions Details
+                                var sql5 = "SELECT 'advance' AS type, id, user_id, advance_amount AS amount,payment_status AS status, createdAt AS created_at FROM advance_amount_transactions WHERE user_id =? UNION ALL SELECT 'rent' AS type, id, user_id, amount,status, createdAt AS created_at FROM transactions WHERE user_id =? ORDER BY created_at DESC";
+                                connection.query(sql5, [user_id, user_id], (trans_err, trans_res) => {
+                                    if (trans_err) {
+                                        return res.status(201).json({ message: "Unable to Get Transactions Details", statusCode: 201 })
+                                    } else {
+                                        res.status(200).json({ statusCode: 200, message: "View Customer Details", data: user_data, eb_data: eb_data, invoice_details: inv_res, transactions: trans_res })
+                                    }
+                                })
+                            }
+                        })
+                    }
+                })
             })
-
-
         } else {
             return res.status(201).json({ message: "Invalid or Inactive User", statusCode: 201 })
         }
     })
-
 }
 
-module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details }
+// function user_amenities_history(req, res) {
+
+//     var user_id = req.body.user_id;
+
+//     var amenities_id = req.body.amenities_id;
+//     var amenities_id=[1]
+
+//     // if (!user_id || user_id == undefined) {
+//     //     return res.status(201).json({ message: "Missing User Details", statusCode: 201 })
+//     // }
+
+//     if (!amenities_id && amenities_id == undefined) {
+//         var sql2 = ` SELECT amen.id, amen.user_Id,amen.amenity_Id, amen.hostel_Id, amen.status, amen.created_At, amname.Amnities_Name, am.Amount FROM AmenitiesHistory AS amen 
+//         JOIN hostel ON hostel.User_Id = amen.user_Id  
+//         JOIN Amenities AS am ON am.Amnities_Id = amen.amenity_Id 
+//         JOIN AmnitiesName AS amname ON am.Amnities_Id = amname.id 
+//         WHERE amen.user_Id = 'MATH010' 
+//         ORDER BY amen.amenity_Id ASC, amen.created_At DESC`;
+//     } else {
+//         var sql2 = ` SELECT amen.id, amen.user_Id,amen.amenity_Id, amen.hostel_Id, amen.status, amen.created_At, amname.Amnities_Name, am.Amount FROM AmenitiesHistory AS amen 
+//         JOIN hostel ON hostel.User_Id = amen.user_Id  
+//         JOIN Amenities AS am ON am.Amnities_Id = amen.amenity_Id 
+//         JOIN AmnitiesName AS amname ON am.Amnities_Id = amname.id 
+//         WHERE amen.user_Id = 'MATH010' AND amen.amenity_Id IN (${amenities_id.join(',')}) 
+//         ORDER BY amen.amenity_Id ASC, amen.created_At DESC`;
+
+//     }
+
+
+//     connection.query(sql2, (am_err, am_data) => {
+//         if (am_err) {
+//             return res.status(201).json({ message: "Unable to Get Amenity Details", statusCode: 201 });
+//         } else {
+//             const result = [];
+//             const monthStatusMap = {};
+
+//             // const monthNames = [
+//             //     null, // Index 0 is not used since months are 1-12
+//             //     'January', 'February', 'March', 'April', 'May', 'June',
+//             //     'July', 'August', 'September', 'October', 'November', 'December'
+//             // ];
+
+//             // Populate monthStatusMap with existing records
+//             am_data.forEach(record => {
+//                 const createdMonth = new Date(record.created_At).getMonth() + 1; // Get month (1-12)
+//                 const key = `${record.user_Id}-${record.amenity_Id}-${record.hostel_Id}-${createdMonth}`;
+//                 // record.month_name = monthNames[createdMonth];
+//                 monthStatusMap[key] = record;
+//             });
+
+//             let lastStatusMap = {}; // Track last status per amenity
+//             let lastMonthMap = {}; // Track last month per amenity
+
+//             am_data.forEach(record => {
+//                 const amenityId = record.amenity_Id;
+//                 const currentStatus = record.status;
+//                 const createdAt = new Date(record.created_At);
+//                 const currentMonth = createdAt.getMonth() + 1; // Get current month (1-12)
+//                 const currentYear = createdAt.getFullYear();
+
+//                 if (lastMonthMap[amenityId] !== null && currentMonth !== lastMonthMap[amenityId] + 1) {
+//                     for (let month = lastMonthMap[amenityId] + 1; month < currentMonth; month++) {
+//                         const gapMonth = month % 12;
+//                         console.log(gapMonth);
+//                         const gapYear = month > 12 ? currentYear + 1 : currentYear;
+
+//                         let newRecord = {
+//                             id: 0,
+//                             user_Id: record.user_Id,
+//                             amenity_Id: record.amenity_Id,
+//                             hostel_Id: record.hostel_Id,
+//                             created_At: `${gapYear}-${String(gapMonth).padStart(2, '0')}-01T00:00:00.000Z`,
+//                             Amnities_Name: record.Amnities_Name,
+//                             Amount: record.Amount,
+//                             status: lastStatusMap[amenityId] == 1 && gapMonth == 3 ? 1 : 0 // Activate March if previous is active
+//                         };
+
+//                         result.push(newRecord);
+//                     }
+//                 }
+
+//                 result.push(record);
+//                 lastMonthMap[amenityId] = currentMonth;
+//                 lastStatusMap[amenityId] = currentStatus;
+//             });
+
+//             // Handle trailing months after the last record for each amenity
+//             Object.keys(lastMonthMap).forEach(amenityId => {
+//                 const lastMonth = lastMonthMap[amenityId];
+//                 const lastStatus = lastStatusMap[amenityId];
+
+//                 for (let month = lastMonth + 1; month <= 6; month++) {
+//                     let newRecord = {
+//                         id: null,
+//                         user_Id: am_data[0].user_Id, // Use the first user ID as an example
+//                         amenity_Id: amenityId,
+//                         hostel_Id: am_data[0].hostel_Id, // Use the first hostel ID as an example
+//                         created_At: `2024-${String(month).padStart(2, '0')}-01T00:00:00.000Z`,
+//                         Amnities_Name: am_data[0].Amnities_Name, // Use the first Amnities_Name as an example
+//                         Amount: am_data[0].Amount, // Use the first Amount as an example
+//                         status: lastStatus == 1 && month == 3 ? 1 : 0 // Activate March if previous is active
+//                     };
+
+//                     result.push(newRecord);
+//                 }
+//             });
+
+//             // result.sort((a, b) => {
+//             //     return new Date(a.created_At) - new Date(b.created_At);
+//             // });
+
+//             return res.status(201).json({ message: "Amenity Details", statusCode: 201, data: result });
+//         }
+//     });
+
+// }
+
+function user_amenities_history(req, res) {
+
+    var user_id = req.body.user_id;
+    var amenities_id = req.body.amenities_id; // Example, replace with actual logic
+
+    var sql1 = "SELECT * FROM hostel WHERE ID=?";
+    connection.query(sql1, [user_id], (sel_err, sel_res) => {
+        if (sel_err) {
+
+        } else if (sel_res.length != 0) {
+
+            var user_ids = sel_res[0].User_Id;
+
+            var sql = ` SELECT 
+            amen.id, 
+            amen.user_Id, 
+            amen.amenity_Id, 
+            amen.hostel_Id, 
+            amen.status, 
+            amen.created_At, 
+            amname.Amnities_Name, 
+            am.Amount 
+        FROM 
+            AmenitiesHistory AS amen 
+        JOIN 
+            hostel ON hostel.User_Id = amen.user_Id  
+        JOIN 
+            Amenities AS am ON am.Amnities_Id = amen.amenity_Id 
+        JOIN 
+            AmnitiesName AS amname ON am.Amnities_Id = amname.id 
+        WHERE 
+            amen.user_Id = '${user_ids}'`;
+
+            if (amenities_id != undefined && amenities_id.length > 0) {
+                sql += ` AND amen.amenity_Id IN (${amenities_id.join(',')})`;
+            }
+
+            sql += ` ORDER BY amen.amenity_Id ASC, amen.created_At DESC`;
+
+            connection.query(sql, (am_err, am_data) => {
+                if (am_err) {
+                    return res.status(500).json({ message: "Unable to fetch amenity details", error: am_err });
+                } else {
+                    const result = [];
+                    const monthStatusMap = {};
+                    const monthNames = [
+                        null, // Index 0 is not used since months are 1-12
+                        'January', 'February', 'March', 'April', 'May', 'June',
+                        'July', 'August', 'September', 'October', 'November', 'December'
+                    ];
+
+                    // Get the current month dynamically
+                    const currentMonth = new Date().getMonth(); // Get current month (1-12)
+
+                    // Process each record from database query
+                    am_data.forEach(record => {
+                        const createdAt = new Date(record.created_At);
+                        const amenityId = record.amenity_Id;
+                        const startMonth = createdAt.getMonth() + 1; // Get month from createdAt
+
+                        // Check if the startMonth is less than or equal to currentMonth
+                        if (startMonth <= currentMonth) {
+                            // Check if record already exists for the same month-amenity combination
+                            const existingRecord = result.find(r =>
+                                r.amenity_Id === amenityId &&
+                                new Date(r.created_At).getMonth() === createdAt.getMonth()
+                            );
+
+                            if (!existingRecord) {
+                                // If no existing record, add the current record to result with month name
+                                result.push({
+                                    id: record.id,
+                                    user_Id: record.user_Id,
+                                    amenity_Id: record.amenity_Id,
+                                    hostel_Id: record.hostel_Id,
+                                    created_At: record.created_At,
+                                    Amnities_Name: record.Amnities_Name,
+                                    Amount: record.Amount,
+                                    status: record.status,
+                                    month_name: monthNames[startMonth] // Add month name based on startMonth
+                                });
+                            }
+                        }
+                    });
+
+                    // Add missing months for each amenity if needed
+                    result.forEach(record => {
+                        const createdAt = new Date(record.created_At);
+                        const amenityId = record.amenity_Id;
+                        const startMonth = createdAt.getMonth() + 1; // Get month from createdAt
+
+                        // Check if the startMonth is less than or equal to currentMonth
+                        if (startMonth <= currentMonth) {
+                            // Check if there are missing months to fill
+                            for (let month = startMonth + 1; month <= currentMonth; month++) {
+                                // Check if this month-amenity combination already exists in result
+                                const exists = result.some(r =>
+                                    r.amenity_Id === amenityId &&
+                                    new Date(r.created_At).getMonth() + 1 === month
+                                );
+
+                                if (!exists) {
+                                    // Create a new record for the missing month with month name
+                                    const gapYear = month > 12 ? createdAt.getFullYear() + 1 : createdAt.getFullYear();
+                                    result.push({
+                                        id: null,
+                                        user_Id: record.user_Id,
+                                        amenity_Id: amenityId,
+                                        hostel_Id: record.hostel_Id,
+                                        created_At: `${gapYear}-${String(month).padStart(2, '0')}-01T00:00:00.000Z`,
+                                        Amnities_Name: record.Amnities_Name,
+                                        Amount: record.Amount,
+                                        status: 0, // Default status for missing months
+                                        month_name: monthNames[month] // Add month name based on month
+                                    });
+                                }
+                            }
+                        }
+                    });
+
+                    result.sort((a, b) => new Date(a.created_At) - new Date(b.created_At));
+
+                    return res.status(200).json({ statusCode: 200, message: "Amenity Details", data: result });
+                }
+            });
+        } else {
+            return res.status(200).json({ message: "Invalid User Details", statusCode: 201 });
+        }
+    })
+}
+
+
+
+module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details, user_amenities_history }
