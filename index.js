@@ -537,6 +537,11 @@ app.post('/customer_details', (req, res) => {
     userQueries.customer_details(req, res);
 })
 
+// Amentites Details for particular user
+app.post('/user_amenities_history', (req, res) => {
+    userQueries.user_amenities_history(req, res);
+})
+
 // ****************** Expenses Start ******************* //
 
 // Add Expenses
@@ -548,6 +553,6 @@ app.post('/remove_expenses', (req, res) => {
     assets.remove_expenses(req, res);
 })
 
-app.get('/all_expenses',(req,res)=>{
+app.get('/all_expenses', (req, res) => {
     assets.all_expenses(req, res);
 })
