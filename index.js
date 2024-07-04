@@ -14,6 +14,7 @@ const profileQueries = require('./ProfileQueries')
 const complianceQueries = require('./ComplianceQueries')
 const pgQueries = require('./PgQueries')
 const vendorQueries = require('./vendorQueries')
+const expensesManagement = require('./ExpensesManagement')
 
 const multer = require('multer');
 const request = require('request');
@@ -34,11 +35,35 @@ app.use(function (req, res, next) {
     next();
 })
 
-app.use(middleware);
+// app.use(middleware);
 
 app.listen('2001', function () {
     console.log("node is started at 2001")
 })
+
+// ExpensesManagement 
+
+app.post('/add/add-expense',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    expensesManagement.AddExpense(connection,request,response)
+})
+app.post('/add/expense-category',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    expensesManagement.AddExpenseCategory(connection,request,response)
+})
+app.post('/get/expense-category',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    expensesManagement.GetExpensesCategory(connection,request,response)
+})
+
+app.post('/calculate/hostel-expenses',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    expensesManagement.CalculateExpenses(connection,request,response)
+})
+// app.post('/add/add-salary',(request,response)=>{
+//     response.set('Access-Control-Allow-Origin', '*');
+//     expensesManagement.AddSalaryDetails(connection,request,response)
+// })
 
 // userQueries.js
 
