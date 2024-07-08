@@ -638,6 +638,8 @@ function customer_details(req, res) {
 
     var user_id = req.body.user_id;
 
+    var created_by = req.user_details.id;
+
     if (!user_id || user_id == undefined) {
         return res.status(201).json({ message: "Missing User Details", statusCode: 201 })
     }
@@ -650,6 +652,8 @@ function customer_details(req, res) {
         } else if (user_data.length != 0) {
 
             var temp = user_data[0];
+
+            var hostel_id = user_data[0].Hostel_Id;
 
             var amenn_user_id = user_data[0].User_Id;
             // All Amenties
@@ -682,7 +686,17 @@ function customer_details(req, res) {
                                     if (trans_err) {
                                         return res.status(201).json({ message: "Unable to Get Transactions Details", statusCode: 201 })
                                     } else {
-                                        res.status(200).json({ statusCode: 200, message: "View Customer Details", data: user_data, eb_data: eb_data, invoice_details: inv_res, transactions: trans_res })
+
+                                        // Get Hostel Amenities
+                                        var sql6 = "SELECT * FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id WHERE am.Hostel_Id=?";
+                                        connection.query(sql6, [hostel_id, created_by], (am_err, am_res) => {
+                                            if (am_err) {
+                                                console.log(am_err);
+                                                return res.status(201).json({ message: "Unable to Get All Amenities", statusCode: 201 })
+                                            } else {
+                                                res.status(200).json({ statusCode: 200, message: "View Customer Details", data: user_data, eb_data: eb_data, invoice_details: inv_res, transactions: trans_res, all_amenities: am_res })
+                                            }
+                                        })
                                     }
                                 })
                             }
@@ -698,6 +712,9 @@ function customer_details(req, res) {
 
 
 function user_amenities_history(req, res) {
+
+    var created_by = req.user_details.id;
+
     var user_id = req.body.user_id;
     var amenities_id = req.body.amenities_id || [];
 
@@ -727,7 +744,7 @@ function user_amenities_history(req, res) {
                 JOIN 
                     AmnitiesName AS amname ON am.Amnities_Id = amname.id 
                 WHERE 
-                    amen.user_Id = '${user_ids}'
+                    amen.user_Id = '${user_ids}' AND am.Status=1 AND am.createdBy='${created_by}'
             `;
 
             if (amenities_id.length > 0) {
@@ -741,7 +758,7 @@ function user_amenities_history(req, res) {
                     return res.status(201).json({ message: "Unable to fetch amenity details", error: am_err });
                 } else {
                     const result = [];
-                    const lastStatusMap = {}; 
+                    const lastStatusMap = {};
                     const monthNames = [
                         null,
                         'January', 'February', 'March', 'April', 'May', 'June',

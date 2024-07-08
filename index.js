@@ -603,6 +603,5 @@ app.get('/all_expenses', (req, res) => {
 // CREATE BED .............
 
 app.post('/create/create-bed', (request, response) => {
-    response.set('Access-Control-Allow-Origin', '*');
     pgQueries.createBed(connection, response, request)
 })
