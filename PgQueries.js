@@ -1,9 +1,23 @@
 const moment = require('moment')
+const AWS = require('aws-sdk');
+require('dotenv').config();
+
+
+const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
+const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
+const AWS_REGION = process.env.AWS_REGION;
+
+AWS.config.update({
+    accessKeyId: AWS_ACCESS_KEY_ID,
+    secretAccessKey: AWS_SECRET_ACCESS_KEY,
+    region: AWS_REGION
+});
+const s3 = new AWS.S3();
 
 
 function getHostelList(connection, response, request) {
     const userDetails = request.user_details;
-    connection.query(`select * from hosteldetails where created_By = '${userDetails.id}' `, function (err, data) {
+    connection.query(`select * from hosteldetails where created_By = '${userDetails.id}' ORDER BY create_At DESC`, function (err, data) {
         if (data) {
             response.status(200).json({ data: data })
         }
@@ -41,13 +55,98 @@ function hostelListDetails(connection, response) {
 }
 
 
-function createPG(connection, request, response) {
-    const userDetails = request.user_details;
-    const reqData = request.body;
+// function createPG(connection, request, response) {
+//     const userDetails = request.user_details;
+//     const reqData = request.body;
 
+//     let hostelID, errorMessage
+//     if (reqData) {
+//         const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) values (\'${reqData.name}\',\'${reqData.phoneNo}\',\'${reqData.number_of_floors}\',\'${reqData.email_Id}\',\'${reqData.location}\',\'${userDetails.id}\')`
+//         connection.query(query, function (error, data) {
+//             if (error) {
+//                 console.log("error", error);
+//                 response.status(201).json({ message: 'Cannot Insert Details' })
+//             }
+//             else {
+//                 console.log("Data for new hostel *=>", data)
+//                 const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqData.phoneNo}\'`
+//                 connection.query(query2, function (error, datum) {
+//                     if (datum.length > 0) {
+//                         // hostelID = datum[0].id
+//                         // for (let i = 0; i < reqData.floorDetails.length; i++) {
+//                         //     for (let j = 0; j < reqData.floorDetails[i].length; j++) {
+//                         //         const bed = Number(reqData.floorDetails[i][j].number_Of_Bed)
+//                         //         const room = Number(reqData.floorDetails[i][j].roomName)
+//                         //         const price = Number(reqData.floorDetails[i][j].price)
+//                         //         const query3 = insert into hostelrooms(Hostel_Id,Floor_Id,Room_Id,Number_Of_Beds,Created_By,Price) values(\'${hostelID}\',\'${i + 1}\',\'${room}\',\'${bed}\',\'${reqData.created_by}\',\'${price}\')
+//                         //         connection.query(query3, function (error, data) {
+//                         //             console.log(error);
+//                         //             if (error) {
+//                         //                 errorMessage = error;
+//                         //             }
+
+//                         //         })
+//                         //     }
+//                         // }
+//                         // if (errorMessage) {
+
+//                         //     response.status(201).json({ message: 'Cannot Insert Details' })
+//                         // }
+//                         // else {
+//                         response.status(200).json({ message: 'Data Saved Successfully' })
+//                         // }
+//                     }
+
+//                     else {
+//                         response.status(201).json({ message: 'Phone number not Registered' })
+//                     }
+
+//                 })
+//             }
+//         })
+//     }
+//     else {
+//         response.status(201).json({ message: 'Missing Parameter' })
+//     }
+// }
+
+
+function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileData, callback) {
+    const s3 = new AWS.S3();
+
+    const params = {
+        Bucket: bucketName,
+        Key: folderName + fileName,
+        Body: fileData.buffer,
+        ACL: 'public-read'
+    };
+
+    s3.upload(params, (err, data) => {
+        if (err) {
+            console.error('Error uploading file to S3:', err);
+            callback(err);
+        } else {
+            console.log('File uploaded successfully:', data.Location);
+            callback(null, data.Location);
+        }
+    });
+}
+
+
+
+
+function createPG(connection,reqHostel, response, request) {
+    const userDetails = request.user_details;
+    const timestamp = Date.now();
     let hostelID, errorMessage
-    if (reqData) {
-        const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) values (\'${reqData.name}\',\'${reqData.phoneNo}\',\'${reqData.number_of_floors}\',\'${reqData.email_Id}\',\'${reqData.location}\',\'${userDetails.id}\')`
+    if (reqHostel.profile) {
+        uploadProfilePictureToS3Bucket('smartstaydevs', 'Hostel_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqHostel.profile, (err, hostel_Logo) => {
+            if (err) {
+                response.status(202).json({ message: 'Database error' });
+            }else{
+
+            
+        const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By, profile) values (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\', \'${hostel_Logo}\')`
         connection.query(query, function (error, data) {
             if (error) {
                 console.log("error", error);
@@ -55,32 +154,11 @@ function createPG(connection, request, response) {
             }
             else {
                 console.log("Data for new hostel *=>", data)
-                const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqData.phoneNo}\'`
+                const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqHostel.hostel_Phone}\'`
                 connection.query(query2, function (error, datum) {
                     if (datum.length > 0) {
-                        // hostelID = datum[0].id
-                        // for (let i = 0; i < reqData.floorDetails.length; i++) {
-                        //     for (let j = 0; j < reqData.floorDetails[i].length; j++) {
-                        //         const bed = Number(reqData.floorDetails[i][j].number_Of_Bed)
-                        //         const room = Number(reqData.floorDetails[i][j].roomName)
-                        //         const price = Number(reqData.floorDetails[i][j].price)
-                        //         const query3 = insert into hostelrooms(Hostel_Id,Floor_Id,Room_Id,Number_Of_Beds,Created_By,Price) values(\'${hostelID}\',\'${i + 1}\',\'${room}\',\'${bed}\',\'${reqData.created_by}\',\'${price}\')
-                        //         connection.query(query3, function (error, data) {
-                        //             console.log(error);
-                        //             if (error) {
-                        //                 errorMessage = error;
-                        //             }
-
-                        //         })
-                        //     }
-                        // }
-                        // if (errorMessage) {
-
-                        //     response.status(201).json({ message: 'Cannot Insert Details' })
-                        // }
-                        // else {
-                        response.status(200).json({ message: 'Data Saved Successfully' })
-                        // }
+                    response.status(200).json({ message: 'Data Saved Successfully', statusCode:200 })
+                    
                     }
 
                     else {
@@ -91,10 +169,38 @@ function createPG(connection, request, response) {
             }
         })
     }
+})
+}
     else {
-        response.status(201).json({ message: 'Missing Parameter' })
+        const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) values (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\')`
+        connection.query(query, function (error, data) {
+            if (error) {
+                console.log("error", error);
+                response.status(201).json({ message: 'Cannot Insert Details' })
+            }
+            else {
+                console.log("Data for new hostel *=>", data)
+                const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqHostel.hostel_Phone}\'`
+                connection.query(query2, function (error, datum) {
+                    if (datum.length > 0) {
+                       
+                        response.status(200).json({ message: 'Data Saved Successfully' , statusCode:200  })
+                      
+                    }
+
+                    else {
+                        response.status(201).json({ message: 'Phone number not Registered' })
+                    }
+
+                })
+            }
+        })
+
+
     }
 }
+
+
 
 
 function FloorList(connection, requestData, response) {
@@ -115,8 +221,9 @@ function FloorList(connection, requestData, response) {
 
 
 function RoomList(connection, reqData, response) {
+    
     if (reqData) {
-        connection.query(`select * from hostelrooms where Hostel_Id = \'${reqData.hostel_Id}\' and Floor_Id = \'${reqData.floor_Id}\' and isActive=1`, function (error, data) {
+        connection.query(`select * from hostelrooms where Hostel_Id = \'${reqData.hostel_Id}\'  and isActive=1`, function (error, data) {
             if (data) {
                 response.status(200).json({ data: data })
             }
@@ -631,4 +738,35 @@ function update_room_details(connection, request, response) {
 }
 
 
-module.exports = { getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details }
+function createBed(connection, response, request){
+const reqData = request.body
+
+if(reqData){
+
+    const checkQuery = `select * from hostelrooms where `
+
+
+
+
+}else{
+    response.status(201).json({ message: "Missing Parameter", statusCode: 201 });
+}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details }

@@ -1,10 +1,14 @@
-const addNotification = require('./components/add_notification')
 
-function AddCompliance(connection, atten, response) {
+function AddCompliance(connection, request, response) {
+
+    var atten = request.body;
+
     if (!atten) {
         response.status(400).json({ message: "Missing Parameter" });
         return;
     }
+
+    var created_by = request.user_details.id;
 
     connection.query(`SELECT * FROM compliance WHERE User_id = '${atten.User_id}' and date='${atten.date}'`, function (err, hostelData) {
         if (err) {
@@ -13,8 +17,8 @@ function AddCompliance(connection, atten, response) {
             return;
         }
 
-        if (hostelData && hostelData.length > 0) {
-            connection.query(`UPDATE compliance SET date='${atten.date}', Name='${atten.Name}', Phone='${atten.Phone}', Roomdetail='${atten.Roomdetail}', Complainttype='${atten.Complainttype}', Assign='${atten.Assign}', Status='${atten.Status}', Hostel_id='${atten.Hostel_id}', Floor_id='${atten.Floor_id}', Room='${atten.Room}', hostelname='${atten.hostelname}', Description='${atten.Description}' WHERE User_id='${atten.User_id}' and date='${atten.date}'`, function (error, data) {
+        if (hostelData && hostelData.length > 0 && atten.id) {
+            connection.query(`UPDATE compliance SET date='${atten.date}', Name='${atten.Name}', Phone='${atten.Phone}', Roomdetail='${atten.Roomdetail}', Complainttype='${atten.Complainttype}', Assign='${atten.Assign}', Status='${atten.Status}', Hostel_id='${atten.Hostel_id}', Floor_id='${atten.Floor_id}', Room='${atten.Room}', hostelname='${atten.hostelname}', Description='${atten.Description}' WHERE ID='${atten.id}'`, function (error, data) {
                 if (error) {
                     response.status(500).json({ message: "Error updating record" });
                 } else {
@@ -54,7 +58,7 @@ function AddCompliance(connection, atten, response) {
                         });
                     }
 
-                    connection.query(`INSERT INTO compliance(date, Name, Phone, Requestid, Roomdetail, Complainttype, Assign, Status, Hostel_id, Floor_id, Room, hostelname, Description, User_id) VALUES ('${atten.date}', '${atten.Name}', '${atten.Phone}', '${nextRequestId}', '${atten.Roomdetail}', '${atten.Complainttype}', '${atten.Assign}', '${atten.Status}', '${atten.Hostel_id}', '${atten.Floor_id}', '${atten.Room}', '${atten.hostelname}', '${atten.Description}','${atten.User_id}')`, async function (error, data) {
+                    connection.query(`INSERT INTO compliance(date, Name, Requestid, Roomdetail, Complainttype, Assign, Status, Hostel_id, Floor_id, Room, hostelname, Description, User_id,Bed,created_by) VALUES ('${atten.date}', '${atten.Name}', '${nextRequestId}', '${atten.Roomdetail}', '${atten.Complainttype}', '${atten.Assign}', '${atten.Status}', '${atten.Hostel_id}', '${atten.Floor_id}', '${atten.Room}', '${atten.hostelname}', '${atten.Description}','${atten.User_id}','${atten.Bed}','${created_by}')`, function (error, data) {
                         if (error) {
                             console.error(error);
                             response.status(500).json({ message: "Error inserting record", statusCode: 500 });
@@ -84,8 +88,8 @@ function AddCompliance(connection, atten, response) {
 
 function GetComplianceList(connection, response, request) {
     const userDetails = request.user_details;
-    const query = `SELECT * FROM hosteldetails hstlDetails inner join compliance comp  on comp.Hostel_id=hstlDetails.id  WHERE hstlDetails.created_By ='${userDetails.id}' ORDER BY comp.ID DESC`;
-    connection.query(query, function (error, hostelData) {
+    const query1 = `SELECT * FROM hosteldetails hstlDetails inner join compliance comp  on comp.Hostel_id=hstlDetails.id  WHERE hstlDetails.created_By ='${userDetails.id}' ORDER BY comp.ID DESC`;
+    connection.query(query1, function (error, hostelData) {
         if (error) {
             console.error(error);
             response.status(403).json({ message: 'Error fetching hostel data' });

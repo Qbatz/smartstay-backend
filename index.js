@@ -14,6 +14,7 @@ const profileQueries = require('./ProfileQueries')
 const complianceQueries = require('./ComplianceQueries')
 const pgQueries = require('./PgQueries')
 const vendorQueries = require('./vendorQueries')
+const expensesManagement = require('./ExpensesManagement')
 
 const multer = require('multer');
 const request = require('request');
@@ -34,11 +35,47 @@ app.use(function (req, res, next) {
     next();
 })
 
-app.use(middleware);
+// app.use(middleware);
 
 app.listen('2001', function () {
     console.log("node is started at 2001")
 })
+
+// ExpensesManagement 
+
+app.post('/add/add-expense',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    expensesManagement.AddExpense(connection,request,response)
+})
+app.post('/add/expense-category',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    expensesManagement.AddExpenseCategory(connection,request,response)
+})
+app.post('/get/expense-category',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    expensesManagement.GetExpensesCategory(connection,request,response)
+})
+
+app.post('/calculate/hostel-expenses',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    expensesManagement.CalculateExpenses(connection,request,response)
+})
+
+app.post('/get/get-hostel-expenses',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    expensesManagement.GetHostelExpenses(connection,request,response)
+})
+
+app.post('/delete/delete-expenses',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    expensesManagement.DeleteExpenses(connection,request,response)
+})
+
+
+// app.post('/add/add-salary',(request,response)=>{
+//     response.set('Access-Control-Allow-Origin', '*');
+//     expensesManagement.AddSalaryDetails(connection,request,response)
+// })
 
 // userQueries.js
 
@@ -204,8 +241,7 @@ app.get('/get/userAccount', (request, response) => {
 
 app.post('/compliance/add-details', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    var atten = request.body;
-    complianceQueries.AddCompliance(connection, atten, response)
+    complianceQueries.AddCompliance(connection, request, response)
 
 })
 
@@ -234,10 +270,29 @@ app.get('/hostel/list-details', (request, response) => {
 
 })
 
-app.post('/add/new-hostel', (request, response) => {
+// app.post('/add/new-hostel', (request, response) => {
+//     response.set('Access-Control-Allow-Origin', '*');
+//     pgQueries.createPG(connection, request, response)
+// })
+
+
+
+// {name: pgName, phoneNo: mobile,email_Id: email, location: location
+
+
+app.post('/add/new-hostel', upload.single('profile'), (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    pgQueries.createPG(connection, request, response)
+    const reqHostel = {
+        profile: request.file,
+       hostel_Name: request.body.name,
+       hostel_Phone : request.body.phoneNo,
+       hostel_email_Id : request.body.email_Id,
+       hostel_location : request.body.location
+               };
+
+    pgQueries.createPG(connection,reqHostel, response, request)
 })
+
 
 app.post('/list/floor-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
@@ -407,6 +462,20 @@ app.post('/payment_history', (request, response) => {
     accountManagement.payment_history(connection, response, request)
 })
 
+
+app.post('/add/amenity-history', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    const reqData = request.body;
+    invoiceQueries.UpdateAmenitiesHistory(connection, response, reqData)
+})
+
+
+app.post('/amenity/list-amenity-history', (req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    const reqdata = req.body;
+    invoiceQueries.GetAmenitiesHistory(connection, res, reqdata)
+})
+
 // ************* Use it Later ***********//
 // Get Room Details
 app.post('/get_room_details', (request, response) => {
@@ -476,8 +545,9 @@ app.post('/add/update_vendor', upload.single('profile'), (request, response) => 
         Vendor_Mobile: request.body.Vendor_Mobile,
         Vendor_Email: request.body.Vendor_Email,
         Vendor_Address: request.body.Vendor_Address,
-        Status: request.body.Status,
-        Vendor_Id: request.body.Vendor_Id
+        Vendor_Id: request.body.Vendor_Id,
+        Business_Name: request.body.Business_Name,
+        id: request.body.id
     };
     console.log("reqInvoice", reqInvoice)
     vendorQueries.ToAddAndUpdateVendor(connection, reqInvoice, response, request)
@@ -488,6 +558,12 @@ app.post('/get/vendor_list', (request, response) => {
     vendorQueries.GetVendorList(connection, response, request)
 })
 
+
+app.post('/delete-vendor-list', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    const reqVendor = request.body;
+    vendorQueries.TodeleteVendorList(connection, response, request, reqVendor)
+})
 // ****************** Assets Start ***************** //
 
 // All Asset Details
@@ -499,9 +575,45 @@ app.post('/add_asset', (req, res) => {
     assets.add_asset(req, res);
 })
 
-app.delete('/remove_asset', (req, res) => {
+app.post('/remove_asset', (req, res) => {
     assets.remove_asset(req, res);
+})
+
+// Assign Asset
+app.post('/assign_asset', (req, res) => {
+    assets.asseign_asset(req, res);
 })
 
 
 // ****************** Assets End ******************* //
+
+// Get Customer all details
+app.post('/customer_details', (req, res) => {
+    userQueries.customer_details(req, res);
+})
+
+// Amentites Details for particular user
+app.post('/user_amenities_history', (req, res) => {
+    userQueries.user_amenities_history(req, res);
+})
+
+// ****************** Expenses Start ******************* //
+
+// Add Expenses
+app.post('/add_expenses', (req, res) => {
+    assets.add_expenses(req, res);
+})
+
+app.post('/remove_expenses', (req, res) => {
+    assets.remove_expenses(req, res);
+})
+
+app.get('/all_expenses', (req, res) => {
+    assets.all_expenses(req, res);
+})
+
+// CREATE BED .............
+
+app.post('/create/create-bed', (request, response) => {
+    pgQueries.createBed(connection, response, request)
+})
