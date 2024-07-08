@@ -35,7 +35,7 @@ app.use(function (req, res, next) {
     next();
 })
 
-app.use(middleware);
+// app.use(middleware);
 
 app.listen('2001', function () {
     console.log("node is started at 2001")
@@ -60,6 +60,18 @@ app.post('/calculate/hostel-expenses',(request,response)=>{
     response.set('Access-Control-Allow-Origin', '*');
     expensesManagement.CalculateExpenses(connection,request,response)
 })
+
+app.post('/get/get-hostel-expenses',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    expensesManagement.GetHostelExpenses(connection,request,response)
+})
+
+app.post('/delete/delete-expenses',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    expensesManagement.DeleteExpenses(connection,request,response)
+})
+
+
 // app.post('/add/add-salary',(request,response)=>{
 //     response.set('Access-Control-Allow-Origin', '*');
 //     expensesManagement.AddSalaryDetails(connection,request,response)
