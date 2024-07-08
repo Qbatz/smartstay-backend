@@ -41,7 +41,7 @@ function add_asset(req, res) {
                     connection.query(sql2, [data.id], (as_err, as_res) => {
                         if (as_err) {
                             return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
-                        } else if (as_res.length != 0) {
+                        } else if (as_res.length > 0) {
 
                             var total_price = data.price * data.product_count;
 
