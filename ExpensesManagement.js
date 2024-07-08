@@ -1,11 +1,14 @@
 const moment = require('moment');
 
 function AddExpense(connection, request, response) {
-    let reqData = request.body
+    let reqData = request.body;
+    var createdBy = request.user_details.id;
+    let purchase_amount = Number(reqData.unit_count) * Number(reqData.unit_amount)
+    console.log("purchase_amount",purchase_amount);
     let createdate = moment(new Date()).format('yyyy-MM-DD HH:mm:ss')
     console.log("createdate", createdate);
     if (reqData) {
-        if (reqData.id) {
+        if (reqData.id != null && reqData.id != undefined) {
             let query = `UPDATE expenses SET
   vendor_id = ${reqData.vendor_id},
   asset_id = ${reqData.asset_id},
@@ -13,10 +16,12 @@ function AddExpense(connection, request, response) {
   purchase_date = '${reqData.purchase_date}',
   unit_count = ${reqData.unit_count},
   unit_amount = ${reqData.unit_amount},
-  purchase_amount = ${reqData.purchase_amount},
+  purchase_amount = ${purchase_amount},
   description = '${reqData.description}',
-  created_by = ${reqData.created_by},
-  createdate = '${createdate}' WHERE id = ${reqData.id};`
+  created_by = ${createdBy},
+  createdate = '${createdate}'
+  payment_mode = '${reqData.payment_mode}'
+   WHERE id = ${reqData.id};`
             connection.query(query, function (updateErr, updateData) {
                 if (updateErr) {
                     response.status(201).json({ message: "Internal Server Error" });
@@ -29,9 +34,9 @@ function AddExpense(connection, request, response) {
         else {
             let createdate = moment(new Date()).format('yyyy-MM-DD HH:mm:ss')
             console.log("createdate", createdate);
-            let query = `INSERT INTO expenses ( vendor_id, asset_id, category_id, purchase_date, unit_count, unit_amount, purchase_amount, description, created_by,createdate)
+            let query = `INSERT INTO expenses ( vendor_id, asset_id, category_id, purchase_date, unit_count, unit_amount, purchase_amount, description, created_by,createdate,payment_mode)
 VALUES
-  (${reqData.vendor_id}, ${reqData.asset_id}, ${reqData.category_id}, ${reqData.purchase_date}, ${reqData.unit_count}, ${reqData.unit_amount},${reqData.purchase_amount}, '${reqData.description}', ${reqData.created_by}, '${createdate}');
+  (${reqData.vendor_id}, ${reqData.asset_id}, ${reqData.category_id}, ${reqData.purchase_date}, ${reqData.unit_count}, ${reqData.unit_amount},${purchase_amount}, '${reqData.description}', ${createdBy}, '${createdate}','${reqData.payment_mode}');
 `
             connection.query(query, function (insertErr, insertData) {
                 if (insertErr) {
@@ -96,26 +101,6 @@ function GetExpensesCategory(connection, request, response) {
     })
 }
 
-
-// function AddSalaryDetails(connection,request,response) {
-//     let reqData = request.body  
-//     if (reqData) {
-//         if (reqData.id) {
-//            let query=`` 
-//         }
-//         else{
-
-//         }
-//     }
-//     else{
-//         response.status(201).json({ message: "Missing Parameter" });
-//     }
-
-// }
-
-
-
-
 function CalculateExpenses(connection, request, response) {
     let reqData = request.body
     let startingYear = new Date(reqData.startingDate).getFullYear();
@@ -150,13 +135,13 @@ function CalculateExpenses(connection, request, response) {
                         Amount: data[i].purchase_amount
                     }
                     resArray.push(temp);
-                    console.log("resArray...loop", resArray);
                 }
-                console.log("resArray", resArray);
-                //  resobj = {...resobj,resArray}
-                //  console.log("resobj",resobj);
+                console.log("resArray", resArray.length);
+                if (data.length === resArray.length) {
+                    response.status(200).json({ totalAmount, resArray });
+                }
 
-                response.status(200).json({ totalAmount, resArray });
+                
             }
             else {
                 response.status(201).json({ message: "No Data Found" });
@@ -165,5 +150,51 @@ function CalculateExpenses(connection, request, response) {
     })
 }
 
+function GetHostelExpenses(connection,request,response) {
+    let startingYear = new Date().getFullYear();
+    console.log("startingYear", startingYear);
+    let endingYear = new Date().getFullYear();
+    console.log("endingYear", endingYear);
+    let query = `select *,category.category_Name from expenses expen
+    join Expense_Category_Name category on category.id = expen.category_id
+        where expen.status = true  (
+            (YEAR(expen.createdate) = ${startingYear} )
+            OR
+            (YEAR(expen.createdate) = ${endingYear} )
+        )`
+    connection.query(query,function(err,data) {
+       if (err) {
+        console.log("err",err);
+        response.status(201).json({ message:'Error Fetching Data' });
+       } 
+       else{
+        if (data.length > 0) {
+            response.status(200).json({ data:data });
+        }
+        else{
+            response.status(201).json({ message: 'No Data Found' });
+        }
+       }
+    })
+}
 
-module.exports = { AddExpense, AddExpenseCategory, GetExpensesCategory, CalculateExpenses };
+function DeleteExpenses(connection,request,response) {
+    let req = request.body
+    if (req) {
+        let query = `UPDATE expenses SET status=0 WHERE id=${req.id}`
+        connection.query(query,function(err,data){
+            if (err) {
+                response.status(201).json({ message: 'Error while delete the Expenses' });
+            }
+            else{
+                response.status(200).json({ message: 'Expense deleted successfully' });
+            }
+        })
+    }
+    else{
+        response.status(201).json({ message: 'Missing Parameter' });
+    }
+}
+
+
+module.exports = { AddExpense, AddExpenseCategory, GetExpensesCategory, CalculateExpenses,GetHostelExpenses,DeleteExpenses };
