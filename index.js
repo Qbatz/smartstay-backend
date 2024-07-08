@@ -347,6 +347,10 @@ app.post('/amenities/amnityUpdate', (request, response) => {
     profileQueries.UpdateAmnity(connection, atten, response)
 
 })
+app.get('/list/AmnitiesName', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*')
+    userQueries.getAmnitiesName(connection, response)
+})
 
 
 app.post('/checkout/checkout-user', (request, response) => {

@@ -943,7 +943,17 @@ function user_amenities_history(req, res) {
         }
     })
 }
+function getAmnitiesName(connection, response) {
+    connection.query('select * from AmnitiesName', function (error, data) {
+        if (error) {
+            response.status(203).json({ message: 'not connected' })
+        }
+        else {
+            response.status(200).json({ data: data })
+        }
+    })
+}
 
 
 
-module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details, user_amenities_history }
+module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details, user_amenities_history,getAmnitiesName }
