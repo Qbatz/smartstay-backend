@@ -689,7 +689,7 @@ function customer_details(req, res) {
 
                                         // Get Hostel Amenities
                                         var sql6 = "SELECT * FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id WHERE am.Hostel_Id=?";
-                                        connection.query(sql6, [hostel_id, created_by], (am_err, am_res) => {
+                                        connection.query(sql6, [hostel_id], (am_err, am_res) => {
                                             if (am_err) {
                                                 console.log(am_err);
                                                 return res.status(201).json({ message: "Unable to Get All Amenities", statusCode: 201 })
@@ -730,7 +730,7 @@ function user_amenities_history(req, res) {
                     amen.id, 
                     amen.user_Id, 
                     amen.amenity_Id, 
-                    amen.hostel_Id, 
+                    hostel.Hostel_Id,
                     amen.status, 
                     amen.created_At, 
                     amname.Amnities_Name, 
