@@ -258,10 +258,29 @@ app.get('/hostel/list-details', (request, response) => {
 
 })
 
-app.post('/add/new-hostel', (request, response) => {
+// app.post('/add/new-hostel', (request, response) => {
+//     response.set('Access-Control-Allow-Origin', '*');
+//     pgQueries.createPG(connection, request, response)
+// })
+
+
+
+// {name: pgName, phoneNo: mobile,email_Id: email, location: location
+
+
+app.post('/add/new-hostel', upload.single('profile'), (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    pgQueries.createPG(connection, request, response)
+    const reqHostel = {
+        profile: request.file,
+       hostel_Name: request.body.name,
+       hostel_Phone : request.body.phoneNo,
+       hostel_email_Id : request.body.email_Id,
+       hostel_location : request.body.location
+               };
+
+    pgQueries.createPG(connection,reqHostel, response, request)
 })
+
 
 app.post('/list/floor-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
@@ -583,4 +602,10 @@ app.post('/remove_expenses', (req, res) => {
 
 app.get('/all_expenses', (req, res) => {
     assets.all_expenses(req, res);
+})
+
+// CREATE BED .............
+
+app.post('/create/create-bed', (request, response) => {
+    pgQueries.createBed(connection, response, request)
 })
