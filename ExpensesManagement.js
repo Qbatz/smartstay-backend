@@ -3,6 +3,8 @@ const moment = require('moment');
 function AddExpense(connection, request, response) {
     let reqData = request.body;
     var createdBy = request.user_details.id;
+    let purchase_date = moment(new Date(reqData.purchase_date)).format('yyyy-MM-DD')
+    console.log("purchase_date",purchase_date);
     let purchase_amount = Number(reqData.unit_count) * Number(reqData.unit_amount)
     console.log("purchase_amount", purchase_amount);
     let createdate = moment(new Date()).format('yyyy-MM-DD HH:mm:ss')
@@ -13,13 +15,13 @@ function AddExpense(connection, request, response) {
   vendor_id = ${reqData.vendor_id},
   asset_id = ${reqData.asset_id},
   category_id = ${reqData.category_id},
-  purchase_date = '${reqData.purchase_date}',
+  purchase_date = '${purchase_date}',
   unit_count = ${reqData.unit_count},
   unit_amount = ${reqData.unit_amount},
   purchase_amount = ${purchase_amount},
   description = '${reqData.description}',
   created_by = ${createdBy},
-  createdate = '${createdate}'
+  createdate = '${createdate}',
   payment_mode = '${reqData.payment_mode}'
    WHERE id = ${reqData.id};`
             connection.query(query, function (updateErr, updateData) {
@@ -36,8 +38,9 @@ function AddExpense(connection, request, response) {
             console.log("createdate", createdate);
             let query = `INSERT INTO expenses ( vendor_id, asset_id, category_id, purchase_date, unit_count, unit_amount, purchase_amount, description, created_by,createdate,payment_mode)
 VALUES
-  (${reqData.vendor_id}, ${reqData.asset_id}, ${reqData.category_id}, ${reqData.purchase_date}, ${reqData.unit_count}, ${reqData.unit_amount},${purchase_amount}, '${reqData.description}', ${createdBy}, '${createdate}','${reqData.payment_mode}');
+  (${reqData.vendor_id}, ${reqData.asset_id}, ${reqData.category_id}, '${purchase_date}', ${reqData.unit_count}, ${reqData.unit_amount},${purchase_amount}, '${reqData.description}', ${createdBy}, '${createdate}','${reqData.payment_mode}');
 `
+console.log("query",query);
             connection.query(query, function (insertErr, insertData) {
                 if (insertErr) {
                     console.log("insertErr", insertErr);
@@ -107,7 +110,7 @@ function CalculateExpenses(connection, request, response) {
     console.log("startingYear", startingYear);
     let endingYear = reqData.endingDate ? new Date(reqData.endingDate).getFullYear() : new Date(reqData.startingDate).getFullYear();
     console.log("endingYear", endingYear);
-    let query = `select expen.id,expen.vendor_id,expen.asset_id,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode, sum(expen.purchase_amount) as total_amount, category.category_Name from expenses expen
+    let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode, sum(expen.purchase_amount) as total_amount, category.category_Name from expenses expen
     join Expense_Category_Name category on category.id = expen.category_id
     where expen.status = true and (
             (YEAR(expen.createdate) = ${startingYear} )
@@ -158,7 +161,7 @@ function GetHostelExpenses(connection, request, response) {
     console.log("startingYear", startingYear);
     let endingYear = new Date().getFullYear();
     console.log("endingYear", endingYear);
-    let query = `select expen.id,expen.vendor_id,expen.asset_id,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode,category.category_Name,ven.Vendor_Name,ast.asset_name from expenses expen
+    let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode,category.category_Name,ven.Vendor_Name,ast.asset_name from expenses expen
     join Expense_Category_Name category on category.id = expen.category_id
     join Vendor ven on ven.id = expen.vendor_id
     join assets ast on ast.id = expen.asset_id
