@@ -1,6 +1,7 @@
 const moment = require('moment')
 const AWS = require('aws-sdk');
 require('dotenv').config();
+const connection = require('./config/connection');
 
 
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
@@ -135,7 +136,7 @@ function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileDa
 
 
 
-function createPG(connection,reqHostel, response, request) {
+function createPG(connection, reqHostel, response, request) {
     const userDetails = request.user_details;
     const timestamp = Date.now();
     let hostelID, errorMessage
@@ -143,34 +144,34 @@ function createPG(connection,reqHostel, response, request) {
         uploadProfilePictureToS3Bucket('smartstaydevs', 'Hostel_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqHostel.profile, (err, hostel_Logo) => {
             if (err) {
                 response.status(202).json({ message: 'Database error' });
-            }else{
+            } else {
 
-            
-        const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By, profile) values (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\', \'${hostel_Logo}\')`
-        connection.query(query, function (error, data) {
-            if (error) {
-                console.log("error", error);
-                response.status(201).json({ message: 'Cannot Insert Details' })
-            }
-            else {
-                console.log("Data for new hostel *=>", data)
-                const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqHostel.hostel_Phone}\'`
-                connection.query(query2, function (error, datum) {
-                    if (datum.length > 0) {
-                    response.status(200).json({ message: 'Data Saved Successfully', statusCode:200 })
-                    
+
+                const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By, profile) values (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\', \'${hostel_Logo}\')`
+                connection.query(query, function (error, data) {
+                    if (error) {
+                        console.log("error", error);
+                        response.status(201).json({ message: 'Cannot Insert Details' })
                     }
-
                     else {
-                        response.status(201).json({ message: 'Phone number not Registered' })
-                    }
+                        console.log("Data for new hostel *=>", data)
+                        const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqHostel.hostel_Phone}\'`
+                        connection.query(query2, function (error, datum) {
+                            if (datum.length > 0) {
+                                response.status(200).json({ message: 'Data Saved Successfully', statusCode: 200 })
 
+                            }
+
+                            else {
+                                response.status(201).json({ message: 'Phone number not Registered' })
+                            }
+
+                        })
+                    }
                 })
             }
         })
     }
-})
-}
     else {
         const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) values (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\')`
         connection.query(query, function (error, data) {
@@ -183,9 +184,9 @@ function createPG(connection,reqHostel, response, request) {
                 const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqHostel.hostel_Phone}\'`
                 connection.query(query2, function (error, datum) {
                     if (datum.length > 0) {
-                       
-                        response.status(200).json({ message: 'Data Saved Successfully' , statusCode:200  })
-                      
+
+                        response.status(200).json({ message: 'Data Saved Successfully', statusCode: 200 })
+
                     }
 
                     else {
@@ -221,7 +222,7 @@ function FloorList(connection, requestData, response) {
 
 
 function RoomList(connection, reqData, response) {
-    
+
     if (reqData) {
         connection.query(`select * from hostelrooms where Hostel_Id = \'${reqData.hostel_Id}\'  and isActive=1`, function (error, data) {
             if (data) {
@@ -270,15 +271,16 @@ function RoomCount(connection, reqFloorID, response) {
     let errorMessage;
 
     if (reqFloorID) {
-        connection.query(`SELECT * FROM hostelrooms WHERE Floor_Id = '${reqFloorID.floor_Id}' AND Hostel_Id = '${reqFloorID.hostel_Id}' AND isActive=1`, function (error, RoomsData) {
+        connection.query(`SELECT *,COALESCE(SUM(Number_Of_Beds),0) AS total_beds FROM hostelrooms WHERE Floor_Id = '${reqFloorID.floor_Id}' AND Hostel_Id = '${reqFloorID.hostel_Id}' AND isActive=1 GROUP BY Room_Id`, function (error, RoomsData) {
             if (error) {
                 response.status(201).json({ message: "Error occurred while fetching data" });
                 return;
-            }
+            }   
 
             if (RoomsData.length > 0) {
 
                 for (let i = 0; i < RoomsData.length; i++) {
+                    
                     const Room_Id = RoomsData[i].Room_Id;
 
                     connection.query(`SELECT COUNT('Bed') AS bookedBedCount, hos.Hostel_Id AS hostel_Id, hos.Floor, hos.Rooms FROM hostel hos WHERE Floor = '${reqFloorID.floor_Id}' AND Hostel_Id = '${reqFloorID.hostel_Id}' AND Rooms = '${Room_Id}' AND hos.isActive = true`, function (error, hostelData) {
@@ -290,7 +292,7 @@ function RoomCount(connection, reqFloorID, response) {
                                 Hostel_Id: RoomsData[i].Hostel_Id,
                                 Floor_Id: RoomsData[i].Floor_Id,
                                 Room_Id: RoomsData[i].Room_Id,
-                                Number_Of_Beds: RoomsData[i].Number_Of_Beds,
+                                Number_Of_Beds: RoomsData[i].total_beds,
                                 Room_Rent: RoomsData[i].Price
                             };
                             responseData.push(objectFormation);
@@ -737,36 +739,48 @@ function update_room_details(connection, request, response) {
     }
 }
 
+function createBed(req, res) {
 
-function createBed(connection, response, request){
-const reqData = request.body
+    var created_by = req.user_details.id
 
-if(reqData){
+    var { hostel_id, floor_id, room_id, bed_no, amount } = req.body;
 
-    const checkQuery = `select * from hostelrooms where `
+    if (!hostel_id || !floor_id || !room_id || !bed_no || !amount) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Parameters." });
+    }
 
+    if (isNaN(amount)) {
+        return res.status(201).json({ statusCode: 201, message: "Amount must be a number." });
+    }
 
+    var sql1 = "SELECT * FROM hosteldetails WHERE id=?";
+    connection.query(sql1, [hostel_id], (err, hs_data) => {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
+        } else if (hs_data.length > 0) {
 
+            var sql2 = "SELECT * FROM hostelrooms WHERE bed_no=? AND Hostel_Id=? AND Floor_Id=? AND Room_Id=? AND isActive=1";
+            connection.query(sql2, [bed_no, hostel_id, floor_id, room_id], (err, hs_res) => {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Room Details" })
+                } else if (hs_res.length > 0) {
+                    return res.status(201).json({ statusCode: 201, message: "Bed Number Already Exists" })
+                } else {
 
-}else{
-    response.status(201).json({ message: "Missing Parameter", statusCode: 201 });
+                    var sql3 = "INSERT INTO hostelrooms (Hostel_Id,Floor_Id,Room_Id,bed_no,Number_of_Beds,Price,Created_By) VALUES (?,?,?,?,?,?,?)"
+                    connection.query(sql3, [hostel_id, floor_id, room_id, bed_no, 1, amount, created_by], (ins_err, ins_res) => {
+                        if (ins_err) {
+                            return res.status(201).json({ statusCode: 201, message: "Unable to Add Hostel Room Details" })
+                        } else {
+                            return res.status(200).json({ statusCode: 200, message: "Add New Bed Details" })
+                        }
+                    })
+                }
+            })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Hostel Details" })
+        }
+    })
 }
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details }

@@ -12,7 +12,7 @@ function add_notification(user_id, title, user_type, message, unseen_users) {
         var unseen_users_str = JSON.stringify(unseen_users);
         unseen_users_str = unseen_users_str.substring(1, unseen_users_str.length - 1);
     } else {
-        var unseen_users_str = 0; // or some default value if unseen_users is empty
+        var unseen_users_str = 0;
     }
 
     var sql2 = "INSERT INTO notifications (user_id,title,user_type,message,status,unseen_users) VALUES (?,?,?,?,1,?)";
