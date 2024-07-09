@@ -625,3 +625,12 @@ app.get('/all_expenses', (req, res) => {
 app.post('/create-bed', (req, res) => {
     pgQueries.createBed(req, res)
 })
+
+app.post('/complaint_types', (req, res) => {
+    complianceQueries.add_complainttypes(req, res)
+})
+
+app.get('/all_complaint_types', (req, res) => {
+    complianceQueries.all_complaint_types(req, res)
+})
+
