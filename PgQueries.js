@@ -201,9 +201,6 @@ function createPG(connection, reqHostel, response, request) {
     }
 }
 
-
-
-
 function FloorList(connection, requestData, response) {
     if (requestData) {
         connection.query(`select * from hostelrooms where Hostel_Id = \'${requestData.hostel_Id}\ and isActive=1'`, function (error, data) {
@@ -275,12 +272,12 @@ function RoomCount(connection, reqFloorID, response) {
             if (error) {
                 response.status(201).json({ message: "Error occurred while fetching data" });
                 return;
-            }   
+            }
 
             if (RoomsData.length > 0) {
 
                 for (let i = 0; i < RoomsData.length; i++) {
-                    
+
                     const Room_Id = RoomsData[i].Room_Id;
 
                     connection.query(`SELECT COUNT('Bed') AS bookedBedCount, hos.Hostel_Id AS hostel_Id, hos.Floor, hos.Rooms FROM hostel hos WHERE Floor = '${reqFloorID.floor_Id}' AND Hostel_Id = '${reqFloorID.hostel_Id}' AND Rooms = '${Room_Id}' AND hos.isActive = true`, function (error, hostelData) {
@@ -753,28 +750,52 @@ function createBed(req, res) {
         return res.status(201).json({ statusCode: 201, message: "Amount must be a number." });
     }
 
-    var sql1 = "SELECT * FROM hosteldetails WHERE id=?";
-    connection.query(sql1, [hostel_id], (err, hs_data) => {
+    var sql1 = "SELECT * FROM hosteldetails WHERE id='" + hostel_id + "'";
+    console.log(sql1);
+    connection.query(sql1, (err, hs_data) => {
         if (err) {
+            console.log(err);
             return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
-        } else if (hs_data.length > 0) {
+        } else if (hs_data.length != 0) {
 
-            var sql2 = "SELECT * FROM hostelrooms WHERE bed_no=? AND Hostel_Id=? AND Floor_Id=? AND Room_Id=? AND isActive=1";
-            connection.query(sql2, [bed_no, hostel_id, floor_id, room_id], (err, hs_res) => {
+            var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND Room_Id=? AND isActive=1";
+            connection.query(sql2, [hostel_id, floor_id, room_id], (err, hs_res) => {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Room Details" })
                 } else if (hs_res.length > 0) {
-                    return res.status(201).json({ statusCode: 201, message: "Bed Number Already Exists" })
-                } else {
 
-                    var sql3 = "INSERT INTO hostelrooms (Hostel_Id,Floor_Id,Room_Id,bed_no,Number_of_Beds,Price,Created_By) VALUES (?,?,?,?,?,?,?)"
-                    connection.query(sql3, [hostel_id, floor_id, room_id, bed_no, 1, amount, created_by], (ins_err, ins_res) => {
-                        if (ins_err) {
-                            return res.status(201).json({ statusCode: 201, message: "Unable to Add Hostel Room Details" })
+                    var hos_detail_id = hs_res[0].id;
+                    var total_beds = hs_res[0].Number_Of_Beds;
+
+                    // Check Bed Details
+                    var sql4 = "SELECT * FROM bed_details WHERE bed_no='" + bed_no + "' AND status=1 AND hos_detail_id='" + hos_detail_id + "'";
+                    connection.query(sql4, (err, bed_res) => {
+                        if (err) {
+                            return res.status(201).json({ statusCode: 201, message: "Unable to Get Bed Details" })
+                        } else if (bed_res.length != 0) {
+                            return res.status(201).json({ statusCode: 201, message: "Bed Number Already Exists" })
                         } else {
-                            return res.status(200).json({ statusCode: 200, message: "Add New Bed Details" })
+                            var sql5 = "INSERT INTO bed_details (hos_detail_id,bed_no,bed_amount,status,createdby) VALUES (?,?,?,1,?)";
+                            connection.query(sql5, [hos_detail_id, bed_no, amount, created_by], (err, ins_data) => {
+                                if (err) {
+                                    return res.status(201).json({ statusCode: 201, message: "Unable to Add Bed Details" })
+                                } else {
+                                    var number_of_beds = total_beds + 1;
+                                    var sql3 = "UPDATE hostelrooms SET Number_Of_Beds='" + number_of_beds + "' WHERE id='" + hos_detail_id + "'";
+                                    connection.query(sql3, (up_err, up_res) => {
+                                        if (up_err) {
+                                            return res.status(201).json({ statusCode: 201, message: "Unable to Update Total Bed Details" })
+                                        } else {
+                                            return res.status(200).json({ statusCode: 200, message: "Successfully Add New Bed Details" })
+                                        }
+                                    })
+
+                                }
+                            })
                         }
                     })
+                } else {
+                    return res.status(201).json({ statusCode: 201, message: "Invalid Hostel Details" })
                 }
             })
         } else {
