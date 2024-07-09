@@ -703,7 +703,7 @@ function customer_details(req, res) {
 
             var amenn_user_id = user_data[0].User_Id;
             // All Amenties
-            var sql2 = "SELECT amname.Amnities_Name AS Amnities_Name FROM AmenitiesHistory AS amhis JOIN AmnitiesName AS amname ON amname.id = amhis.amenity_Id WHERE amhis.created_At <= CURDATE() AND amhis.status = 1 AND amhis.user_id = '" + amenn_user_id + "' UNION SELECT amname.Amnities_Name AS Amnities_Name FROM Amenities AS amen JOIN AmnitiesName AS amname ON amname.id = amen.Amnities_Id WHERE amen.setAsDefault = 1 GROUP BY Amnities_Name";
+            var sql2 = "SELECT amname.Amnities_Name AS Amnities_Name FROM AmenitiesHistory AS amhis JOIN AmnitiesName AS amname ON amname.id = amhis.amenity_Id WHERE amhis.status = 1 AND amhis.user_id = '" + amenn_user_id + "' UNION SELECT amname.Amnities_Name AS Amnities_Name FROM Amenities AS amen JOIN AmnitiesName AS amname ON amname.id = amen.Amnities_Id WHERE amen.setAsDefault = 1 GROUP BY Amnities_Name";
             connection.query(sql2, (am_err, am_data) => {
                 if (am_err) {
                     // console.log(am_err);
@@ -757,9 +757,165 @@ function customer_details(req, res) {
 }
 
 
-function user_amenities_history(req, res) {
+// function user_amenities_history(req, res) {
 
-    var created_by = req.user_details.id;
+//     var created_by = req.body.id;
+
+//     var user_id = req.body.user_id;
+//     var amenities_id = req.body.amenities_id || [];
+
+//     var sql1 = "SELECT * FROM hostel WHERE ID=?";
+//     connection.query(sql1, [user_id], (sel_err, sel_res) => {
+//         if (sel_err) {
+//             return res.status(500).json({ message: "Database query error", error: sel_err });
+//         } else if (sel_res.length != 0) {
+//             var user_ids = sel_res[0].User_Id;
+
+//             var sql = `
+//                 SELECT 
+//                     amen.id, 
+//                     amen.user_Id, 
+//                     amen.amenity_Id, 
+//                     hostel.Hostel_Id,
+//                     amen.status, 
+//                     amen.created_At, 
+//                     amname.Amnities_Name, 
+//                     am.Amount 
+//                 FROM 
+//                     AmenitiesHistory AS amen 
+//                 JOIN 
+//                     hostel ON hostel.User_Id = amen.user_Id  
+//                 JOIN 
+//                     Amenities AS am ON am.Amnities_Id = amen.amenity_Id 
+//                 JOIN 
+//                     AmnitiesName AS amname ON am.Amnities_Id = amname.id 
+//                 WHERE 
+//                     amen.user_Id = '${user_ids}' AND am.Status=1
+//             `;
+
+//             if (amenities_id.length > 0) {
+//                 sql += ` AND amen.amenity_Id IN (${amenities_id.join(',')})`;
+//             }
+
+//             sql += ` ORDER BY amen.created_At ASC`; // Ensure records are ordered by created_At
+
+//             connection.query(sql, (am_err, am_data) => {
+//                 if (am_err) {
+//                     return res.status(201).json({ message: "Unable to fetch amenity details", error: am_err });
+//                 } else {
+//                     const result = [];
+//                     const lastStatusMap = {};
+//                     const monthNames = [
+//                         null,
+//                         'January', 'February', 'March', 'April', 'May', 'June',
+//                         'July', 'August', 'September', 'October', 'November', 'December'
+//                     ];
+
+//                     // Get the current month and year dynamically
+//                     const currentDate = new Date();
+//                     const currentMonth = currentDate.getMonth() + 1; // Get current month (1-12)
+//                     const currentYear = currentDate.getFullYear();
+
+//                     // Process each record from the database query
+//                     am_data.forEach(record => {
+//                         const status = record.status;
+//                         const createdAt = new Date(record.created_At);
+//                         const amenityId = record.amenity_Id;
+//                         const startMonth = createdAt.getMonth() + 1; // Get month from createdAt
+//                         const startYear = createdAt.getFullYear();
+
+//                         // If there are gaps before the current record, fill them
+//                         if (lastStatusMap[amenityId] !== undefined) {
+//                             const lastRecordDate = new Date(lastStatusMap[amenityId].created_At);
+//                             const lastMonth = lastRecordDate.getMonth() + 1;
+//                             const lastYear = lastRecordDate.getFullYear();
+
+//                             for (let year = lastYear; year <= startYear; year++) {
+//                                 const start = year === lastYear ? lastMonth + 1 : 1;
+//                                 const end = year === startYear ? startMonth : 12;
+
+//                                 for (let month = start; month < end; month++) {
+//                                     if (year > currentYear || (year === currentYear && month > currentMonth)) {
+//                                         break;
+//                                     }
+//                                     result.push({
+//                                         id: null,
+//                                         user_Id: record.user_Id,
+//                                         amenity_Id: amenityId,
+//                                         hostel_Id: record.hostel_Id,
+//                                         created_At: `${year}-${String(month).padStart(2, '0')}-01T00:00:00.000Z`,
+//                                         Amnities_Name: record.Amnities_Name,
+//                                         Amount: record.Amount,
+//                                         status: lastStatusMap[amenityId].status,
+//                                         month_name: monthNames[month]
+//                                     });
+//                                 }
+//                             }
+//                         }
+
+//                         // Add the current record
+//                         if (startYear < currentYear || (startYear === currentYear && startMonth <= currentMonth)) {
+//                             result.push({
+//                                 id: record.id,
+//                                 user_Id: record.user_Id,
+//                                 amenity_Id: record.amenity_Id,
+//                                 hostel_Id: record.hostel_Id,
+//                                 created_At: record.created_At,
+//                                 Amnities_Name: record.Amnities_Name,
+//                                 Amount: record.Amount,
+//                                 status: record.status,
+//                                 month_name: monthNames[startMonth]
+//                             });
+//                         }
+
+//                         // Update the last known status
+//                         lastStatusMap[amenityId] = { Amnities_Name: record.Amnities_Name, Amount: record.Amount, status: record.status, created_At: record.created_At };
+//                     });
+
+//                     console.log(lastStatusMap);
+
+//                     // Fill missing months after the last record for each amenity
+//                     Object.keys(lastStatusMap).forEach(amenityId => {
+//                         const lastRecordDate = new Date(lastStatusMap[amenityId].created_At);
+//                         const lastMonth = lastRecordDate.getMonth() + 1;
+//                         const lastYear = lastRecordDate.getFullYear();
+
+//                         for (let year = lastYear; year <= currentYear; year++) {
+//                             const start = year === lastYear ? lastMonth + 1 : 1;
+//                             const end = year === currentYear ? currentMonth : 12;
+
+//                             for (let month = start; month <= end; month++) {
+//                                 if (year > currentYear || (year === currentYear && month > currentMonth)) {
+//                                     break;
+//                                 }
+//                                 result.push({
+//                                     id: null,
+//                                     user_Id: sel_res[0].User_Id,
+//                                     amenity_Id: amenityId,
+//                                     hostel_Id: sel_res[0].ID,
+//                                     created_At: `${year}-${String(month).padStart(2, '0')}-01T00:00:00.000Z`,
+//                                     Amnities_Name: lastStatusMap[amenityId].Amnities_Name,
+//                                     Amount: lastStatusMap[amenityId].Amount,
+//                                     status: lastStatusMap[amenityId].status,
+//                                     month_name: monthNames[month]
+//                                 });
+//                             }
+//                         }
+//                     });
+
+//                     // Sort the result by created_At
+//                     result.sort((a, b) => new Date(a.created_At) - new Date(b.created_At));
+
+//                     return res.status(200).json({ statusCode: 200, message: "Amenity Details", data: result });
+//                 }
+//             });
+//         } else {
+//             return res.status(200).json({ message: "Invalid User Details", statusCode: 201 });
+//         }
+//     });
+// }
+
+function user_amenities_history(req, res) {
 
     var user_id = req.body.user_id;
     var amenities_id = req.body.amenities_id || [];
@@ -790,7 +946,7 @@ function user_amenities_history(req, res) {
                 JOIN 
                     AmnitiesName AS amname ON am.Amnities_Id = amname.id 
                 WHERE 
-                    amen.user_Id = '${user_ids}' AND am.Status=1 AND am.createdBy='${created_by}'
+                    amen.user_Id = '${user_ids}' AND am.Status=1
             `;
 
             if (amenities_id.length > 0) {
@@ -816,6 +972,9 @@ function user_amenities_history(req, res) {
                     const currentMonth = currentDate.getMonth() + 1; // Get current month (1-12)
                     const currentYear = currentDate.getFullYear();
 
+                    // Use a Set to keep track of unique records
+                    const seenRecords = new Set();
+
                     // Process each record from the database query
                     am_data.forEach(record => {
                         const status = record.status;
@@ -823,6 +982,7 @@ function user_amenities_history(req, res) {
                         const amenityId = record.amenity_Id;
                         const startMonth = createdAt.getMonth() + 1; // Get month from createdAt
                         const startYear = createdAt.getFullYear();
+                        const uniqueKey = `${record.user_Id}-${amenityId}-${startYear}-${startMonth}`;
 
                         // If there are gaps before the current record, fill them
                         if (lastStatusMap[amenityId] !== undefined) {
@@ -838,23 +998,28 @@ function user_amenities_history(req, res) {
                                     if (year > currentYear || (year === currentYear && month > currentMonth)) {
                                         break;
                                     }
-                                    result.push({
-                                        id: null,
-                                        user_Id: record.user_Id,
-                                        amenity_Id: amenityId,
-                                        hostel_Id: record.hostel_Id,
-                                        created_At: `${year}-${String(month).padStart(2, '0')}-01T00:00:00.000Z`,
-                                        Amnities_Name: record.Amnities_Name,
-                                        Amount: record.Amount,
-                                        status: lastStatusMap[amenityId].status,
-                                        month_name: monthNames[month]
-                                    });
+                                    const gapUniqueKey = `${record.user_Id}-${amenityId}-${year}-${month}`;
+                                    if (!seenRecords.has(gapUniqueKey)) {
+                                        seenRecords.add(gapUniqueKey);
+                                        result.push({
+                                            id: null,
+                                            user_Id: record.user_Id,
+                                            amenity_Id: amenityId,
+                                            hostel_Id: record.hostel_Id,
+                                            created_At: `${year}-${String(month).padStart(2, '0')}-01T00:00:00.000Z`,
+                                            Amnities_Name: record.Amnities_Name,
+                                            Amount: record.Amount,
+                                            status: lastStatusMap[amenityId].status,
+                                            month_name: monthNames[month]
+                                        });
+                                    }
                                 }
                             }
                         }
 
                         // Add the current record
-                        if (startYear < currentYear || (startYear === currentYear && startMonth <= currentMonth)) {
+                        if ((startYear < currentYear || (startYear === currentYear && startMonth <= currentMonth)) && !seenRecords.has(uniqueKey)) {
+                            seenRecords.add(uniqueKey);
                             result.push({
                                 id: record.id,
                                 user_Id: record.user_Id,
@@ -872,6 +1037,8 @@ function user_amenities_history(req, res) {
                         lastStatusMap[amenityId] = { Amnities_Name: record.Amnities_Name, Amount: record.Amount, status: record.status, created_At: record.created_At };
                     });
 
+                    console.log(lastStatusMap);
+
                     // Fill missing months after the last record for each amenity
                     Object.keys(lastStatusMap).forEach(amenityId => {
                         const lastRecordDate = new Date(lastStatusMap[amenityId].created_At);
@@ -886,17 +1053,21 @@ function user_amenities_history(req, res) {
                                 if (year > currentYear || (year === currentYear && month > currentMonth)) {
                                     break;
                                 }
-                                result.push({
-                                    id: null,
-                                    user_Id: sel_res[0].User_Id,
-                                    amenity_Id: amenityId,
-                                    hostel_Id: sel_res[0].ID,
-                                    created_At: `${year}-${String(month).padStart(2, '0')}-01T00:00:00.000Z`,
-                                    Amnities_Name: lastStatusMap[amenityId].Amnities_Name,
-                                    Amount: lastStatusMap[amenityId].Amount,
-                                    status: lastStatusMap[amenityId].status,
-                                    month_name: monthNames[month]
-                                });
+                                const gapUniqueKey = `${sel_res[0].User_Id}-${amenityId}-${year}-${month}`;
+                                if (!seenRecords.has(gapUniqueKey)) {
+                                    seenRecords.add(gapUniqueKey);
+                                    result.push({
+                                        id: null,
+                                        user_Id: sel_res[0].User_Id,
+                                        amenity_Id: amenityId,
+                                        hostel_Id: sel_res[0].ID,
+                                        created_At: `${year}-${String(month).padStart(2, '0')}-01T00:00:00.000Z`,
+                                        Amnities_Name: lastStatusMap[amenityId].Amnities_Name,
+                                        Amount: lastStatusMap[amenityId].Amount,
+                                        status: lastStatusMap[amenityId].status,
+                                        month_name: monthNames[month]
+                                    });
+                                }
                             }
                         }
                     });
@@ -912,6 +1083,9 @@ function user_amenities_history(req, res) {
         }
     });
 }
+
+
+
 function getAmnitiesName(connection, response) {
     connection.query('select * from AmnitiesName', function (error, data) {
         if (error) {
