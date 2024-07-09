@@ -35,7 +35,7 @@ app.use(function (req, res, next) {
     next();
 })
 
-// app.use(middleware);
+app.use(middleware);
 
 app.listen('2001', function () {
     console.log("node is started at 2001")
@@ -43,32 +43,32 @@ app.listen('2001', function () {
 
 // ExpensesManagement 
 
-app.post('/add/add-expense',(request,response)=>{
+app.post('/add/add-expense', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    expensesManagement.AddExpense(connection,request,response)
+    expensesManagement.AddExpense(connection, request, response)
 })
-app.post('/add/expense-category',(request,response)=>{
+app.post('/add/expense-category', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    expensesManagement.AddExpenseCategory(connection,request,response)
+    expensesManagement.AddExpenseCategory(connection, request, response)
 })
-app.post('/get/expense-category',(request,response)=>{
+app.post('/get/expense-category', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    expensesManagement.GetExpensesCategory(connection,request,response)
-})
-
-app.post('/calculate/hostel-expenses',(request,response)=>{
-    response.set('Access-Control-Allow-Origin', '*');
-    expensesManagement.CalculateExpenses(connection,request,response)
+    expensesManagement.GetExpensesCategory(connection, request, response)
 })
 
-app.post('/get/get-hostel-expenses',(request,response)=>{
+app.post('/calculate/hostel-expenses', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    expensesManagement.GetHostelExpenses(connection,request,response)
+    expensesManagement.CalculateExpenses(connection, request, response)
 })
 
-app.post('/delete/delete-expenses',(request,response)=>{
+app.post('/get/get-hostel-expenses', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    expensesManagement.DeleteExpenses(connection,request,response)
+    expensesManagement.GetHostelExpenses(connection, request, response)
+})
+
+app.post('/delete/delete-expenses', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    expensesManagement.DeleteExpenses(connection, request, response)
 })
 
 
@@ -284,13 +284,13 @@ app.post('/add/new-hostel', upload.single('profile'), (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const reqHostel = {
         profile: request.file,
-       hostel_Name: request.body.name,
-       hostel_Phone : request.body.phoneNo,
-       hostel_email_Id : request.body.email_Id,
-       hostel_location : request.body.location
-               };
+        hostel_Name: request.body.name,
+        hostel_Phone: request.body.phoneNo,
+        hostel_email_Id: request.body.email_Id,
+        hostel_location: request.body.location
+    };
 
-    pgQueries.createPG(connection,reqHostel, response, request)
+    pgQueries.createPG(connection, reqHostel, response, request)
 })
 
 
@@ -614,6 +614,6 @@ app.get('/all_expenses', (req, res) => {
 
 // CREATE BED .............
 
-app.post('/create/create-bed', (request, response) => {
-    pgQueries.createBed(connection, response, request)
+app.post('/create-bed', (req, res) => {
+    pgQueries.createBed(req, res)
 })
