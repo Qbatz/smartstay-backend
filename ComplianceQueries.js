@@ -146,5 +146,43 @@ function all_complaint_types(req, res) {
     })
 }
 
+function remove_complaint_types(req, res) {
 
-module.exports = { AddCompliance, GetComplianceList, add_complainttypes, all_complaint_types };
+    var id = req.body.id;
+    var user_id = req.user_details.id;
+
+    if (!id) {
+        return res.status(201).json({ statusCode: 201, message: "Please Add Complaint Id" })
+    }
+
+    var sql1 = "SELECT * FROM complaint_type WHERE id='" + id + "' AND created_by='" + user_id + "'";
+    connection.query(sql1, (sel_err, sel_res) => {
+        if (sel_err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get Complaint Types" })
+        } else if (sel_res.length != 0) {
+
+            // Check in this id used or not used
+            var sql2 = "SELECT * FROM compliance WHERE Complainttype='" + id + "'";
+            connection.query(sql2, (err, com_data) => {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Get Complaint Details" })
+                } else if (com_data.length != 0) {
+                    return res.status(201).json({ statusCode: 201, message: "In This Complaint Type added Complaint ,So We Cannot Remove this" })
+                } else {
+                    // Remove Complaint
+                    var sql3 = "UPDATE complaint_type SET status=0 WHERE id='" + id + "'";
+                    connection.query(sql3, (err, data) => {
+                        if (err) {
+                            return res.status(201).json({ statusCode: 201, message: "Unable to Remove Complaint Type" })
+                        } else {
+                            return res.status(200).json({ statusCode: 200, message: "Successfully Removed Complaint Type" })
+                        }
+                    })
+                }
+            })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Complaint Type Id" })
+        }
+    })
+}
+module.exports = { AddCompliance, GetComplianceList, add_complainttypes, all_complaint_types, remove_complaint_types };

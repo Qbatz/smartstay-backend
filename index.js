@@ -71,9 +71,9 @@ app.post('/delete/delete-expenses', (request, response) => {
     expensesManagement.DeleteExpenses(connection, request, response)
 })
 
-app.post('/delete/delete-category',(request,response)=>{
+app.post('/delete/delete-category', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    expensesManagement.DeleteExpensesCategory(connection,request,response)
+    expensesManagement.DeleteExpensesCategory(connection, request, response)
 })
 
 // app.post('/add/add-salary',(request,response)=>{
@@ -634,3 +634,6 @@ app.get('/all_complaint_types', (req, res) => {
     complianceQueries.all_complaint_types(req, res)
 })
 
+app.post('/remove_complaint_type', (req, res) => {
+    complianceQueries.remove_complaint_types(req, res)
+})
