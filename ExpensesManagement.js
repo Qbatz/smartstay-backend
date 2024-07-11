@@ -1,10 +1,11 @@
 const moment = require('moment');
+const connection = require('./config/connection')
 
-function AddExpense(connection, request, response) {
+function AddExpense(request, response) {
     let reqData = request.body;
     var createdBy = request.user_details.id;
     let purchase_date = moment(new Date(reqData.purchase_date)).format('yyyy-MM-DD')
-    console.log("purchase_date",purchase_date);
+    console.log("purchase_date", purchase_date);
     let purchase_amount = Number(reqData.unit_count) * Number(reqData.unit_amount)
     console.log("purchase_amount", purchase_amount);
     let createdate = moment(new Date()).format('yyyy-MM-DD HH:mm:ss')
@@ -40,7 +41,7 @@ function AddExpense(connection, request, response) {
 VALUES
   (${reqData.vendor_id}, ${reqData.asset_id}, ${reqData.category_id}, '${purchase_date}', ${reqData.unit_count}, ${reqData.unit_amount},${purchase_amount}, '${reqData.description}', ${createdBy}, '${createdate}','${reqData.payment_mode}');
 `
-console.log("query",query);
+            console.log("query", query);
             connection.query(query, function (insertErr, insertData) {
                 if (insertErr) {
                     console.log("insertErr", insertErr);
@@ -58,17 +59,33 @@ console.log("query",query);
     }
 }
 
-function AddExpenseCategory(connection, request, response) {
+function AddExpenseCategory(request, response) {
     let reqData = request.body
     let category = reqData.category_Name.replace(" ", "")
     if (reqData) {
-        connection.query(`select * from Expense_Category_Name where REPLACE(UPPER(category_Name), ' ', '') = UPPER('${category}')`, function (error, data) {
+        connection.query(`select * from Expense_Category_Name where REPLACE(UPPER(category_Name), ' ', '') = UPPER('${category}') and status = true`, function (error, data) {
             if (error) {
                 console.log("error", error);
                 response.status(201).json({ message: "Error Fetching Data" });
             }
             else if (data.length > 0) {
-                response.status(201).json({ message: "Data Already Exist" });
+                if (reqData.sub_Category) {
+                    connection.query(`update Expense_Category_Name set sub_Category ='${reqData.sub_Category}' where id=${reqData.id}`, function (updateErr, updateData) {
+                        if (updateErr) {
+                            console.log("updateErr",updateErr);
+                            response.status(201).json({ message: "Error while Add sub category" });
+                        }
+                        else {
+                            response.status(200).json({ message: "Sub Category Added successfully" });
+                        }
+                    })
+                }
+                else {
+                    response.status(201).json({ message: "Missing Parameter" });
+                }
+
+
+
             }
             else {
                 connection.query(`insert into Expense_Category_Name(category_Name,sub_Category) values('${reqData.category_Name}','${reqData.sub_Category}');`, function (insertErr, insertData) {
@@ -90,7 +107,7 @@ function AddExpenseCategory(connection, request, response) {
 
 }
 
-function GetExpensesCategory(connection, request, response) {
+function GetExpensesCategory(request, response) {
     connection.query(`select * from Expense_Category_Name where status = true`, function (error, data) {
         if (error) {
             response.status(201).json({ message: "Error fetching Data" });
@@ -104,7 +121,7 @@ function GetExpensesCategory(connection, request, response) {
     })
 }
 
-function CalculateExpenses(connection, request, response) {
+function CalculateExpenses(request, response) {
     let reqData = request.body
     let startingYear = new Date(reqData.startingDate).getFullYear();
     console.log("startingYear", startingYear);
@@ -112,12 +129,9 @@ function CalculateExpenses(connection, request, response) {
     console.log("endingYear", endingYear);
     let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode, sum(expen.purchase_amount) as total_amount, category.category_Name from expenses expen
     join Expense_Category_Name category on category.id = expen.category_id
-    where expen.status = true and (
-            (YEAR(expen.createdate) = ${startingYear} )
-            OR
-            (YEAR(expen.createdate) = ${endingYear} )
-        )
-            GROUP BY 
+    where expen.status = true 
+    AND YEAR(expen.createdate) BETWEEN  ${startingYear} AND ${endingYear}
+               GROUP BY 
             expen.id`
     console.log("query", query);
     connection.query(query, function (error, data) {
@@ -153,31 +167,110 @@ function CalculateExpenses(connection, request, response) {
     })
 }
 
-function GetHostelExpenses(connection, request, response) {
+function GetHostelExpenses(request, response) {
     let startingYear = new Date().getFullYear();
     var createdBy = request.user_details.id;
-    // and expen.created_by = ${createdBy} 
-    //and category.status = true 
     console.log("startingYear", startingYear);
     let endingYear = new Date().getFullYear();
     console.log("endingYear", endingYear);
-    let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode,category.category_Name,ven.Vendor_Name,ast.asset_name from expenses expen
+
+    var category = request.body?.category ? request.body.category : null;
+    var max_amount = request.body?.max_amount ? request.body.max_amount : null;
+    var min_amount = request.body?.min_amount ? request.body.min_amount : null;
+    var asset_id = request.body?.asset_id ? request.body.asset_id : null;
+    var payment_mode = request.body?.payment_mode ? request.body.payment_mode : null;
+    var vendor_id = request.body?.vendor_id ? request.body.vendor_id : null;
+    var start_date = request.body?.start_date ? request.body.start_date : null;
+    var end_date = request.body?.end_date ? request.body.end_date : null;
+
+
+    let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,ven.Vendor_profile,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode,category.category_Name,ven.Vendor_Name,ast.asset_name from expenses expen
     join Expense_Category_Name category on category.id = expen.category_id
     join Vendor ven on ven.id = expen.vendor_id
     join assets ast on ast.id = expen.asset_id
-        where expen.status = true and expen.created_by = ${createdBy} and (
-            (YEAR(expen.createdate) = ${startingYear})
-            OR
-            (YEAR(expen.createdate) = ${endingYear} )
-        ) `
+        where expen.status = true and expen.created_by = ${createdBy}`
+
+    // and (
+    //     (YEAR(expen.createdate) = ${startingYear})
+    //     OR
+    //     (YEAR(expen.createdate) = ${endingYear} ) 
+    // )
+
+    if (asset_id) {
+        query += ` AND expen.asset_id = ${asset_id}`;
+    }
+
+    if (category) {
+        query += ` AND expen.category_id = ${category}`;
+    }
+
+    if (payment_mode) {
+        query += ` AND expen.payment_mode = '${payment_mode}'`;
+    }
+    if (vendor_id) {
+        query += ` AND expen.vendor_id = ${vendor_id}`
+    }
+    if (min_amount && !max_amount) {
+        query += ` AND expen.purchase_amount >= ${min_amount}`
+    }
+
+    if (min_amount && max_amount) {
+        query += `AND expen.purchase_amount >= ${min_amount} AND expen.purchase_amount <= ${max_amount}`
+    }
+
+    if (start_date && !end_date) {
+        const startDateRange = `${start_date} 00:00:00`;
+        const endDateRange = `${start_date} 23:59:59`;
+        query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
+    }
+    if (start_date && end_date) {
+        const startDateRange = `${start_date} 00:00:00`;
+        const endDateRange = `${end_date} 23:59:59`;
+        query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
+    }
+    console.log("query", query)
     connection.query(query, function (err, data) {
+        console.log("data", data);
         if (err) {
             console.log("err", err);
             response.status(201).json({ message: 'Error Fetching Data' });
         }
         else {
             if (data.length > 0) {
-                response.status(200).json({ data: data });
+                let categorylist = [];
+                let vendorList = [];
+                let assetList = [];
+                let paymentModeList = [];
+                let total_amount = 0;
+                for (let i = 0; i < data.length; i++) {
+                    total_amount += data[i].purchase_amount;
+                    if (!categorylist.some(item => item.category_id === data[i].category_id)) {
+                        categorylist.push({ category_id: data[i].category_id, category_Name: data[i].category_Name });
+                    }
+
+                    if (!vendorList.some(item => item.vendor_id === data[i].vendor_id)) {
+                        vendorList.push({ vendor_id: data[i].vendor_id, Vendor_Name: data[i].Vendor_Name });
+                    }
+
+                    if (!assetList.some(item => item.asset_id === data[i].asset_id)) {
+                        assetList.push({ asset_id: data[i].asset_id, asset_name: data[i].asset_name });
+                    }
+
+                    if (!paymentModeList.some(item => item.payment_mode === data[i].payment_mode)) {
+                        paymentModeList.push({ payment_mode: data[i].payment_mode });
+                    }
+
+
+                    // categorylist[i] ={category_id:data[i].category_id,category_Name:data[i].category_Name}
+                    // vendorList[i] = {vendor_id:data[i].vendor_id,Vendor_Name:data[i].Vendor_Name}
+                    // assetList[i] = {asset_id:data[i].asset_id,asset_name:data[i].asset_name}
+                    // paymentModeList[i]={payment_mode:data[i].payment_mode}
+                }
+                console.log("categorylist", categorylist, vendorList, assetList, paymentModeList);
+
+
+
+                response.status(200).json({ categorylist: categorylist, vendorList: vendorList, assetList: assetList, paymentModeList: paymentModeList, total_amount: total_amount, data: data });
             }
             else {
                 response.status(201).json({ message: 'No Data Found' });
@@ -186,7 +279,7 @@ function GetHostelExpenses(connection, request, response) {
     })
 }
 
-function DeleteExpenses(connection, request, response) {
+function DeleteExpenses(request, response) {
     let req = request.body
     if (req) {
         let query = `UPDATE expenses SET status=0 WHERE id=${req.id}`
@@ -204,7 +297,7 @@ function DeleteExpenses(connection, request, response) {
     }
 }
 
-function DeleteExpensesCategory(connection, request, response) {
+function DeleteExpensesCategory(request, response) {
     let reqBodyData = request.body
     if (reqBodyData) {
         let query = `Update Expense_Category_Name SET status = 0 WHERE id=${reqBodyData.id}`
