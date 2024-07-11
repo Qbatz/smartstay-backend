@@ -45,35 +45,35 @@ app.listen('2001', function () {
 
 app.post('/add/add-expense', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    expensesManagement.AddExpense(connection, request, response)
+    expensesManagement.AddExpense(request, response)
 })
 app.post('/add/expense-category', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    expensesManagement.AddExpenseCategory(connection, request, response)
+    expensesManagement.AddExpenseCategory(request, response)
 })
 app.post('/get/expense-category', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    expensesManagement.GetExpensesCategory(connection, request, response)
+    expensesManagement.GetExpensesCategory(request, response)
 })
 
 app.post('/calculate/hostel-expenses', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    expensesManagement.CalculateExpenses(connection, request, response)
+    expensesManagement.CalculateExpenses(request, response)
 })
 
 app.post('/get/get-hostel-expenses', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    expensesManagement.GetHostelExpenses(connection, request, response)
+    expensesManagement.GetHostelExpenses(request, response)
 })
 
 app.post('/delete/delete-expenses', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    expensesManagement.DeleteExpenses(connection, request, response)
+    expensesManagement.DeleteExpenses(request, response)
 })
 
 app.post('/delete/delete-category',(request,response)=>{
     response.set('Access-Control-Allow-Origin', '*');
-    expensesManagement.DeleteExpensesCategory(connection,request,response)
+    expensesManagement.DeleteExpensesCategory(request,response)
 })
 
 // app.post('/add/add-salary',(request,response)=>{
