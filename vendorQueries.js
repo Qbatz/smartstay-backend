@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 require('dotenv').config();
-
+const connection = require('./config/connection');
 
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
@@ -24,7 +24,7 @@ const s3 = new AWS.S3();
 //         const created_by = request.user_details.id;
 //         const checkQuery = `select * from Vendor where Vendor_Id = '${reqInvoice.Vendor_Id}'`
 //         connection.query(checkQuery, function (error, getData) {
-          
+
 //             if (getData && getData.length > 0) {
 //                 uploadProfilePictureToS3Bucket('smartstaydevs', 'Vendor_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqInvoice.profile, (err, vendor_profile) => {
 //                     if (err) {
@@ -106,7 +106,7 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
         const Vendor_Name = firstName + ' ' + lastName;
         const created_by = request.user_details.id;
         const checkQuery = `SELECT * FROM Vendor WHERE Vendor_Id = '${reqInvoice.Vendor_Id}'`;
-        
+
         connection.query(checkQuery, function (error, getData) {
             if (getData && getData.length > 0) {
                 if (reqInvoice.profile) {
@@ -245,44 +245,74 @@ function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileDa
 
 
 
-function GetVendorList(connection, response, request){
+function GetVendorList(connection, response, request) {
     const admin_Id = request.user_details.id
-    connection.query(`select * from Vendor where Status = true and  createdBy = '${admin_Id}' ORDER BY CreatedAt DESC`,function(error, getVendorList){
-        if(error){
-            response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
-        }else{
-            response.status(200).json({ VendorList: getVendorList});
-        }
-    })
-}
-
-
-
-
-function TodeleteVendorList(connection, response, request,reqVendor){
-if(reqVendor){
-    const query = `UPDATE Vendor SET Status = '${reqVendor.Status}' where id = '${reqVendor.id}'`
-    connection.query(query,function(error, updateData){
+    connection.query(`select * from Vendor where Status = true and  createdBy = '${admin_Id}' ORDER BY CreatedAt DESC`, function (error, getVendorList) {
         if (error) {
-            response.status(201).json({ message: "Internal Server Error", statusCode: 201, updateError: error });
+            response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
         } else {
-            response.status(200).json({ message: "Update Successfully", statusCode: 200 });
+            response.status(200).json({ VendorList: getVendorList });
         }
     })
-}else{
-    response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
 }
 
 
+function TodeleteVendorList(connection, response, request, reqVendor) {
+    if (reqVendor) {
+        const query = `UPDATE Vendor SET Status = '${reqVendor.Status}' where id = '${reqVendor.id}'`
+        connection.query(query, function (error, updateData) {
+            if (error) {
+                response.status(201).json({ message: "Internal Server Error", statusCode: 201, updateError: error });
+            } else {
+                response.status(200).json({ message: "Update Successfully", statusCode: 200 });
+            }
+        })
+    } else {
+        response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
+    }
+}
 
+function add_ebbilling_settings(req, res) {
 
+    var created_by = req.user_details.id;
+    var hostel_id = req.body.hostel_id;
+    var unit = req.body.unit;
+    var amount = req.body.amount;
+
+    if (!hostel_id && !unit && !amount) {
+        return res.status(201).json({ statusCode: 201, message: "Please Add Mantatory Fields" });
+    }
+
+    var sql1 = "SELECT * FROM eb_settings WHERE hostel_id='" + hostel_id + "'";
+    connection.query(sql1, (err, sel_res) => {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unble to Get Eb Details" });
+        } else if (sel_res.length != 0) {
+
+            var up_id = sel_res[0].id;
+            // Update Records
+            var sql2 = "UPDATE eb_settings SET unit='" + unit + "',amount='" + amount + "' WHERE id='" + up_id + "'";
+            connection.query(sql2, (err, ins_res) => {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unble to Update Eb Details" });
+                } else {
+                    return res.status(200).json({ statusCode: 200, message: "Successfully Updated Eb Details" });
+                }
+            })
+        } else {
+
+            var sql3 = "INSERT INTO eb_settings (hostel_id,unit,amount,created_by) VALUES (?,?,?,?)";
+            connection.query(sql3, [hostel_id, unit, amount, created_by], (err, ins_res) => {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unble to Add Eb Details" });
+                } else {
+                    return res.status(200).json({ statusCode: 200, message: "Successfully Added Eb Details" });
+                }
+            })
+        }
+    })
 
 }
 
 
-
-
-
-
-
-module.exports = { ToAddAndUpdateVendor ,GetVendorList,TodeleteVendorList}
+module.exports = { ToAddAndUpdateVendor, GetVendorList, TodeleteVendorList, add_ebbilling_settings }
