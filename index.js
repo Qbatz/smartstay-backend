@@ -626,6 +626,10 @@ app.post('/create-bed', (req, res) => {
     pgQueries.createBed(req, res)
 })
 
+app.post('/bed_details', (req, res) => {
+    pgQueries.bed_details(req, res)
+})
+
 app.post('/complaint_types', (req, res) => {
     complianceQueries.add_complainttypes(req, res)
 })

@@ -750,8 +750,8 @@ function createBed(req, res) {
         return res.status(201).json({ statusCode: 201, message: "Amount must be a number." });
     }
 
-    var sql1 = "SELECT * FROM hosteldetails WHERE id='" + hostel_id + "'";
-    console.log(sql1);
+    var sql1 = "SELECT * FROM hosteldetails WHERE id='" + hostel_id + "' AND created_By='" + created_by + "'";
+    // console.log(sql1);
     connection.query(sql1, (err, hs_data) => {
         if (err) {
             console.log(err);
@@ -804,4 +804,47 @@ function createBed(req, res) {
     })
 }
 
-module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details }
+function bed_details(req, res) {
+
+    var created_by = req.user_details.id
+
+    var { hostel_id, floor_id, room_id } = req.body;
+
+    if (!hostel_id || !floor_id || !room_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Parameters." });
+    }
+
+    var sql1 = "SELECT * FROM hosteldetails WHERE id='" + hostel_id + "'";
+    connection.query(sql1, (err, hs_data) => {
+        if (err) {
+            console.log(err);
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
+        } else if (hs_data.length != 0) {
+
+            var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND Room_Id=? AND isActive=1";
+            connection.query(sql2, [hostel_id, floor_id, room_id], (err, hs_res) => {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Room Details" })
+                } else if (hs_res.length > 0) {
+
+                    var hos_detail_id = hs_res[0].id;
+
+                    var sql3 = "SELECT * FROM bed_details WHERE hos_detail_id='" + hos_detail_id + "' AND status=1 AND isfilled=0";
+                    connection.query(sql3, (err, bed_data) => {
+                        if (err) {
+                            return res.status(201).json({ statusCode: 201, message: "Unable to Get Bed Details" })
+                        } else {
+                            return res.status(200).json({ statusCode: 200, message: "Bed Details", hostel_details: hs_res, bed_details: bed_data })
+                        }
+                    })
+                } else {
+                    return res.status(201).json({ statusCode: 201, message: "Invalid Hostel or Room Details" })
+                }
+            })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Hostel Details" })
+        }
+    })
+}
+
+module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details }
