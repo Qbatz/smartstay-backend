@@ -268,7 +268,7 @@ function createUser(connection, request, response) {
             }
         })
     } else {
-        connection.query(`SELECT * FROM hostel WHERE Phone='${atten.Phone}' OR Email='${atten.Email}' AND isActive = 1`, function (error, data) {
+        connection.query(`SELECT * FROM hostel WHERE Phone='${atten.Phone}' AND isActive = 1`, function (error, data) {
             if (data.length > 0) {
                 response.status(202).json({ message: "Phone Number Already Exists", statusCode: 202 });
             } else {

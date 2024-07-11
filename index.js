@@ -641,3 +641,7 @@ app.get('/all_complaint_types', (req, res) => {
 app.post('/remove_complaint_type', (req, res) => {
     complianceQueries.remove_complaint_types(req, res)
 })
+
+app.post('/add_ebbilling_settings', (req, res) => {
+    vendorQueries.add_ebbilling_settings(req, res)
+})
