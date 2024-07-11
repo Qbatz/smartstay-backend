@@ -1,3 +1,4 @@
+const connection = require('./config/connection')
 
 function AddCompliance(connection, request, response) {
 
@@ -58,7 +59,7 @@ function AddCompliance(connection, request, response) {
                         });
                     }
 
-                    connection.query(`INSERT INTO compliance(date, Name, Requestid, Roomdetail, Complainttype, Assign, Status, Hostel_id, Floor_id, Room, hostelname, Description, User_id,Bed,created_by) VALUES ('${atten.date}', '${atten.Name}', '${nextRequestId}', '${atten.Roomdetail}', '${atten.Complainttype}', '${atten.Assign}', '${atten.Status}', '${atten.Hostel_id}', '${atten.Floor_id}', '${atten.Room}', '${atten.hostelname}', '${atten.Description}','${atten.User_id}','${atten.Bed}','${created_by}')`,async function (error, data) {
+                    connection.query(`INSERT INTO compliance(date, Name, Requestid, Roomdetail, Complainttype, Assign, Status, Hostel_id, Floor_id, Room, hostelname, Description, User_id,Bed,created_by) VALUES ('${atten.date}', '${atten.Name}', '${nextRequestId}', '${atten.Roomdetail}', '${atten.Complainttype}', '${atten.Assign}', '${atten.Status}', '${atten.Hostel_id}', '${atten.Floor_id}', '${atten.Room}', '${atten.hostelname}', '${atten.Description}','${atten.User_id}','${atten.Bed}','${created_by}')`, async function (error, data) {
                         if (error) {
                             console.error(error);
                             response.status(500).json({ message: "Error inserting record", statusCode: 500 });
@@ -99,5 +100,89 @@ function GetComplianceList(connection, response, request) {
     });
 }
 
+function add_complainttypes(req, res) {
 
-module.exports = { AddCompliance, GetComplianceList };
+    var user_id = req.user_details.id;
+
+    var complaint_name = req.body.complaint_name;
+
+    if (!complaint_name) {
+        return res.status(201).json({ statusCode: 201, message: "Please Add Complaint Name" })
+    }
+
+    var sql1 = "SELECT * FROM complaint_type WHERE complaint_name COLLATE latin1_general_ci = ? AND status=1 AND created_by ='" + user_id + "'";
+    connection.query(sql1, [complaint_name], (err, sel_data) => {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get Complaint Details" })
+        } else if (sel_data.length == 0) {
+
+            var sql2 = "INSERT INTO complaint_type (complaint_name,status,created_by) VALUES (?,1,?)";
+            connection.query(sql2, [complaint_name, user_id], (err, ins_data) => {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Add Complaint Details" })
+                } else {
+                    return res.status(200).json({ statusCode: 200, message: "Successfully Add Complaint Details" })
+                }
+            })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Complaint Type Already Exists" })
+        }
+    })
+}
+
+function all_complaint_types(req, res) {
+
+    var user_id = req.user_details.id;
+
+    var sql1 = "SELECT * FROM complaint_type WHERE status=1 AND created_by='" + user_id + "'";
+    connection.query(sql1, (sql_err, sel_res) => {
+        if (sql_err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get Complaint Types" })
+        } else if (sel_res.length > 0) {
+            return res.status(200).json({ statusCode: 200, message: "All Complaint Types", complaint_types: sel_res })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "No Data Found" });
+        }
+    })
+}
+
+function remove_complaint_types(req, res) {
+
+    var id = req.body.id;
+    var user_id = req.user_details.id;
+
+    if (!id) {
+        return res.status(201).json({ statusCode: 201, message: "Please Add Complaint Id" })
+    }
+
+    var sql1 = "SELECT * FROM complaint_type WHERE id='" + id + "' AND created_by='" + user_id + "'";
+    connection.query(sql1, (sel_err, sel_res) => {
+        if (sel_err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get Complaint Types" })
+        } else if (sel_res.length != 0) {
+
+            // Check in this id used or not used
+            var sql2 = "SELECT * FROM compliance WHERE Complainttype='" + id + "'";
+            connection.query(sql2, (err, com_data) => {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Get Complaint Details" })
+                } else if (com_data.length != 0) {
+                    return res.status(201).json({ statusCode: 201, message: "In This Complaint Type added Complaint ,So We Cannot Remove this" })
+                } else {
+                    // Remove Complaint
+                    var sql3 = "UPDATE complaint_type SET status=0 WHERE id='" + id + "'";
+                    connection.query(sql3, (err, data) => {
+                        if (err) {
+                            return res.status(201).json({ statusCode: 201, message: "Unable to Remove Complaint Type" })
+                        } else {
+                            return res.status(200).json({ statusCode: 200, message: "Successfully Removed Complaint Type" })
+                        }
+                    })
+                }
+            })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Complaint Type Id" })
+        }
+    })
+}
+module.exports = { AddCompliance, GetComplianceList, add_complainttypes, all_complaint_types, remove_complaint_types };

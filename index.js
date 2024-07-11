@@ -71,7 +71,7 @@ app.post('/delete/delete-expenses', (request, response) => {
     expensesManagement.DeleteExpenses(request, response)
 })
 
-app.post('/delete/delete-category',(request,response)=>{
+app.post('/delete/delete-category', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     expensesManagement.DeleteExpensesCategory(request,response)
 })
@@ -624,4 +624,16 @@ app.get('/all_expenses', (req, res) => {
 
 app.post('/create-bed', (req, res) => {
     pgQueries.createBed(req, res)
+})
+
+app.post('/complaint_types', (req, res) => {
+    complianceQueries.add_complainttypes(req, res)
+})
+
+app.get('/all_complaint_types', (req, res) => {
+    complianceQueries.all_complaint_types(req, res)
+})
+
+app.post('/remove_complaint_type', (req, res) => {
+    complianceQueries.remove_complaint_types(req, res)
 })
