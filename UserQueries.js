@@ -750,7 +750,8 @@ function customer_details(req, res) {
                                     } else {
 
                                         // Get Hostel Amenities
-                                        var sql6 = "SELECT * FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id WHERE am.Hostel_Id=? AND createdBy='" + created_by + "' AND setAsDefault=0;";
+                                        // var sql6 = "SELECT * FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id WHERE am.Hostel_Id=? AND createdBy='" + created_by + "' AND setAsDefault=0;";
+                                        var sql6 = "SELECT amname.Amnities_Name,am.Amount FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id JOIN AmenitiesHistory AS amhis ON amhis.amenity_Id=am.Amnities_Id WHERE am.Hostel_Id='" + hostel_id + "' AND amhis.user_id !='" + amenn_user_id + "' AND am.setAsDefault=0 AND am.Status=1 AND am.createdBy='" + created_by + "';"
                                         connection.query(sql6, [hostel_id], (am_err, am_res) => {
                                             if (am_err) {
                                                 console.log(am_err);
