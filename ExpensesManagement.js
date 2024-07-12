@@ -167,7 +167,7 @@ function CalculateExpenses(request, response) {
     })
 }
 
-function getAllfilter(createdBy, response, data) {
+function getAllfilter(createdBy, response, data,total_amount) {
     let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,ven.Vendor_profile,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode,category.category_Name,ven.Vendor_Name,ast.asset_name from expenses expen
     join Expense_Category_Name category on category.id = expen.category_id
     join Vendor ven on ven.id = expen.vendor_id
@@ -184,10 +184,10 @@ function getAllfilter(createdBy, response, data) {
                 let vendorList = [];
                 let assetList = [];
                 let paymentModeList = [];
-                let total_amount = 0;
+                // let total_amount = 0;
 
                 for (let i = 0; i < getData.length; i++) {
-                    total_amount += getData[i].purchase_amount;
+                    // total_amount += getData[i].purchase_amount;
                     if (!categorylist.some(item => item.category_id === getData[i].category_id)) {
                         categorylist.push({ category_id: getData[i].category_id, category_Name: getData[i].category_Name });
                     }
@@ -209,14 +209,14 @@ function getAllfilter(createdBy, response, data) {
                     vendorList: vendorList,
                     assetList: assetList,
                     paymentModeList: paymentModeList,
-                    total_amount: total_amount,
-                    data: data
+                    total_amount: total_amount
                 }
-                if (typeof (data) == Array && data.length > 0) {
+                if (Array.isArray(data) && data.length > 0) {
+                    tempobj = { ...tempobj, data: data}
                     response.status(200).json(tempobj);
                 }
                 else {
-                    tempobj = { ...tempobj, message: data, data: [] }
+                    tempobj = { ...tempobj, message: data }
                     response.status(200).json(tempobj);
                 }
             }
@@ -243,7 +243,7 @@ function GetHostelExpenses(request, response) {
     join Vendor ven on ven.id = expen.vendor_id
     join assets ast on ast.id = expen.asset_id
         where expen.status = true and expen.created_by = ${createdBy}`
-
+console.log("query",query);
     if (asset_id) {
         query += ` AND expen.asset_id = ${asset_id}`;
     }
@@ -280,12 +280,18 @@ function GetHostelExpenses(request, response) {
             response.status(201).json({ message: 'Error Fetching Data' });
         }
         else {
+            let total_amount = 0;
             if (data && data.length > 0) {
-                basicDetails = getAllfilter(createdBy, response, data)
+                console.log("data",data);
+                data.map((v)=>{
+                    return  total_amount += v.purchase_amount
+                })
+               console.log("total_amount",total_amount);
+                basicDetails = getAllfilter(createdBy, response, data,total_amount)
             }
             else {
                 let message = 'No Data Found';
-                basicDetails = getAllfilter(createdBy, response, message)
+                basicDetails = getAllfilter(createdBy, response, message,total_amount)
             }
         }
     })
