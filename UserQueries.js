@@ -259,10 +259,10 @@ function createUser(connection, request, response) {
                         }
                     });
                 })
-                .catch(error => {
-                    console.log(error);
-                    return response.status(205).json({ message: "Invalid Bed Details", statusCode: 205 });
-                });
+                    .catch(error => {
+                        console.log(error);
+                        return response.status(205).json({ message: "Invalid Bed Details", statusCode: 205 });
+                    });
             } else {
                 response.status(202).json({ message: "Invalid User Id", statusCode: 202 });
             }
@@ -718,7 +718,8 @@ function customer_details(req, res) {
 
             var amenn_user_id = user_data[0].User_Id;
             // All Amenties
-            var sql2 = "SELECT amname.Amnities_Name AS Amnities_Name FROM AmenitiesHistory AS amhis JOIN AmnitiesName AS amname ON amname.id = amhis.amenity_Id WHERE amhis.status = 1 AND amhis.user_id = '" + amenn_user_id + "' UNION SELECT amname.Amnities_Name AS Amnities_Name FROM Amenities AS amen JOIN AmnitiesName AS amname ON amname.id = amen.Amnities_Id WHERE amen.setAsDefault = 1 GROUP BY Amnities_Name";
+            // var sql2 = "SELECT amname.Amnities_Name AS Amnities_Name FROM AmenitiesHistory AS amhis JOIN AmnitiesName AS amname ON amname.id = amhis.amenity_Id WHERE amhis.status = 1 AND amhis.user_id = '" + amenn_user_id + "' UNION SELECT amname.Amnities_Name AS Amnities_Name FROM Amenities AS amen JOIN AmnitiesName AS amname ON amname.id = amen.Amnities_Id WHERE amen.setAsDefault = 1 GROUP BY Amnities_Name";
+            var sql2 = "SELECT amname.Amnities_Name AS Amnities_Name,amen.setAsDefault AS free_amenity FROM AmenitiesHistory AS amhis JOIN AmnitiesName AS amname ON amname.id = amhis.amenity_Id JOIN Amenities AS amen ON amen.id=amhis.amenity_Id WHERE amhis.status = 1 AND amhis.user_id = '" + amenn_user_id + "' AND amen.createdBy='" + created_by + "' UNION SELECT amname.Amnities_Name AS Amnities_Name,amen.setAsDefault AS free_amenity FROM Amenities AS amen JOIN AmnitiesName AS amname ON amname.id = amen.Amnities_Id WHERE amen.setAsDefault = 1 AND amen.createdBy='" + created_by + "' GROUP BY Amnities_Name";
             connection.query(sql2, (am_err, am_data) => {
                 if (am_err) {
                     // console.log(am_err);
@@ -749,7 +750,7 @@ function customer_details(req, res) {
                                     } else {
 
                                         // Get Hostel Amenities
-                                        var sql6 = "SELECT * FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id WHERE am.Hostel_Id=?";
+                                        var sql6 = "SELECT * FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id WHERE am.Hostel_Id=? AND createdBy='" + created_by + "' AND setAsDefault=0;";
                                         connection.query(sql6, [hostel_id], (am_err, am_res) => {
                                             if (am_err) {
                                                 console.log(am_err);

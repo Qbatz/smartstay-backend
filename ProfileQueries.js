@@ -1,5 +1,7 @@
 const AWS = require('aws-sdk');
 require('dotenv').config();
+const connection = require('./config/connection');
+
 
 
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
@@ -108,8 +110,8 @@ function InvoiceSettings(connection, reqInvoice, response) {
             });
         }
 
-        
-         else if (Profile) {
+
+        else if (Profile) {
             const timestamp = Date.now();
             console.log("timestamp", timestamp)
             uploadProfilePictureToS3('smartstaydevs', 'Logo/', 'Logo' + reqInvoice.hostel_Id + `${timestamp}` + '.jpg', reqInvoice.profile, (err, s3Url) => {
@@ -130,7 +132,7 @@ function InvoiceSettings(connection, reqInvoice, response) {
                     });
                 }
             });
-        
+
         } else if (Prefix && Suffix) {
             const query = `UPDATE hosteldetails SET  prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}' WHERE id='${reqInvoice.hostel_Id}'`;
             connection.query(query, function (error, invoiceData) {
@@ -143,8 +145,8 @@ function InvoiceSettings(connection, reqInvoice, response) {
                 }
             });
         }
-        
-        
+
+
     } else {
         response.status(400).json({ message: 'Missing parameter' });
     }
@@ -180,18 +182,16 @@ function UpdateEB(connection, attenArray, response) {
 
 function AmenitiesSetting(connection, request, response) {
 
-    var reqData=request.body;
-    const userDetails = request.user_details;
-    
-    var created_by=userDetails.id;
+    var reqData = request.body;
+    var created_by = request.user_details.id;
 
-    console.log("reqData", reqData);
+    // console.log("reqData", reqData);
     if (!reqData) {
         response.status(201).json({ message: 'Missing parameter' });
         return;
     }
     else {
-        const amenitiesName = reqData?.AmenitiesName?.trim().replace(/\s+/g, '');
+        const amenitiesName = reqData?.amenitiesName?.trim().replace(/\s+/g, '');
         const capitalizedAmenitiesName = amenitiesName?.charAt(0).toUpperCase() + amenitiesName?.slice(1).toLowerCase();
 
         connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${reqData.Hostel_Id}`, function (error, amenitiesData) {
@@ -199,14 +199,15 @@ function AmenitiesSetting(connection, request, response) {
             console.log("capitalizedAmenitiesName", capitalizedAmenitiesName)
 
             let amenityId = reqData.amenityId;
-            if (reqData.amenityId != undefined || reqData.AmenitiesName != undefined) {
+
+            if (reqData.amenityId != undefined || reqData.amenitiesName != undefined) {
                 connection.query(`SELECT * FROM AmnitiesName WHERE LOWER(Amnities_Name) = '${capitalizedAmenitiesName}'`, function (err, data) {
                     console.log("data..?", data)
                     if (error) {
                         console.error(error);
                         response.status(202).json({ message: 'Database error' });
                     } else if (data.length > 0) {
-                        insertAminity(data[0].id,created_by)
+                        insertAminity(data[0].id, created_by)
                     } else {
                         if (!reqData.amenityId && reqData.amenityId != 0 && reqData.amenityId != "") {
                             connection.query(`INSERT INTO AmnitiesName (Amnities_Name) VALUES ('${capitalizedAmenitiesName}')`, function (error, data) {
@@ -215,7 +216,7 @@ function AmenitiesSetting(connection, request, response) {
                                         if (!error) {
                                             amenityId = amenityData[0].id
                                             console.log("amenityData", amenityData[0].id);
-                                            insertAminity(amenityData[0].id,created_by)
+                                            insertAminity(amenityData[0].id, created_by)
                                         }
                                     })
                                 }
@@ -224,7 +225,7 @@ function AmenitiesSetting(connection, request, response) {
                                 }
                             })
                         } else {
-                            insertAminity(reqData.amenityId,created_by)
+                            insertAminity(reqData.amenityId, created_by)
                         }
                     }
                 })
@@ -232,7 +233,8 @@ function AmenitiesSetting(connection, request, response) {
         })
     }
 
-    function insertAminity(id,created_by) {
+    function insertAminity(id, created_by) {
+        
         connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${reqData.Hostel_Id} AND Amnities_Id = ${id}`, function (error, existingAmenity) {
             if (error) {
                 console.error(error);
@@ -315,18 +317,19 @@ function AmenitiesSetting(connection, request, response) {
     //     })
 
     // }
-
 }
 
 
+function getAmenitiesList(req, res) {
 
-function getAmenitiesList(connection, response) {
-    connection.query(`select * from Amenities AmeList INNER JOIN AmnitiesName AmeName ON AmeList.Amnities_Id = AmeName.id `, function (err, data) {
-        if (data) {
-            response.status(200).json({ data: data })
-        }
-        else {
-            response.status(201).json({ message: 'No Data Found' })
+    var created_by = req.user_details.id;
+
+    var sql1 = "SELECT * FROM Amenities AS ame JOIN AmnitiesName AS amname ON ame.Amnities_Id = amname.id AND ame.createdBy='" + created_by + "';"
+    connection.query(sql1, function (err, data) {
+        if (err) {
+            res.status(201).json({ statusCode: 201, message: "Unable to Get Amenities List" })
+        } else {
+            res.status(200).json({ statusCode: 200, message: "Amenities List", data: data })
         }
     })
 }
@@ -334,7 +337,7 @@ function getAmenitiesList(connection, response) {
 function getEbReading(connection, response) {
     connection.query(`select * from EbReading `, function (err, data) {
         if (data) {
-            response.status(200).json({data:data})
+            response.status(200).json({ data: data })
         }
         else {
             response.status(201).json({ message: 'No Data Found' })

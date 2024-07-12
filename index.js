@@ -362,9 +362,9 @@ app.post('/invoice/settings', upload.single('profile'), (request, response) => {
 })
 
 
-app.get('/list/amenities-list', (request, response) => {
-    response.set('Access-Control-Allow-Origin', '*')
-    profileQueries.getAmenitiesList(connection, response)
+app.get('/list/amenities-list', (req, res) => {
+    // response.set('Access-Control-Allow-Origin', '*')
+    profileQueries.getAmenitiesList(req, res)
 })
 
 app.post('/EB/Hostel_Room_based', (request, response) => {
