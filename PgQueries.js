@@ -270,8 +270,7 @@ function RoomCount(connection, reqFloorID, response) {
     if (reqFloorID) {
         connection.query(`SELECT *,COALESCE(SUM(Number_Of_Beds),0) AS total_beds FROM hostelrooms WHERE Floor_Id = '${reqFloorID.floor_Id}' AND Hostel_Id = '${reqFloorID.hostel_Id}' AND isActive=1 GROUP BY Room_Id`, function (error, RoomsData) {
             if (error) {
-                response.status(201).json({ message: "Error occurred while fetching data" });
-                return;
+                return response.status(201).json({ message: "Error occurred while fetching data" });
             }
 
             if (RoomsData.length > 0) {
@@ -293,14 +292,29 @@ function RoomCount(connection, reqFloorID, response) {
                                 Room_Rent: RoomsData[i].Price
                             };
                             responseData.push(objectFormation);
-                        }
 
-                        if (responseData.length === RoomsData.length) {
-                            if (errorMessage) {
-                                response.status(202).json({ message: "Error occurred while fetching data" });
-                            } else {
-                                // console.log("responseData", responseData);
-                                response.status(200).json({ responseData: responseData });
+                            if (responseData.length === RoomsData.length) {
+                                if (errorMessage) {
+                                    response.status(202).json({ message: "Error occurred while fetching data" });
+                                } else {
+                                    // console.log("responseData", responseData);
+
+                                    var temp = responseData[0];
+
+                                    var bed_query = "SELECT bd.bed_no,bd.bed_amount,bd.isfilled FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id WHERE hr.Hostel_Id='" + objectFormation.Hostel_Id + "' AND hr.Floor_Id='" + objectFormation.Floor_Id + "' AND hr.Room_Id='" + objectFormation.Room_Id + "' AND bd.status=1 AND hr.isActive=1"
+                                    console.log(bed_query);
+                                    connection.query(bed_query, (err, bed_data) => {
+                                        if (err) {
+                                            temp['bed_details'] = 0;
+                                            responseData[0] = temp;
+                                            response.status(200).json({ responseData: responseData });
+                                        } else {
+                                            temp['bed_details'] = bed_data;
+                                            responseData[0] = temp;
+                                            response.status(200).json({ responseData: responseData });
+                                        }
+                                    })
+                                }
                             }
                         }
                     });
