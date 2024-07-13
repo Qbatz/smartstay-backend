@@ -15,7 +15,7 @@ function check_bed_details(bed_details_obj) {
                 } else if (be_res.length != 0) {
                     var bed_details_id = be_res[0].bed_detail_id;
 
-                    var sql1 = "UPDATE bed_details SET isfilled=1 WHERE id='" + bed_details_id + "'";
+                    var sql1 = "UPDATE bed_details SET isfilled=1 AND user_id='" + bed_details_obj.user_id + "' WHERE id='" + bed_details_id + "'";
                     connection.query(sql1, (err, up_data) => {
                         if (err) {
                             reject(err)
@@ -31,7 +31,7 @@ function check_bed_details(bed_details_obj) {
 
                                         var bed_details_id1 = sql2_res[0].bed_detail_id;
 
-                                        var sql1 = "UPDATE bed_details SET isfilled=0 WHERE id='" + bed_details_id1 + "'";
+                                        var sql1 = "UPDATE bed_details SET isfilled=0 AND user_id='0' WHERE id='" + bed_details_id1 + "'";
                                         connection.query(sql1, (err, up_data) => {
                                             if (err) {
                                                 reject(err)
