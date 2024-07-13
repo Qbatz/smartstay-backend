@@ -106,6 +106,10 @@ function createUser(connection, request, response) {
                     profile_url = 0;
                 }
 
+                if (!profile) {
+                    var profile_url = req.body.profile || 0;
+                }
+
                 var bed_details_obj = {
                     old_bed: old_bed,
                     old_room: old_room,
