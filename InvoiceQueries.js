@@ -2057,10 +2057,11 @@ function UpdateInvoice(connection, response, atten) {
 function UpdateAmenitiesHistory(connection, response, reqData) {
     if (reqData) {
         connection.query(`select * from AmenitiesHistory where user_Id ='${reqData.userID}' and amenity_Id = ${reqData.amenityID} ORDER BY id DESC`, function (err, data) {
-            if (data.length > 0) {
+            if ( data && data.length > 0) {
                 if (data[0].status === 1) {
                     connection.query(`UPDATE AmenitiesHistory SET status = ${reqData.status} where user_Id ='${reqData.userID}' and amenity_Id = ${reqData.amenityID}`, function (updateError, updateData) {
                         if (updateError) {
+                            console.log("updateError",updateError)
                             response.status(201).json({ message: "Does not Update" });
                         }
                         else {
