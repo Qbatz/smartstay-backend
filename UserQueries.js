@@ -120,6 +120,7 @@ function createUser(connection, request, response) {
                     floor_id: atten.Floor,
                     room: atten.Rooms,
                     bed: atten.Bed,
+                    user_id: atten.ID
                 }
 
                 bedDetails.check_bed_details(bed_details_obj).then(() => {

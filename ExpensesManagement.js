@@ -230,20 +230,27 @@ function getAllfilter(createdBy, response, data,total_amount) {
 function GetHostelExpenses(request, response) {
     var createdBy = request.user_details.id;
     var category = request.body?.category ? request.body.category : null;
-    var max_amount = request.body?.max_amount ? request.body.max_amount : null;
-    var min_amount = request.body?.min_amount ? request.body.min_amount : null;
+    var max_amount = request.body?.max_amount ? Number(request.body.max_amount) : null;
+    var min_amount = request.body?.min_amount ? Number(request.body.min_amount) : null;
     var asset_id = request.body?.asset_id ? request.body.asset_id : null;
     var payment_mode = request.body?.payment_mode ? request.body.payment_mode : null;
     var vendor_id = request.body?.vendor_id ? request.body.vendor_id : null;
     var start_date = request.body?.start_date ? moment(new Date(request.body.start_date)).format('YYYY-MM-DD') : null;
     var end_date = request.body?.end_date ? moment(new Date(request.body.end_date)).format('YYYY-MM-DD') : null;
 
-    let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,ven.Vendor_profile,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode,category.category_Name,ven.Vendor_Name,ast.asset_name from expenses expen
-    join Expense_Category_Name category on category.id = expen.category_id
-    join Vendor ven on ven.id = expen.vendor_id
-    join assets ast on ast.id = expen.asset_id
-        where expen.status = true and expen.created_by = ${createdBy}`
-console.log("query",query);
+    // let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,ven.Vendor_profile,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode,category.category_Name,ven.Vendor_Name,ast.asset_name from expenses expen
+    // join Expense_Category_Name category on category.id = expen.category_id
+    // join Vendor ven on ven.id = expen.vendor_id
+    // join assets ast on ast.id = expen.asset_id
+    //     where expen.status = true and expen.created_by = ${createdBy}`
+
+    let query = `SELECT expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode, category.category_Name, ven.Vendor_Name, ast.asset_name 
+FROM expenses expen
+JOIN Expense_Category_Name category ON category.id = expen.category_id
+JOIN Vendor ven ON ven.id = expen.vendor_id
+JOIN assets ast ON ast.id = expen.asset_id
+WHERE expen.status = true AND expen.created_by = ${createdBy}`;
+
     if (asset_id) {
         query += ` AND expen.asset_id = ${asset_id}`;
     }
@@ -261,8 +268,15 @@ console.log("query",query);
     if (min_amount && !max_amount) {
         query += ` AND expen.purchase_amount >= ${min_amount}`
     }
-    if (min_amount && max_amount) {
-        query += `AND expen.purchase_amount >= ${min_amount} AND expen.purchase_amount <= ${max_amount}`
+    if (min_amount ==0  && max_amount || min_amount == undefined  && max_amount) {
+        query += ` AND expen.purchase_amount <= ${max_amount}`
+    }
+    // if (min_amount && max_amount) {
+    //     query += `AND expen.purchase_amount BETWEEN ${min_amount} AND ${max_amount}`
+    //     // query += `AND expen.purchase_amount >= ${min_amount} AND expen.purchase_amount <= ${max_amount}`
+    // }
+    if (min_amount !== undefined && max_amount !== undefined && min_amount !== null && max_amount !== null) {
+        query += ` AND expen.purchase_amount >= ${min_amount} AND expen.purchase_amount <= ${max_amount}`;
     }
     if (start_date && !end_date) {
         const startDateRange = `${start_date} 00:00:00`;
@@ -274,6 +288,7 @@ console.log("query",query);
         const endDateRange = `${end_date} 23:59:59`;
         query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
     }
+    console.log("query",query);
     connection.query(query, function (err, data) {
         if (err) {
             console.log("err", err);
