@@ -84,7 +84,7 @@ function createnewAccount(request, response) {
 
     var reqBodyData = request.body;
 
-    if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.name && reqBodyData.password) {
+    if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.first_name && reqBodyData.password) {
         connection.query(
             `SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`,
             [reqBodyData.mobileNo, reqBodyData.emailId],
@@ -104,7 +104,7 @@ function createnewAccount(request, response) {
                         const hash_password = await bcrypt.hash(reqBodyData.password, 10);
 
                         connection.query(
-                            `INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password) VALUES (?,?,?,?)`,
+                            `INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password) VALUES (?,?,?,?,?)`,
                             [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password],
                             function (error, result) {
                                 if (error) {
