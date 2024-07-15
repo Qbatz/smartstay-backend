@@ -472,8 +472,7 @@ app.post('/payment_history', (request, response) => {
 
 app.post('/add/amenity-history', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const reqData = request.body;
-    invoiceQueries.UpdateAmenitiesHistory(connection, response, reqData)
+    invoiceQueries.UpdateAmenitiesHistory(connection, response, request)
 })
 
 
