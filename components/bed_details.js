@@ -4,7 +4,7 @@ function check_bed_details(bed_details_obj) {
 
     return new Promise((resolve, reject) => {
 
-        if (bed_details_obj.Floor == 0 || bed_details_obj.Floor == undefined && bed_details_obj.Rooms == 0 || bed_details_obj.Rooms == undefined) {
+        if (bed_details_obj.floor_id == 0 || bed_details_obj.floor_id == undefined && bed_details_obj.room == 0 || bed_details_obj.room == undefined) {
             resolve("No Need to Validate in this User");
         } else {
 
@@ -21,7 +21,7 @@ function check_bed_details(bed_details_obj) {
                     } else if (be_res.length != 0) {
                         var bed_details_id = be_res[0].bed_detail_id;
 
-                        var sql1 = "UPDATE bed_details SET isfilled=1 WHERE id='" + bed_details_id + "'";
+                        var sql1 = "UPDATE bed_details SET isfilled=1, user_id='" + bed_details_obj.user_id + "' WHERE id='" + bed_details_id + "'";
                         connection.query(sql1, (err, up_data) => {
                             if (err) {
                                 reject(err)
@@ -37,7 +37,7 @@ function check_bed_details(bed_details_obj) {
 
                                             var bed_details_id1 = sql2_res[0].bed_detail_id;
 
-                                            var sql1 = "UPDATE bed_details SET isfilled=0 WHERE id='" + bed_details_id1 + "'";
+                                            var sql1 = "UPDATE bed_details SET isfilled=0,user_id=0 WHERE id='" + bed_details_id1 + "'";
                                             connection.query(sql1, (err, up_data) => {
                                                 if (err) {
                                                     reject(err)

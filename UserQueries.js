@@ -160,11 +160,16 @@ function createUser(connection, request, response) {
 
                                 if (inv_data.length == 0) {
 
+
+                                    if (atten.AdvanceAmount && atten.AdvanceAmount != undefined) {
+                                      
                                     console.log(atten.AdvanceAmount);
 
-                                    if (!atten.AdvanceAmount && atten.AdvanceAmount != undefined && atten.AdvanceAmount > 0) {
+                                   // if (!atten.AdvanceAmount && atten.AdvanceAmount != undefined && atten.AdvanceAmount > 0) {
 
                                         insert_advance_invoice(connection, user_ids).then(() => {
+
+                                            // console.log(atten.AdvanceAmount);
 
                                             // Check and insert advance amount transactions
                                             if (paid_advance != undefined && paid_advance != 0) {
@@ -209,7 +214,7 @@ function createUser(connection, request, response) {
                             function checkAndInsertRentInvoice() {
                                 // Check and update advance
 
-                                if (!atten.RoomRent && atten.RoomRent != undefined && atten.RoomRent > 0) {
+                                if (atten.RoomRent && atten.RoomRent != undefined && atten.RoomRent > 0) {
 
                                     var sqlAdvance = "SELECT * FROM invoicedetails WHERE hos_user_id=? AND invoice_type=1";
                                     connection.query(sqlAdvance, [atten.ID], function (rent_err, rent_res) {
