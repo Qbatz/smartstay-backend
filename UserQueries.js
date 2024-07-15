@@ -133,14 +133,14 @@ function createUser(connection, request, response) {
                             var update_complaice_query = "SELECT * FROM compliance WHERE User_id=?";
                             connection.query(update_complaice_query, [unique_user_id], function (up_com_err, up_com_res) {
                                 if (up_com_err) {
-                                    console.log("up_com_err",up_com_err);
+                                    console.log("up_com_err", up_com_err);
                                     return
                                 } else if (up_com_res.length != 0) {
 
                                     var up_query = "UPDATE compliance SET Circle='" + Circle + "',Name='" + Name + "',Phone='" + atten.Phone + "',Hostel_id='" + atten.hostel_Id + "',Floor_id='" + atten.Floor + "',Room='" + atten.Rooms + "',hostelname='" + atten.HostelName + "' WHERE User_id='" + unique_user_id + "';";
                                     connection.query(up_query, function (up_err, up_res) {
                                         if (up_err) {
-                                            console.log("up_err",up_err);
+                                            console.log("up_err", up_err);
                                         }
                                     })
                                 }
@@ -158,9 +158,11 @@ function createUser(connection, request, response) {
 
                                 if (inv_data.length == 0) {
 
-                                    if (!atten.AdvanceAmount && atten.AdvanceAmount != undefined && atten.AdvanceAmount > 0) {
+                                    if (atten.AdvanceAmount && atten.AdvanceAmount != undefined) {
 
                                         insert_advance_invoice(connection, user_ids).then(() => {
+
+                                            // console.log(atten.AdvanceAmount);
 
                                             // Check and insert advance amount transactions
                                             if (paid_advance != undefined && paid_advance != 0) {
@@ -168,12 +170,12 @@ function createUser(connection, request, response) {
                                                 var sql4 = "SELECT * FROM advance_amount_transactions WHERE user_id=? ORDER BY id ASC";
                                                 connection.query(sql4, [user_ids], async function (ad_err, ad_res) {
                                                     if (ad_err) {
-                                                        console.log("ad_err",ad_err);
+                                                        console.log("ad_err", ad_err);
                                                     } else if (ad_res.length == 0) {
                                                         var sql_1 = "INSERT INTO advance_amount_transactions (user_id, inv_id, advance_amount, payment_status, created_by) VALUES (?, ?, ?, ?, ?)";
                                                         connection.query(sql_1, [user_ids, 0, paid_advance, 1, created_by], function (ins_err, ins_res) {
                                                             if (ins_err) {
-                                                                console.log("ins_err",ins_err);
+                                                                console.log("ins_err", ins_err);
                                                             }
                                                         });
 
@@ -205,7 +207,7 @@ function createUser(connection, request, response) {
                             function checkAndInsertRentInvoice() {
                                 // Check and update advance
 
-                                if (!atten.RoomRent && atten.RoomRent != undefined && atten.RoomRent > 0) {
+                                if (atten.RoomRent && atten.RoomRent != undefined && atten.RoomRent > 0) {
 
                                     var sqlAdvance = "SELECT * FROM invoicedetails WHERE hos_user_id=? AND invoice_type=1";
                                     connection.query(sqlAdvance, [atten.ID], function (rent_err, rent_res) {
@@ -246,12 +248,12 @@ function createUser(connection, request, response) {
                                                     var sql2 = "SELECT * FROM transactions WHERE user_id=? AND invoice_id=0 AND MONTH(createdAt) = MONTH(CURDATE()) AND YEAR(createdAt) = YEAR(CURDATE())";
                                                     connection.query(sql2, [user_ids], async function (trans_err, trans_res) {
                                                         if (trans_err) {
-                                                            console.log("trans_err",trans_err);
+                                                            console.log("trans_err", trans_err);
                                                         } else if (trans_res.length == 0) {
                                                             var sql_1 = "INSERT INTO transactions (user_id, invoice_id, amount, status, created_by) VALUES (?, ?, ?, ?, ?)";
                                                             connection.query(sql_1, [user_ids, 0, paid_rent, 1, created_by], function (ins_err, ins_res) {
                                                                 if (ins_err) {
-                                                                    console.log("ins_err",ins_err);
+                                                                    console.log("ins_err", ins_err);
                                                                 }
                                                             });
 
@@ -306,7 +308,7 @@ function createUser(connection, request, response) {
 
                         connection.query(`INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance) VALUES ('${Circle}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}','${paid_advance}','${pending_advance}')`, async function (insertError, insertData) {
                             if (insertError) {
-                                console.log("insertError",insertError);
+                                console.log("insertError", insertError);
                                 response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
                             } else {
 
