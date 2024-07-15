@@ -21,11 +21,11 @@ function check_bed_details(bed_details_obj) {
                     } else if (be_res.length != 0) {
                         var bed_details_id = be_res[0].bed_detail_id;
 
-                    var sql1 = "UPDATE bed_details SET isfilled=1 WHERE id='" + bed_details_id + "'";
-                    connection.query(sql1, (err, up_data) => {
-                        if (err) {
-                            reject(err)
-                        } else {
+                        var sql1 = "UPDATE bed_details SET isfilled=1 WHERE id='" + bed_details_id + "'";
+                        connection.query(sql1, (err, up_data) => {
+                            if (err) {
+                                reject(err)
+                            } else {
 
                                 if (bed_details_obj.old_bed != undefined && bed_details_obj.old_bed != 0) {
 
@@ -37,29 +37,29 @@ function check_bed_details(bed_details_obj) {
 
                                             var bed_details_id1 = sql2_res[0].bed_detail_id;
 
-                                        var sql1 = "UPDATE bed_details SET isfilled=0 WHERE id='" + bed_details_id1 + "'";
-                                        connection.query(sql1, (err, up_data) => {
-                                            if (err) {
-                                                reject(err)
-                                            } else {
-                                                resolve("sucess")
-                                            }
-                                        })
-                                    } else {
-                                        resolve("No need to update Bed Details")
-                                    }
-                                })
-                            } else {
-                                resolve("Sucess")
+                                            var sql1 = "UPDATE bed_details SET isfilled=0 WHERE id='" + bed_details_id1 + "'";
+                                            connection.query(sql1, (err, up_data) => {
+                                                if (err) {
+                                                    reject(err)
+                                                } else {
+                                                    resolve("sucess")
+                                                }
+                                            })
+                                        } else {
+                                            resolve("No need to update Bed Details")
+                                        }
+                                    })
+                                } else {
+                                    resolve("Sucess")
+                                }
                             }
-                        }
-                    })
-                } else {
-                    reject("Unable to Get Hostel Details")
-                }
-            })
+                        })
+                    } else {
+                        reject("Unable to Get Hostel Details")
+                    }
+                })
+            }
         }
-
     });
 };
 

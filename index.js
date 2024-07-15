@@ -5,7 +5,6 @@ const middleware = require('./middleware');
 const connection = require('./config/connection');
 const notifications = require('./notifications');
 const assets = require('./assets');
-
 const app = express()
 const userQueries = require('./UserQueries');
 const accountManagement = require('./AccountManagementQueries')
@@ -73,7 +72,7 @@ app.post('/delete/delete-expenses', (request, response) => {
 
 app.post('/delete/delete-category', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    expensesManagement.DeleteExpensesCategory(request,response)
+    expensesManagement.DeleteExpensesCategory(request, response)
 })
 
 // app.post('/add/add-salary',(request,response)=>{
@@ -123,8 +122,8 @@ app.post('/create/create-account', upload.single('profile'), (request, response)
 
 app.post('/newaccount/create-account', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const reqBodyData = request.body
-    accountManagement.createnewAccount(connection, reqBodyData, response);
+    // const reqBodyData = request.body
+    accountManagement.createnewAccount(request, response);
 })
 
 app.get('/login/login', (request, response) => {
@@ -445,10 +444,8 @@ app.post('/delete/delete-room', (request, response) => {
     let reqData = request.body
     pgQueries.deleteRoom(connection, response, reqData)
 })
-app.post('/delete/delete-bed', (request, response) => {
-    response.set('Access-Control-Allow-Origin', '*');
-    let reqData = request.body
-    pgQueries.deleteBed(connection, response, reqData)
+app.post('/delete/delete-bed', (req, res) => {
+    pgQueries.deleteBed(req, res)
 })
 
 app.post('/transaction/list', (request, response) => {

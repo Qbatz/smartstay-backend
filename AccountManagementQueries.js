@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt');
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const conn = require('./config/connection');
+const connection = require('./config/connection');
 
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
@@ -80,7 +80,9 @@ function createAccountForLogin(connection, reqBodyData, response) {
     }
 }
 
-function createnewAccount(connection, reqBodyData, response) {
+function createnewAccount(request, response) {
+
+    var reqBodyData = request.body;
 
     if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.name && reqBodyData.password) {
         connection.query(
@@ -95,20 +97,29 @@ function createnewAccount(connection, reqBodyData, response) {
 
                 if (data.length === 0) {
 
-                    const hash_password = await bcrypt.hash(reqBodyData.password, 10);
-                    connection.query(
-                        `INSERT INTO createaccount (Name, mobileNo, email_Id, password) VALUES (?,?,?,?)`,
-                        [reqBodyData.name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password],
-                        function (error, result) {
-                            if (error) {
-                                console.error("Database error:", error);
-                                response.status(500).json({ message: 'Database error' });
-                                return;
-                            } else {
-                                response.status(200).json({ message: 'Created Successfully', statusCode: 200 });
+                    var confirm_pass = reqBodyData.confirm_password;
+
+                    if (reqBodyData.password === confirm_pass) {
+
+                        const hash_password = await bcrypt.hash(reqBodyData.password, 10);
+
+                        connection.query(
+                            `INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password) VALUES (?,?,?,?)`,
+                            [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password],
+                            function (error, result) {
+                                if (error) {
+                                    console.error("Database error:", error);
+                                    response.status(500).json({ message: 'Database error' });
+                                    return;
+                                } else {
+                                    response.status(200).json({ message: 'Created Successfully', statusCode: 200 });
+                                }
                             }
-                        }
-                    );
+                        );
+                    } else {
+                        response.status(210).json({ message: 'Password and Confirm Password Not Matched', statusCode: 210 });
+                    }
+
                 } else {
                     const mobileExists = data.some(record => record.mobileNo === reqBodyData.mobileNo);
                     const emailExists = data.some(record => record.email_Id === reqBodyData.emailId);
@@ -133,7 +144,7 @@ function createnewAccount(connection, reqBodyData, response) {
 
 // Generate JWT Token
 const generateToken = (user) => {
-    return jwt.sign({ id: user.id, sub: user.id,user_type:1,username: user.Name }, process.env.JWT_SECRET, { expiresIn: '30m' });
+    return jwt.sign({ id: user.id, sub: user.id, user_type: 1, username: user.Name }, process.env.JWT_SECRET, { expiresIn: '30m' });
 };
 
 // Login API

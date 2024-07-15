@@ -3,7 +3,6 @@ const AWS = require('aws-sdk');
 require('dotenv').config();
 const connection = require('./config/connection');
 
-
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 const AWS_REGION = process.env.AWS_REGION;
@@ -650,28 +649,40 @@ function deleteRoom(connection, response, reqData) {
     }
 }
 
-function deleteBed(connection, response, reqData) {
+function deleteBed(req, res) {
 
-    if (reqData) {
-        connection.query(`select Number_Of_Beds from hostelrooms where Hostel_Id = '${reqData.hostelId}' and Floor_Id = '${reqData.floorId}' and Room_Id = '${reqData.roomNo}' and isActive=1`, function (err, data) {
-            if (data.length > 0) {
-                let bed = Number(data[0].Number_Of_Beds) - 1
-                let updateQuery = ` UPDATE hostelrooms SET Number_Of_Beds = '${bed}' WHERE Hostel_Id = '${reqData.hostelId}' AND Floor_Id = '${reqData.floorId}' AND Room_Id = '${reqData.roomNo}'`;
-                connection.query(updateQuery, function (error, updateData) {
-                    if (error) {
-                        response.status(201).json({ message: "doesn't update" });
-                    }
-                    else {
-                        response.status(200).json({ message: "Bed Update Successfully" });
+    var created_by = req.user_details.id;
+    var { hostelId, floorId, roomNo, bed_id } = req.body;
+
+    if (!hostelId && !floorId && !roomNo && !bed_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Required Fields" })
+    }
+
+    var sql1 = "SELECT *,bd.id AS bed_detail_id FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id WHERE bd.bed_no='" + bed_id + "' AND hr.Hostel_Id='" + hostelId + "' AND hr.Floor_Id='" + floorId + "' AND hr.Room_Id='" + roomNo + "' AND bd.status=1 AND hr.isActive=1"
+    connection.query(sql1, (err, data) => {
+        if (err) {
+            res.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 });
+        } else if (data.length != 0) {
+            var isfilled = data[0].isfilled;
+            var bed_detail_id = data[0].bed_detail_id;
+
+            if (isfilled == 0) {
+                // Update Status 0
+                var sql2 = "UPDATE bed_details SET status=0 WHERE id='" + bed_detail_id + "'";
+                connection.query(sql2, (err, data) => {
+                    if (err) {
+                        res.status(201).json({ message: "Unable to Remove Hostel Details", statusCode: 201 });
+                    } else {
+                        res.status(200).json({ message: "Sucessfully Bed Removed", statusCode: 200 });
                     }
                 })
+            } else {
+                res.status(210).json({ message: "User Assigned In this Bed, So Not Remove this Bed", statusCode: 210 });
             }
-        })
-    }
-    else {
-        response.status(201).json({ message: "Missing parameter" });
-    }
-
+        } else {
+            res.status(201).json({ message: "Invalid Hostel Details", statusCode: 201 });
+        }
+    })
 }
 
 // Get Particular Room Details
