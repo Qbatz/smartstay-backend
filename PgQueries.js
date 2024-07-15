@@ -261,12 +261,12 @@ function BedList(connection, requestBodyData, response) {
     }
 }
 
-
 function RoomCount(connection, reqFloorID, response) {
     let responseData = [];
     let errorMessage;
 
     if (reqFloorID) {
+
         connection.query(`SELECT *,COALESCE(SUM(Number_Of_Beds),0) AS total_beds FROM hostelrooms WHERE Floor_Id = '${reqFloorID.floor_Id}' AND Hostel_Id = '${reqFloorID.hostel_Id}' AND isActive=1 GROUP BY Room_Id`, function (error, RoomsData) {
             if (error) {
                 return response.status(201).json({ message: "Error occurred while fetching data" });
@@ -274,8 +274,9 @@ function RoomCount(connection, reqFloorID, response) {
 
             if (RoomsData.length > 0) {
 
-                for (let i = 0; i < RoomsData.length; i++) {
+                let roomsProcessed = 0;
 
+                for (let i = 0; i < RoomsData.length; i++) {
                     const Room_Id = RoomsData[i].Room_Id;
 
                     connection.query(`SELECT COUNT('Bed') AS bookedBedCount, hos.Hostel_Id AS hostel_Id, hos.Floor, hos.Rooms FROM hostel hos WHERE Floor = '${reqFloorID.floor_Id}' AND Hostel_Id = '${reqFloorID.hostel_Id}' AND Rooms = '${Room_Id}' AND hos.isActive = true`, function (error, hostelData) {
@@ -292,29 +293,25 @@ function RoomCount(connection, reqFloorID, response) {
                             };
                             responseData.push(objectFormation);
 
-                            if (responseData.length === RoomsData.length) {
-                                if (errorMessage) {
-                                    response.status(202).json({ message: "Error occurred while fetching data" });
+                            var bed_query = `SELECT bd.bed_no, bd.bed_amount, bd.isfilled FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id = hr.id WHERE hr.Hostel_Id = '${objectFormation.Hostel_Id}' AND hr.Floor_Id = '${objectFormation.Floor_Id}' AND hr.Room_Id = '${objectFormation.Room_Id}' AND bd.status = 1 AND hr.isActive = 1`;
+
+                            connection.query(bed_query, (err, bed_data) => {
+                                if (err) {
+                                    responseData[i]['bed_details'] = 0;
                                 } else {
-                                    // console.log("responseData", responseData);
-
-                                    var temp = responseData[0];
-
-                                    var bed_query = "SELECT bd.bed_no,bd.bed_amount,bd.isfilled FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id WHERE hr.Hostel_Id='" + objectFormation.Hostel_Id + "' AND hr.Floor_Id='" + objectFormation.Floor_Id + "' AND hr.Room_Id='" + objectFormation.Room_Id + "' AND bd.status=1 AND hr.isActive=1"
-                                    console.log(bed_query);
-                                    connection.query(bed_query, (err, bed_data) => {
-                                        if (err) {
-                                            temp['bed_details'] = 0;
-                                            responseData[0] = temp;
-                                            response.status(200).json({ responseData: responseData });
-                                        } else {
-                                            temp['bed_details'] = bed_data;
-                                            responseData[0] = temp;
-                                            response.status(200).json({ responseData: responseData });
-                                        }
-                                    })
+                                    responseData[i]['bed_details'] = bed_data;
                                 }
-                            }
+
+                                roomsProcessed++;
+
+                                if (roomsProcessed === RoomsData.length) {
+                                    if (errorMessage) {
+                                        response.status(202).json({ message: "Error occurred while fetching data" });
+                                    } else {
+                                        response.status(200).json({ responseData: responseData });
+                                    }
+                                }
+                            });
                         }
                     });
                 }
@@ -325,8 +322,8 @@ function RoomCount(connection, reqFloorID, response) {
     } else {
         response.status(201).json({ message: "Missing Parameter" });
     }
-
 }
+
 
 function ListForFloor(connection, reqData, response) {
     if (reqData) {
@@ -718,7 +715,7 @@ function get_room_details(connection, request, response) {
 
 // Update Particular Room Details
 function update_room_details(connection, request, response) {
-    
+
     var { hostel_id, room_id, floor_id, amount } = request.body;
 
     if ((!hostel_id && hostel_id == undefined) || (!room_id && room_id == undefined) || (!amount && amount < 0)) {
@@ -829,7 +826,7 @@ function createBed(req, res) {
                 }
             })
         } else {
-            return res.status(201).json({ statusCode: 201, message: "Invalid Hostel Details" })
+            return res.status(201).json({ statusCode: 201, message: "Invalid Hostel ID" })
         }
     })
 }
