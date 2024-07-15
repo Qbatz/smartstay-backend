@@ -2054,13 +2054,15 @@ function UpdateInvoice(connection, response, atten) {
     }
 }
 
-function UpdateAmenitiesHistory(connection, response, reqData) {
+function UpdateAmenitiesHistory(connection, response, request) {
+    const reqData = request.body;
     if (reqData) {
+        let created_By = request.user_details.id
         connection.query(`select * from AmenitiesHistory where user_Id ='${reqData.userID}' and amenity_Id = ${reqData.amenityID} ORDER BY id DESC`, function (err, data) {
             if ( data && data.length > 0) {
                 if (data[0].status === 1) {
                     // connection.query(`UPDATE AmenitiesHistory SET status = ${reqData.status} where user_Id ='${reqData.userID}' and amenity_Id = ${reqData.amenityID}`, function (updateError, updateData) {
-                    connection.query(`insert into AmenitiesHistory(user_Id,amenity_Id,hostel_Id,created_By) values('${reqData.userID}',${reqData.amenityID},${reqData.hostelID},${reqData.created_By})`, function (updateError, updateData) {
+                    connection.query(`insert into AmenitiesHistory(user_Id,amenity_Id,hostel_Id,created_By,status) values('${reqData.userID}',${reqData.amenityID},${reqData.hostelID},${created_By},${reqData.Status})`, function (updateError, updateData) {
                         if (updateError) {
                             console.log("updateError",updateError)
                             response.status(201).json({ message: "Does not Update" });
@@ -2071,7 +2073,7 @@ function UpdateAmenitiesHistory(connection, response, reqData) {
                     })
                 }
                 else {
-                    connection.query(`insert into AmenitiesHistory(user_Id,amenity_Id,hostel_Id,created_By) values('${reqData.userID}',${reqData.amenityID},${reqData.hostelID},${reqData.created_By})`, function (error, insertData) {
+                    connection.query(`insert into AmenitiesHistory(user_Id,amenity_Id,hostel_Id,created_By) values('${reqData.userID}',${reqData.amenityID},${reqData.hostelID},${created_By})`, function (error, insertData) {
                         if (error) {
                             response.status(201).json({ message: "Does not Insert" });
                         }
