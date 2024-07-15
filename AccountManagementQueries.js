@@ -83,8 +83,8 @@ function createAccountForLogin(connection, reqBodyData, response) {
 function createnewAccount(request, response) {
 
     var reqBodyData = request.body;
+    if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.first_name && reqBodyData.last_name  && reqBodyData.password && reqBodyData.confirm_password) {
 
-    if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.first_name && reqBodyData.password) {
         connection.query(
             `SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`,
             [reqBodyData.mobileNo, reqBodyData.emailId],
