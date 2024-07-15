@@ -92,7 +92,7 @@ function createUser(connection, request, response) {
                         const timestamp = Date.now();
                         profile_url = await uploadImage.uploadProfilePictureToS3Bucket('smartstaydevs', 'users/', 'profile' + unique_user_id + timestamp + '.jpg', profile);
 
-                        if (old_profile != null || old_profile != undefined && old_profile != 0) {
+                        if (old_profile != null && old_profile != undefined && old_profile != 0) {
                             const old_profile_key = getKeyFromUrl(old_profile);
                             var deleteResponse = await uploadImage.deleteImageFromS3Bucket('smartstaydevs', old_profile_key);
                             console.log("Image deleted successfully:", deleteResponse);
@@ -156,9 +156,16 @@ function createUser(connection, request, response) {
                                     return
                                 }
 
+                                console.log(inv_data.length);
+
                                 if (inv_data.length == 0) {
 
+
                                     if (atten.AdvanceAmount && atten.AdvanceAmount != undefined) {
+                                      
+                                    console.log(atten.AdvanceAmount);
+
+                                   // if (!atten.AdvanceAmount && atten.AdvanceAmount != undefined && atten.AdvanceAmount > 0) {
 
                                         insert_advance_invoice(connection, user_ids).then(() => {
 
