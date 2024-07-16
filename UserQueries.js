@@ -1065,8 +1065,8 @@ function user_amenities_history(req, res) {
                         }
 
                         // Add the current record
-                        if ((startYear < currentYear || (startYear === currentYear && startMonth <= currentMonth)) && !seenRecords.has(uniqueKey)) {
-                            seenRecords.add(uniqueKey);
+                        if ((startYear < currentYear || (startYear === currentYear && startMonth <= currentMonth))) {
+                            // seenRecords.add(uniqueKey);
                             result.push({
                                 id: record.id,
                                 user_Id: record.user_Id,
