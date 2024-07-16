@@ -60,41 +60,57 @@ VALUES
 }
 
 function AddExpenseCategory(request, response) {
-    let reqData = request.body
-    let category = reqData.category_Name.replace(" ", "")
+
+    let reqData = request.body;
+    var created_by = request.user_details.id;
+
+    if (!reqData.category_Name) {
+        return response.status(201).json({ statusCode: 201, message: "Missing Category Name" })
+    }
     if (reqData) {
-        connection.query(`select * from Expense_Category_Name where REPLACE(UPPER(category_Name), ' ', '') = UPPER('${category}') and status = true`, function (error, data) {
+        var sql1 = "SELECT * FROM Expense_Category_Name WHERE category_Name COLLATE latin1_general_ci = '" + reqData.category_Name + "' AND status=1 AND created_by ='" + created_by + "'";
+        connection.query(sql1, function (error, data) {
             if (error) {
                 console.log("error", error);
-                response.status(201).json({ message: "Error Fetching Data" });
+                response.status(201).json({ statusCode: 201, message: "Error Fetching Data" });
             }
             else if (data.length > 0) {
+
+                if (!reqData.id) {
+                    return response.status(201).json({ statusCode: 201, message: "Category Name Already Exist" });
+                }
                 if (reqData.sub_Category) {
-                    connection.query(`update Expense_Category_Name set sub_Category ='${reqData.sub_Category}' where id=${reqData.id}`, function (updateErr, updateData) {
-                        if (updateErr) {
-                            console.log("updateErr", updateErr);
-                            response.status(201).json({ message: "Error while Add sub category" });
-                        }
-                        else {
-                            response.status(200).json({ message: "Sub Category Added successfully" });
+
+                    var sql3 = "SELECT * FROM Expense_Subcategory_Name WHERE subcategory COLLATE latin1_general_ci = '" + reqData.sub_Category + "' AND status=1 AND created_by ='" + created_by + "'";
+                    connection.query(sql3, function (err, sql3_res) {
+                        if (err) {
+                            return response.status(201).json({ statusCode: 201, message: "Unble to Get Subcategory Details" });
+                        } else if (sql3_res.length > 0) {
+                            return response.status(201).json({ statusCode: 201, message: "Sub Category Name Already Exist" });
+                        } else {
+                            // Add Subcategory
+                            var sql4 = "INSERT INTO Expense_Subcategory_Name (cat_id,subcategory,status,created_by) VALUES ('" + reqData.id + "','" + reqData.sub_Category + "',1,'" + created_by + "')";
+                            connection.query(sql4, function (ins_err, ins_res) {
+                                if (ins_err) {
+                                    console.log(ins_err);
+                                    return response.status(201).json({ statusCode: 201, message: "Unble to Add Subcategory Details" });
+                                } else {
+                                    response.status(200).json({ statusCode: 200, message: "Successfully Added Sub Category" });
+                                }
+                            })
                         }
                     })
+
+                } else {
+                    return response.status(201).json({ statusCode: 201, message: "Missing Subcategory Name" });
                 }
-                else {
-                    response.status(201).json({ message: "Missing Parameter" });
-                }
-
-
-
-            }
-            else {
-                connection.query(`insert into Expense_Category_Name(category_Name,sub_Category) values('${reqData.category_Name}','${reqData.sub_Category}');`, function (insertErr, insertData) {
+            } else {
+                var sql2 = `INSERT INTO Expense_Category_Name(category_Name,created_by) VALUES('${reqData.category_Name}','${created_by}');`;
+                connection.query(sql2, function (insertErr, insertData) {
                     if (insertErr) {
-                        console.log("insertErr", insertErr);
-                        response.status(201).json({ message: "Does not Save" });
-                    }
-                    else {
-                        response.status(200).json({ message: "Data saved successfully" });
+                        response.status(201).json({ statusCode: 201, message: "Does not Save" });
+                    } else {
+                        response.status(200).json({ statusCode: 200, message: "New Category Added successfully" });
                     }
                 })
             }
@@ -167,7 +183,7 @@ function CalculateExpenses(request, response) {
     })
 }
 
-function getAllfilter(createdBy, response, data,total_amount) {
+function getAllfilter(createdBy, response, data, total_amount) {
     let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,ven.Vendor_profile,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode,category.category_Name,ven.Vendor_Name,ast.asset_name from expenses expen
     join Expense_Category_Name category on category.id = expen.category_id
     join Vendor ven on ven.id = expen.vendor_id
@@ -212,7 +228,7 @@ function getAllfilter(createdBy, response, data,total_amount) {
                     total_amount: total_amount
                 }
                 if (Array.isArray(data) && data.length > 0) {
-                    tempobj = { ...tempobj, data: data}
+                    tempobj = { ...tempobj, data: data }
                     response.status(200).json(tempobj);
                 }
                 else {
@@ -268,7 +284,7 @@ WHERE expen.status = true AND expen.created_by = ${createdBy}`;
     if (min_amount && !max_amount) {
         query += ` AND expen.purchase_amount >= ${min_amount}`
     }
-    if (min_amount ==0  && max_amount || min_amount == undefined  && max_amount) {
+    if (min_amount == 0 && max_amount || min_amount == undefined && max_amount) {
         query += ` AND expen.purchase_amount <= ${max_amount}`
     }
     // if (min_amount && max_amount) {
@@ -288,7 +304,7 @@ WHERE expen.status = true AND expen.created_by = ${createdBy}`;
         const endDateRange = `${end_date} 23:59:59`;
         query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
     }
-    console.log("query",query);
+    console.log("query", query);
     connection.query(query, function (err, data) {
         if (err) {
             console.log("err", err);
@@ -297,16 +313,16 @@ WHERE expen.status = true AND expen.created_by = ${createdBy}`;
         else {
             let total_amount = 0;
             if (data && data.length > 0) {
-                console.log("data",data);
-                data.map((v)=>{
-                    return  total_amount += v.purchase_amount
+                console.log("data", data);
+                data.map((v) => {
+                    return total_amount += v.purchase_amount
                 })
-               console.log("total_amount",total_amount);
-                basicDetails = getAllfilter(createdBy, response, data,total_amount)
+                console.log("total_amount", total_amount);
+                basicDetails = getAllfilter(createdBy, response, data, total_amount)
             }
             else {
                 let message = 'No Data Found';
-                basicDetails = getAllfilter(createdBy, response, message,total_amount)
+                basicDetails = getAllfilter(createdBy, response, message, total_amount)
             }
         }
     })
