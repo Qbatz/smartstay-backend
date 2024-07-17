@@ -353,7 +353,7 @@ function DeleteExpenses(request, response) {
 function DeleteExpensesCategory(request, response) {
     let reqBodyData = request.body
     if (reqBodyData.id && reqBodyData.sub_Category_Id == undefined) {
-        connection.query(`select * from Expense_Subcategory_Name where id=${reqBodyData.id}`,function(selectErr,selectData){
+        connection.query(`select * from Expense_Subcategory_Name where category_id=${reqBodyData.id} and status = true`,function(selectErr,selectData){
             if (selectErr) {
                 response.status(201).json({ message: 'Error while fetching Data' });
             }
