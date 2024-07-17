@@ -124,7 +124,10 @@ function AddExpenseCategory(request, response) {
 }
 
 function GetExpensesCategory(request, response) {
-    connection.query(`select * from Expense_Category_Name where status = true`, function (error, data) {
+    connection.query(`select category.category_Name,category.id as category_Id,category.status,subcategory.id as subcategory_Id,subcategory.subcategory from Expense_Category_Name category
+join Expense_Subcategory_Name subcategory on subcategory.cat_id = category.id
+where category.status = true and subcategory.status`, function (error, data) {
+        // connection.query(`select * from Expense_Category_Name where status = true`, function (error, data) {
         if (error) {
             response.status(201).json({ message: "Error fetching Data" });
         }
@@ -350,15 +353,29 @@ function DeleteExpenses(request, response) {
 function DeleteExpensesCategory(request, response) {
     let reqBodyData = request.body
     if (reqBodyData) {
-        let query = `Update Expense_Category_Name SET status = false WHERE id=${reqBodyData.id}`
-        connection.query(query, function (err, data) {
-            if (err) {
-                response.status(201).json({ message: 'Error Deleting category' });
+        connection.query(`select * from Expense_Category_Name where id=${reqBodyData.id}`,function(selectErr,selectData){
+            if (selectErr) {
+                response.status(201).json({ message: 'Error while fetching Data' });
             }
-            else {
-                response.status(200).json({ message: 'Category Deleted Successfully' });
+            else{
+                if (selectData.length > 0) {
+                    let query = `Update Expense_Category_Name SET status = false WHERE id=${reqBodyData.id}`
+                    connection.query(query, function (err, data) {
+                        if (err) {
+                            response.status(201).json({ message: 'Error Deleting category' });
+                        }
+                        else {
+                            connection.query(`Update Expense_Subcategory_Name SET status = false where category_id = ${reqBodyData.id}`)
+                            response.status(200).json({ message: 'Category Deleted Successfully' });
+                        }
+                    })  
+                }
+                else{
+                    response.status(201).json({ message: 'No data found' });
+                }
             }
         })
+        
     }
     else {
         response.status(201).json({ message: 'Missing Parameter' });
