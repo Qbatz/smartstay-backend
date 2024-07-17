@@ -1,11 +1,8 @@
 const moment = require('moment');
 const connection = require('./config/connection');
 const addNotification = require('./components/add_notification');
-const { dash } = require('pdfkit');
 const bedDetails = require('./components/bed_details');
 var uploadImage = require('./components/upload_image')
-
-
 
 
 function getUsers(connection, response, request) {
@@ -162,10 +159,10 @@ function createUser(connection, request, response) {
 
 
                                     if (atten.AdvanceAmount && atten.AdvanceAmount != undefined) {
-                                      
-                                    console.log(atten.AdvanceAmount);
 
-                                   // if (!atten.AdvanceAmount && atten.AdvanceAmount != undefined && atten.AdvanceAmount > 0) {
+                                        console.log(atten.AdvanceAmount);
+
+                                        // if (!atten.AdvanceAmount && atten.AdvanceAmount != undefined && atten.AdvanceAmount > 0) {
 
                                         insert_advance_invoice(connection, user_ids).then(() => {
 
@@ -577,9 +574,9 @@ function CheckOutUser(connection, response, attenData) {
     }
 }
 
-function transitionlist(connection, request, response) {
+function transitionlist(request, response) {
 
-    var { id, invoice_id, amount, balance_due, invoice_type } = request.body;
+    var { id, invoice_id, amount, balance_due, invoice_type, payment_by, payment_date } = request.body;
 
     var userDetails = request.user_details;
     var created_by = userDetails.id;
@@ -614,8 +611,6 @@ function transitionlist(connection, request, response) {
 
                             var new_amount = already_paid_amount + amount;
 
-
-
                             if (new_amount == already_paid_amount) {
                                 var Status = 'Success';
                             } else {
@@ -628,8 +623,8 @@ function transitionlist(connection, request, response) {
                                     response.status(201).json({ message: 'Unable to Update User Details' });
                                 } else {
 
-                                    var sql3 = "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by) VALUES (?,?,?,1,?)";
-                                    connection.query(sql3, [user_id, invoice_id, amount, created_by], function (ins_err, ins_res) {
+                                    var sql3 = "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by,payment_type,payment_date) VALUES (?,?,?,1,?,?,?)";
+                                    connection.query(sql3, [user_id, invoice_id, amount, created_by, payment_by, payment_date], function (ins_err, ins_res) {
                                         if (ins_err) {
                                             response.status(201).json({ message: 'Unable to Add Transactions Details' });
                                         } else {
@@ -697,8 +692,8 @@ function transitionlist(connection, request, response) {
                                                 response.status(201).json({ message: 'Unable to Update Payemnt Details' });
                                             } else {
 
-                                                var sql3 = "INSERT INTO advance_amount_transactions (user_id,inv_id,advance_amount,payment_status,user_status,created_by) VALUES (?,?,?,1,1,?)";
-                                                connection.query(sql3, [ID, invoice_id, amount, created_by], function (ins_err, ins_res) {
+                                                var sql3 = "INSERT INTO advance_amount_transactions (user_id,inv_id,advance_amount,payment_status,user_status,created_by,payment_type,payment_date) VALUES (?,?,?,1,1,?,?,?)";
+                                                connection.query(sql3, [ID, invoice_id, amount, created_by, payment_by, payment_date], function (ins_err, ins_res) {
                                                     if (ins_err) {
                                                         response.status(201).json({ message: 'Unable to Add Transactions Details' });
                                                     } else {

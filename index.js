@@ -450,7 +450,7 @@ app.post('/delete/delete-bed', (req, res) => {
 
 app.post('/transaction/list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    userQueries.transitionlist(connection, request, response)
+    userQueries.transitionlist(request, response)
 })
 
 // Forgot Password Otp Response
