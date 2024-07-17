@@ -131,7 +131,7 @@ where category.status = true and subcategory.status`, function (error, data) {
         if (error) {
             response.status(201).json({ message: "Error fetching Data" });
         }
-        else if (data.length > 0) {
+        else if (data && data.length > 0) {
             response.status(200).json({ data: data });
         }
         else {
@@ -352,30 +352,55 @@ function DeleteExpenses(request, response) {
 
 function DeleteExpensesCategory(request, response) {
     let reqBodyData = request.body
-    if (reqBodyData) {
-        connection.query(`select * from Expense_Category_Name where id=${reqBodyData.id}`,function(selectErr,selectData){
+    if (reqBodyData.id && reqBodyData.sub_Category_Id == undefined) {
+        connection.query(`select * from Expense_Subcategory_Name where id=${reqBodyData.id}`,function(selectErr,selectData){
             if (selectErr) {
                 response.status(201).json({ message: 'Error while fetching Data' });
             }
             else{
-                if (selectData.length > 0) {
-                    let query = `Update Expense_Category_Name SET status = false WHERE id=${reqBodyData.id}`
+                 let query = `Update Expense_Category_Name SET status = false WHERE id=${reqBodyData.id}`
+                if (selectData && selectData.length > 0) {                   
                     connection.query(query, function (err, data) {
                         if (err) {
                             response.status(201).json({ message: 'Error Deleting category' });
                         }
                         else {
-                            connection.query(`Update Expense_Subcategory_Name SET status = false where category_id = ${reqBodyData.id}`)
-                            response.status(200).json({ message: 'Category Deleted Successfully' });
+                            connection.query(`Update Expense_Subcategory_Name SET status = false where category_id = ${reqBodyData.id}`,function(updateErr,updateData){
+                                if (updateErr) {
+                                    response.status(201).json({ message: 'Error Deleting Sub category' });
+                                }
+                                else{
+                                    response.status(200).json({ message: 'Category Deleted Successfully' });
+                                }
+                            })
+                            // response.status(200).json({ message: 'Category Deleted Successfully' });
                         }
                     })  
                 }
                 else{
-                    response.status(201).json({ message: 'No data found' });
+                    connection.query(query,function(deleteErr,deleteData){
+                        if (deleteErr) {
+                            response.status(201).json({ message: 'Error While Deleting Category' });
+                        }
+                        else{
+                            response.status(200).json({ message: 'Category Dleted Successfully' });
+                        }
+                    })
+                   
                 }
             }
         })
         
+    }
+    else if(reqBodyData && reqBodyData.sub_Category_Id){
+        connection.query(`Update Expense_Subcategory_Name SET status = false where id = ${reqBodyData.sub_Category_Id}`,function(updateErr,updateData){
+            if (updateErr) {
+                response.status(201).json({ message: 'Error Deleting Sub category' });
+            }
+            else{
+                response.status(200).json({ message: 'Sub Category Deleted Successfully' });
+            }
+        })
     }
     else {
         response.status(201).json({ message: 'Missing Parameter' });
