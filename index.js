@@ -34,7 +34,7 @@ app.use(function (req, res, next) {
     next();
 })
 
-app.use(middleware);
+// app.use(middleware);
 
 app.listen('2001', function () {
     console.log("node is started at 2001")
@@ -639,4 +639,12 @@ app.post('/remove_complaint_type', (req, res) => {
 
 app.post('/add_ebbilling_settings', (req, res) => {
     vendorQueries.add_ebbilling_settings(req, res)
+})
+
+app.post("/aadhar_verify_otp", (req, res) => {
+    userQueries.aadhar_verify_otp(req, res)
+})
+
+app.post("/aadhaar_otp_verification", (req, res) => {
+    userQueries.aadhaar_otp_verify(req, res)
 })
