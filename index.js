@@ -74,6 +74,10 @@ app.post('/delete/delete-category', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     expensesManagement.DeleteExpensesCategory(request, response)
 })
+app.post('/pdf/expense-pdf',(request,response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    expensesManagement.GenerateExpenseHistoryPDF(request, response)
+})
 
 // app.post('/add/add-salary',(request,response)=>{
 //     response.set('Access-Control-Allow-Origin', '*');

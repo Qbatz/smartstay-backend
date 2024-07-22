@@ -2089,8 +2089,9 @@ function UpdateAmenitiesHistory(connection, response, request) {
                     response.status(201).json({ message: "Does not Insert" });
                 }
                 else {
-                    connection.query(`insert into AmenitiesHistory(user_Id,amenity_Id,hostel_Id,created_By) values('${reqData.userID}',${reqData.amenityID},${reqData.hostelID},${reqData.created_By})`, function (error, insertData) {
+                    connection.query(`insert into AmenitiesHistory(user_Id,amenity_Id,hostel_Id,created_By) values('${reqData.userID}',${reqData.amenityID},${reqData.hostelID},${created_By})`, function (error, insertData) {
                         if (error) {
+                            console.log("error",error);
                             response.status(201).json({ message: "Does not Insert" });
                         }
                         else {
