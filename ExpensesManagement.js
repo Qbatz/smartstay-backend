@@ -263,11 +263,12 @@ function GetHostelExpenses(request, response) {
     // join assets ast on ast.id = expen.asset_id
     //     where expen.status = true and expen.created_by = ${createdBy}`
 
-    let query = `SELECT expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode, category.category_Name, ven.Vendor_Name, ast.asset_name 
+    let query = `SELECT expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode, category.category_Name, ven.Vendor_Name, asname.asset_name 
 FROM expenses expen
 JOIN Expense_Category_Name category ON category.id = expen.category_id
 JOIN Vendor ven ON ven.id = expen.vendor_id
 JOIN assets ast ON ast.id = expen.asset_id
+JOIN asset_names asname ON asname.id=ast.asset_id
 WHERE expen.status = true AND expen.created_by = ${createdBy}`;
 
     if (asset_id) {
