@@ -34,7 +34,7 @@ app.use(function (req, res, next) {
     next();
 })
 
-// app.use(middleware);
+app.use(middleware);
 
 app.listen('2001', function () {
     console.log("node is started at 2001")
@@ -132,6 +132,7 @@ app.get('/login/login', (request, response) => {
     accountManagement.loginAccount(connection, response, email_Id, password);
 })
 
+// forgetPassword API
 app.post('/forget/select-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const reqData = request.body

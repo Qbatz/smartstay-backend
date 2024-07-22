@@ -83,7 +83,7 @@ function createAccountForLogin(connection, reqBodyData, response) {
 function createnewAccount(request, response) {
 
     var reqBodyData = request.body;
-    if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.first_name && reqBodyData.last_name  && reqBodyData.password && reqBodyData.confirm_password) {
+    if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.first_name && reqBodyData.last_name && reqBodyData.password && reqBodyData.confirm_password) {
 
         connection.query(
             `SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`,
@@ -199,28 +199,38 @@ function get_user_details(connection, request, response) {
 }
 
 function forgetPassword(connection, response, reqData) {
-    if (reqData.email) {
-        connection.query(`SELECT * FROM createaccount WHERE email_id= \'${reqData.email}\'`, async function (error, data) {
-            console.log("data for reset", data[0].Otp)
 
-            const hash_password = await bcrypt.hash(reqData.NewPassword, 10);
+    if (reqData.email && reqData.NewPassword) {
 
-            connection.query(`UPDATE createaccount SET password= \'${hash_password}\' WHERE email_id=\'${reqData.email}\' `, function (error, data) {
-                if ((data)) {
-                    connection.query(`UPDATE createaccount SET Otp = 0 WHERE email_id=\'${reqData.email}\' `, function (error, resetData) {
-                        if (resetData) {
-                            response.status(200).json({ message: "New Password Update Successfully" })
-                        } else {
-                            response.status(201).json({ message: "Cannot Update NewPassowrd", statusCode: 201 })
-                        }
-                    })
-                }
-                else {
-                    response.status(201).json({ message: "Cannot Update NewPassowrd", statusCode: 201 })
-                }
+        var confirm_password = reqData.confirm_password;
+
+        var password = reqData.NewPassword;
+
+        if (confirm_password === password) {
+            connection.query(`SELECT * FROM createaccount WHERE email_id= \'${reqData.email}\'`, async function (error, data) {
+                console.log("data for reset", data[0].Otp)
+
+                const hash_password = await bcrypt.hash(reqData.NewPassword, 10);
+
+                connection.query(`UPDATE createaccount SET password= \'${hash_password}\' WHERE email_id=\'${reqData.email}\' `, function (error, data) {
+                    if ((data)) {
+                        connection.query(`UPDATE createaccount SET Otp = 0 WHERE email_id=\'${reqData.email}\' `, function (error, resetData) {
+                            if (resetData) {
+                                response.status(200).json({ message: "New Password Update Successfully" })
+                            } else {
+                                response.status(201).json({ message: "Cannot Update NewPassowrd", statusCode: 201 })
+                            }
+                        })
+                    }
+                    else {
+                        response.status(201).json({ message: "Cannot Update NewPassowrd", statusCode: 201 })
+                    }
+                })
+
             })
-
-        })
+        } else {
+            response.status(201).json({ message: "Password and Confirm Password Not Matched", statusCode: 201 })
+        }
     } else {
         response.status(203).json({ message: "Missing Parameter" })
     }
