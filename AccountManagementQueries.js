@@ -7,6 +7,8 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const connection = require('./config/connection');
+const uploadImage = require('./components/upload_image');
+
 
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
@@ -81,8 +83,69 @@ function createAccountForLogin(connection, reqBodyData, response) {
     }
 }
 
-function update_account_details(req, res) {
+function getKeyFromUrl(url) {
+    const urlParts = url.split('/');
+    const key = urlParts.slice(3).join('/'); // Get everything after the bucket name
+    return key;
+}
 
+function update_account_details(request, response) {
+
+    var { first_name, last_name, email_id, phone, address } = request.body;
+    var user_id = request.user_details.id;
+    var profile = request.file;
+
+    if (!first_name || !last_name || !email_id || !phone || !address) {
+        response.status(201).json({ message: "Please Add Mandatory Details", statusCode: 201 });
+    } else {
+        var sql1 = "SELECT * FROM createaccount WHERE id='" + user_id + "'";
+        connection.query(sql1, async function (err, data) {
+            if (err) {
+                response.status(201).json({ message: "Unable to Get Admin Details", statusCode: 201 });
+            } else if (data.length != 0) {
+
+                var old_profile = data[0].profile;
+
+                if (profile) {
+                    try {
+                        const timestamp = Date.now();
+                        profile_url = await uploadImage.uploadProfilePictureToS3Bucket('smartstaydevs', 'Profile/', 'Profile' + user_id + timestamp + '.jpg', profile);
+
+                        if (old_profile != null && old_profile != undefined && old_profile != 0) {
+                            const old_profile_key = getKeyFromUrl(old_profile);
+                            var deleteResponse = await uploadImage.deleteImageFromS3Bucket('smartstaydevs', old_profile_key);
+                            console.log("Image deleted successfully:", deleteResponse);
+                        } else {
+                            console.error("Failed to extract key from URL:", old_profile);
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        profile_url = 0;
+                    }
+                } else {
+                    profile_url = 0;
+                }
+
+                if (!profile) {
+                    profile_url = request.body.profile || 0;
+                }
+
+                console.log(profile_url);
+
+                var sql2 = "UPDATE createaccount SET first_name=?,last_name=?,mobileNo=?,email_Id=?,Address=?,profile=? WHERE id='" + user_id + "'";
+                connection.query(sql2, [first_name, last_name, phone, email_id, address, profile_url], function (err, up_data) {
+                    if (err) {
+                        response.status(201).json({ message: "Unable to Update Admin Details", statusCode: 201 });
+                    } else {
+                        response.status(200).json({ message: "Successfully Updated Admin Details", statusCode: 200 });
+                    }
+                })
+
+            } else {
+                response.status(201).json({ message: "Invalid Admin Details", statusCode: 201 });
+            }
+        })
+    }
 }
 
 function createnewAccount(request, response) {
