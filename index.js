@@ -119,6 +119,11 @@ app.post('/create/create-account', upload.single('profile'), (request, response)
     accountManagement.createAccountForLogin(connection, reqBodyData, response)
 })
 
+// Update Admin Details API
+app.post('/update_account_details', upload.single('profile'), (request, response) => {
+    accountManagement.update_account_details(request, response)
+})
+
 
 app.post('/newaccount/create-account', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
@@ -132,6 +137,7 @@ app.get('/login/login', (request, response) => {
     accountManagement.loginAccount(connection, response, email_Id, password);
 })
 
+// forgetPassword API
 app.post('/forget/select-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const reqData = request.body
@@ -639,4 +645,12 @@ app.post('/remove_complaint_type', (req, res) => {
 
 app.post('/add_ebbilling_settings', (req, res) => {
     vendorQueries.add_ebbilling_settings(req, res)
+})
+
+app.post("/aadhar_verify_otp", (req, res) => {
+    userQueries.aadhar_verify_otp(req, res)
+})
+
+app.post("/aadhaar_otp_verification", (req, res) => {
+    userQueries.aadhaar_otp_verify(req, res)
 })

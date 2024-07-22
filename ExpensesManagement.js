@@ -124,11 +124,14 @@ function AddExpenseCategory(request, response) {
 }
 
 function GetExpensesCategory(request, response) {
-    connection.query(`select * from Expense_Category_Name where status = true`, function (error, data) {
+    connection.query(`select category.category_Name,category.id as category_Id,category.status,subcategory.id as subcategory_Id,subcategory.subcategory from Expense_Category_Name category
+join Expense_Subcategory_Name subcategory on subcategory.cat_id = category.id
+where category.status = true and subcategory.status`, function (error, data) {
+        // connection.query(`select * from Expense_Category_Name where status = true`, function (error, data) {
         if (error) {
             response.status(201).json({ message: "Error fetching Data" });
         }
-        else if (data.length > 0) {
+        else if (data && data.length > 0) {
             response.status(200).json({ data: data });
         }
         else {
@@ -349,14 +352,53 @@ function DeleteExpenses(request, response) {
 
 function DeleteExpensesCategory(request, response) {
     let reqBodyData = request.body
-    if (reqBodyData) {
-        let query = `Update Expense_Category_Name SET status = false WHERE id=${reqBodyData.id}`
-        connection.query(query, function (err, data) {
-            if (err) {
-                response.status(201).json({ message: 'Error Deleting category' });
+    if (reqBodyData.id && reqBodyData.sub_Category_Id == undefined) {
+        connection.query(`select * from Expense_Subcategory_Name where category_id=${reqBodyData.id} and status = true`,function(selectErr,selectData){
+            if (selectErr) {
+                response.status(201).json({ message: 'Error while fetching Data' });
             }
-            else {
-                response.status(200).json({ message: 'Category Deleted Successfully' });
+            else{
+                 let query = `Update Expense_Category_Name SET status = false WHERE id=${reqBodyData.id}`
+                if (selectData && selectData.length > 0) {                   
+                    connection.query(query, function (err, data) {
+                        if (err) {
+                            response.status(201).json({ message: 'Error Deleting category' });
+                        }
+                        else {
+                            connection.query(`Update Expense_Subcategory_Name SET status = false where category_id = ${reqBodyData.id}`,function(updateErr,updateData){
+                                if (updateErr) {
+                                    response.status(201).json({ message: 'Error Deleting Sub category' });
+                                }
+                                else{
+                                    response.status(200).json({ message: 'Category Deleted Successfully' });
+                                }
+                            })
+                            // response.status(200).json({ message: 'Category Deleted Successfully' });
+                        }
+                    })  
+                }
+                else{
+                    connection.query(query,function(deleteErr,deleteData){
+                        if (deleteErr) {
+                            response.status(201).json({ message: 'Error While Deleting Category' });
+                        }
+                        else{
+                            response.status(200).json({ message: 'Category Dleted Successfully' });
+                        }
+                    })
+                   
+                }
+            }
+        })
+        
+    }
+    else if(reqBodyData && reqBodyData.sub_Category_Id){
+        connection.query(`Update Expense_Subcategory_Name SET status = false where id = ${reqBodyData.sub_Category_Id}`,function(updateErr,updateData){
+            if (updateErr) {
+                response.status(201).json({ message: 'Error Deleting Sub category' });
+            }
+            else{
+                response.status(200).json({ message: 'Sub Category Deleted Successfully' });
             }
         })
     }

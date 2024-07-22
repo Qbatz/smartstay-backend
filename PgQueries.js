@@ -554,9 +554,10 @@ function UpdateEB(connection, atten, response) {
 function listDashBoard(connection, response, request) {
     const userDetails = request.user_details;
     // if (reqdata) {
-    let query = `select COALESCE((select count(id) from smart_stay.hosteldetails where created_By=details.created_By),0) as hostelCount,COALESCE(sum((select count(Room_Id) from smart_stay.hostelrooms where Hostel_Id=details.id)),0) as roomCount, COALESCE(sum((select sum(Number_Of_Beds) from smart_stay.hostelrooms where Hostel_Id=details.id)),0) as Bed ,COALESCE(sum((select count(id) from smart_stay.hostel where Hostel_Id= details.id and isActive =1)),0) as occupied_Bed ,(select COALESCE(SUM(COALESCE(icv.RoomRent, 0) + COALESCE(icv.EbAmount, 0) + COALESCE(icv.AmnitiesAmount, 0)), 0) AS revenue
-        FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=?) AS Revenue,(select COALESCE(SUM(COALESCE(icv.RoomRent, 0) + COALESCE(icv.EbAmount, 0) + COALESCE(icv.AmnitiesAmount, 0)), 0) AS revenue
-        FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=? AND icv.Status='Pending') AS overdue from smart_stay.hosteldetails details where details.created_By=?;`
+    let query = `select COALESCE((select count(id) from smart_stay.hosteldetails where created_By=details.created_By),0) as hostelCount,COALESCE(sum((select count(Room_Id) from smart_stay.hostelrooms where Hostel_Id=details.id)),0) as roomCount, COALESCE(sum((select sum(Number_Of_Beds) from smart_stay.hostelrooms where Hostel_Id=details.id)),0) as Bed ,COALESCE(sum((select count(id) from smart_stay.hostel where Hostel_Id= details.id and isActive =1)),0) as occupied_Bed ,
+    (select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue
+    FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=1) AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue
+    FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=? AND icv.Status='Pending') AS overdue from smart_stay.hosteldetails details where details.created_By=?;`
     connection.query(query, [userDetails.id, userDetails.id, userDetails.id], function (error, data) {
         if (error) {
             response.status(201).json({ message: "No data found" });
@@ -586,7 +587,7 @@ function listDashBoard(connection, response, request) {
                 })
 
                 // Get Revenue Details 
-                var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.RoomRent, 0) + COALESCE(invo.EbAmount, 0) + COALESCE(invo.AmnitiesAmount, 0)), 0) AS revenue FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL  SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS numbers ) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.RoomRent, invo.EbAmount,invo.AmnitiesAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By = ?  AND invo.Status = 'Success' ) AS invo ON m.month = invo.month GROUP BY m.month ORDER BY m.month; "
+                var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL  SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS numbers ) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.RoomRent, invo.EbAmount,invo.AmnitiesAmount,invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By = ?) AS invo ON m.month = invo.month GROUP BY m.month ORDER BY m.month; "
                 // Execute the query
                 connection.query(query1, [userDetails.id], (error, results, fields) => {
                     if (error) {

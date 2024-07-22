@@ -3,7 +3,6 @@ const AWS = require('aws-sdk');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
-// const conn = require('./config/connection');
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
@@ -43,7 +42,9 @@ function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileDa
 }
 
 function createAccountForLogin(connection, reqBodyData, response) {
+
     if (reqBodyData.id != "" && reqBodyData.id != undefined) {
+
         if (reqBodyData.profile) {
             const timestamp = Date.now();
             uploadProfilePictureToS3Bucket('smartstaydevs', 'Profile/', 'Profile' + reqBodyData.id + `${timestamp}` + '.jpg', reqBodyData.profile, (err, S3URL) => {
@@ -64,7 +65,7 @@ function createAccountForLogin(connection, reqBodyData, response) {
 
         } else {
 
-            connection.query(`UPDATE createaccount SET Name='${reqBodyData.name}', mobileNo='${reqBodyData.mobileNo}', email_Id='${reqBodyData.emailId}', Address='${reqBodyData.Address}', Country='${reqBodyData.Country}', City='${reqBodyData.City}', State='${reqBodyData.State}' WHERE id='${reqBodyData.id}'`, function (error, data) {
+            connection.query(`UPDATE createaccount SET Name='${reqBodyData.name}', mobileNo='${reqBodyData.mobileNo}', email_Id='${reqBodyData.emailId}', Address='${reqBodyData.Address}' WHERE id='${reqBodyData.id}'`, function (error, data) {
                 if (error) {
                     console.log("error", error);
                     response.status(201).json({ message: "No User Found" });
@@ -80,10 +81,14 @@ function createAccountForLogin(connection, reqBodyData, response) {
     }
 }
 
+function update_account_details(req, res) {
+
+}
+
 function createnewAccount(request, response) {
 
     var reqBodyData = request.body;
-    if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.first_name && reqBodyData.last_name  && reqBodyData.password && reqBodyData.confirm_password) {
+    if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.first_name && reqBodyData.last_name && reqBodyData.password && reqBodyData.confirm_password) {
 
         connection.query(
             `SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`,
@@ -199,28 +204,38 @@ function get_user_details(connection, request, response) {
 }
 
 function forgetPassword(connection, response, reqData) {
-    if (reqData.email) {
-        connection.query(`SELECT * FROM createaccount WHERE email_id= \'${reqData.email}\'`, async function (error, data) {
-            console.log("data for reset", data[0].Otp)
 
-            const hash_password = await bcrypt.hash(reqData.NewPassword, 10);
+    if (reqData.email && reqData.NewPassword) {
 
-            connection.query(`UPDATE createaccount SET password= \'${hash_password}\' WHERE email_id=\'${reqData.email}\' `, function (error, data) {
-                if ((data)) {
-                    connection.query(`UPDATE createaccount SET Otp = 0 WHERE email_id=\'${reqData.email}\' `, function (error, resetData) {
-                        if (resetData) {
-                            response.status(200).json({ message: "New Password Update Successfully" })
-                        } else {
-                            response.status(201).json({ message: "Cannot Update NewPassowrd", statusCode: 201 })
-                        }
-                    })
-                }
-                else {
-                    response.status(201).json({ message: "Cannot Update NewPassowrd", statusCode: 201 })
-                }
+        var confirm_password = reqData.confirm_password;
+
+        var password = reqData.NewPassword;
+
+        if (confirm_password === password) {
+            connection.query(`SELECT * FROM createaccount WHERE email_id= \'${reqData.email}\'`, async function (error, data) {
+                console.log("data for reset", data[0].Otp)
+
+                const hash_password = await bcrypt.hash(reqData.NewPassword, 10);
+
+                connection.query(`UPDATE createaccount SET password= \'${hash_password}\' WHERE email_id=\'${reqData.email}\' `, function (error, data) {
+                    if ((data)) {
+                        connection.query(`UPDATE createaccount SET Otp = 0 WHERE email_id=\'${reqData.email}\' `, function (error, resetData) {
+                            if (resetData) {
+                                response.status(200).json({ message: "New Password Update Successfully" })
+                            } else {
+                                response.status(201).json({ message: "Cannot Update NewPassowrd", statusCode: 201 })
+                            }
+                        })
+                    }
+                    else {
+                        response.status(201).json({ message: "Cannot Update NewPassowrd", statusCode: 201 })
+                    }
+                })
+
             })
-
-        })
+        } else {
+            response.status(201).json({ message: "Password and Confirm Password Not Matched", statusCode: 201 })
+        }
     } else {
         response.status(203).json({ message: "Missing Parameter" })
     }
@@ -412,4 +427,4 @@ function payment_history(connection, response, request) {
 
 
 
-module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount, get_user_details, forgotpassword_otp_response, payment_history }
+module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount, get_user_details, forgotpassword_otp_response, payment_history, update_account_details }

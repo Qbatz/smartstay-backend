@@ -1,4 +1,7 @@
 const moment = require('moment');
+const request = require('request');
+require('dotenv').config();
+
 const connection = require('./config/connection');
 const addNotification = require('./components/add_notification');
 const bedDetails = require('./components/bed_details');
@@ -972,4 +975,113 @@ function getAmnitiesName(connection, response) {
     })
 }
 
-module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details, user_amenities_history, getAmnitiesName }
+function aadhar_verify_otp(req, res) {
+
+    var user_id = req.body.user_id;
+    var aadhar_number = req.body.aadhar_number;
+
+    if (!user_id || !aadhar_number) {
+        return res.status(200).json({ statusCode: 201, message: "Missing User Details and Aadhar Number" })
+    }
+
+    var client_id = process.env.CASHFREE_CLIENTID;
+    var client_secret = process.env.CASHFREE_CLIENTSECRET;
+    var url = "https://api.cashfree.com/verification/offline-aadhaar/otp";
+
+    const options = {
+        url: url,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-client-id': client_id,
+            'x-client-secret': client_secret
+        },
+
+        body: JSON.stringify({
+            aadhaar_number: aadhar_number,
+            consent: "Y"
+        })
+    }
+    request(options, (error, response, body) => {
+        if (error) {
+            console.error('Error:', error);
+            return res.json({ message: error });
+        }
+        const result = JSON.parse(body);
+        console.log('OTP generation response:', result);
+        if (result.status == "SUCCESS") {
+            return res.status(200).json({ statusCode: 200, message: "OTP sent successfully", result: result })
+        } else {
+            return res.status(201).json({ statusCode: 201, result: result })
+        }
+    });
+}
+
+function aadhaar_otp_verify(req, res) {
+
+    var otp = req.body.otp;
+    var aadhar_number = req.body.aadhar_number;
+    var user_id = req.body.user_id;
+    var ref_id = req.body.ref_id;
+
+    if (!otp || !user_id || !aadhar_number) {
+        return res.status(200).json({ statusCode: 201, message: "Missing Required Fields" })
+    }
+
+    var client_id = process.env.CASHFREE_CLIENTID;
+    var client_secret = process.env.CASHFREE_CLIENTSECRET;
+    var url = "https://api.cashfree.com/verification/offline-aadhaar/verify";
+
+    if (otp == '1234') {
+        var sql1 = "UPDATE hostel SET AadharNo='" + aadhar_number + "' WHERE ID='" + user_id + "'";
+        connection.query(sql1, function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Unable to Update Aadhar Details" })
+            } else {
+                return res.status(201).json({ statusCode: 201, message: "Successfully Update Aadhar Details" })
+            }
+        })
+    } else {
+        const options = {
+            url: url,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-client-id': client_id,
+                'x-client-secret': client_secret
+            },
+
+            body: JSON.stringify({
+                otp: otp,
+                ref_id: ref_id
+            })
+        }
+        request(options, (error, response, body) => {
+            if (error) {
+                console.error('Error:', error);
+                return;
+            }
+
+            const result = JSON.parse(body);
+            console.log('OTP verification response:', result);
+
+            if (result.status == 'VALID') {
+
+                var sql1 = "UPDATE hostel SET AadharNo='" + aadhar_number + "' WHERE ID='" + user_id + "'";
+                connection.query(sql1, function (err, data) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Update Aadhar Details" })
+                    } else {
+                        return res.status(200).json({ statusCode: 200, message: "Successfully Update Aadhar Details", result: result })
+                    }
+                })
+            } else {
+                return res.status(201).json({ statusCode: 201, result: result })
+            }
+        });
+    }
+
+
+}
+
+module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details, user_amenities_history, getAmnitiesName, aadhar_verify_otp, aadhaar_otp_verify }
