@@ -3,7 +3,6 @@ const AWS = require('aws-sdk');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
-// const conn = require('./config/connection');
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
@@ -43,7 +42,9 @@ function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileDa
 }
 
 function createAccountForLogin(connection, reqBodyData, response) {
+
     if (reqBodyData.id != "" && reqBodyData.id != undefined) {
+
         if (reqBodyData.profile) {
             const timestamp = Date.now();
             uploadProfilePictureToS3Bucket('smartstaydevs', 'Profile/', 'Profile' + reqBodyData.id + `${timestamp}` + '.jpg', reqBodyData.profile, (err, S3URL) => {
@@ -64,7 +65,7 @@ function createAccountForLogin(connection, reqBodyData, response) {
 
         } else {
 
-            connection.query(`UPDATE createaccount SET Name='${reqBodyData.name}', mobileNo='${reqBodyData.mobileNo}', email_Id='${reqBodyData.emailId}', Address='${reqBodyData.Address}', Country='${reqBodyData.Country}', City='${reqBodyData.City}', State='${reqBodyData.State}' WHERE id='${reqBodyData.id}'`, function (error, data) {
+            connection.query(`UPDATE createaccount SET Name='${reqBodyData.name}', mobileNo='${reqBodyData.mobileNo}', email_Id='${reqBodyData.emailId}', Address='${reqBodyData.Address}' WHERE id='${reqBodyData.id}'`, function (error, data) {
                 if (error) {
                     console.log("error", error);
                     response.status(201).json({ message: "No User Found" });
@@ -78,6 +79,10 @@ function createAccountForLogin(connection, reqBodyData, response) {
     } else {
         response.status(201).json({ message: 'Missing Parameter' });
     }
+}
+
+function update_account_details(req, res) {
+
 }
 
 function createnewAccount(request, response) {
@@ -422,4 +427,4 @@ function payment_history(connection, response, request) {
 
 
 
-module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount, get_user_details, forgotpassword_otp_response, payment_history }
+module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount, get_user_details, forgotpassword_otp_response, payment_history, update_account_details }

@@ -119,6 +119,11 @@ app.post('/create/create-account', upload.single('profile'), (request, response)
     accountManagement.createAccountForLogin(connection, reqBodyData, response)
 })
 
+// Update Admin Details API
+app.post('/update_account_details', upload.single('profile'), (request, response) => {
+    accountManagement.update_account_details(request, response)
+})
+
 
 app.post('/newaccount/create-account', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
