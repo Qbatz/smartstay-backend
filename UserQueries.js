@@ -607,11 +607,13 @@ function transitionlist(request, response) {
 
                             var user_id = sel1_res[0].ID;
 
+                            var total_amount = check_res[0].Amount;
+
                             var already_paid_amount = check_res[0].PaidAmount;
 
                             var new_amount = already_paid_amount + amount;
 
-                            if (new_amount == already_paid_amount) {
+                            if (new_amount == total_amount) {
                                 var Status = 'Success';
                             } else {
                                 var Status = 'Pending';
