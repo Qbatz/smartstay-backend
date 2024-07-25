@@ -559,13 +559,13 @@ function listDashBoard(connection, response, request) {
     console.log("endingYear", endingYear);
 
     // if (reqdata) {
-    let query = `select COALESCE((select count(id) from smart_stay.hosteldetails where created_By=details.created_By),0) as hostelCount,COALESCE(sum((select count(Room_Id) from smart_stay.hostelrooms where Hostel_Id=details.id)),0) as roomCount, COALESCE(sum((select sum(Number_Of_Beds) from smart_stay.hostelrooms where Hostel_Id=details.id)),0) as Bed ,COALESCE(sum((select count(id) from smart_stay.hostel where Hostel_Id= details.id and isActive =1)),0) as occupied_Bed ,
+    let query = `select COALESCE((select count(id) from hosteldetails where created_By=details.created_By),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id)),0) as roomCount, COALESCE(sum((select sum(Number_Of_Beds) from hostelrooms where Hostel_Id=details.id)),0) as Bed ,COALESCE(sum((select count(id) from hostel where Hostel_Id= details.id and isActive =1)),0) as occupied_Bed ,
     (select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue
     FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=?) AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue
-    FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=? AND icv.BalanceDue != 0) AS overdue from smart_stay.hosteldetails details where details.created_By=?;`
+    FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=? AND icv.BalanceDue != 0) AS overdue from hosteldetails details where details.created_By=?;`
     connection.query(query, [userDetails.id, userDetails.id, userDetails.id], function (error, data) {
         if (error) {
-            response.status(201).json({ message: "No data found" });
+            response.status(201).json({ message: "No data found", error: error });
         } else {
             if (data.length > 0) {
                 let obj = {};
