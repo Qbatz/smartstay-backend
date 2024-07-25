@@ -408,19 +408,37 @@ function all_reports(req, res) {
     var bed_start_date = req.body.bed_start_date;
     var bed_end_date = req.body.bed_end_date;
 
-    var sql_1 = "SELECT * FROM bed_details WHERE createdby='" + created_by + "' AND status=1 AND isfilled=1";
+    var sql_1 = "SELECT bd.*,hos.RoomRent FROM bed_details AS bd JOIN hostel AS hos ON hos.id=bd.user_id WHERE createdby='" + created_by + "' AND bd.status=1 AND bd.isfilled=1 ";
 
     if (bed_start_date && bed_end_date) {
         const startDateRange = `${bed_start_date} 00:00:00`;
         const endDateRange = `${bed_end_date} 23:59:59`;
-        sql_1 += ` AND createdat >= '${startDateRange}' AND createdat <= '${endDateRange}'`;
+        sql_1 += ` AND bd.createdat >= '${startDateRange}' AND bd.createdat <= '${endDateRange}'`;
     }
 
     connection.query(sql_1, function (err, bed_det) {
         if (err) {
             res.status(201).json({ statusCode: 201, message: "Unable to Get Bed Details" })
         } else {
-            res.status(201).json({ statusCode: 201, message: "Sale Bed Details", report: bed_det })
+
+            var sales_income = bed_det
+                .map(x => x.bed_amount)
+                .reduce((sum, value) => sum + value, 0);
+
+
+            var total_income = bed_det
+                .map(x => x.RoomRent)
+                .reduce((sum, value) => sum + value, 0);
+
+            var revenue = total_income - sales_income;
+
+            var hostel_wise_projection = {
+                sales_income,
+                total_income,
+                revenue
+            }
+
+            res.status(201).json({ statusCode: 201, message: "Report Details", report: hostel_wise_projection })
         }
     })
 

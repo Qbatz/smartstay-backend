@@ -74,7 +74,7 @@ app.post('/delete/delete-category', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     expensesManagement.DeleteExpensesCategory(request, response)
 })
-app.post('/pdf/expense-pdf',(request,response) => {
+app.post('/pdf/expense-pdf', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     expensesManagement.GenerateExpenseHistoryPDF(request, response)
 })
@@ -647,8 +647,13 @@ app.post('/remove_complaint_type', (req, res) => {
     complianceQueries.remove_complaint_types(req, res)
 })
 
+//  Eb Billing Amount values 
 app.post('/add_ebbilling_settings', (req, res) => {
     vendorQueries.add_ebbilling_settings(req, res)
+})
+
+app.get('/get_ebbilling_settings', (req, res) => {
+    vendorQueries.get_ebbilling_settings(req, res)
 })
 
 app.post("/aadhar_verify_otp", (req, res) => {

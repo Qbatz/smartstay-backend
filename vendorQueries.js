@@ -314,5 +314,19 @@ function add_ebbilling_settings(req, res) {
 
 }
 
+function get_ebbilling_settings(req, res) {
+    
+    var created_by = req.user_details.id;
+    
+    var sql1 = "SELECT ebs.*,hos.Name FROM eb_settings AS ebs JOIN hosteldetails AS hos ON hos.id = ebs.hostel_id WHERE ebs.created_by='" + created_by + "';"
+    connection.query(sql1, function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get Eb Billing Settings" })
+        } else {
+            return res.status(200).json({ statusCode: 200, message: "Eb Billing Settings", eb_settings: data })
+        }
+    })
+}
 
-module.exports = { ToAddAndUpdateVendor, GetVendorList, TodeleteVendorList, add_ebbilling_settings }
+
+module.exports = { ToAddAndUpdateVendor, GetVendorList, TodeleteVendorList, add_ebbilling_settings,get_ebbilling_settings }
