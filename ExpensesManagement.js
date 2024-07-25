@@ -140,8 +140,8 @@ function AddExpenseCategory(request, response) {
 
 function GetExpensesCategory(request, response) {
     connection.query(`SELECT category.category_Name,category.id as category_Id,category.status,subcategory.id as subcategory_Id,subcategory.subcategory FROM Expense_Category_Name category
-JOIN Expense_Subcategory_Name subcategory on subcategory.category_id = category.id
-WHERE category.status = true and subcategory.status`, function (error, data) {
+LEFT JOIN Expense_Subcategory_Name subcategory on subcategory.category_id = category.id and subcategory.status = true
+WHERE category.status = true`, function (error, data) {
         // connection.query(`select * from Expense_Category_Name where status = true`, function (error, data) {
         if (error) {
             console.log("error",error)
