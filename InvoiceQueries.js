@@ -1855,6 +1855,15 @@ function deletePDfs(filenames) {
         });
     });
 }
+function deleteAmenityPDfs(filename) {
+        fs.unlink(filename, function (err) {
+            if (err) {
+                console.error("delete pdf error", err);
+            } else {
+                console.log("PDF file deleted successfully");
+            }
+        });
+}
 
 
 
@@ -2110,7 +2119,7 @@ function UpdateAmenitiesHistory(connection, response, request) {
 }
 // startdate to enddate
 function GetAmenitiesHistory(connection, res, req) {
-    console.log("req", moment(req.endingDate).format('DD/MM/YYYY'));
+    // console.log("req", moment(req.endingDate).format('DD/MM/YYYY'));
     let endMonth = req.endingDate ? new Date(req.endingDate).getMonth() + 1 : new Date(req.startingDate).getMonth() + 1;
     console.log("endMonth", endMonth);
     let endYear = req.endingDate ? new Date(req.endingDate).getFullYear() : new Date(req.startingDate).getFullYear();
@@ -2399,17 +2408,65 @@ function AmenitiesPDF(hostelDetails, monthData, response) {
         }
 
         console.log('PDF generated:', res.filename);
-        if (res.filename) {
+        // if (res.filename) {
+        //     console.log("res", res);
+        //     response.status(200).json({ message: "Amenities History", filepath: res.filename, amenity_details: monthData });
+        // }
+
+
+
+
+
+
+          if (res.filename) {
             console.log("res", res);
-            response.status(200).json({ message: "Amenities History", filepath: res.filename, amenity_details: monthData });
-        }
-        // var inv_id = inv_data.id;
+//upload to s3 bucket
+            
+            let uploadedPDFs = 0;
+            let pdfInfo = [];
+            const fileContent = fs.readFileSync(res.filename);
+                const key = `amenity/${res.filename}`;
+                const BucketName = 'smartstaydevs';
+                const params = {
+                    Bucket: BucketName,
+                    Key: key,
+                    Body: fileContent,
+                    ContentType: 'application/pdf'
+                };
+        
+                s3.upload(params, function (err, uploadData) {
+                    if (err) {
+                        console.error("Error uploading PDF", err);
+                        response.status(201).json({ message: 'Error uploading PDF to S3' });
+                    } else {
+                        console.log("PDF uploaded successfully", uploadData.Location);
+                        uploadedPDFs++;
+        
+                        const pdfInfoItem = {
+                            // user: user,
+                            url: uploadData.Location
+                        };
+                        pdfInfo.push(pdfInfoItem);
+        
+                        if (pdfInfo.length > 0) {
+        
+                            var pdf_url = []
+                            pdfInfo.forEach(pdf => {
+                                console.log(pdf.url);
+                                pdf_url.push(pdf.url)
+                            });
+        
+                            if (pdf_url.length > 0) {
+                                response.status(200).json({ message: 'Insert PDF successfully', filepath: pdf_url[0],amenity_details: monthData});  
+                                deleteAmenityPDfs(res.filename);                              
+                            } else {
+                                response.status(201).json({ message: 'Cannot Insert PDF to Database' });
+                            }
 
-        // Upload the PDF to S3
-        // await uploadToS3(outputPath, 'amenity.pdf', inv_id);
-
-        // Remove the local PDF file after upload
-        // fs.unlinkSync(res.filename);
+                        }
+                    }
+                });
+     }
 
     });
 
