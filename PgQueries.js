@@ -553,6 +553,11 @@ function UpdateEB(connection, atten, response) {
 };
 function listDashBoard(connection, response, request) {
     const userDetails = request.user_details;
+    let startingYear = new Date().getFullYear()-1;
+    console.log("startingYear", startingYear);
+    let endingYear = new Date().getFullYear();
+    console.log("endingYear", endingYear);
+
     // if (reqdata) {
     let query = `select COALESCE((select count(id) from smart_stay.hosteldetails where created_By=details.created_By),0) as hostelCount,COALESCE(sum((select count(Room_Id) from smart_stay.hostelrooms where Hostel_Id=details.id)),0) as roomCount, COALESCE(sum((select sum(Number_Of_Beds) from smart_stay.hostelrooms where Hostel_Id=details.id)),0) as Bed ,COALESCE(sum((select count(id) from smart_stay.hostel where Hostel_Id= details.id and isActive =1)),0) as occupied_Bed ,
     (select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue
@@ -594,8 +599,54 @@ function listDashBoard(connection, response, request) {
                         console.error('Error executing query:', error);
                         return;
                     }
+                    else{
+                        // expense category
+                        let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode, sum(expen.purchase_amount) as total_amount, category.category_Name from expenses expen
+                        join Expense_Category_Name category on category.id = expen.category_id
+                        where expen.status = true 
+                        AND YEAR(expen.createdate) BETWEEN  ${startingYear} AND ${endingYear}
+                                   GROUP BY 
+                                expen.id`
+                        console.log("query", query);
+                        connection.query(query, function (error, data) {
+                            if (error) {
+                                console.log("error", error);
+                                response.status(201).json({ message: "Error fetching Data" });
+                            }
+                            else {
+                                if (data.length > 0) {
+                                    console.log("data", data);
+                                    let resArray = [];
+                                    let totalAmount = 0;
+                                    for (let i = 0; i < data.length; i++) {
+                                        totalAmount += data[i].total_amount;
+                                        let temp = {
+                                            id: data[i].id,
+                                            category_Name: data[i].category_Name,
+                                            Amount: data[i].purchase_amount
+                                        }
+                                        resArray.push(temp);
+                                    }
+                                    console.log("resArray", resArray.length);
+                                    if (data.length === resArray.length) {
+                                        response.status(200).json({ dashboardList:dashboardList, Revenue_reports: results,totalAmount:totalAmount,categoryList:resArray });
+                                        // response.status(200).json({ totalAmount, resArray });
+                                    }
+                    
+                    
+                                }
+                                else {
+                                    response.status(201).json({ message: "No Data Found" });
+                                }
+                            }
+                        })
+
+
+
+                        
+                    }
                     // Process the results
-                    response.status(200).json({ dashboardList, Revenue_reports: results });
+                    
                 })
             }
         }
@@ -603,6 +654,15 @@ function listDashBoard(connection, response, request) {
     // } else {
     //     response.status(201).json({ message: "Missing Parameter" });
     // }
+
+
+
+
+   
+
+
+
+
 }
 
 
