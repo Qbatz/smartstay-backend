@@ -202,11 +202,12 @@ function CalculateExpenses(request, response) {
 }
 
 function getAllfilter(createdBy, response, data, total_amount) {
-    let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,ven.Vendor_profile,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode,category.category_Name,ven.Vendor_Name,asname.asset_name from expenses expen
+    let query = `select hos.Name as hostel_name,hos.email_id as hostel_email,hos.Address as hostel_address,hos.hostel_PhoneNo as hostel_phoneNo, expen.id,expen.category_id,expen.vendor_id,expen.asset_id,ven.Vendor_profile,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode,category.category_Name,ven.Vendor_Name,asname.asset_name from expenses expen
     join Expense_Category_Name category on category.id = expen.category_id
     join Vendor ven on ven.id = expen.vendor_id
     join assets ast on ast.id = expen.asset_id
     join asset_names asname on asname.id=ast.asset_id
+join hosteldetails hos on hos.id = expen.hostel_id
         where expen.status = true and expen.created_by = ${createdBy}`
     connection.query(query, function (getErr, getData) {
         if (getErr) {
@@ -279,12 +280,13 @@ function GetHostelExpenses(request, response) {
     // join assets ast on ast.id = expen.asset_id
     //     where expen.status = true and expen.created_by = ${createdBy}`
 
-    let query = `SELECT expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode, category.category_Name, ven.Vendor_Name, asname.asset_name 
+    let query = `SELECT hos.Name as hostel_name,hos.email_id as hostel_email,hos.Address as hostel_address,hos.hostel_PhoneNo as hostel_phoneNo, expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode, category.category_Name, ven.Vendor_Name, asname.asset_name 
 FROM expenses expen
 JOIN Expense_Category_Name category ON category.id = expen.category_id
 JOIN Vendor ven ON ven.id = expen.vendor_id
 JOIN assets ast ON ast.id = expen.asset_id
 JOIN asset_names asname ON asname.id=ast.asset_id
+JOIN hosteldetails hos ON hos.id = expen.hostel_id
 WHERE expen.status = true AND expen.created_by = ${createdBy}`;
 
     if (asset_id) {
@@ -440,12 +442,13 @@ function GenerateExpenseHistoryPDF(request,response){
     var start_date = request.body?.start_date ? moment(new Date(request.body.start_date)).format('YYYY-MM-DD') : null;
     var end_date = request.body?.end_date ? moment(new Date(request.body.end_date)).format('YYYY-MM-DD') : null;
 
-    let query = `SELECT expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode, category.category_Name, ven.Vendor_Name, asname.asset_name 
+    let query = `SELECT hos.Name as hostel_name,hos.email_id as hostel_email,hos.Address as hostel_address,hos.hostel_PhoneNo as hostel_phoneNo, expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode, category.category_Name, ven.Vendor_Name, asname.asset_name 
 FROM expenses expen
 JOIN Expense_Category_Name category ON category.id = expen.category_id
 JOIN Vendor ven ON ven.id = expen.vendor_id
 JOIN assets ast ON ast.id = expen.asset_id
 JOIN asset_names asname ON asname.id=ast.asset_id
+JOIN hosteldetails hos ON hos.id = expen.hostel_id
 WHERE expen.status = true AND expen.created_by = ${createdBy}`;
 
     if (asset_id) {
@@ -517,12 +520,12 @@ for (let i = 0; i < data.length; i++) {
                     <td> asset_name : ${data[i].asset_name} <br/> unit_count : ${data[i].unit_count} <br/> unit_amount : ${data[i].unit_amount}</td> */}
                
 htmlContent = htmlContent
-        // .replace('{{hostal_name}}', hostelDetails.hostelName)
-        // .replace('{{Phone}}', hostelDetails.hostelPhoneNo)
-        // .replace('{{email}}', hostelDetails.hostelEmailID)
+        .replace('{{hostal_name}}', data[0].hostel_name)
+        .replace('{{Phone}}', data[0].hostel_phoneNo)
+        .replace('{{email}}', data[0].hostel_email)
         // .replace('{{user_address}}', hostelDetails.userAddress)
         // .replace('{{user_name}}', hostelDetails.userName)
-        // .replace('{{city}}', hostelDetails.hostelAddress)
+        .replace('{{city}}', data[0].hostel_address)
         .replace('{{invoice_rows}}', invoiceRows)
         .replace('{{total_amount}}', total_amount)
         const outputPath = path.join(__dirname, 'expenseHistory.pdf');
