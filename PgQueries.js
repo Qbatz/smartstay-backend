@@ -567,6 +567,7 @@ function listDashBoard(connection, response, request) {
         if (error) {
             response.status(201).json({ message: "No data found", error: error });
         } else {
+
             if (data.length > 0) {
                 let obj = {};
                 // let tempArray = []
@@ -598,8 +599,7 @@ function listDashBoard(connection, response, request) {
                     if (error) {
                         console.error('Error executing query:', error);
                         return;
-                    }
-                    else {
+                    } else {
                         // expense category
                         let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode, sum(expen.purchase_amount) as total_amount, category.category_Name from expenses expen
                         join Expense_Category_Name category on category.id = expen.category_id
@@ -632,37 +632,21 @@ function listDashBoard(connection, response, request) {
                                         response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, totalAmount: totalAmount, categoryList: resArray });
                                         // response.status(200).json({ totalAmount, resArray });
                                     }
-
-
-                                }
-                                else {
-                                    response.status(201).json({ message: "No Data Found" });
+                                } else {
+                                    response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, totalAmount: [], categoryList: [] });
                                 }
                             }
                         })
-
-
-
-
                     }
-                    // Process the results
-
                 })
+            } else {
+                response.status(200).json({ dashboardList: [], Revenue_reports: [], totalAmount: [], categoryList: [] });
             }
         }
     })
     // } else {
     //     response.status(201).json({ message: "Missing Parameter" });
     // }
-
-
-
-
-
-
-
-
-
 }
 
 
