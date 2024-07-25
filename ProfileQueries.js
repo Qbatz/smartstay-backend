@@ -234,7 +234,7 @@ function AmenitiesSetting(connection, request, response) {
     }
 
     function insertAminity(id, created_by) {
-        
+
         connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${reqData.Hostel_Id} AND Amnities_Id = ${id}`, function (error, existingAmenity) {
             if (error) {
                 console.error(error);
@@ -324,7 +324,7 @@ function getAmenitiesList(req, res) {
 
     var created_by = req.user_details.id;
 
-    var sql1 = "SELECT * FROM Amenities AS ame JOIN AmnitiesName AS amname ON ame.Amnities_Id = amname.id AND ame.createdBy='" + created_by + "';"
+    var sql1 = "SELECT ame.*,amname.Amnities_Name,hsd.Name FROM Amenities AS ame JOIN AmnitiesName AS amname ON ame.Amnities_Id = amname.id JOIN hosteldetails AS hsd ON hsd.id = ame.Hostel_Id WHERE ame.createdBy='" + created_by + "'";
     connection.query(sql1, function (err, data) {
         if (err) {
             res.status(201).json({ statusCode: 201, message: "Unable to Get Amenities List" })

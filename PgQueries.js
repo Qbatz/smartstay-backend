@@ -553,7 +553,7 @@ function UpdateEB(connection, atten, response) {
 };
 function listDashBoard(connection, response, request) {
     const userDetails = request.user_details;
-    let startingYear = new Date().getFullYear()-1;
+    let startingYear = new Date().getFullYear() - 1;
     console.log("startingYear", startingYear);
     let endingYear = new Date().getFullYear();
     console.log("endingYear", endingYear);
@@ -561,8 +561,8 @@ function listDashBoard(connection, response, request) {
     // if (reqdata) {
     let query = `select COALESCE((select count(id) from smart_stay.hosteldetails where created_By=details.created_By),0) as hostelCount,COALESCE(sum((select count(Room_Id) from smart_stay.hostelrooms where Hostel_Id=details.id)),0) as roomCount, COALESCE(sum((select sum(Number_Of_Beds) from smart_stay.hostelrooms where Hostel_Id=details.id)),0) as Bed ,COALESCE(sum((select count(id) from smart_stay.hostel where Hostel_Id= details.id and isActive =1)),0) as occupied_Bed ,
     (select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue
-    FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=1) AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue
-    FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=? AND icv.Status='Pending') AS overdue from smart_stay.hosteldetails details where details.created_By=?;`
+    FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=?) AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue
+    FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=? AND icv.BalanceDue != 0) AS overdue from smart_stay.hosteldetails details where details.created_By=?;`
     connection.query(query, [userDetails.id, userDetails.id, userDetails.id], function (error, data) {
         if (error) {
             response.status(201).json({ message: "No data found" });
@@ -599,7 +599,7 @@ function listDashBoard(connection, response, request) {
                         console.error('Error executing query:', error);
                         return;
                     }
-                    else{
+                    else {
                         // expense category
                         let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode, sum(expen.purchase_amount) as total_amount, category.category_Name from expenses expen
                         join Expense_Category_Name category on category.id = expen.category_id
@@ -629,11 +629,11 @@ function listDashBoard(connection, response, request) {
                                     }
                                     console.log("resArray", resArray.length);
                                     if (data.length === resArray.length) {
-                                        response.status(200).json({ dashboardList:dashboardList, Revenue_reports: results,totalAmount:totalAmount,categoryList:resArray });
+                                        response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, totalAmount: totalAmount, categoryList: resArray });
                                         // response.status(200).json({ totalAmount, resArray });
                                     }
-                    
-                    
+
+
                                 }
                                 else {
                                     response.status(201).json({ message: "No Data Found" });
@@ -643,10 +643,10 @@ function listDashBoard(connection, response, request) {
 
 
 
-                        
+
                     }
                     // Process the results
-                    
+
                 })
             }
         }
@@ -658,7 +658,7 @@ function listDashBoard(connection, response, request) {
 
 
 
-   
+
 
 
 

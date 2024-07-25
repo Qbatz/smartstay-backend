@@ -1019,6 +1019,10 @@ function aadhar_verify_otp(req, res) {
     });
 }
 
+function encrypt(text, secretKey) {
+    return CryptoJS.AES.encrypt(text, secretKey).toString();
+}
+
 function aadhaar_otp_verify(req, res) {
 
     var otp = req.body.otp;
@@ -1034,8 +1038,13 @@ function aadhaar_otp_verify(req, res) {
     var client_secret = process.env.CASHFREE_CLIENTSECRET;
     var url = "https://api.cashfree.com/verification/offline-aadhaar/verify";
 
+    const secretKey = 'abcd'; // Secret key used for encryption
+    const originalText = aadhar_number;
+    const encryptedText = encrypt(originalText, secretKey);
+    console.log(encryptedText);
+
     if (otp == '1234') {
-        var sql1 = "UPDATE hostel SET AadharNo='" + aadhar_number + "' WHERE ID='" + user_id + "'";
+        var sql1 = "UPDATE hostel SET AadharNo='" + encryptedText + "' WHERE ID='" + user_id + "'";
         connection.query(sql1, function (err, data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Update Aadhar Details" })
@@ -1069,7 +1078,7 @@ function aadhaar_otp_verify(req, res) {
 
             if (result.status == 'VALID') {
 
-                var sql1 = "UPDATE hostel SET AadharNo='" + aadhar_number + "' WHERE ID='" + user_id + "'";
+                var sql1 = "UPDATE hostel SET AadharNo='" + encryptedText + "' WHERE ID='" + user_id + "'";
                 connection.query(sql1, function (err, data) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Update Aadhar Details" })

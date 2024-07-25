@@ -658,3 +658,8 @@ app.post("/aadhar_verify_otp", (req, res) => {
 app.post("/aadhaar_otp_verification", (req, res) => {
     userQueries.aadhaar_otp_verify(req, res)
 })
+
+// Reports API
+app.post("/all_reports", (req, res) => {
+    assets.all_reports(req, res)
+})

@@ -21,7 +21,7 @@ function check_bed_details(bed_details_obj) {
                     } else if (be_res.length != 0) {
                         var bed_details_id = be_res[0].bed_detail_id;
 
-                        var sql1 = "UPDATE bed_details SET isfilled=1, user_id='" + bed_details_obj.user_id + "' WHERE id='" + bed_details_id + "'";
+                        var sql1 = "UPDATE bed_details SET isfilled=1, user_id='" + bed_details_obj.user_id + "',createdat = now() WHERE id='" + bed_details_id + "'";
                         connection.query(sql1, (err, up_data) => {
                             if (err) {
                                 reject(err)

@@ -6,7 +6,7 @@ function all_assets(req, res) {
     const user_id = req.user_details.id;
 
     // var sql1 = "SELECT assets.*,ven.Vendor_Name,aa.asset_id,aa.hostel_id,aa.room_id,aa.assigned_date FROM assets JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id WHERE assets.created_by=? AND assets.status=1 ORDER BY assets.id DESC";
-    var sql1="SELECT assets.*,aname.asset_name,ven.Vendor_Name,aa.asset_id AS Asset_id,aa.hostel_id,aa.room_id,aa.assigned_date FROM assets JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id JOIN asset_names AS aname ON assets.asset_id=aname.id WHERE assets.created_by=? AND assets.status=1 ORDER BY assets.id DESC"
+    var sql1 = "SELECT assets.*,aname.asset_name,ven.Vendor_Name,aa.asset_id AS Asset_id,aa.hostel_id,aa.room_id,aa.assigned_date FROM assets JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id JOIN asset_names AS aname ON assets.asset_id=aname.id WHERE assets.created_by=? AND assets.status=1 ORDER BY assets.id DESC"
     connection.query(sql1, [user_id], (err, data) => {
         if (err) {
             return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
@@ -401,4 +401,30 @@ function all_expenses(req, res) {
 }
 
 
-module.exports = { all_assets, add_asset, remove_asset, asseign_asset, add_expenses, remove_expenses, all_expenses }
+function all_reports(req, res) {
+
+    var created_by = req.user_details.id;
+
+    var bed_start_date = req.body.bed_start_date;
+    var bed_end_date = req.body.bed_end_date;
+
+    var sql_1 = "SELECT * FROM bed_details WHERE createdby='" + created_by + "' AND status=1 AND isfilled=1";
+
+    if (bed_start_date && bed_end_date) {
+        const startDateRange = `${bed_start_date} 00:00:00`;
+        const endDateRange = `${bed_end_date} 23:59:59`;
+        sql_1 += ` AND createdat >= '${startDateRange}' AND createdat <= '${endDateRange}'`;
+    }
+
+    connection.query(sql_1, function (err, bed_det) {
+        if (err) {
+            res.status(201).json({ statusCode: 201, message: "Unable to Get Bed Details" })
+        } else {
+            res.status(201).json({ statusCode: 201, message: "Sale Bed Details", report: bed_det })
+        }
+    })
+
+}
+
+
+module.exports = { all_assets, add_asset, remove_asset, asseign_asset, add_expenses, remove_expenses, all_expenses, all_reports }
