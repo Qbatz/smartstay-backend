@@ -104,7 +104,7 @@ function AddExpenseCategory(request, response) {
                             return response.status(201).json({ statusCode: 201, message: "Sub Category Name Already Exist" });
                         } else {
                             // Add Subcategory
-                            var sql4 = "INSERT INTO Expense_Subcategory_Name (cat_id,subcategory,status,created_by) VALUES ('" + reqData.id + "','" + reqData.sub_Category + "',1,'" + created_by + "')";
+                            var sql4 = "INSERT INTO Expense_Subcategory_Name (category_id,subcategory,status,created_by) VALUES ('" + reqData.id + "','" + reqData.sub_Category + "',1,'" + created_by + "')";
                             connection.query(sql4, function (ins_err, ins_res) {
                                 if (ins_err) {
                                     console.log(ins_err);
