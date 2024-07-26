@@ -552,20 +552,22 @@ function UpdateEB(connection, atten, response) {
 
 };
 function listDashBoard(connection, response, request) {
-    const userDetails = request.user_details;
-    let startingYear = new Date().getFullYear() - 1;
-    console.log("startingYear", startingYear);
-    let endingYear = new Date().getFullYear();
-    console.log("endingYear", endingYear);
 
-    // if (reqdata) {
-    let query = `select COALESCE((select count(id) from hosteldetails where created_By=details.created_By),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id)),0) as roomCount, COALESCE(sum((select sum(Number_Of_Beds) from hostelrooms where Hostel_Id=details.id)),0) as Bed ,COALESCE(sum((select count(id) from hostel where Hostel_Id= details.id and isActive =1)),0) as occupied_Bed ,
+    var userDetails = request.user_details;
+    var created_by = request.user_details.id;
+    let startingYear = new Date().getFullYear() - 1;
+    // console.log("startingYear", startingYear);
+    let endingYear = new Date().getFullYear();
+    // console.log("endingYear", endingYear);
+
+    var sql1 = `select COALESCE((select count(id) from hosteldetails where created_By=details.created_By),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id)),0) as roomCount, COALESCE(sum((select sum(Number_Of_Beds) from hostelrooms where Hostel_Id=details.id)),0) as Bed ,COALESCE(sum((select count(id) from hostel where Hostel_Id= details.id and isActive =1)),0) as occupied_Bed ,
     (select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue
-    FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=?) AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue
-    FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=? AND icv.BalanceDue != 0) AS overdue from hosteldetails details where details.created_By=?;`
-    connection.query(query, [userDetails.id, userDetails.id, userDetails.id], function (error, data) {
+    FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By='${created_by}') AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue
+    FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By='${created_by}' AND icv.BalanceDue != 0) AS overdue from hosteldetails details where details.created_By='${created_by}';`
+    connection.query(sql1, function (error, data) {
         if (error) {
-            response.status(201).json({ message: "No data found", error: error });
+            console.log(error);
+            response.status(201).json({ statusCode: 201, message: "No data found", error: error.message });
         } else {
 
             if (data.length > 0) {
@@ -595,7 +597,7 @@ function listDashBoard(connection, response, request) {
                 // Get Revenue Details 
                 var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL  SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS numbers ) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.RoomRent, invo.EbAmount,invo.AmnitiesAmount,invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By = ?) AS invo ON m.month = invo.month GROUP BY m.month ORDER BY m.month; "
                 // Execute the query
-                connection.query(query1, [userDetails.id], (error, results, fields) => {
+                connection.query(query1, [created_by], (error, results, fields) => {
                     if (error) {
                         console.error('Error executing query:', error);
                         return;
@@ -607,7 +609,7 @@ function listDashBoard(connection, response, request) {
                         AND YEAR(expen.createdate) BETWEEN  ${startingYear} AND ${endingYear}
                                    GROUP BY 
                                 expen.id`
-                        console.log("query", query);
+                        // console.log("query", query);
                         connection.query(query, function (error, data) {
                             if (error) {
                                 console.log("error", error);
