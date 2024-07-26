@@ -419,7 +419,7 @@ function DeleteExpensesCategory(request, response) {
         
     }
     else if(reqBodyData && reqBodyData.sub_Category_Id){
-        connection.query(`Update Expense_Subcategory_Name SET status = false where id = ${reqBodyData.sub_Category_Id}`,function(updateErr,updateData){
+        connection.query(`Update Expense_Subcategory_Name SET status = false where id = ${reqBodyData.sub_Category_Id} and category_id =${reqBodyData.id}`,function(updateErr,updateData){
             if (updateErr) {
                 response.status(201).json({ message: 'Error Deleting Sub category' });
             }

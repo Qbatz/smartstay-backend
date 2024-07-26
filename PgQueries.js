@@ -565,7 +565,8 @@ function listDashBoard(connection, response, request) {
     FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By=? AND icv.BalanceDue != 0) AS overdue from hosteldetails details where details.created_By=?;`
     connection.query(query, [userDetails.id, userDetails.id, userDetails.id], function (error, data) {
         if (error) {
-            response.status(201).json({ message: "No data found", error: error });
+            response.status(200).json({ dashboardList: [], Revenue_reports: [], totalAmount: [], categoryList: [], error: error });
+            // response.status(201).json({ message: "No data found", error: error });
         } else {
 
             if (data.length > 0) {
