@@ -53,7 +53,7 @@ function add_asset(req, res) {
                                     return res.status(201).json({ message: "Unable to Get Asset Name Details", statusCode: 201 })
                                 } else if (asss_data.length != 0) {
 
-                                    var sql5 = "INSERT INTO asset_names VALUES (asset_name) VALUES ('" + data.asset_name + "')";
+                                    var sql5 = "INSERT INTO asset_names (asset_name) VALUES ('" + data.asset_name + "')";
                                     connection.query(sql5, (err, ins_data) => {
                                         if (err) {
                                             return res.status(201).json({ message: "Unable to Add Asset Name", statusCode: 201 })

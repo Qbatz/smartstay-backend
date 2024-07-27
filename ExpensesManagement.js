@@ -134,26 +134,18 @@ function AddExpenseCategory(request, response) {
     else {
         response.status(201).json({ message: "Missing Parameter" });
     }
-
-
 }
 
 function GetExpensesCategory(request, response) {
-    connection.query(`SELECT category.category_Name,category.id as category_Id,category.status,subcategory.id as subcategory_Id,subcategory.subcategory FROM Expense_Category_Name category
-LEFT JOIN Expense_Subcategory_Name subcategory on subcategory.category_id = category.id and subcategory.status = true
-WHERE category.status = true`, function (error, data) {
-        // connection.query(`select * from Expense_Category_Name where status = true`, function (error, data) {
+
+    var created_by = request.user_details.id;
+
+    var sql1 = "SELECT category.category_Name,category.id as category_Id,category.status,subcategory.id as subcategory_Id,subcategory.subcategory FROM Expense_Category_Name category LEFT JOIN Expense_Subcategory_Name subcategory on subcategory.category_id = category.id and subcategory.status = true WHERE category.status = true AND category.created_by='" + created_by + "'"
+    connection.query(sql1, function (error, data) {
         if (error) {
-            console.log("error",error)
             response.status(201).json({ message: "Error fetching Data" });
-        }
-        else if (data && data.length > 0) {
-            console.log("data",data)
-            response.status(200).json({ data: data });
-        }
-        else {
-            console.log("data",data)
-            response.status(201).json({ message: "No Data Found" });
+        } else {
+            response.status(200).json({ message: "Expense Categories", statusCode: 200, data: data });
         }
     })
 }
@@ -170,7 +162,7 @@ function CalculateExpenses(request, response) {
     AND YEAR(expen.createdate) BETWEEN  ${startingYear} AND ${endingYear}
                GROUP BY 
             expen.id`
-    console.log("query", query);
+    // console.log("query", query);
     connection.query(query, function (error, data) {
         if (error) {
             console.log("error", error);
@@ -253,7 +245,7 @@ join hosteldetails hos on hos.id = expen.hostel_id
                 if (Array.isArray(data) && data.length > 0) {
                     tempobj = { ...tempobj, data: data }
                     // response.status(200).json(tempobj);
-                    GenerateExpenseHistoryPDF(data,tempobj,response)
+                    GenerateExpenseHistoryPDF(data, tempobj, response)
                 }
                 else {
                     tempobj = { ...tempobj, message: data }
@@ -330,7 +322,7 @@ WHERE expen.status = true AND expen.created_by = ${createdBy}`;
         const startDateRange = `${start_date} 00:00:00`;
         const endDateRange = `${end_date} 23:59:59`;
         query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
-       
+
         // query += ` AND expen.purchase_date >= '${startDateRange}' AND expen.purchase_date <= '${endDateRange}'`;
     }
     console.log("query", query);
@@ -379,51 +371,51 @@ function DeleteExpenses(request, response) {
 function DeleteExpensesCategory(request, response) {
     let reqBodyData = request.body
     if (reqBodyData.id && reqBodyData.sub_Category_Id == undefined) {
-        connection.query(`select * from Expense_Subcategory_Name where category_id=${reqBodyData.id} and status = true`,function(selectErr,selectData){
+        connection.query(`select * from Expense_Subcategory_Name where category_id=${reqBodyData.id} and status = true`, function (selectErr, selectData) {
             if (selectErr) {
                 response.status(201).json({ message: 'Error while fetching Data' });
             }
-            else{
-                 let query = `Update Expense_Category_Name SET status = false WHERE id=${reqBodyData.id}`
-                if (selectData && selectData.length > 0) {                   
+            else {
+                let query = `Update Expense_Category_Name SET status = false WHERE id=${reqBodyData.id}`
+                if (selectData && selectData.length > 0) {
                     connection.query(query, function (err, data) {
                         if (err) {
                             response.status(201).json({ message: 'Error Deleting category' });
                         }
                         else {
-                            connection.query(`Update Expense_Subcategory_Name SET status = false where category_id = ${reqBodyData.id}`,function(updateErr,updateData){
+                            connection.query(`Update Expense_Subcategory_Name SET status = false where category_id = ${reqBodyData.id}`, function (updateErr, updateData) {
                                 if (updateErr) {
                                     response.status(201).json({ message: 'Error Deleting Sub category' });
                                 }
-                                else{
+                                else {
                                     response.status(200).json({ message: 'Category Deleted Successfully' });
                                 }
                             })
                             // response.status(200).json({ message: 'Category Deleted Successfully' });
                         }
-                    })  
+                    })
                 }
-                else{
-                    connection.query(query,function(deleteErr,deleteData){
+                else {
+                    connection.query(query, function (deleteErr, deleteData) {
                         if (deleteErr) {
                             response.status(201).json({ message: 'Error While Deleting Category' });
                         }
-                        else{
+                        else {
                             response.status(200).json({ message: 'Category Dleted Successfully' });
                         }
                     })
-                   
+
                 }
             }
         })
-        
+
     }
-    else if(reqBodyData && reqBodyData.sub_Category_Id){
-        connection.query(`Update Expense_Subcategory_Name SET status = false where id = ${reqBodyData.sub_Category_Id} and category_id =${reqBodyData.id}`,function(updateErr,updateData){
+    else if (reqBodyData && reqBodyData.sub_Category_Id) {
+        connection.query(`Update Expense_Subcategory_Name SET status = false where id = ${reqBodyData.sub_Category_Id} and category_id =${reqBodyData.id}`, function (updateErr, updateData) {
             if (updateErr) {
                 response.status(201).json({ message: 'Error Deleting Sub category' });
             }
-            else{
+            else {
                 response.status(200).json({ message: 'Sub Category Deleted Successfully' });
             }
         })
@@ -488,7 +480,7 @@ function DeleteExpensesCategory(request, response) {
 //         const startDateRange = `${start_date} 00:00:00`;
 //         const endDateRange = `${end_date} 23:59:59`;
 //         query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
-       
+
 //         // query += ` AND expen.purchase_date >= '${startDateRange}' AND expen.purchase_date <= '${endDateRange}'`;
 //     }
 //     console.log("query", query);
@@ -522,7 +514,7 @@ function DeleteExpensesCategory(request, response) {
 // }
 // {/* <td>category_Name : ${data[i].category_Name}<br/>purchase_amount : ${data[i].purchase_amount}</td>
 //                     <td> asset_name : ${data[i].asset_name} <br/> unit_count : ${data[i].unit_count} <br/> unit_amount : ${data[i].unit_amount}</td> */}
-               
+
 // htmlContent = htmlContent
 //         .replace('{{hostal_name}}', data[0].hostel_name)
 //         .replace('{{Phone}}', data[0].hostel_phoneNo)
@@ -546,7 +538,7 @@ function DeleteExpensesCategory(request, response) {
 //             console.log("res", res);
 // //upload to s3 bucket
 
-            
+
 //             let uploadedPDFs = 0;
 //             let pdfInfo = [];
 //             const fileContent = fs.readFileSync(res.filename);
@@ -558,7 +550,7 @@ function DeleteExpensesCategory(request, response) {
 //                     Body: fileContent,
 //                     ContentType: 'application/pdf'
 //                 };
-        
+
 //                 s3.upload(params, function (err, uploadData) {
 //                     if (err) {
 //                         console.error("Error uploading PDF", err);
@@ -566,21 +558,21 @@ function DeleteExpensesCategory(request, response) {
 //                     } else {
 //                         console.log("PDF uploaded successfully", uploadData.Location);
 //                         uploadedPDFs++;
-        
+
 //                         const pdfInfoItem = {
 //                             // user: user,
 //                             url: uploadData.Location
 //                         };
 //                         pdfInfo.push(pdfInfoItem);
-        
+
 //                         if (pdfInfo.length > 0) {
-        
+
 //                             var pdf_url = []
 //                             pdfInfo.forEach(pdf => {
 //                                 console.log(pdf.url);
 //                                 pdf_url.push(pdf.url)
 //                             });
-        
+
 //                             if (pdf_url.length > 0) {
 //                                 response.status(200).json({ message: 'Insert PDF successfully', pdf_url: pdf_url[0] });  
 //                                 deletePDfs(res.filename);                              
@@ -617,21 +609,21 @@ function DeleteExpensesCategory(request, response) {
 // }
 
 
-function GenerateExpenseHistoryPDF(data,tempobj,response){
+function GenerateExpenseHistoryPDF(data, tempobj, response) {
     const htmlFilePath = path.join(__dirname, 'mail_templates', 'expensesHistory.html');
     let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
-    
-            let total_amount = 0;
-            if (data && data.length > 0) {
-                console.log("data", data);
-                data.map((v) => {
-                    return total_amount += v.purchase_amount
-                })
-                console.log("total_amount", total_amount);
-                let invoiceRows = '';
-for (let i = 0; i < data.length; i++) {
-    let purchase_date = moment(data[i].purchase_date).format('DD-MM-YYYY')
-    invoiceRows += `
+
+    let total_amount = 0;
+    if (data && data.length > 0) {
+        console.log("data", data);
+        data.map((v) => {
+            return total_amount += v.purchase_amount
+        })
+        console.log("total_amount", total_amount);
+        let invoiceRows = '';
+        for (let i = 0; i < data.length; i++) {
+            let purchase_date = moment(data[i].purchase_date).format('DD-MM-YYYY')
+            invoiceRows += `
                 <tr>
                     <td>${purchase_date}</td>
                     <td>${data[i].Vendor_Name}</td>
@@ -642,31 +634,31 @@ for (let i = 0; i < data.length; i++) {
                     <td>${data[i].purchase_amount}</td>
                 </tr>
             `;
-}
-htmlContent = htmlContent
-        .replace('{{hostal_name}}', data[0].hostel_name)
-        .replace('{{Phone}}', data[0].hostel_phoneNo)
-        .replace('{{email}}', data[0].hostel_email)
-        .replace('{{city}}', data[0].hostel_address)
-        .replace('{{invoice_rows}}', invoiceRows)
-        .replace('{{total_amount}}', total_amount)
+        }
+        htmlContent = htmlContent
+            .replace('{{hostal_name}}', data[0].hostel_name)
+            .replace('{{Phone}}', data[0].hostel_phoneNo)
+            .replace('{{email}}', data[0].hostel_email)
+            .replace('{{city}}', data[0].hostel_address)
+            .replace('{{invoice_rows}}', invoiceRows)
+            .replace('{{total_amount}}', total_amount)
         const outputPath = path.join(__dirname, 'expenseHistory.pdf');
 
-    // Generate the PDF
-    pdf.create(htmlContent, { phantomPath: phantomjs.path }).toFile(outputPath, async (err, res) => {
-        if (err) {
-            console.error('Error generating PDF:', err);
-            return;
-        }
+        // Generate the PDF
+        pdf.create(htmlContent, { phantomPath: phantomjs.path }).toFile(outputPath, async (err, res) => {
+            if (err) {
+                console.error('Error generating PDF:', err);
+                return;
+            }
 
-        console.log('PDF generated:', res.filename);
-        if (res.filename) {
-            console.log("res", res);
-//upload to s3 bucket
-            
-            let uploadedPDFs = 0;
-            let pdfInfo = [];
-            const fileContent = fs.readFileSync(res.filename);
+            console.log('PDF generated:', res.filename);
+            if (res.filename) {
+                console.log("res", res);
+                //upload to s3 bucket
+
+                let uploadedPDFs = 0;
+                let pdfInfo = [];
+                const fileContent = fs.readFileSync(res.filename);
                 const key = `expense/${res.filename}`;
                 const BucketName = 'smartstaydevs';
                 const params = {
@@ -675,7 +667,7 @@ htmlContent = htmlContent
                     Body: fileContent,
                     ContentType: 'application/pdf'
                 };
-        
+
                 s3.upload(params, function (err, uploadData) {
                     if (err) {
                         console.error("Error uploading PDF", err);
@@ -683,24 +675,24 @@ htmlContent = htmlContent
                     } else {
                         console.log("PDF uploaded successfully", uploadData.Location);
                         uploadedPDFs++;
-        
+
                         const pdfInfoItem = {
                             // user: user,
                             url: uploadData.Location
                         };
                         pdfInfo.push(pdfInfoItem);
-        
+
                         if (pdfInfo.length > 0) {
-        
+
                             var pdf_url = []
                             pdfInfo.forEach(pdf => {
                                 console.log(pdf.url);
                                 pdf_url.push(pdf.url)
                             });
-        
+
                             if (pdf_url.length > 0) {
-                                response.status(200).json({ message: 'Insert PDF successfully', pdf_url: pdf_url[0],data:tempobj });  
-                                deletePDfs(res.filename);                              
+                                response.status(200).json({ message: 'Insert PDF successfully', pdf_url: pdf_url[0], data: tempobj });
+                                deletePDfs(res.filename);
                             } else {
                                 response.status(201).json({ message: 'Cannot Insert PDF to Database' });
                             }
@@ -708,13 +700,13 @@ htmlContent = htmlContent
                         }
                     }
                 });
-     }
-    });
             }
-            else {
-                response.status(201).json({ message: 'No Data Found' });
-            }    
-   
+        });
+    }
+    else {
+        response.status(201).json({ message: 'No Data Found' });
+    }
+
 }
 
 
@@ -730,4 +722,4 @@ function deletePDfs(filename) {
     }
 }
 
-module.exports = { AddExpense, AddExpenseCategory, GetExpensesCategory, CalculateExpenses, GetHostelExpenses, DeleteExpenses, DeleteExpensesCategory ,GenerateExpenseHistoryPDF};
+module.exports = { AddExpense, AddExpenseCategory, GetExpensesCategory, CalculateExpenses, GetHostelExpenses, DeleteExpenses, DeleteExpensesCategory, GenerateExpenseHistoryPDF };
