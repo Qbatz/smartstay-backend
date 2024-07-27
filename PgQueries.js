@@ -595,57 +595,62 @@ function listDashBoard(connection, response, request) {
 
                 })
 
-                var sql2="SELECT com.*,CASE WHEN com.user_type = 1 THEN com.created_by ELSE hos.id END AS com_created_by FROM compliance AS com JOIN hostel AS hos ON com.User_id = hos.User_Id WHERE (CASE WHEN com.user_type = 1 THEN com.created_by ELSE hos.id END) = 1;"
-                console.log(sql2);
-                // Get Revenue Details 
-                var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL  SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS numbers ) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.RoomRent, invo.EbAmount,invo.AmnitiesAmount,invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By = ?) AS invo ON m.month = invo.month GROUP BY m.month ORDER BY m.month; "
-                // Execute the query
-                connection.query(query1, [created_by], (error, results, fields) => {
-                    if (error) {
-                        console.error('Error executing query:', error);
-                        return;
+                var sql2 = "SELECT com.*,CASE WHEN com.user_type = 1 THEN com.created_by ELSE hos.id END AS com_created_by,ct.complaint_name FROM compliance AS com JOIN hostel AS hos ON com.User_id = hos.User_Id JOIN complaint_type AS ct ON ct.id = com.Complainttype WHERE CASE WHEN com.user_type = 1 THEN com.created_by ELSE hos.id END = '" + created_by + "' AND com.Status != 'Completed' ORDER BY com.ID DESC LIMIT 5;"
+                connection.query(sql2, function (err, com_data) {
+                    if (err) {
+                        response.status(201).json({ message: "Unable to Get Complaince Details", err: err.message });
                     } else {
-                        // expense category
-                        let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode, sum(expen.purchase_amount) as total_amount, category.category_Name from expenses expen
-                        join Expense_Category_Name category on category.id = expen.category_id
-                        where expen.status = true 
-                        AND YEAR(expen.createdate) BETWEEN  ${startingYear} AND ${endingYear}
-                                   GROUP BY 
-                                expen.id`
-                        // console.log("query", query);
-                        connection.query(query, function (error, data) {
+                        // Get Revenue Details 
+                        var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL  SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS numbers ) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.RoomRent, invo.EbAmount,invo.AmnitiesAmount,invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By = ?) AS invo ON m.month = invo.month GROUP BY m.month ORDER BY m.month; "
+                        // Execute the query
+                        connection.query(query1, [created_by], (error, results, fields) => {
                             if (error) {
-                                console.log("error", error);
-                                response.status(201).json({ message: "Error fetching Data" });
-                            }
-                            else {
-                                if (data.length > 0) {
-                                    console.log("data", data);
-                                    let resArray = [];
-                                    let totalAmount = 0;
-                                    for (let i = 0; i < data.length; i++) {
-                                        totalAmount += data[i].total_amount;
-                                        let temp = {
-                                            id: data[i].id,
-                                            category_Name: data[i].category_Name,
-                                            Amount: data[i].purchase_amount
+                                console.error('Error executing query:', error);
+                                return;
+                            } else {
+                                // expense category
+                                let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode, sum(expen.purchase_amount) as total_amount, category.category_Name from expenses expen
+                                join Expense_Category_Name category on category.id = expen.category_id
+                                where expen.status = true 
+                                AND YEAR(expen.createdate) BETWEEN  ${startingYear} AND ${endingYear}
+                                           GROUP BY 
+                                        expen.id`
+                                // console.log("query", query);
+                                connection.query(query, function (error, data) {
+                                    if (error) {
+                                        console.log("error", error);
+                                        response.status(201).json({ message: "Error fetching Data" });
+                                    }
+                                    else {
+                                        if (data.length > 0) {
+                                            console.log("data", data);
+                                            let resArray = [];
+                                            let totalAmount = 0;
+                                            for (let i = 0; i < data.length; i++) {
+                                                totalAmount += data[i].total_amount;
+                                                let temp = {
+                                                    id: data[i].id,
+                                                    category_Name: data[i].category_Name,
+                                                    Amount: data[i].purchase_amount
+                                                }
+                                                resArray.push(temp);
+                                            }
+                                            console.log("resArray", resArray.length);
+                                            if (data.length === resArray.length) {
+                                                response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, totalAmount: totalAmount, categoryList: resArray, com_data: com_data });
+                                                // response.status(200).json({ totalAmount, resArray });
+                                            }
+                                        } else {
+                                            response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, totalAmount: [], categoryList: [], com_data: com_data });
                                         }
-                                        resArray.push(temp);
                                     }
-                                    console.log("resArray", resArray.length);
-                                    if (data.length === resArray.length) {
-                                        response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, totalAmount: totalAmount, categoryList: resArray });
-                                        // response.status(200).json({ totalAmount, resArray });
-                                    }
-                                } else {
-                                    response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, totalAmount: [], categoryList: [] });
-                                }
+                                })
                             }
                         })
                     }
                 })
             } else {
-                response.status(200).json({ dashboardList: [], Revenue_reports: [], totalAmount: [], categoryList: [] });
+                response.status(200).json({ dashboardList: [], Revenue_reports: [], totalAmount: [], categoryList: [], com_data: [] });
             }
         }
     })
