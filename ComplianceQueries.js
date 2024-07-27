@@ -1,4 +1,6 @@
 const connection = require('./config/connection')
+const addNotification = require('./components/add_notification')
+
 
 function AddCompliance(connection, request, response) {
 
@@ -64,8 +66,8 @@ function AddCompliance(connection, request, response) {
                             console.error(error);
                             response.status(500).json({ message: "Error inserting record", statusCode: 500 });
                         } else {
-                            var user_id = req.user_details.id;
-                            var user_type = req.user_details.user_type;
+                            var user_id = request.user_details.id;
+                            var user_type = request.user_details.user_type;
 
                             if (user_type != 0) {
 
