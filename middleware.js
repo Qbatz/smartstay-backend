@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const connection = require('./config/connection');
 
 module.exports = (req, res, next) => {
 
@@ -27,30 +28,41 @@ module.exports = (req, res, next) => {
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 req.user_details = decoded;
 
-                const currentTime = Math.floor(Date.now() / 1000);
-                const timeToExpire = decoded.exp - currentTime;
+                var created_by = decoded.id;
 
-                let newToken = null;
+                var sql1 = "SELECT * FROM createaccount WHERE id='" + created_by + "'";
+                connection.query(sql1, function (err, data) {
+                    if (err) {
+                        res.status(206).json({ message: "Unable to Get Admin Details", statusCode: 206 });
+                    } else if (data.length != 0) {
 
-                // Refresh the token
-                if (timeToExpire <= 600) {
-                    newToken = jwt.sign(
-                        { id: decoded.id, sub: decoded.id, user_type: 1, username: decoded.username }, process.env.JWT_SECRET, { expiresIn: '30m' }
-                    );
-                    res.locals.refresh_token = newToken;
-                }
+                        const currentTime = Math.floor(Date.now() / 1000);
+                        const timeToExpire = decoded.exp - currentTime;
 
-                const originalJson = res.json.bind(res);
+                        let newToken = null;
 
-                res.json = (body) => {
-                    if (newToken) {
-                        body.refresh_token = newToken;
+                        // Refresh the token
+                        if (timeToExpire <= 600) {
+                            newToken = jwt.sign(
+                                { id: decoded.id, sub: decoded.id, user_type: 1, username: decoded.username }, process.env.JWT_SECRET, { expiresIn: '30m' }
+                            );
+                            res.locals.refresh_token = newToken;
+                        }
+
+                        const originalJson = res.json.bind(res);
+
+                        res.json = (body) => {
+                            if (newToken) {
+                                body.refresh_token = newToken;
+                            }
+                            originalJson(body);
+                        };
+
+                        next();
+                    } else {
+                        res.status(206).json({ message: "Invalid User", statusCode: 206 });
                     }
-                    originalJson(body);
-                };
-
-                next();
-
+                })
             } catch (err) {
                 res.status(206).json({ message: "Access denied. Invalid Token or Token Expired", statusCode: 206 });
             }
