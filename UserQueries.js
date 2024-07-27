@@ -58,8 +58,16 @@ function createUser(connection, request, response) {
     var profile = request.file;
 
     const FirstNameInitial = atten.firstname.charAt(0).toUpperCase();
-    const LastNameInitial = atten.lastname.charAt(0).toUpperCase();
-    const Circle = FirstNameInitial + LastNameInitial;
+    if (atten.lastname) {
+        var LastNameInitial = atten.lastname.charAt(0).toUpperCase();
+        var Circle = FirstNameInitial + LastNameInitial;
+    } else {
+        atten.lastname = "";
+        var FirstNameInitial2 = atten.firstname.charAt(0).toUpperCase();
+        var LastNameInitial2 = atten.firstname.charAt(1).toUpperCase();
+        console.log(FirstNameInitial2);
+        var Circle = FirstNameInitial2 + LastNameInitial2;
+    }
     const Status = atten.BalanceDue < 0 ? 'Pending' : 'Success';
     const Name = atten.firstname + ' ' + atten.lastname;
 

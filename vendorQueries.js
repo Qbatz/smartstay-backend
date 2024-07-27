@@ -103,7 +103,8 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
         const timestamp = Date.now();
         const firstName = reqInvoice.firstName;
         const lastName = reqInvoice.LastName;
-        const Vendor_Name = firstName + ' ' + lastName;
+        // const Vendor_Name = firstName + ' ' + lastName;
+        const Vendor_Name = firstName + (lastName ? ' ' + lastName : '');
         const created_by = request.user_details.id;
         const checkQuery = `SELECT * FROM Vendor WHERE Vendor_Id = '${reqInvoice.Vendor_Id}'`;
 
