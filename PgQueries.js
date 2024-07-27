@@ -566,8 +566,9 @@ function listDashBoard(connection, response, request) {
     FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By='${created_by}' AND icv.BalanceDue != 0) AS overdue from hosteldetails details where details.created_By='${created_by}';`
     connection.query(sql1, function (error, data) {
         if (error) {
-            response.status(200).json({ dashboardList: [], Revenue_reports: [], totalAmount: [], categoryList: [], error: error });
-            // response.status(201).json({ message: "No data found", error: error });
+            console.log(error, "Error Message");
+            // response.status(200).json({ dashboardList: [], Revenue_reports: [], totalAmount: [], categoryList: [], error: error });
+            response.status(201).json({ message: "No data found", error: error.message });
         } else {
 
             if (data.length > 0) {
@@ -594,6 +595,8 @@ function listDashBoard(connection, response, request) {
 
                 })
 
+                var sql2="SELECT com.*,CASE WHEN com.user_type = 1 THEN com.created_by ELSE hos.id END AS com_created_by FROM compliance AS com JOIN hostel AS hos ON com.User_id = hos.User_Id WHERE (CASE WHEN com.user_type = 1 THEN com.created_by ELSE hos.id END) = 1;"
+                console.log(sql2);
                 // Get Revenue Details 
                 var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL  SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS numbers ) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.RoomRent, invo.EbAmount,invo.AmnitiesAmount,invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By = ?) AS invo ON m.month = invo.month GROUP BY m.month ORDER BY m.month; "
                 // Execute the query
