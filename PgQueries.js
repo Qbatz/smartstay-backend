@@ -554,9 +554,9 @@ function UpdateEB(connection, atten, response) {
 function listDashBoard(connection, response, request) {
     const userDetails = request.user_details;
     let startingYear = new Date().getFullYear() - 1;
-    console.log("startingYear", startingYear);
+    // console.log("startingYear", startingYear);
     let endingYear = new Date().getFullYear();
-    console.log("endingYear", endingYear);
+    // console.log("endingYear", endingYear);
 
     // if (reqdata) {
     let query = `select COALESCE((select count(id) from hosteldetails where created_By=details.created_By),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id)),0) as roomCount, COALESCE(sum((select sum(Number_Of_Beds) from hostelrooms where Hostel_Id=details.id)),0) as Bed ,COALESCE(sum((select count(id) from hostel where Hostel_Id= details.id and isActive =1)),0) as occupied_Bed ,
@@ -607,7 +607,7 @@ function listDashBoard(connection, response, request) {
                         AND YEAR(expen.createdate) BETWEEN  ${startingYear} AND ${endingYear}
                                    GROUP BY 
                                 expen.id`
-                        console.log("query", query);
+                        // console.log("query", query);
                         connection.query(query, function (error, data) {
                             if (error) {
                                 console.log("error", error);
