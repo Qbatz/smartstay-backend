@@ -5,6 +5,7 @@ const middleware = require('./middleware');
 const connection = require('./config/connection');
 const notifications = require('./notifications');
 const assets = require('./assets');
+
 const app = express()
 const userQueries = require('./UserQueries');
 const accountManagement = require('./AccountManagementQueries')
@@ -33,6 +34,7 @@ app.use(function (req, res, next) {
     res.header("Access-Control-Allow-Headers", "X-Requested-With,Content-Type,Accept");
     next();
 })
+const dbquery = require('./dbquery');
 
 app.use(middleware);
 

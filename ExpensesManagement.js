@@ -104,7 +104,7 @@ function AddExpenseCategory(request, response) {
                             return response.status(201).json({ statusCode: 201, message: "Sub Category Name Already Exist" });
                         } else {
                             // Add Subcategory
-                            var sql4 = "INSERT INTO Expense_Subcategory_Name (cat_id,subcategory,status,created_by) VALUES ('" + reqData.id + "','" + reqData.sub_Category + "',1,'" + created_by + "')";
+                            var sql4 = "INSERT INTO Expense_Subcategory_Name (category_id,subcategory,status,created_by) VALUES ('" + reqData.id + "','" + reqData.sub_Category + "',1,'" + created_by + "')";
                             connection.query(sql4, function (ins_err, ins_res) {
                                 if (ins_err) {
                                     console.log(ins_err);
@@ -419,7 +419,7 @@ function DeleteExpensesCategory(request, response) {
         
     }
     else if(reqBodyData && reqBodyData.sub_Category_Id){
-        connection.query(`Update Expense_Subcategory_Name SET status = false where id = ${reqBodyData.sub_Category_Id}`,function(updateErr,updateData){
+        connection.query(`Update Expense_Subcategory_Name SET status = false where id = ${reqBodyData.sub_Category_Id} and category_id =${reqBodyData.id}`,function(updateErr,updateData){
             if (updateErr) {
                 response.status(201).json({ message: 'Error Deleting Sub category' });
             }
