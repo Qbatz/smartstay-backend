@@ -560,10 +560,12 @@ function listDashBoard(connection, response, request) {
     let endingYear = new Date().getFullYear();
     // console.log("endingYear", endingYear);
 
-    var sql1 = `select COALESCE((select count(id) from hosteldetails where created_By=details.created_By),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id)),0) as roomCount, COALESCE(sum((select sum(Number_Of_Beds) from hostelrooms where Hostel_Id=details.id)),0) as Bed ,COALESCE(sum((select count(id) from hostel where Hostel_Id= details.id and isActive =1)),0) as occupied_Bed ,
+    var sql1 = `select creaccount.first_name,creaccount.last_name,COALESCE((select count(id) from hosteldetails where created_By=details.created_By),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id)),0) as roomCount, COALESCE(sum((select sum(Number_Of_Beds) from hostelrooms where Hostel_Id=details.id)),0) as Bed ,COALESCE(sum((select count(id) from hostel where Hostel_Id= details.id and isActive =1)),0) as occupied_Bed ,
     (select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue
     FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By='${created_by}') AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue
-    FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By='${created_by}' AND icv.BalanceDue != 0) AS overdue from hosteldetails details where details.created_By='${created_by}';`
+    FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By='${created_by}' AND icv.BalanceDue != 0) AS overdue from hosteldetails details
+    join createaccount creaccount on creaccount.id = details.created_by
+    where details.created_By='${created_by}';`
     connection.query(sql1, function (error, data) {
         if (error) {
             console.log(error, "Error Message");
@@ -588,7 +590,9 @@ function listDashBoard(connection, response, request) {
                         availableBed: item.Bed - item.occupied_Bed,
                         Revenue: item.Revenue,
                         overdue: item.overdue,
-                        current: current
+                        current: current,
+                        first_name : item.first_name,
+                        last_name: item.last_name
                     }
                     // tempArray.push(obj)
                     return obj
@@ -601,7 +605,8 @@ function listDashBoard(connection, response, request) {
                         response.status(201).json({ message: "Unable to Get Complaince Details", err: err.message });
                     } else {
                         // Get Revenue Details 
-                        var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL  SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS numbers ) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.RoomRent, invo.EbAmount,invo.AmnitiesAmount,invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By = ?) AS invo ON m.month = invo.month GROUP BY m.month ORDER BY m.month; "
+                        // var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL  SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS numbers ) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.RoomRent, invo.EbAmount,invo.AmnitiesAmount,invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By = ?) AS invo ON m.month = invo.month GROUP BY m.month ORDER BY m.month; "
+                        var query1 = `SELECT m.month,COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue,COALESCE(SUM(COALESCE(expen.purchase_amount, 0)), 0) AS expense FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS numbers) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month, invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By = ${created_by}) AS invo ON m.month = invo.month LEFT JOIN (SELECT DATE_FORMAT(expen.createdate, '%Y-%m') AS month, expen.purchase_amount FROM expenses AS expen WHERE expen.created_by=${created_by}) AS expen ON m.month = expen.month GROUP BY m.month ORDER BY m.month;`
                         // Execute the query
                         connection.query(query1, [created_by], (error, results, fields) => {
                             if (error) {
@@ -611,7 +616,7 @@ function listDashBoard(connection, response, request) {
                                 // expense category
                                 let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode, sum(expen.purchase_amount) as total_amount, category.category_Name from expenses expen
                                 join Expense_Category_Name category on category.id = expen.category_id
-                                where expen.status = true 
+                                where expen.status = true AND expen.created_by = ${created_by}
                                 AND YEAR(expen.createdate) BETWEEN  ${startingYear} AND ${endingYear}
                                            GROUP BY 
                                         expen.id`
@@ -630,6 +635,8 @@ function listDashBoard(connection, response, request) {
                                                 totalAmount += data[i].total_amount;
                                                 let temp = {
                                                     id: data[i].id,
+                                                    first_name:data[i].first_name,
+                                                    last_name:data[i].last_name,
                                                     category_Name: data[i].category_Name,
                                                     Amount: data[i].purchase_amount
                                                 }

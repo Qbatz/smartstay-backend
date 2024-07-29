@@ -20,11 +20,11 @@ function AddExpense(request, response) {
     let reqData = request.body;
     var createdBy = request.user_details.id;
     let purchase_date = moment(new Date(reqData.purchase_date)).format('yyyy-MM-DD')
-    console.log("purchase_date", purchase_date);
+    // console.log("purchase_date", purchase_date);
     let purchase_amount = Number(reqData.unit_count) * Number(reqData.unit_amount)
-    console.log("purchase_amount", purchase_amount);
+    // console.log("purchase_amount", purchase_amount);
     let createdate = moment(new Date()).format('yyyy-MM-DD HH:mm:ss')
-    console.log("createdate", createdate);
+    // console.log("createdate", createdate);
     if (reqData) {
         if (reqData.id != null && reqData.id != undefined) {
             let query = `UPDATE expenses SET
@@ -38,7 +38,8 @@ function AddExpense(request, response) {
   description = '${reqData.description}',
   created_by = ${createdBy},
   createdate = '${createdate}',
-  payment_mode = '${reqData.payment_mode}'
+  payment_mode = '${reqData.payment_mode}',
+  hostel_id = ${reqData.hostel_id}
    WHERE id = ${reqData.id};`
             connection.query(query, function (updateErr, updateData) {
                 if (updateErr) {
@@ -51,12 +52,12 @@ function AddExpense(request, response) {
         }
         else {
             let createdate = moment(new Date()).format('yyyy-MM-DD HH:mm:ss')
-            console.log("createdate", createdate);
-            let query = `INSERT INTO expenses ( vendor_id, asset_id, category_id, purchase_date, unit_count, unit_amount, purchase_amount, description, created_by,createdate,payment_mode)
+            // console.log("createdate", createdate);
+            let query = `INSERT INTO expenses ( vendor_id, asset_id, category_id, purchase_date, unit_count, unit_amount, purchase_amount, description, created_by,createdate,payment_mode,hostel_id)
 VALUES
-  (${reqData.vendor_id}, ${reqData.asset_id}, ${reqData.category_id}, '${purchase_date}', ${reqData.unit_count}, ${reqData.unit_amount},${purchase_amount}, '${reqData.description}', ${createdBy}, '${createdate}','${reqData.payment_mode}');
+  (${reqData.vendor_id}, ${reqData.asset_id}, ${reqData.category_id}, '${purchase_date}', ${reqData.unit_count}, ${reqData.unit_amount},${purchase_amount}, '${reqData.description}', ${createdBy}, '${createdate}','${reqData.payment_mode}',${reqData.hostel_id});
 `
-            console.log("query", query);
+            // console.log("query", query);
             connection.query(query, function (insertErr, insertData) {
                 if (insertErr) {
                     console.log("insertErr", insertErr);
@@ -153,9 +154,9 @@ function GetExpensesCategory(request, response) {
 function CalculateExpenses(request, response) {
     let reqData = request.body
     let startingYear = new Date(reqData.startingDate).getFullYear();
-    console.log("startingYear", startingYear);
+    // console.log("startingYear", startingYear);
     let endingYear = reqData.endingDate ? new Date(reqData.endingDate).getFullYear() : new Date(reqData.startingDate).getFullYear();
-    console.log("endingYear", endingYear);
+    // console.log("endingYear", endingYear);
     let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode, sum(expen.purchase_amount) as total_amount, category.category_Name from expenses expen
     join Expense_Category_Name category on category.id = expen.category_id
     where expen.status = true 
@@ -182,7 +183,7 @@ function CalculateExpenses(request, response) {
                     }
                     resArray.push(temp);
                 }
-                console.log("resArray", resArray.length);
+                // console.log("resArray", resArray.length);
                 if (data.length === resArray.length) {
                     response.status(200).json({ totalAmount, resArray });
                 }
@@ -276,7 +277,7 @@ function GetHostelExpenses(request, response) {
     // join assets ast on ast.id = expen.asset_id
     //     where expen.status = true and expen.created_by = ${createdBy}`
 
-    let query = `SELECT hos.Name as hostel_name,hos.email_id as hostel_email,hos.Address as hostel_address,hos.hostel_PhoneNo as hostel_phoneNo, expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode, category.category_Name, ven.Vendor_Name, asname.asset_name 
+    let query = `SELECT expen.hostel_id,hos.Name as hostel_name,hos.email_id as hostel_email,hos.Address as hostel_address,hos.hostel_PhoneNo as hostel_phoneNo, expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode, category.category_Name, ven.Vendor_Name, asname.asset_name 
 FROM expenses expen
 JOIN Expense_Category_Name category ON category.id = expen.category_id
 JOIN Vendor ven ON ven.id = expen.vendor_id
@@ -325,7 +326,7 @@ WHERE expen.status = true AND expen.created_by = ${createdBy}`;
 
         // query += ` AND expen.purchase_date >= '${startDateRange}' AND expen.purchase_date <= '${endDateRange}'`;
     }
-    console.log("query", query);
+    // console.log("query", query);
     connection.query(query, function (err, data) {
         if (err) {
             console.log("err", err);
@@ -334,11 +335,11 @@ WHERE expen.status = true AND expen.created_by = ${createdBy}`;
         else {
             let total_amount = 0;
             if (data && data.length > 0) {
-                console.log("data", data);
+                // console.log("data", data);
                 data.map((v) => {
                     return total_amount += v.purchase_amount
                 })
-                console.log("total_amount", total_amount);
+                // console.log("total_amount", total_amount);
                 basicDetails = getAllfilter(createdBy, response, data, total_amount)
             }
             else {
@@ -651,7 +652,7 @@ function GenerateExpenseHistoryPDF(data, tempobj, response) {
                 return;
             }
 
-            console.log('PDF generated:', res.filename);
+            // console.log('PDF generated:', res.filename);
             if (res.filename) {
                 console.log("res", res);
                 //upload to s3 bucket
@@ -673,7 +674,7 @@ function GenerateExpenseHistoryPDF(data, tempobj, response) {
                         console.error("Error uploading PDF", err);
                         response.status(500).json({ message: 'Error uploading PDF to S3' });
                     } else {
-                        console.log("PDF uploaded successfully", uploadData.Location);
+                        // console.log("PDF uploaded successfully", uploadData.Location);
                         uploadedPDFs++;
 
                         const pdfInfoItem = {
@@ -686,7 +687,7 @@ function GenerateExpenseHistoryPDF(data, tempobj, response) {
 
                             var pdf_url = []
                             pdfInfo.forEach(pdf => {
-                                console.log(pdf.url);
+                                // console.log(pdf.url);
                                 pdf_url.push(pdf.url)
                             });
 
