@@ -15,6 +15,7 @@ const complianceQueries = require('./ComplianceQueries')
 const pgQueries = require('./PgQueries')
 const vendorQueries = require('./vendorQueries')
 const expensesManagement = require('./ExpensesManagement')
+var billings = require('./zoho_billing/billings');
 
 const multer = require('multer');
 const request = require('request');
@@ -669,4 +670,8 @@ app.post("/aadhaar_otp_verification", (req, res) => {
 // Reports API
 app.post("/all_reports", (req, res) => {
     assets.all_reports(req, res)
+})
+
+app.post('/subscipition', (req, res) => {
+    billings.subscipition(req, res)
 })

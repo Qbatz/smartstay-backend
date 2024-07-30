@@ -8,6 +8,8 @@ const fs = require('fs');
 const path = require('path');
 const connection = require('./config/connection');
 const uploadImage = require('./components/upload_image');
+const apiResponse = require('./zoho_billing/api_response');
+
 
 
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
@@ -151,7 +153,7 @@ function update_account_details(request, response) {
 function createnewAccount(request, response) {
 
     var reqBodyData = request.body;
-    if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.first_name  && reqBodyData.password && reqBodyData.confirm_password) {
+    if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.first_name && reqBodyData.password && reqBodyData.confirm_password) {
 
         connection.query(
             `SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`,
@@ -171,9 +173,26 @@ function createnewAccount(request, response) {
 
                         const hash_password = await bcrypt.hash(reqBodyData.password, 10);
 
+                        // var apiEndpoint = "https://www.zohoapis.in/billing/v1/customers";
+                        // var method = "POST"
+                        // var inbut_body = {
+                        //     display_name: reqBodyData.first_name + ' ' + reqBodyData.last_name,
+                        //     first_name: reqBodyData.first_name,
+                        //     last_name: reqBodyData.last_name,
+                        //     email: reqBodyData.emailId,
+                        // };
+
+                        // apiResponse(apiEndpoint, method, inbut_body).then(api_data => {
+                        //     console.log('API Response:', api_data);
+
+                        //     const customerId = api_data.customer.customer_id; // Adjust the path based on actual response structure
+                        //     console.log('Customer ID:', customerId)
+
+                        var customerId = 0;
+
                         connection.query(
-                            `INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password) VALUES (?,?,?,?,?)`,
-                            [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password],
+                            `INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id) VALUES (?,?,?,?,?,?)`,
+                            [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customerId],
                             function (error, result) {
                                 if (error) {
                                     console.error("Database error:", error);
@@ -184,6 +203,11 @@ function createnewAccount(request, response) {
                                 }
                             }
                         );
+                        // })
+                        // .catch(error => {
+                        //     console.error('Error:', error)
+                        //     response.status(201).json({ message: error, statusCode: 201 });
+                        // })
                     } else {
                         response.status(210).json({ message: 'Password and Confirm Password Not Matched', statusCode: 210 });
                     }

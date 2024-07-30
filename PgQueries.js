@@ -53,64 +53,6 @@ function hostelListDetails(connection, response) {
         }
     })
 }
-
-
-// function createPG(connection, request, response) {
-//     const userDetails = request.user_details;
-//     const reqData = request.body;
-
-//     let hostelID, errorMessage
-//     if (reqData) {
-//         const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) values (\'${reqData.name}\',\'${reqData.phoneNo}\',\'${reqData.number_of_floors}\',\'${reqData.email_Id}\',\'${reqData.location}\',\'${userDetails.id}\')`
-//         connection.query(query, function (error, data) {
-//             if (error) {
-//                 console.log("error", error);
-//                 response.status(201).json({ message: 'Cannot Insert Details' })
-//             }
-//             else {
-//                 console.log("Data for new hostel *=>", data)
-//                 const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqData.phoneNo}\'`
-//                 connection.query(query2, function (error, datum) {
-//                     if (datum.length > 0) {
-//                         // hostelID = datum[0].id
-//                         // for (let i = 0; i < reqData.floorDetails.length; i++) {
-//                         //     for (let j = 0; j < reqData.floorDetails[i].length; j++) {
-//                         //         const bed = Number(reqData.floorDetails[i][j].number_Of_Bed)
-//                         //         const room = Number(reqData.floorDetails[i][j].roomName)
-//                         //         const price = Number(reqData.floorDetails[i][j].price)
-//                         //         const query3 = insert into hostelrooms(Hostel_Id,Floor_Id,Room_Id,Number_Of_Beds,Created_By,Price) values(\'${hostelID}\',\'${i + 1}\',\'${room}\',\'${bed}\',\'${reqData.created_by}\',\'${price}\')
-//                         //         connection.query(query3, function (error, data) {
-//                         //             console.log(error);
-//                         //             if (error) {
-//                         //                 errorMessage = error;
-//                         //             }
-
-//                         //         })
-//                         //     }
-//                         // }
-//                         // if (errorMessage) {
-
-//                         //     response.status(201).json({ message: 'Cannot Insert Details' })
-//                         // }
-//                         // else {
-//                         response.status(200).json({ message: 'Data Saved Successfully' })
-//                         // }
-//                     }
-
-//                     else {
-//                         response.status(201).json({ message: 'Phone number not Registered' })
-//                     }
-
-//                 })
-//             }
-//         })
-//     }
-//     else {
-//         response.status(201).json({ message: 'Missing Parameter' })
-//     }
-// }
-
-
 function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileData, callback) {
     const s3 = new AWS.S3();
 
@@ -343,71 +285,6 @@ function ListForFloor(connection, reqData, response) {
 
 }
 
-// function CreateRoom(connection, reqsData, response) {
-//     let hostelId, errorMessage, message;
-//     if (reqsData) {
-//         const query1 = `SELECT * FROM hosteldetails WHERE id='${reqsData.id}'`;
-//         connection.query(query1, function (error, data) {
-
-//             if (data && data.length > 0) {
-//                 hostelId = data[0].id;
-
-//                 for (let i = 0; i < reqsData.floorDetails.length; i++) {
-//                     const currentRoom = reqsData.floorDetails[i];
-//                     const checkRoomQuery = `SELECT Room_Id, Number_Of_Beds FROM hostelrooms WHERE Hostel_Id = '${hostelId}' AND Floor_Id = '${currentRoom.floorId}' AND Room_Id = '${currentRoom.roomId}' AND isActive=1`;
-
-//                     connection.query(checkRoomQuery, function (error, existingRoom) {
-
-//                         if (existingRoom && existingRoom.length > 0) {
-
-//                             setTimeout(() => {
-//                                 message = `Room ID is already exists.`;
-//                             }, 1000)
-
-
-//                             let updateQuery;
-//                             if (currentRoom.number_of_beds && currentRoom.roomRent) {
-//                                 updateQuery = ` UPDATE hostelrooms SET Number_Of_Beds = '${currentRoom.number_of_beds}', Price = '${currentRoom.roomRent}'  WHERE Hostel_Id = '${hostelId}' AND Floor_Id = '${currentRoom.floorId}' AND Room_Id = '${currentRoom.roomId}'`;
-
-//                             } else if (currentRoom.number_of_beds) {
-//                                 let bed = Number(existingRoom[0].Number_Of_Beds) + Number(currentRoom.number_of_beds)
-//                                 updateQuery = ` UPDATE hostelrooms SET Number_Of_Beds = '${bed}' WHERE Hostel_Id = '${hostelId}' AND Floor_Id = '${currentRoom.floorId}' AND Room_Id = '${currentRoom.roomId}'`;
-//                             }
-
-
-//                             connection.query(updateQuery, function (error, updateResult) {
-//                                 console.log("Update result", updateResult);
-//                                 if (error) {
-//                                     errorMessage = error;
-//                                 }
-
-//                             });
-//                         } else {
-//                             const insertQuery = `INSERT INTO hostelrooms (Hostel_Id, Floor_Id, Room_Id, Number_Of_Beds, Price)VALUES ('${hostelId}', '${currentRoom.floorId}', '${currentRoom.roomId}', '${currentRoom.number_of_beds}', '${currentRoom.roomRent}')`;
-
-//                             connection.query(insertQuery, function (error, insertResult) {
-//                                 if (error) {
-//                                     errorMessage = error;
-//                                 }
-
-//                             });
-//                         }
-//                     });
-//                 }
-
-//                 if (errorMessage) {
-//                     response.status(201).json({ message: 'Cannot Insert Details' });
-//                 } else {
-//                     response.status(200).json({ message: message && message.length > 0 ? message : 'Create Room Details successfully' })
-//                 }
-//             } else {
-//                 response.status(201).json({ message: 'No Data Found' });
-//             }
-//         });
-//     } else {
-//         response.status(201).json({ message: 'Missing Parameter' });
-//     }
-// }
 async function CreateRoom(connection, request, response) {
 
     var reqsData = request.body;

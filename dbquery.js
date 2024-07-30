@@ -10,7 +10,18 @@ const queries = [
         status TINYINT NULL,
         PRIMARY KEY (id));`,
 
-        "ALTER TABLE hostel ADD COLUMN created_by BIGINT(20) NULL DEFAULT '0' AFTER pending_advance",
+    "ALTER TABLE hostel ADD COLUMN created_by BIGINT(20) NULL DEFAULT '0' AFTER pending_advance",
+
+    "ALTER TABLE createaccount ADD COLUMN customer_id VARCHAR(255) NULL DEFAULT '0' AFTER isEnable,ADD COLUMN plan_code VARCHAR(255) NULL AFTER customer_id",
+
+    "ALTER TABLE createaccount ADD COLUMN plan_status INT NULL DEFAULT '0' AFTER plan_code",
+
+    "CREATE TABLE subscribtion_history (`id` INT NOT NULL AUTO_INCREMENT,`customer_id` VARCHAR(255) NOT NULL,`plan_code` VARCHAR(45) NOT NULL,`amount` BIGINT(20) NOT NULL,`plan_status` INT(11) NULL DEFAULT '0',`plan_duration` INT(11) NULL DEFAULT '30',`startdate` DATE NOT NULL,`end_date` DATE NOT NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,`updateat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY (`id`))",
+
+    "CREATE TABLE subscribtion_invoices (`id` INT NOT NULL AUTO_INCREMENT,`customer_id` VARCHAR(255) NOT NULL,`invoice_id` VARCHAR(255) NULL DEFAULT '0',`invoice_pdf` VARCHAR(255) NULL DEFAULT '0',`status` INT(11) NOT NULL DEFAULT '0',`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,`updateat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY (`id`))",
+
+    "CREATE TABLE subscribtion_transactions (`id` INT NOT NULL AUTO_INCREMENT,`customer_id` VARCHAR(255) NOT NULL,`invoice_id` VARCHAR(255) NULL DEFAULT '0',`payment_type` VARCHAR(255) NULL DEFAULT '0',`status` INT(11) NOT NULL DEFAULT '0',`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,`updateat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY (`id`))",
+
 ];
 
 queries.forEach(executeQuery);
