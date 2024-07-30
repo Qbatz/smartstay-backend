@@ -106,6 +106,8 @@ function update_account_details(request, response) {
 
                 var old_profile = data[0].profile;
 
+                console.log(old_profile);
+
                 if (profile) {
                     try {
                         const timestamp = Date.now();
@@ -119,7 +121,7 @@ function update_account_details(request, response) {
                             console.error("Failed to extract key from URL:", old_profile);
                         }
                     } catch (err) {
-                        console.error(err);
+                        console.log(err);
                         profile_url = 0;
                     }
                 } else {
