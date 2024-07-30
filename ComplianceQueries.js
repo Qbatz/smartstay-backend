@@ -40,7 +40,7 @@ function AddCompliance(connection, request, response) {
             } else {
 
                 var total_count = data[0].total_count || "#100";
-                var count = parseInt(data.replace('#', ''), 10);
+                var count = parseInt(total_count.replace('#', ''), 10);
                 count += 1;
                 total_count = `#${count}`;
 
