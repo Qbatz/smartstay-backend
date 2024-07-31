@@ -22,6 +22,10 @@ const queries = [
 
     "CREATE TABLE subscribtion_transactions (`id` INT NOT NULL AUTO_INCREMENT,`customer_id` VARCHAR(255) NOT NULL,`invoice_id` VARCHAR(255) NULL DEFAULT '0',`payment_type` VARCHAR(255) NULL DEFAULT '0',`status` INT(11) NOT NULL DEFAULT '0',`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,`updateat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY (`id`))",
 
+    "ALTER TABLE subscribtion_history ADD COLUMN `subscribtion_id` VARCHAR(255) NULL AFTER `plan_code`;",
+
+    "ALTER TABLE createaccount ADD COLUMN `subscription_id` VARCHAR(255) NULL DEFAULT '0' AFTER `customer_id`;"
+
 ];
 
 queries.forEach(executeQuery);

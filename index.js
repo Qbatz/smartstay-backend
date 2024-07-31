@@ -672,6 +672,12 @@ app.post("/all_reports", (req, res) => {
     assets.all_reports(req, res)
 })
 
+// *********** Billing Process **************
+
 app.post('/subscipition', (req, res) => {
     billings.subscipition(req, res)
+})
+
+app.post('/update_subscription', (req, res) => {
+    billings.update_subscipition(req, res)
 })

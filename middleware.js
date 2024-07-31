@@ -16,7 +16,8 @@ module.exports = (req, res, next) => {
         '/forget/select-list',
         '/forgot_otp_response',
         '/newaccount/create-account',
-        '/subscipition'
+        '/subscipition',
+        '/update_subscription'
     ];
 
     if (openEndpoints.includes(req.originalUrl) || req.originalUrl.startsWith('/login/login?')) {
