@@ -17,11 +17,37 @@ const s3 = new AWS.S3();
 
 function getHostelList(connection, response, request) {
     const userDetails = request.user_details;
+    let hostelDetails = [];
+    let errorMessage = '';
     connection.query(`select * from hosteldetails where created_By = '${userDetails.id}' ORDER BY create_At DESC`, function (err, data) {
-        if (data) {
-            response.status(200).json({ data: data })
+        if (data && data.length > 0) {
+            for (let i = 0; i < data.length; i++) {
+                console.log("data", data);
+                let query = `select * from Hostel_Floor where hostel_id = ${data[i].id} and status = true`;
+                connection.query(query, function (error, floorDetails) {
+
+                    if (error) {
+                        errorMessage = error
+                        console.log("error", error);
+                    }
+                    else {
+                        if (floorDetails && floorDetails.length > 0) {
+                            hostelDetails.push({ ...data[i], floorDetails })
+                        }
+                        else {
+                            hostelDetails.push({ ...data[i], floorDetails: [] })
+                        }
+                    }
+                    if (hostelDetails && hostelDetails.length == data.length) {
+                        response.status(200).json({ data: hostelDetails })
+                    }
+                })
+            }
+
+
         }
         else {
+            console.log("err", err);
             response.status(201).json({ message: 'No Data Found' })
         }
     })
@@ -130,28 +156,6 @@ function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileDa
             callback(null, data.Location);
         }
     });
-}
-
-
-function AddFloorDetails(request,data,Number_Of_Floor) {
-    let requestBdy = request.body;
-    let errorMessage='';
-if(Number_Of_Floor){
-    let hostel_Id = data[0].id;
-    for (let i = 1; i <= Number_Of_Floor; i++) {
-        let query = `insert into Hostel_Floor(hostel_id,floor_name) values(${hostel_Id},${i});`
-        connection.query(query,function(err,data){
-            if (err) {
-                errorMessage = err
-            }
-        })
-    }
-    if (errorMessage) {
-        response.status(201).json({ message: 'Error insert floor details' }) 
-    } else {
-        response.status(200).json({ message: 'floor details saved successfully' })
-    }
-}
 }
 
 function createPG(connection, reqHostel, response, request) {
@@ -351,7 +355,7 @@ function ListForFloor(connection, reqData, response) {
                 response.status(200).json({ data: data })
             }
             else {
-                console.log("error",error);
+                console.log("error", error);
                 response.status(201).json({ message: "No User Found" })
             }
         })
@@ -439,32 +443,32 @@ async function CreateRoom(connection, request, response) {
 function CreateFloor(connection, reqDataFloor, response) {
     if (reqDataFloor && reqDataFloor.hostel_Id && reqDataFloor.floor_Id) {
         let floor_Name = reqDataFloor.floor_Name ? reqDataFloor.floor_Name : null;
- let query1 = `select * from Hostel_Floor where hostel_id = ${reqDataFloor.hostel_Id} and floor_id = ${reqDataFloor.floor_Id} and status = true`
+        let query1 = `select * from Hostel_Floor where hostel_id = ${reqDataFloor.hostel_Id} and floor_id = ${reqDataFloor.floor_Id} and status = true`
 
-connection.query(query1,function(select_err,select_data){
-    if (select_err) {
-        console.log("select_err",select_err);
-        response.status(201).json({ message: 'Select Floor Details error' })
-    }
-    else{
-        if (select_data && select_data.length > 0) {
-            response.status(202).json({ message: 'Floor Number is already exist' })
-        } else {
-            let query2 = `insert into Hostel_Floor(hostel_id,floor_id,floor_name) values(${reqDataFloor.hostel_Id},${reqDataFloor.floor_Id},'${floor_Name}');`
-        
-            connection.query(query2, function (inserror, create_floor) {                    
-                if (inserror) {
-                    console.log("inserror",inserror);
-                    response.status(201).json({ message: 'Cannot save Floor Details' })
-                }
-                else {
-                    response.status(200).json({ message: 'Floor Details Saved Successfully' })
-                }
+        connection.query(query1, function (select_err, select_data) {
+            if (select_err) {
+                console.log("select_err", select_err);
+                response.status(201).json({ message: 'Select Floor Details error' })
+            }
+            else {
+                if (select_data && select_data.length > 0) {
+                    response.status(202).json({ message: 'Floor Number is already exist' })
+                } else {
+                    let query2 = `insert into Hostel_Floor(hostel_id,floor_id,floor_name) values(${reqDataFloor.hostel_Id},${reqDataFloor.floor_Id},'${floor_Name}');`
 
-            })
-        }
-    }
-})        
+                    connection.query(query2, function (inserror, create_floor) {
+                        if (inserror) {
+                            console.log("inserror", inserror);
+                            response.status(201).json({ message: 'Cannot save Floor Details' })
+                        }
+                        else {
+                            response.status(200).json({ message: 'Floor Details Saved Successfully' })
+                        }
+
+                    })
+                }
+            }
+        })
     }
     else {
         response.status(201).json({ message: 'Missing Parameter' })
@@ -542,7 +546,7 @@ function listDashBoard(connection, response, request) {
                         Revenue: item.Revenue,
                         overdue: item.overdue,
                         current: current,
-                        first_name : item.first_name,
+                        first_name: item.first_name,
                         last_name: item.last_name
                     }
                     // tempArray.push(obj)
@@ -586,8 +590,8 @@ function listDashBoard(connection, response, request) {
                                                 totalAmount += data[i].total_amount;
                                                 let temp = {
                                                     id: data[i].id,
-                                                    first_name:data[i].first_name,
-                                                    last_name:data[i].last_name,
+                                                    first_name: data[i].first_name,
+                                                    last_name: data[i].last_name,
                                                     category_Name: data[i].category_Name,
                                                     Amount: data[i].purchase_amount
                                                 }

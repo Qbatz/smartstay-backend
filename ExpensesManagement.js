@@ -245,8 +245,8 @@ join hosteldetails hos on hos.id = expen.hostel_id
                 }
                 if (Array.isArray(data) && data.length > 0) {
                     tempobj = { ...tempobj, data: data }
-                    // response.status(200).json(tempobj);
-                    GenerateExpenseHistoryPDF(data, tempobj, response)
+                    response.status(200).json(tempobj);
+                    // GenerateExpenseHistoryPDF(data, tempobj, response)
                 }
                 else {
                     tempobj = { ...tempobj, message: data }
@@ -426,287 +426,188 @@ function DeleteExpensesCategory(request, response) {
     }
 }
 
-// function GenerateExpenseHistoryPDF(request,response){
-//     const htmlFilePath = path.join(__dirname, 'mail_templates', 'expensesHistory.html');
-//     let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
-//     var createdBy = request.user_details.id;
-//     var category = request.body?.category ? request.body.category : null;
-//     var max_amount = request.body?.max_amount ? Number(request.body.max_amount) : null;
-//     var min_amount = request.body?.min_amount ? Number(request.body.min_amount) : null;
-//     var asset_id = request.body?.asset_id ? request.body.asset_id : null;
-//     var payment_mode = request.body?.payment_mode ? request.body.payment_mode : null;
-//     var vendor_id = request.body?.vendor_id ? request.body.vendor_id : null;
-//     var start_date = request.body?.start_date ? moment(new Date(request.body.start_date)).format('YYYY-MM-DD') : null;
-//     var end_date = request.body?.end_date ? moment(new Date(request.body.end_date)).format('YYYY-MM-DD') : null;
-
-//     let query = `SELECT hos.Name as hostel_name,hos.email_id as hostel_email,hos.Address as hostel_address,hos.hostel_PhoneNo as hostel_phoneNo, expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode, category.category_Name, ven.Vendor_Name, asname.asset_name 
-// FROM expenses expen
-// JOIN Expense_Category_Name category ON category.id = expen.category_id
-// JOIN Vendor ven ON ven.id = expen.vendor_id
-// JOIN assets ast ON ast.id = expen.asset_id
-// JOIN asset_names asname ON asname.id=ast.asset_id
-// JOIN hosteldetails hos ON hos.id = expen.hostel_id
-// WHERE expen.status = true AND expen.created_by = ${createdBy}`;
-
-//     if (asset_id) {
-//         query += ` AND expen.asset_id = ${asset_id}`;
-//     }
-
-//     if (category) {
-//         query += ` AND expen.category_id = ${category}`;
-//     }
-
-//     if (payment_mode) {
-//         query += ` AND expen.payment_mode = '${payment_mode}'`;
-//     }
-//     if (vendor_id) {
-//         query += ` AND expen.vendor_id = ${vendor_id}`
-//     }
-//     if (min_amount && !max_amount) {
-//         query += ` AND expen.purchase_amount >= ${min_amount}`
-//     }
-//     if (min_amount == 0 && max_amount || min_amount == undefined && max_amount) {
-//         query += ` AND expen.purchase_amount <= ${max_amount}`
-//     }
-//     if (min_amount !== undefined && max_amount !== undefined && min_amount !== null && max_amount !== null) {
-//         query += ` AND expen.purchase_amount >= ${min_amount} AND expen.purchase_amount <= ${max_amount}`;
-//     }
-//     if (start_date && !end_date) {
-//         const startDateRange = `${start_date} 00:00:00`;
-//         const endDateRange = `${start_date} 23:59:59`;
-//         query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
-//         // query += ` AND expen.purchase_date = '${startDateRange}' AND expen.purchase_date <= '${endDateRange}'`;
-//     }
-//     if (start_date && end_date) {
-//         const startDateRange = `${start_date} 00:00:00`;
-//         const endDateRange = `${end_date} 23:59:59`;
-//         query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
-
-//         // query += ` AND expen.purchase_date >= '${startDateRange}' AND expen.purchase_date <= '${endDateRange}'`;
-//     }
-//     console.log("query", query);
-//     connection.query(query, function (err, data) {
-//         if (err) {
-//             console.log("err", err);
-//             response.status(201).json({ message: 'Error Fetching Data' });
-//         }
-//         else {
-//             let total_amount = 0;
-//             if (data && data.length > 0) {
-//                 console.log("data", data);
-//                 data.map((v) => {
-//                     return total_amount += v.purchase_amount
-//                 })
-//                 console.log("total_amount", total_amount);
-//                 let invoiceRows = '';
-// for (let i = 0; i < data.length; i++) {
-//     let purchase_date = moment(data[i].purchase_date).format('DD-MM-YYYY')
-//     invoiceRows += `
-//                 <tr>
-//                     <td>${purchase_date}</td>
-//                     <td>${data[i].Vendor_Name}</td>
-//                     <td>${data[i].asset_name}</td>
-//                     <td>${data[i].unit_amount}</td>
-//                     <td>${data[i].unit_count}</td>
-//                     <td></td>
-//                     <td>${data[i].purchase_amount}</td>
-//                 </tr>
-//             `;
-// }
-// {/* <td>category_Name : ${data[i].category_Name}<br/>purchase_amount : ${data[i].purchase_amount}</td>
-//                     <td> asset_name : ${data[i].asset_name} <br/> unit_count : ${data[i].unit_count} <br/> unit_amount : ${data[i].unit_amount}</td> */}
-
-// htmlContent = htmlContent
-//         .replace('{{hostal_name}}', data[0].hostel_name)
-//         .replace('{{Phone}}', data[0].hostel_phoneNo)
-//         .replace('{{email}}', data[0].hostel_email)
-//         // .replace('{{user_address}}', hostelDetails.userAddress)
-//         // .replace('{{user_name}}', hostelDetails.userName)
-//         .replace('{{city}}', data[0].hostel_address)
-//         .replace('{{invoice_rows}}', invoiceRows)
-//         .replace('{{total_amount}}', total_amount)
-//         const outputPath = path.join(__dirname, 'expenseHistory.pdf');
-
-//     // Generate the PDF
-//     pdf.create(htmlContent, { phantomPath: phantomjs.path }).toFile(outputPath, async (err, res) => {
-//         if (err) {
-//             console.error('Error generating PDF:', err);
-//             return;
-//         }
-
-//         console.log('PDF generated:', res.filename);
-//         if (res.filename) {
-//             console.log("res", res);
-// //upload to s3 bucket
-
-
-//             let uploadedPDFs = 0;
-//             let pdfInfo = [];
-//             const fileContent = fs.readFileSync(res.filename);
-//                 const key = `expense/${res.filename}`;
-//                 const BucketName = 'smartstaydevs';
-//                 const params = {
-//                     Bucket: BucketName,
-//                     Key: key,
-//                     Body: fileContent,
-//                     ContentType: 'application/pdf'
-//                 };
-
-//                 s3.upload(params, function (err, uploadData) {
-//                     if (err) {
-//                         console.error("Error uploading PDF", err);
-//                         response.status(500).json({ message: 'Error uploading PDF to S3' });
-//                     } else {
-//                         console.log("PDF uploaded successfully", uploadData.Location);
-//                         uploadedPDFs++;
-
-//                         const pdfInfoItem = {
-//                             // user: user,
-//                             url: uploadData.Location
-//                         };
-//                         pdfInfo.push(pdfInfoItem);
-
-//                         if (pdfInfo.length > 0) {
-
-//                             var pdf_url = []
-//                             pdfInfo.forEach(pdf => {
-//                                 console.log(pdf.url);
-//                                 pdf_url.push(pdf.url)
-//                             });
-
-//                             if (pdf_url.length > 0) {
-//                                 response.status(200).json({ message: 'Insert PDF successfully', pdf_url: pdf_url[0] });  
-//                                 deletePDfs(res.filename);                              
-//                             } else {
-//                                 response.status(201).json({ message: 'Cannot Insert PDF to Database' });
-//                             }
-
-//                         }
-//                     }
-//                 });
-
-// ///////-------------------------
-
-//             // response.status(200).json({ message: "Expenses History", filepath: res.filename, expenseDetails: data });
-//         }
-//         // var inv_id = inv_data.id;
-
-//         // Upload the PDF to S3
-//         // await uploadToS3(outputPath, 'amenity.pdf', inv_id);
-
-//         // Remove the local PDF file after upload
-//         // fs.unlinkSync(res.filename);
-
-//     });
-
-//                 // response.status(200).json({ data:data, total_amount:total_amount})
-//                 // basicDetails = getAllfilter(createdBy, response, data, total_amount)
-//             }
-//             else {
-//                 response.status(201).json({ message: 'No Data Found' });
-//             }
-//         }
-//     })
-// }
-
-
-function GenerateExpenseHistoryPDF(data, tempobj, response) {
+function GenerateExpenseHistoryPDF(request, response) {
     const htmlFilePath = path.join(__dirname, 'mail_templates', 'expensesHistory.html');
     let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
 
     let total_amount = 0;
-    if (data && data.length > 0) {
-        console.log("data", data);
-        data.map((v) => {
-            return total_amount += v.purchase_amount
-        })
-        console.log("total_amount", total_amount);
-        let invoiceRows = '';
-        for (let i = 0; i < data.length; i++) {
-            let purchase_date = moment(data[i].purchase_date).format('DD-MM-YYYY')
-            invoiceRows += `
-                <tr>
-                    <td>${purchase_date}</td>
-                    <td>${data[i].Vendor_Name}</td>
-                    <td>${data[i].asset_name}</td>
-                    <td>${data[i].unit_amount}</td>
-                    <td>${data[i].unit_count}</td>
-                    <td></td>
-                    <td>${data[i].purchase_amount}</td>
-                </tr>
-            `;
+
+
+    var createdBy = request.user_details.id;
+    var category = request.body?.category ? request.body.category : null;
+    var max_amount = request.body?.max_amount ? Number(request.body.max_amount) : null;
+    var min_amount = request.body?.min_amount ? Number(request.body.min_amount) : null;
+    var asset_id = request.body?.asset_id ? request.body.asset_id : null;
+    var payment_mode = request.body?.payment_mode ? request.body.payment_mode : null;
+    var vendor_id = request.body?.vendor_id ? request.body.vendor_id : null;
+    var start_date = request.body?.start_date ? moment(new Date(request.body.start_date)).format('YYYY-MM-DD') : null;
+    var end_date = request.body?.end_date ? moment(new Date(request.body.end_date)).format('YYYY-MM-DD') : null;
+
+    // let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,ven.Vendor_profile,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode,category.category_Name,ven.Vendor_Name,ast.asset_name from expenses expen
+    // join Expense_Category_Name category on category.id = expen.category_id
+    // join Vendor ven on ven.id = expen.vendor_id
+    // join assets ast on ast.id = expen.asset_id
+    //     where expen.status = true and expen.created_by = ${createdBy}`
+
+    let query = `SELECT expen.hostel_id,hos.Name as hostel_name,hos.email_id as hostel_email,hos.Address as hostel_address,hos.hostel_PhoneNo as hostel_phoneNo, expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode, category.category_Name, ven.Vendor_Name, asname.asset_name 
+FROM expenses expen
+JOIN Expense_Category_Name category ON category.id = expen.category_id
+JOIN Vendor ven ON ven.id = expen.vendor_id
+JOIN assets ast ON ast.id = expen.asset_id
+JOIN asset_names asname ON asname.id=ast.asset_id
+JOIN hosteldetails hos ON hos.id = expen.hostel_id
+WHERE expen.status = true AND expen.created_by = ${createdBy}`;
+
+    if (asset_id) {
+        query += ` AND expen.asset_id = ${asset_id}`;
+    }
+
+    if (category) {
+        query += ` AND expen.category_id = ${category}`;
+    }
+
+    if (payment_mode) {
+        query += ` AND expen.payment_mode = '${payment_mode}'`;
+    }
+    if (vendor_id) {
+        query += ` AND expen.vendor_id = ${vendor_id}`
+    }
+    if (min_amount && !max_amount) {
+        query += ` AND expen.purchase_amount >= ${min_amount}`
+    }
+    if (min_amount == 0 && max_amount || min_amount == undefined && max_amount) {
+        query += ` AND expen.purchase_amount <= ${max_amount}`
+    }
+    // if (min_amount && max_amount) {
+    //     query += `AND expen.purchase_amount BETWEEN ${min_amount} AND ${max_amount}`
+    //     // query += `AND expen.purchase_amount >= ${min_amount} AND expen.purchase_amount <= ${max_amount}`
+    // }
+    if (min_amount !== undefined && max_amount !== undefined && min_amount !== null && max_amount !== null) {
+        query += ` AND expen.purchase_amount >= ${min_amount} AND expen.purchase_amount <= ${max_amount}`;
+    }
+    if (start_date && !end_date) {
+        const startDateRange = `${start_date} 00:00:00`;
+        const endDateRange = `${start_date} 23:59:59`;
+        query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
+        // query += ` AND expen.purchase_date = '${startDateRange}' AND expen.purchase_date <= '${endDateRange}'`;
+    }
+    if (start_date && end_date) {
+        const startDateRange = `${start_date} 00:00:00`;
+        const endDateRange = `${end_date} 23:59:59`;
+        query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
+
+        // query += ` AND expen.purchase_date >= '${startDateRange}' AND expen.purchase_date <= '${endDateRange}'`;
+    }
+    // console.log("query", query);
+    connection.query(query, function (err, data) {
+        if (err) {
+            console.log("err", err);
+            response.status(201).json({ message: 'Error Fetching Data' });
         }
-        htmlContent = htmlContent
-            .replace('{{hostal_name}}', data[0].hostel_name)
-            .replace('{{Phone}}', data[0].hostel_phoneNo)
-            .replace('{{email}}', data[0].hostel_email)
-            .replace('{{city}}', data[0].hostel_address)
-            .replace('{{invoice_rows}}', invoiceRows)
-            .replace('{{total_amount}}', total_amount)
-        const outputPath = path.join(__dirname, 'expenseHistory.pdf');
 
-        // Generate the PDF
-        pdf.create(htmlContent, { phantomPath: phantomjs.path }).toFile(outputPath, async (err, res) => {
-            if (err) {
-                console.error('Error generating PDF:', err);
-                return;
+        if (data && data.length > 0) {
+            console.log("data", data);
+            data.map((v) => {
+                return total_amount += v.purchase_amount
+            })
+            console.log("total_amount", total_amount);
+            let invoiceRows = '';
+            for (let i = 0; i < data.length; i++) {
+                let purchase_date = moment(data[i].purchase_date).format('DD-MM-YYYY')
+                invoiceRows += `
+                    <tr>
+                        <td>${purchase_date}</td>
+                        <td>${data[i].Vendor_Name}</td>
+                        <td>${data[i].asset_name}</td>
+                        <td>${data[i].unit_amount}</td>
+                        <td>${data[i].unit_count}</td>
+                        <td></td>
+                        <td>${data[i].purchase_amount}</td>
+                    </tr>
+                `;
             }
-
-            // console.log('PDF generated:', res.filename);
-            if (res.filename) {
-                console.log("res", res);
-                //upload to s3 bucket
-
-                let uploadedPDFs = 0;
-                let pdfInfo = [];
-                const fileContent = fs.readFileSync(res.filename);
-                const key = `expense/${res.filename}`;
-                const BucketName = 'smartstaydevs';
-                const params = {
-                    Bucket: BucketName,
-                    Key: key,
-                    Body: fileContent,
-                    ContentType: 'application/pdf'
-                };
-
-                s3.upload(params, function (err, uploadData) {
-                    if (err) {
-                        console.error("Error uploading PDF", err);
-                        response.status(500).json({ message: 'Error uploading PDF to S3' });
-                    } else {
-                        // console.log("PDF uploaded successfully", uploadData.Location);
-                        uploadedPDFs++;
-
-                        const pdfInfoItem = {
-                            // user: user,
-                            url: uploadData.Location
-                        };
-                        pdfInfo.push(pdfInfoItem);
-
-                        if (pdfInfo.length > 0) {
-
-                            var pdf_url = []
-                            pdfInfo.forEach(pdf => {
-                                // console.log(pdf.url);
-                                pdf_url.push(pdf.url)
-                            });
-
-                            if (pdf_url.length > 0) {
-                                response.status(200).json({ message: 'Insert PDF successfully', pdf_url: pdf_url[0], data: tempobj });
-                                deletePDfs(res.filename);
-                            } else {
-                                response.status(201).json({ message: 'Cannot Insert PDF to Database' });
+            htmlContent = htmlContent
+                .replace('{{hostal_name}}', data[0].hostel_name)
+                .replace('{{Phone}}', data[0].hostel_phoneNo)
+                .replace('{{email}}', data[0].hostel_email)
+                .replace('{{city}}', data[0].hostel_address)
+                .replace('{{invoice_rows}}', invoiceRows)
+                .replace('{{total_amount}}', total_amount)
+            const outputPath = path.join(__dirname, 'expenseHistory.pdf');
+    
+            // Generate the PDF
+            pdf.create(htmlContent, { phantomPath: phantomjs.path }).toFile(outputPath, async (err, res) => {
+                if (err) {
+                    console.error('Error generating PDF:', err);
+                    return;
+                }
+    
+                // console.log('PDF generated:', res.filename);
+                if (res.filename) {
+                    console.log("res", res);
+                    //upload to s3 bucket
+    
+                    let uploadedPDFs = 0;
+                    let pdfInfo = [];
+                    const fileContent = fs.readFileSync(res.filename);
+                    const key = `expense/${res.filename}`;
+                    const BucketName = 'smartstaydevs';
+                    const params = {
+                        Bucket: BucketName,
+                        Key: key,
+                        Body: fileContent,
+                        ContentType: 'application/pdf'
+                    };
+    
+                    s3.upload(params, function (err, uploadData) {
+                        if (err) {
+                            console.error("Error uploading PDF", err);
+                            response.status(500).json({ message: 'Error uploading PDF to S3' });
+                        } else {
+                            // console.log("PDF uploaded successfully", uploadData.Location);
+                            uploadedPDFs++;
+    
+                            const pdfInfoItem = {
+                                // user: user,
+                                url: uploadData.Location
+                            };
+                            pdfInfo.push(pdfInfoItem);
+    
+                            if (pdfInfo.length > 0) {
+    
+                                var pdf_url = []
+                                pdfInfo.forEach(pdf => {
+                                    // console.log(pdf.url);
+                                    pdf_url.push(pdf.url)
+                                });
+    
+                                if (pdf_url.length > 0) {
+                                    response.status(200).json({ message: 'Insert PDF successfully', pdf_url: pdf_url[0] });
+                                    deletePDfs(res.filename);
+                                } else {
+                                    response.status(201).json({ message: 'Cannot Insert PDF to Database' });
+                                }
+    
                             }
-
                         }
-                    }
-                });
-            }
-        });
-    }
-    else {
-        response.status(201).json({ message: 'No Data Found' });
-    }
+                    });
+                }
+            });
+        }
+        else {
+            response.status(201).json({ message: 'No Data Found' });
+        }
+
+
+
+    })
+
+
+
+
+
+
+    
 
 }
 
