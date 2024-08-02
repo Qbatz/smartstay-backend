@@ -5,7 +5,7 @@ async function subscipition(req, res) {
 
     var { plan_code, customer_id } = req.body;
 
-    var apiEndpoint = 'https://subscriptions.zoho.in/api/v1/subscriptions';
+    var apiEndpoint = 'https://www.zohoapis.in/billing/v1/subscriptions';
     var method = "POST";
 
     const subscriptionDetails = {
@@ -14,7 +14,6 @@ async function subscipition(req, res) {
         },
         customer_id: customer_id,
         start_date: req.body.start_date,
-        trial_days: req.body.trial_days,
         notes: req.body.notes
     };
 
