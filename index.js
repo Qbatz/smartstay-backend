@@ -302,7 +302,8 @@ app.post('/add/new-hostel', upload.single('profile'), (request, response) => {
         hostel_Name: request.body.name,
         hostel_Phone: request.body.phoneNo,
         hostel_email_Id: request.body.email_Id,
-        hostel_location: request.body.location
+        hostel_location: request.body.location,
+        id: request.body.id
     };
 
     pgQueries.createPG(connection, reqHostel, response, request)
