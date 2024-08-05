@@ -70,8 +70,8 @@ function add_asset(req, res) {
                             })
                             function updated_data(asset_id) {
 
-                                var sql3 = "UPDATE assets SET asset_id=?,vendor_id=?,brand_name=?,serial_number=?,product_count=?,purchase_date=?,price=?,total_price=? WHERE id=?";
-                                connection.query(sql3, [asset_id, data.vendor_id, data.brand_name, data.serial_number, data.product_count, data.purchase_date, data.price, total_price, data.id], (up_err, up_res) => {
+                                var sql3 = "UPDATE assets SET asset_id=?,vendor_id=?,product_name=?,rand_name=?,serial_number=?,product_count=?,purchase_date=?,price=?,total_price=? WHERE id=?";
+                                connection.query(sql3, [asset_id, data.vendor_id, data.product_name, data.brand_name, data.serial_number, data.product_count, data.purchase_date, data.price, total_price, data.id], (up_err, up_res) => {
                                     if (up_err) {
                                         return res.status(201).json({ message: "Unable to Update Asset Details", statusCode: 201 })
                                     } else {
@@ -124,8 +124,8 @@ function add_asset(req, res) {
 
                     function inserted_data(asset_id) {
 
-                        var sql2 = "INSERT INTO assets (asset_id,vendor_id,brand_name,serial_number,product_count,purchase_date,price,total_price,status,created_by) VALUES (?,?,?,?,?,?,?,?,?,?)";
-                        connection.query(sql2, [asset_id, data.vendor_id, data.brand_name, data.serial_number, data.product_count, data.purchase_date, data.price, total_price, 1, user_id], (ins_err, ins_res) => {
+                        var sql2 = "INSERT INTO assets (asset_id,vendor_id,product_name,brand_name,serial_number,product_count,purchase_date,price,total_price,status,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+                        connection.query(sql2, [asset_id, data.vendor_id, data.product_name, data.brand_name, data.serial_number, data.product_count, data.purchase_date, data.price, total_price, 1, user_id], (ins_err, ins_res) => {
                             if (ins_err) {
                                 console.log(ins_err);
                                 return res.status(201).json({ message: "Unable to Add Asset Details", statusCode: 201 })
