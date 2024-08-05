@@ -30,7 +30,7 @@ const apiMiddleware = (apiEndpoint, method, input_body) => {
 
                         if (parsedBody.code === 0) {
                             resolve({ shouldRetry: false, response: parsedBody }); // No need to retry, pass the body
-                        } else if (parsedBody.code === 57) {
+                        } else if (parsedBody.code != 57) {
                             resolve({ shouldRetry: false, response: parsedBody }); // No need to retry, pass the body
                         } else {
                             resolve({ shouldRetry: true }); // Indicates that we should retry the API call
