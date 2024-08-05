@@ -104,63 +104,117 @@ function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileDa
 function createPG(connection, reqHostel, response, request) {
     const userDetails = request.user_details;
     const timestamp = Date.now();
-    let hostelID, errorMessage
-    if (reqHostel.profile) {
+    if (reqHostel.id) {
+        if (reqHostel.profile) {
+            uploadProfilePictureToS3Bucket('smartstaydevs', 'Hostel_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqHostel.profile, (err, hostel_Logo) => {
+                if (err) {
+                    console.log(err);
+                    response.status(201).json({ message: 'Error while store profile into the S3 bucket' })
+                }
+                else {
+                    let updateQuery = `update hosteldetails set Name= \'${reqHostel.hostel_Name}\', email_id ='${reqHostel.hostel_email_Id}', Address =\'${reqHostel.hostel_location}\', hostel_PhoneNo ='${reqHostel.hostel_Phone}', number_Of_Floor=0,created_By=\'${userDetails.id}\'
+         , profile=\'${hostel_Logo}\' where id = ${reqHostel.id};`
+                    connection.query(updateQuery, function (update_Err, update_Data) {
+                        if (update_Err) {
+                            response.status(201).json({ message: 'Error while update the data' })
+                        } else {
+                            response.status(200).json({ message: 'Data Updated Successfully', statusCode: 200 })
+                        }
+                    })
+                }
+            })
+        } else {
+            let updateQuery = `update hosteldetails set Name= \'${reqHostel.hostel_Name}\', email_id ='${reqHostel.hostel_email_Id}', Address =\'${reqHostel.hostel_location}\', hostel_PhoneNo ='${reqHostel.hostel_Phone}', number_Of_Floor=0,created_By=\'${userDetails.id}\'
+                where id = ${reqHostel.id};`
+            connection.query(updateQuery, function (update_Err, update_Data) {
+                if (update_Err) {
+                    response.status(201).json({ message: 'Error while update the data' })
+                } else {
+                    response.status(200).json({ message: 'Data Updated Successfully', statusCode: 200 })
+                }
+            })
+        }
+    }
+    else if ((reqHostel.id == undefined && reqHostel.profile) || (reqHostel.id == '' && reqHostel.profile)) {
+
         uploadProfilePictureToS3Bucket('smartstaydevs', 'Hostel_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqHostel.profile, (err, hostel_Logo) => {
             if (err) {
                 response.status(202).json({ message: 'Database error' });
             } else {
-
-
-                const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By, profile) values (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\', \'${hostel_Logo}\')`
-                connection.query(query, function (error, data) {
-                    if (error) {
-                        console.log("error", error);
-                        response.status(201).json({ message: 'Cannot Insert Details' })
+                const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqHostel.hostel_Phone}\'`
+                connection.query(query2, function (error, datum) {
+                    if (datum && datum.length > 0) {
+                        response.status(201).json({ message: 'Phone already Saved', statusCode: 201 })
                     }
                     else {
-                        console.log("Data for new hostel *=>", data)
-                        const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqHostel.hostel_Phone}\'`
-                        connection.query(query2, function (error, datum) {
-                            if (datum.length > 0) {
-                                response.status(200).json({ message: 'Data Saved Successfully', statusCode: 200 })
-
-                            }
-
-                            else {
-                                response.status(201).json({ message: 'Phone number not Registered' })
-                            }
-
-                        })
+                        if (error) {
+                            response.status(201).json({ message: 'Error while fetching data', statusCode: 201 })
+                        } else {
+                            const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By, profile) values (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\', \'${hostel_Logo}\')`
+                            connection.query(query, function (error, data) {
+                                if (error) {
+                                    console.log("error", error);
+                                    response.status(201).json({ message: 'Cannot Insert Details' })
+                                }
+                                else {
+                                    response.status(201).json({ message: 'Phone number not Registered' })
+                                }
+                            })
+                        }
                     }
+
                 })
             }
         })
     }
     else {
-        const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) values (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\')`
-        connection.query(query, function (error, data) {
-            if (error) {
-                console.log("error", error);
-                response.status(201).json({ message: 'Cannot Insert Details' })
+
+        const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqHostel.hostel_Phone}\'`
+        connection.query(query2, function (error, datum) {
+            if (datum && datum.length > 0) {
+                response.status(201).json({ message: 'Phone Number already Saved', statusCode: 201 })
             }
             else {
-                console.log("Data for new hostel *=>", data)
-                const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqHostel.hostel_Phone}\'`
-                connection.query(query2, function (error, datum) {
-                    if (datum.length > 0) {
-
-                        response.status(200).json({ message: 'Data Saved Successfully', statusCode: 200 })
-
-                    }
-
-                    else {
-                        response.status(201).json({ message: 'Phone number not Registered' })
-                    }
-
-                })
+                if (error) {
+                    response.status(201).json({ message: 'Error while fetching data', statusCode: 201 })
+                } else {
+                    const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) values (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\')`
+                    connection.query(query, function (error, data) {
+                        if (error) {
+                            console.log("error", error);
+                            response.status(201).json({ message: 'Cannot Insert Details' })
+                        }
+                        else {
+                            response.status(201).json({ message: 'Phone number not Registered' })
+                        }
+                    })
+                }
             }
+
         })
+
+
+
+
+        // connection.query(query, function (error, data) {
+        //     if (error) {
+        //         console.log("error", error);
+        //         response.status(201).json({ message: 'Cannot Insert Details' })
+        //     }
+        //     else {
+        //         const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqHostel.hostel_Phone}\'`
+        //         connection.query(query2, function (error, datum) {
+        //             if (datum.length > 0) {
+        //                 response.status(200).json({ message: 'Data Saved Successfully', statusCode: 200 })
+        //             }
+
+        //             else {
+        //                 response.status(201).json({ message: 'Phone number not Registered' })
+        //             }
+
+        //         })
+        //     }
+        // })
 
 
     }
