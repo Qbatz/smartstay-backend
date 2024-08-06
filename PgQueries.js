@@ -346,13 +346,11 @@ function RoomCount(connection, reqFloorID, response) {
 
 function ListForFloor(connection, reqData, response) {
     if (reqData && reqData.hostel_Id) {
-        let query = `select * from Hostel_Floor where hostel_id = ${reqData.hostel_Id} and status = true`;
-        connection.query(query, function (error, data) {
-            if (data && data.length > 0) {
-                response.status(200).json({ data: data })
+        connection.query(`select * from hostelrooms where  Hostel_Id = \'${reqData.hostel_Id}\' and isActive= true`, function (error, hostel_data) {
+            if (hostel_data) {
+                response.status(200).json({ hostel_data: hostel_data })
             }
             else {
-                console.log("error", error);
                 response.status(201).json({ message: "No User Found" })
             }
         })
