@@ -410,7 +410,7 @@ app.get('/list/EbReading', (request, response) => {
 
 app.get('/list/Ebstartmeter', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-    invoiceQueries.getEbStart(connection, response)
+    invoiceQueries.getEbStart(connection, response,request)
 })
 app.post('/amenities/amnityUpdate', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
@@ -445,6 +445,13 @@ app.post('/invoice/invoiceUpdate', (request, response) => {
     const atten = request.body;
     console.log("request.body", request.body)
     invoiceQueries.UpdateInvoice(connection, response, atten)
+})
+
+// delete API 
+
+app.post('/delete/delete-hostel',(request,response)=>{
+    response.set('Access-Control-Allow-Origin', '*');
+    pgQueries.deleteHostel(request,response)
 })
 
 app.post('/delete/delete-floor', (request, response) => {

@@ -618,6 +618,35 @@ function listDashBoard(connection, response, request) {
     // }
 }
 
+function deleteHostel(request,response){
+    let req = request.body
+    if (req && req.hostel_Id) {
+        connection.query(`SELECT * FROM hosteldetails WHERE id = ${req.hostel_Id}`,function(selErr,selData){
+            if (selErr) {
+                response.status(201).json({ message: "Error While Fetching Hostel details" });
+            }
+            else{
+                if (selData && selData.length > 0) {
+                    let query = `UPDATE hosteldetails SET isActive = false WHERE id = ${req.hostel_Id}`
+                    connection.query(query,function(delErr,deldata){
+                        if (delErr) {
+                            response.status(201).json({ message: "doesn't update" });
+                        } else {
+                            response.status(200).json({ message: "Hostel Deleted Successfully" });
+                        }
+                    })  
+                }
+                else{
+                    response.status(201).json({ message: "No data found in the hostel" });
+                }
+            }
+        })
+        
+    } else {
+        response.status(201).json({ message: "Missing Parameter" });
+    }
+    
+}
 
 function deleteFloor(connection, response, reqData) {
     if (reqData && reqData.id && reqData.floor_id) {
@@ -887,4 +916,4 @@ function bed_details(req, res) {
     })
 }
 
-module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details }
+module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteHostel, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details }
