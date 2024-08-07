@@ -348,7 +348,7 @@ function ListForFloor(connection, reqData, response) {
     if (reqData && reqData.hostel_Id) {
         connection.query(`select * from hostelrooms where  Hostel_Id = \'${reqData.hostel_Id}\' and isActive= true`, function (error, hostel_data) {
             if (hostel_data) {
-                response.status(200).json({ hostel_data: hostel_data })
+                response.status(200).json({ data: hostel_data })
             }
             else {
                 response.status(201).json({ message: "No User Found" })
