@@ -11,6 +11,7 @@ const queries = [
         PRIMARY KEY (id));`,
 
         "ALTER TABLE hostel ADD COLUMN created_by BIGINT(20) NULL DEFAULT '0' AFTER pending_advance",
+        "ALTER TABLE transactions ADD COLUMN action INT NULL DEFAULT 1 AFTER createdAt",
 ];
 
 queries.forEach(executeQuery);

@@ -2034,8 +2034,13 @@ ORDER BY
     });
 }
 
-function getEbStart(connection, response) {
-    connection.query('select * from EbAmount', function (error, data) {
+function getEbStart(connection, response,request) {
+    var created_by = request.user_details.id;
+    console.log("created_by",created_by);
+    let query = `SELECT hos.Name as hoatel_Name,hos.profile,eb.hostel_Id,eb.Floor,eb.Room,eb.EbAmount,eb.createAt,eb.start_Meter_Reading,eb.end_Meter_Reading,eb.Eb_Unit 
+FROM EbAmount eb LEFT OUTER JOIN hosteldetails hos ON hos.id = eb.hostel_Id where hos.created_By = ${created_by} `
+connection.query(query, function (error, data) {
+    // connection.query('select * from EbAmount', function (error, data) {
         if (error) {
             response.status(203).json({ message: 'not connected' })
         }

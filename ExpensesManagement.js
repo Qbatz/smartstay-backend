@@ -19,8 +19,8 @@ const s3 = new AWS.S3();
 function AddExpense(request, response) {
     let reqData = request.body;
     var createdBy = request.user_details.id;
-    let purchase_date = moment(new Date(reqData.purchase_date)).format('yyyy-MM-DD')
-    // console.log("purchase_date", purchase_date);
+    let purchase_date = moment(new Date(reqData.purchase_date)).format('YYYY-MM-DD')
+    console.log("purchase_date", purchase_date);
     let purchase_amount = Number(reqData.unit_count) * Number(reqData.unit_amount)
     // console.log("purchase_amount", purchase_amount);
     let createdate = moment(new Date()).format('yyyy-MM-DD HH:mm:ss')
@@ -64,7 +64,19 @@ VALUES
                     response.status(201).json({ message: "Internal Server Error" });
                 }
                 else {
-                    response.status(200).json({ message: "Data Saved successfully" });
+
+                    var sql3 = `INSERT INTO transactions (user_id,invoice_id,amount,created_by,payment_type,payment_date,action) VALUES (0,${reqData.asset_id},${purchase_amount},${createdBy},'${reqData.payment_mode}','${purchase_date}',2)`;
+                    // [0, reqData.asset_id, purchase_amount, createdBy, reqData.payment_mode, purchase_date,2]
+                    connection.query(sql3, function (ins_err, ins_res) {
+                        if (ins_err) {
+                            console.log("ADD transaction error", ins_err);
+                            response.status(201).json({ message: 'Unable to Add Transactions Details' });
+                        } else {
+                            response.status(200).json({ message: "Update Successfully" });
+                        }
+                    })
+
+                    // response.status(200).json({ message: "Data Saved successfully" });
                 }
             })
         }
@@ -534,19 +546,19 @@ WHERE expen.status = true AND expen.created_by = ${createdBy}`;
                 .replace('{{invoice_rows}}', invoiceRows)
                 .replace('{{total_amount}}', total_amount)
             const outputPath = path.join(__dirname, 'expenseHistory.pdf');
-    
+
             // Generate the PDF
             pdf.create(htmlContent, { phantomPath: phantomjs.path }).toFile(outputPath, async (err, res) => {
                 if (err) {
                     console.error('Error generating PDF:', err);
                     return;
                 }
-    
+
                 // console.log('PDF generated:', res.filename);
                 if (res.filename) {
                     console.log("res", res);
                     //upload to s3 bucket
-    
+
                     let uploadedPDFs = 0;
                     let pdfInfo = [];
                     const fileContent = fs.readFileSync(res.filename);
@@ -558,7 +570,7 @@ WHERE expen.status = true AND expen.created_by = ${createdBy}`;
                         Body: fileContent,
                         ContentType: 'application/pdf'
                     };
-    
+
                     s3.upload(params, function (err, uploadData) {
                         if (err) {
                             console.error("Error uploading PDF", err);
@@ -566,28 +578,28 @@ WHERE expen.status = true AND expen.created_by = ${createdBy}`;
                         } else {
                             // console.log("PDF uploaded successfully", uploadData.Location);
                             uploadedPDFs++;
-    
+
                             const pdfInfoItem = {
                                 // user: user,
                                 url: uploadData.Location
                             };
                             pdfInfo.push(pdfInfoItem);
-    
+
                             if (pdfInfo.length > 0) {
-    
+
                                 var pdf_url = []
                                 pdfInfo.forEach(pdf => {
                                     // console.log(pdf.url);
                                     pdf_url.push(pdf.url)
                                 });
-    
+
                                 if (pdf_url.length > 0) {
                                     response.status(200).json({ message: 'Insert PDF successfully', pdf_url: pdf_url[0] });
                                     deletePDfs(res.filename);
                                 } else {
                                     response.status(201).json({ message: 'Cannot Insert PDF to Database' });
                                 }
-    
+
                             }
                         }
                     });
@@ -607,7 +619,7 @@ WHERE expen.status = true AND expen.created_by = ${createdBy}`;
 
 
 
-    
+
 
 }
 
