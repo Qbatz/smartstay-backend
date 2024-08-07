@@ -11,7 +11,12 @@ const queries = [
         PRIMARY KEY (id));`,
 
         "ALTER TABLE hostel ADD COLUMN created_by BIGINT(20) NULL DEFAULT '0' AFTER pending_advance",
+
         "ALTER TABLE transactions ADD COLUMN action INT NULL DEFAULT 1 AFTER createdAt",
+
+
+        "ALTER TABLE assets ADD COLUMN `product_name` VARCHAR(255) NULL AFTER `vendor_id`;"
+
 ];
 
 queries.forEach(executeQuery);

@@ -1,5 +1,7 @@
 const moment = require('moment');
 const request = require('request');
+const CryptoJS = require('crypto-js');
+
 require('dotenv').config();
 
 const connection = require('./config/connection');
@@ -1052,12 +1054,14 @@ function aadhaar_otp_verify(req, res) {
     console.log(encryptedText);
 
     if (otp == '1234') {
+
         var sql1 = "UPDATE hostel SET AadharNo='" + encryptedText + "' WHERE ID='" + user_id + "'";
+        console.log(sql1);
         connection.query(sql1, function (err, data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Update Aadhar Details" })
             } else {
-                return res.status(201).json({ statusCode: 201, message: "Successfully Update Aadhar Details" })
+                return res.status(200).json({ statusCode: 200, message: "Successfully Update Aadhar Details" })
             }
         })
     } else {

@@ -309,8 +309,10 @@ function RoomCount(connection, reqFloorID, response) {
                                 Floor_Id: RoomsData[i].Floor_Id,
                                 Room_Id: RoomsData[i].Room_Id,
                                 Number_Of_Beds: RoomsData[i].total_beds,
-                                Room_Rent: RoomsData[i].Price
+                                Room_Rent: RoomsData[i].Price,
+                                isActive: RoomsData[i].isActive
                             };
+
                             responseData.push(objectFormation);
 
                             var bed_query = `SELECT bd.bed_no, bd.bed_amount, bd.isfilled FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id = hr.id WHERE hr.Hostel_Id = '${objectFormation.Hostel_Id}' AND hr.Floor_Id = '${objectFormation.Floor_Id}' AND hr.Room_Id = '${objectFormation.Room_Id}' AND bd.status = 1 AND hr.isActive = 1`;
@@ -549,7 +551,7 @@ function listDashBoard(connection, response, request) {
 
                 })
 
-                var sql2 = "SELECT com.*,CASE WHEN com.user_type = 1 THEN com.created_by ELSE hos.id END AS com_created_by,ct.complaint_name FROM compliance AS com JOIN hostel AS hos ON com.User_id = hos.User_Id JOIN complaint_type AS ct ON ct.id = com.Complainttype WHERE CASE WHEN com.user_type = 1 THEN com.created_by ELSE hos.id END = '" + created_by + "' AND com.Status != 'Completed' ORDER BY com.ID DESC LIMIT 5;"
+                var sql2 = "SELECT com.*,hos.profile,CASE WHEN com.user_type = 1 THEN com.created_by ELSE hos.id END AS com_created_by,ct.complaint_name FROM compliance AS com JOIN hostel AS hos ON com.User_id = hos.User_Id JOIN complaint_type AS ct ON ct.id = com.Complainttype WHERE CASE WHEN com.user_type = 1 THEN com.created_by ELSE hos.id END = '" + created_by + "' AND com.Status != 'Completed' ORDER BY com.ID DESC LIMIT 5;"
                 connection.query(sql2, function (err, com_data) {
                     if (err) {
                         response.status(201).json({ message: "Unable to Get Complaince Details", err: err.message });

@@ -18,7 +18,7 @@ function AddCompliance(connection, request, response) {
 
             } else if (com_data.length != 0) {
 
-                var sql2 = "UPDATE compliance SET Name='" + Name + "', Phone='" + Phone + "',Complainttype='" + Complainttype + "', Assign='" + Assign + "', Status='" + Status + "', hostelname='" + hostelname + "', Description='" + Description + "' WHERE ID=" + id + ""
+                var sql2 = "UPDATE compliance SET Name='" + Name + "',Complainttype='" + Complainttype + "', Assign='" + Assign + "', Status='" + Status + "', hostelname='" + hostelname + "', Description='" + Description + "' WHERE ID=" + id + ""
                 connection.query(sql2, function (up_err, up_res) {
                     if (up_err) {
                         response.status(201).json({ message: "Unable to Update Complaince Detailis", statusCode: 201 });
@@ -34,13 +34,13 @@ function AddCompliance(connection, request, response) {
     } else {
 
         var sql3 = "SELECT MAX(Requestid) AS total_count FROM compliance;";
-        connection.query(sql1, function (err, data) {
+        connection.query(sql3, function (err, data) {
             if (err) {
                 response.status(201).json({ message: "Unable to Get Complaince Detailis", statusCode: 201 });
             } else {
 
                 var total_count = data[0].total_count || "#100";
-                var count = parseInt(data.replace('#', ''), 10);
+                var count = parseInt(total_count.replace('#', ''), 10);
                 count += 1;
                 total_count = `#${count}`;
 
