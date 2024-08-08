@@ -6,6 +6,13 @@ const apiMiddleware = (apiEndpoint, method, input_body) => {
     return new Promise(async (resolve, reject) => {
         const makeApiCall = () => {
             return new Promise((resolve, reject) => {
+
+                if (input_body != 0) {
+                    var body_value = JSON.stringify(input_body);
+                } else {
+                    var body_value = 0;
+                }
+
                 const options = {
                     url: apiEndpoint,
                     method: method,
@@ -14,7 +21,7 @@ const apiMiddleware = (apiEndpoint, method, input_body) => {
                         "X-com-zoho-subscriptions-organizationid": process.env.ORGANIZATION_ID,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(input_body)
+                    body: body_value
                 };
 
                 console.log(options);

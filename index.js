@@ -5,6 +5,7 @@ const middleware = require('./middleware');
 const connection = require('./config/connection');
 const notifications = require('./notifications');
 const assets = require('./assets');
+const crons = require('./crons');
 
 const app = express()
 const userQueries = require('./UserQueries');
@@ -672,12 +673,22 @@ app.post("/all_reports", (req, res) => {
     assets.all_reports(req, res)
 })
 
-// *********** Billing Process **************
-
-app.post('/subscipition', (req, res) => {
-    billings.subscipition(req, res)
+app.get('/invoice_details', (req, res) => {
+    billings.invoice_details(req, res)
 })
 
-app.post('/update_subscription', (req, res) => {
-    billings.update_subscipition(req, res)
+// // Add Payment for Subscription
+// app.post('/new_subscription', (req, res) => {
+//     billings.new_subscription(req, res)
+// })
+
+// Invoice Payment
+app.post('/invoice_record_payments', (req, res) => {
+    billings.invoice_payments(req, res)
 })
+
+// Completed ********
+
+// Get invoices
+// invoice Hosting Page
+// Created Customer

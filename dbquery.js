@@ -24,8 +24,13 @@ const queries = [
 
     "ALTER TABLE subscribtion_history ADD COLUMN `subscribtion_id` VARCHAR(255) NULL AFTER `plan_code`;",
 
-    "ALTER TABLE createaccount ADD COLUMN `subscription_id` VARCHAR(255) NULL DEFAULT '0' AFTER `customer_id`;"
+    "ALTER TABLE createaccount ADD COLUMN `subscription_id` VARCHAR(255) NULL DEFAULT '0' AFTER `customer_id`;",
 
+    "ALTER TABLE subscribtion_history ADD COLUMN `plan_type` VARCHAR(45) NULL AFTER `plan_status`;",
+
+    "ALTER TABLE subscribtion_history ADD COLUMN `payment_status` INT(11) NULL DEFAULT '0' AFTER `plan_duration`;",
+
+    "ALTER TABLE subscribtion_transactions ADD COLUMN `amount` BIGINT(20) GENERATED ALWAYS AS () VIRTUAL AFTER `payment_type`;"
 ];
 
 queries.forEach(executeQuery);
