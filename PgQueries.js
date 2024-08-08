@@ -104,6 +104,11 @@ function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileDa
 function createPG(connection, reqHostel, response, request) {
     const userDetails = request.user_details;
     const timestamp = Date.now();
+
+    if (!reqHostel.hostel_Name || !reqHostel.hostel_Phone || !reqHostel.hostel_email_Id) {
+        return response.status(201).json({ message: "Please Add All Required Fields", statusCode: 201 })
+    }
+
     if (reqHostel.id) {
         if (reqHostel.profile) {
             uploadProfilePictureToS3Bucket('smartstaydevs', 'Hostel_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqHostel.profile, (err, hostel_Logo) => {
@@ -166,36 +171,26 @@ function createPG(connection, reqHostel, response, request) {
                 })
             }
         })
-    }
-    else {
-
-        const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqHostel.hostel_Phone}\'`
-        connection.query(query2, function (error, datum) {
-            if (datum && datum.length > 0) {
-                response.status(201).json({ message: 'Phone Number already Saved', statusCode: 201 })
+    } else {
+        var query2 = "SELECT * FROM hosteldetails WHERE Name = CONVERT(? USING utf8mb4);";
+        connection.query(query2, [reqHostel.hostel_Name], function (error, datum) {
+            if (error) {
+                console.log(error);
+                response.status(201).json({ message: 'Unable to Get Hostel Details', statusCode: 201 })
+            } else if (datum.length != 0) {
+                response.status(201).json({ message: 'Hostel Name Already Exists', statusCode: 201 })
+            } else {
+                const query = `INSERT INTO hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) VALUES (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\')`
+                connection.query(query, function (error, data) {
+                    if (error) {
+                        console.log("error", error);
+                        response.status(201).json({ statusCode: 201, message: 'Cannot Insert Details' })
+                    } else {
+                        response.status(200).json({ statusCode: 200, message: 'Succsessfully Added New Hostel' })
+                    }
+                })
             }
-            else {
-                if (error) {
-                    response.status(201).json({ message: 'Error while fetching data', statusCode: 201 })
-                } else {
-                    const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) values (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\')`
-                    connection.query(query, function (error, data) {
-                        if (error) {
-                            console.log("error", error);
-                            response.status(201).json({ message: 'Cannot Insert Details' })
-                        }
-                        else {
-                            response.status(201).json({ message: 'Phone number not Registered' })
-                        }
-                    })
-                }
-            }
-
         })
-
-
-
-
         // connection.query(query, function (error, data) {
         //     if (error) {
         //         console.log("error", error);
@@ -215,8 +210,6 @@ function createPG(connection, reqHostel, response, request) {
         //         })
         //     }
         // })
-
-
     }
 }
 
@@ -350,7 +343,7 @@ function ListForFloor(connection, reqData, response) {
     if (reqData && reqData.hostel_Id) {
         connection.query(`select * from hostelrooms where  Hostel_Id = \'${reqData.hostel_Id}\' and isActive= true`, function (error, hostel_data) {
             if (hostel_data) {
-                response.status(200).json({ data: hostel_data })
+                response.status(200).json({ hostel_data: hostel_data })
             }
             else {
                 response.status(201).json({ message: "No User Found" })
@@ -618,35 +611,6 @@ function listDashBoard(connection, response, request) {
     // }
 }
 
-function deleteHostel(request,response){
-    let req = request.body
-    if (req && req.hostel_Id) {
-        connection.query(`SELECT * FROM hosteldetails WHERE id = ${req.hostel_Id}`,function(selErr,selData){
-            if (selErr) {
-                response.status(201).json({ message: "Error While Fetching Hostel details" });
-            }
-            else{
-                if (selData && selData.length > 0) {
-                    let query = `UPDATE hosteldetails SET isActive = false WHERE id = ${req.hostel_Id}`
-                    connection.query(query,function(delErr,deldata){
-                        if (delErr) {
-                            response.status(201).json({ message: "doesn't update" });
-                        } else {
-                            response.status(200).json({ message: "Hostel Deleted Successfully" });
-                        }
-                    })  
-                }
-                else{
-                    response.status(201).json({ message: "No data found in the hostel" });
-                }
-            }
-        })
-        
-    } else {
-        response.status(201).json({ message: "Missing Parameter" });
-    }
-    
-}
 
 function deleteFloor(connection, response, reqData) {
     if (reqData && reqData.id && reqData.floor_id) {
@@ -916,4 +880,4 @@ function bed_details(req, res) {
     })
 }
 
-module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteHostel, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details }
+module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details }
