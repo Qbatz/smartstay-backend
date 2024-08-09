@@ -155,14 +155,14 @@ function createPG(connection, reqHostel, response, request) {
                         if (error) {
                             response.status(201).json({ message: 'Error while fetching data', statusCode: 201 })
                         } else {
-                            const query = `insert into hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By, profile) values (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\', \'${hostel_Logo}\')`
+                            const query = `INSERT INTO hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By, profile) VALUES (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\', \'${hostel_Logo}\')`
                             connection.query(query, function (error, data) {
                                 if (error) {
                                     console.log("error", error);
                                     response.status(201).json({ message: 'Cannot Insert Details' })
                                 }
                                 else {
-                                    response.status(201).json({ message: 'Phone number not Registered' })
+                                    response.status(200).json({ message: 'Succsessfully Added New Hostel' })
                                 }
                             })
                         }
