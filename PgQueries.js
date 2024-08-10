@@ -618,34 +618,69 @@ function listDashBoard(connection, response, request) {
     // }
 }
 
-function deleteHostel(request,response){
+function deleteHostel(request, response) {
     let req = request.body
     if (req && req.hostel_Id) {
-        connection.query(`SELECT * FROM hosteldetails WHERE id = ${req.hostel_Id}`,function(selErr,selData){
-            if (selErr) {
-                response.status(201).json({ message: "Error While Fetching Hostel details" });
+        connection.query(`select * from Hostel_Floor where hostel_id = ${req.hostel_Id} and status = true;`, function (floorError, floorData) {
+            if (floorError) {
+                response.status(201).json({ message: "Error While Fetching Hostel room details" });
             }
-            else{
-                if (selData && selData.length > 0) {
-                    let query = `UPDATE hosteldetails SET isActive = false WHERE id = ${req.hostel_Id}`
-                    connection.query(query,function(delErr,deldata){
-                        if (delErr) {
-                            response.status(201).json({ message: "doesn't update" });
-                        } else {
-                            response.status(200).json({ message: "Hostel Deleted Successfully" });
-                        }
-                    })  
+            else {
+                if (floorData && floorData.length > 0) {
+                    response.status(201).json({ message: "This hostel has some floor, so first delete the floor.", FloorStatus: 201 });
                 }
-                else{
-                    response.status(201).json({ message: "No data found in the hostel" });
+                else {
+                    connection.query(`select * from hostelrooms where Hostel_Id = ${req.hostel_Id} and isActive = true;`, function (roomError, roomData) {
+                        if (roomError) {
+                            response.status(201).json({ message: "Error While Fetching Hostel room details" });
+                        }
+                        else {
+                            if (roomData && roomData.length > 0) {
+                                response.status(201).json({ message: "This hostel has some rooms, so first delete the room.", RoomStatus: 201 });
+                            }
+                            else {
+                                connection.query(`SELECT * FROM smart_stay.hostel where Hostel_Id =  ${req.hostel_Id} and isActive = true;`, function (userError, userData) {
+                                    if (userError) {
+                                        response.status(201).json({ message: "Error While Fetching User details" });
+                                    }
+                                    else {
+                                        if (userData && userData.length > 0) {
+                                            response.status(201).json({ message: "This hostel has some Users, so first delete the Users.", UserStatus: 201 });
+                                        }
+                                        else {
+                                            connection.query(`SELECT * FROM hosteldetails WHERE id = ${req.hostel_Id} and isActive = true`, function (selErr, selData) {
+                                                if (selErr) {
+                                                    response.status(201).json({ message: "Error While Fetching Hostel details" });
+                                                }
+                                                else {
+                                                    if (selData && selData.length > 0) {
+                                                        let query = `UPDATE hosteldetails SET isActive = false WHERE id = ${req.hostel_Id}`
+                                                        connection.query(query, function (delErr, deldata) {
+                                                            if (delErr) {
+                                                                response.status(201).json({ message: "doesn't update" });
+                                                            } else {
+                                                                response.status(200).json({ message: "Hostel Deleted Successfully", statusCode : 200});
+                                                            }
+                                                        })
+                                                    }
+                                                    else {
+                                                        response.status(201).json({ message: "No data found in the hostel" });
+                                                    }
+                                                }
+                                            })
+                                        }
+                                    }
+                                })
+                            }
+                        }
+                    })
                 }
             }
         })
-        
     } else {
         response.status(201).json({ message: "Missing Parameter" });
     }
-    
+
 }
 
 function deleteFloor(connection, response, reqData) {
