@@ -19,7 +19,7 @@ function getHostelList(connection, response, request) {
     const userDetails = request.user_details;
     let hostelDetails = [];
     let errorMessage = '';
-    connection.query(`select * from hosteldetails where created_By = '${userDetails.id}' ORDER BY create_At DESC`, function (err, data) {
+    connection.query(`select * from hosteldetails where created_By = '${userDetails.id}' and isActive = true ORDER BY create_At DESC`, function (err, data) {
         if (data && data.length > 0) {
             for (let i = 0; i < data.length; i++) {
                 console.log("data", data);
@@ -347,7 +347,14 @@ function RoomCount(connection, reqFloorID, response) {
 
 function ListForFloor(connection, reqData, response) {
     if (reqData && reqData.hostel_Id) {
-        connection.query(`select * from hostelrooms where  Hostel_Id = \'${reqData.hostel_Id}\' and isActive= true`, function (error, hostel_data) {
+        let query = `SELECT hos.id,hos.hostel_id,hos.floor_id,hos.floor_name,hos.status,hosroom.Room_Id,
+        hosroom.Number_Of_Beds,hosroom.Price,hosroom.Created_By,hosroom.Created_At 
+FROM Hostel_Floor hos 
+LEFT JOIN hostelrooms hosroom 
+ON hos.hostel_id = hosroom.Hostel_Id AND hos.id = hosroom.Floor_Id  
+WHERE hos.hostel_id =  ${reqData.hostel_Id} AND hos.status= true`
+        // connection.query(`select * from hostelrooms where  Hostel_Id = \'${reqData.hostel_Id}\' and isActive= true`, function (error, hostel_data) {
+        connection.query(query, function (error, hostel_data) {
             if (hostel_data) {
                 response.status(200).json({ hostel_data: hostel_data })
             }
@@ -629,47 +636,23 @@ function deleteHostel(request, response) {
                     response.status(201).json({ message: "This hostel has some floor, so first delete the floor.", FloorStatus: 201 });
                 }
                 else {
-                    connection.query(`select * from hostelrooms where Hostel_Id = ${req.hostel_Id} and isActive = true;`, function (roomError, roomData) {
-                        if (roomError) {
-                            response.status(201).json({ message: "Error While Fetching Hostel room details" });
+                    connection.query(`SELECT * FROM hosteldetails WHERE id = ${req.hostel_Id} and isActive = true`, function (selErr, selData) {
+                        if (selErr) {
+                            response.status(201).json({ message: "Error While Fetching Hostel details" });
                         }
                         else {
-                            if (roomData && roomData.length > 0) {
-                                response.status(201).json({ message: "This hostel has some rooms, so first delete the room.", RoomStatus: 201 });
-                            }
-                            else {
-                                connection.query(`SELECT * FROM hostel where Hostel_Id =  ${req.hostel_Id} and isActive = true;`, function (userError, userData) {
-                                    if (userError) {
-                                        response.status(201).json({ message: "Error While Fetching User details" });
-                                    }
-                                    else {
-                                        if (userData && userData.length > 0) {
-                                            response.status(201).json({ message: "This hostel has some Users, so first delete the Users.", UserStatus: 201 });
-                                        }
-                                        else {
-                                            connection.query(`SELECT * FROM hosteldetails WHERE id = ${req.hostel_Id} and isActive = true`, function (selErr, selData) {
-                                                if (selErr) {
-                                                    response.status(201).json({ message: "Error While Fetching Hostel details" });
-                                                }
-                                                else {
-                                                    if (selData && selData.length > 0) {
-                                                        let query = `UPDATE hosteldetails SET isActive = false WHERE id = ${req.hostel_Id}`
-                                                        connection.query(query, function (delErr, deldata) {
-                                                            if (delErr) {
-                                                                response.status(201).json({ message: "doesn't update" });
-                                                            } else {
-                                                                response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
-                                                            }
-                                                        })
-                                                    }
-                                                    else {
-                                                        response.status(201).json({ message: "No data found in the hostel" });
-                                                    }
-                                                }
-                                            })
-                                        }
+                            if (selData && selData.length > 0) {
+                                let query = `UPDATE hosteldetails SET isActive = false WHERE id = ${req.hostel_Id}`
+                                connection.query(query, function (delErr, deldata) {
+                                    if (delErr) {
+                                        response.status(201).json({ message: "doesn't update" });
+                                    } else {
+                                        response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
                                     }
                                 })
+                            }
+                            else {
+                                response.status(201).json({ message: "No data found in the hostel" });
                             }
                         }
                     })
@@ -684,18 +667,30 @@ function deleteHostel(request, response) {
 
 function deleteFloor(connection, response, reqData) {
     if (reqData && reqData.id && reqData.floor_id) {
-        connection.query(`select * from Hostel_Floor where hostel_id= ${reqData.id} and floor_id =${reqData.floor_id}`, function (err, floorData) {
-            if (floorData && floorData.length > 0) {
-                connection.query(`UPDATE Hostel_Floor SET status= false WHERE hostel_id= ${reqData.id} AND floor_id =${reqData.floor_id}`, function (error, data) {
-                    if (error) {
-                        response.status(201).json({ message: "doesn't update" });
-                    } else {
-                        response.status(200).json({ message: "Floor Update Successfully" });
-                    }
-                });
+        connection.query(`select * from hostelrooms where Hostel_Id = ${reqData.id} and Floor_Id = ${reqData.floor_id} and isActive = true;`, function (roomError, roomData) {
+            if (roomError) {
+                response.status(201).json({ message: "Error While Fetching Hostel room details" });
             }
             else {
-                response.status(201).json({ message: "Invalid Credential" });
+                if (roomData && roomData.length > 0) {
+                    response.status(201).json({ message: "This hostel has some rooms, so first delete the room.", RoomStatus: 201 });
+                }
+                else {
+                    connection.query(`select * from Hostel_Floor where hostel_id= ${reqData.id} and floor_id =${reqData.floor_id}`, function (err, floorData) {
+                        if (floorData && floorData.length > 0) {
+                            connection.query(`UPDATE Hostel_Floor SET status= false WHERE hostel_id= ${reqData.id} AND floor_id =${reqData.floor_id}`, function (error, data) {
+                                if (error) {
+                                    response.status(201).json({ message: "doesn't update" });
+                                } else {
+                                    response.status(200).json({ message: "Floor Update Successfully" });
+                                }
+                            });
+                        }
+                        else {
+                            response.status(201).json({ message: "Invalid Credential" });
+                        }
+                    })
+                }
             }
         })
 
@@ -703,12 +698,11 @@ function deleteFloor(connection, response, reqData) {
     else {
         response.status(201).json({ message: "Missing parameter" });
     }
-
 }
 
 function deleteRoom(connection, response, reqData) {
     if (reqData.floorId && reqData.roomNo) {
-        connection.query(`UPDATE hostelrooms SET isActive = 0 WHERE Hostel_Id='${reqData.hostelId}' AND Room_Id= ${reqData.roomNo} AND Floor_Id=${reqData.floorId}`, function (error, data) {
+        connection.query(`UPDATE hostelrooms SET isActive = false WHERE Hostel_Id='${reqData.hostelId}' AND Room_Id= ${reqData.roomNo} AND Floor_Id=${reqData.floorId}`, function (error, data) {
             // connection.query(`DELETE FROM hostelrooms WHERE Room_Id= ${reqData.roomNo} AND Hostel_Id='${reqData.hostelId}' AND Floor_Id=${reqData.floorId}`, function (error, data) {
             if (error) {
                 response.status(201).json({ message: "doesn't update" });
@@ -950,4 +944,4 @@ function bed_details(req, res) {
     })
 }
 
-module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard,deleteHostel, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details }
+module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteHostel, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details }
