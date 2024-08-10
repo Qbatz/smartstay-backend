@@ -638,7 +638,7 @@ function deleteHostel(request, response) {
                                 response.status(201).json({ message: "This hostel has some rooms, so first delete the room.", RoomStatus: 201 });
                             }
                             else {
-                                connection.query(`SELECT * FROM smart_stay.hostel where Hostel_Id =  ${req.hostel_Id} and isActive = true;`, function (userError, userData) {
+                                connection.query(`SELECT * FROM hostel where Hostel_Id =  ${req.hostel_Id} and isActive = true;`, function (userError, userData) {
                                     if (userError) {
                                         response.status(201).json({ message: "Error While Fetching User details" });
                                     }
