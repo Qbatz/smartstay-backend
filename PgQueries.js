@@ -222,7 +222,13 @@ function createPG(connection, reqHostel, response, request) {
 
 function FloorList(connection, requestData, response) {
     if (requestData) {
-        connection.query(`select * from hostelrooms where Hostel_Id = \'${requestData.hostel_Id}\ and isActive=1'`, function (error, data) {
+        let query = `SELECT hos.id,hos.hostel_id,hos.floor_id,hos.floor_name,hos.status,hosroom.Room_Id,
+        hosroom.Number_Of_Beds,hosroom.Price,hosroom.Created_By,hosroom.Created_At 
+FROM Hostel_Floor hos 
+LEFT JOIN hostelrooms hosroom 
+ON hos.hostel_id = hosroom.Hostel_Id AND hos.id = hosroom.Floor_Id  
+WHERE hos.hostel_id =  ${requestData.hostel_Id} AND hos.status= true`
+        connection.query(query, function (error, data) {
             if (data) {
                 response.status(200).json({ data: data })
             }
@@ -659,7 +665,7 @@ function deleteHostel(request, response) {
                                                             if (delErr) {
                                                                 response.status(201).json({ message: "doesn't update" });
                                                             } else {
-                                                                response.status(200).json({ message: "Hostel Deleted Successfully", statusCode : 200});
+                                                                response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
                                                             }
                                                         })
                                                     }
