@@ -72,7 +72,7 @@ VALUES
                             console.log("ADD transaction error", ins_err);
                             response.status(201).json({ message: 'Unable to Add Transactions Details' });
                         } else {
-                            response.status(200).json({ message: "Update Successfully" });
+                            response.status(200).json({ message: "Added Successfully" });
                         }
                     })
 
