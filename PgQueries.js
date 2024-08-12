@@ -673,7 +673,7 @@ function deleteFloor(connection, response, reqData) {
             }
             else {
                 if (roomData && roomData.length > 0) {
-                    response.status(201).json({ message: "This hostel has some rooms, so first delete the room.", RoomStatus: 201 });
+                    response.status(201).json({ message: "This Floor has some rooms, so first delete the room.", RoomStatus: 201 });
                 }
                 else {
                     connection.query(`select * from Hostel_Floor where hostel_id= ${reqData.id} and floor_id =${reqData.floor_id}`, function (err, floorData) {
@@ -701,15 +701,34 @@ function deleteFloor(connection, response, reqData) {
 }
 
 function deleteRoom(connection, response, reqData) {
-    if (reqData.floorId && reqData.roomNo) {
-        connection.query(`UPDATE hostelrooms SET isActive = false WHERE Hostel_Id='${reqData.hostelId}' AND Room_Id= ${reqData.roomNo} AND Floor_Id=${reqData.floorId}`, function (error, data) {
-            // connection.query(`DELETE FROM hostelrooms WHERE Room_Id= ${reqData.roomNo} AND Hostel_Id='${reqData.hostelId}' AND Floor_Id=${reqData.floorId}`, function (error, data) {
-            if (error) {
-                response.status(201).json({ message: "doesn't update" });
-            } else {
-                response.status(200).json({ message: "Room Update Successfully" });
+    if (reqData && reqData.hostelId && reqData.floorId && reqData.roomNo) {
+       let query = `select * from hostelrooms where Hostel_Id =${reqData.hostelId} and Floor_Id = ${reqData.floorId} and Room_Id = ${reqData.roomNo} and isActive = true;`;
+        connection.query(query,function(sel_Error,selData){
+            if (sel_Error) {
+                response.status(201).json({ message: "Error while fetching Room details" });
             }
-        });
+            else{
+                if (selData && selData.length > 0) {
+                    if (selData[0].Number_Of_Beds == 0) {
+                        connection.query(`UPDATE hostelrooms SET isActive = false WHERE Hostel_Id='${reqData.hostelId}' AND Room_Id= ${reqData.roomNo} AND Floor_Id=${reqData.floorId};`, function (error, data) {
+                            // connection.query(`DELETE FROM hostelrooms WHERE Room_Id= ${reqData.roomNo} AND Hostel_Id='${reqData.hostelId}' AND Floor_Id=${reqData.floorId}`, function (error, data) {
+                            if (error) {
+                                response.status(201).json({ message: "doesn't update" });
+                            } else {
+                                response.status(200).json({ message: "Room Update Successfully" });
+                            }
+                        });  
+                    }
+                    else{
+                        response.status(201).json({ message: "This Room has some bed, so first delete the bed.", BedStatus: 201 });
+                    }
+                   
+                } else {
+                    response.status(201).json({ message: "No Data Found" });
+                }
+            }
+        })
+       
     }
     else {
         response.status(201).json({ message: "Missing parameter" });
@@ -725,7 +744,7 @@ function deleteBed(req, res) {
         return res.status(201).json({ statusCode: 201, message: "Missing Required Fields" })
     }
 
-    var sql1 = "SELECT *,bd.id AS bed_detail_id FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id WHERE bd.bed_no='" + bed_id + "' AND hr.Hostel_Id='" + hostelId + "' AND hr.Floor_Id='" + floorId + "' AND hr.Room_Id='" + roomNo + "' AND bd.status=1 AND hr.isActive=1"
+    var sql1 = "SELECT *,bd.id AS bed_detail_id FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id WHERE bd.bed_no='" + bed_id + "' AND hr.Hostel_Id='" + hostelId + "' AND hr.Floor_Id='" + floorId + "' AND hr.Room_Id='" + roomNo + "' AND bd.status=1 AND hr.isActive= true"
     connection.query(sql1, (err, data) => {
         if (err) {
             res.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 });
@@ -735,7 +754,7 @@ function deleteBed(req, res) {
 
             if (isfilled == 0) {
                 // Update Status 0
-                var sql2 = "UPDATE bed_details SET status=0 WHERE id='" + bed_detail_id + "'";
+                var sql2 = "UPDATE bed_details SET status= false WHERE id='" + bed_detail_id + "'";
                 connection.query(sql2, (err, data) => {
                     if (err) {
                         res.status(201).json({ message: "Unable to Remove Hostel Details", statusCode: 201 });
@@ -765,7 +784,7 @@ function get_room_details(connection, request, response) {
                 response.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 });
             } else if (sq_res.length != 0) {
 
-                var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND Room_Id=? AND isActive=1;";
+                var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND Room_Id=? AND isActive= true;";
                 connection.query(sql2, [hostel_id, floor_id, room_id], function (room_err, room_res) {
                     if (room_err) {
                         response.status(201).json({ message: "Unable to Get Room Details", statusCode: 201 });
@@ -791,7 +810,7 @@ function update_room_details(connection, request, response) {
     if ((!hostel_id && hostel_id == undefined) || (!room_id && room_id == undefined) || (!amount && amount < 0)) {
         response.status(201).json({ message: "Missing Parameter Values", statusCode: 201 });
     } else {
-        var sql1 = "SELECT * FROM hosteldetails WHERE id='" + hostel_id + "' AND isActive =1;";
+        var sql1 = "SELECT * FROM hosteldetails WHERE id='" + hostel_id + "' AND isActive = true;";
         connection.query(sql1, function (sq_err, sq_res) {
             if (sq_err) {
                 response.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 });

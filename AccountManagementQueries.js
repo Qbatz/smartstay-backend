@@ -95,7 +95,7 @@ function update_account_details(request, response) {
     var user_id = request.user_details.id;
     var profile = request.file;
 
-    if (!first_name || !last_name || !email_id || !phone || !address) {
+    if (!first_name || !email_id || !phone || !address) {
         response.status(201).json({ message: "Please Add Mandatory Details", statusCode: 201 });
     } else {
         var sql1 = "SELECT * FROM createaccount WHERE id='" + user_id + "'";
