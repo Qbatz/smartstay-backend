@@ -287,10 +287,6 @@ function createnewAccount(request, response) {
                                 var plan_code = reqBodyData.plan_code;
                                 var customer_id = subscription_response.customer.customer_id;
                                 var subscription_id = subscription_response.subscription_id;
-                                var plan_type = subscription_response.status;
-                                var amount = subscription_response.amount;
-                                var start_date = subscription_response.trial_starts_at;
-                                var end_date = subscription_response.trial_ends_at;
                                 var plan_duration = subscription_response.trial_remaining_days;
 
                                 var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status) VALUES (?,?,?,?,?,?,?,?,1)"
@@ -299,8 +295,10 @@ function createnewAccount(request, response) {
                                         console.log(error);
                                         return response.status(201).json({ message: 'Database error' });
                                     } else {
-                                        var sql2 = "INSERT INTO subscribtion_history (customer_id,plan_code,subscribtion_id,amount,plan_status,plan_type,plan_duration,startdate,end_date) VALUES (?,?,?,?,?,?,?,?,?)";
-                                        connection.query(sql2, [customer_id, plan_code, subscription_id, amount, 1, plan_type, plan_duration, start_date, end_date], (err, ins_data) => {
+                                        var user_id = result.insertId;
+
+                                        var sql2 = "INSERT INTO trial_plan_details (plan_code,user_id,customer_id,subscription_id,plan_status,plan_duration) VALUES (?,?,?,?,?,?)";
+                                        connection.query(sql2, [plan_code, user_id, customer_id, subscription_id, 1, plan_duration], (err, ins_data) => {
                                             if (err) {
                                                 console.log(err);
                                                 return response.status(201).json({ message: "Unable to Add Subscribtion History", statusCode: 201 })

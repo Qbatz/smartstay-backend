@@ -60,13 +60,13 @@ async function checkAllSubscriptions() {
             console.log(err);
         } else if (data.length != 0) {
 
-            var currentDate = new Date();
+            var currentDates = new Date();
 
             data.forEach(subscription => {
 
                 var planExpirationDate = new Date(subscription.end_date);
 
-                if (planExpirationDate < currentDate) {
+                if (planExpirationDate < currentDates) {
 
                     var currentDate = new Date().toISOString().split('T')[0];
 
@@ -75,19 +75,12 @@ async function checkAllSubscriptions() {
                     endDate.setDate(endDate.getDate() + 30);
                     var formattedEndDate = endDate.toISOString().split('T')[0];
 
-                    var sql3 = "INSERT INTO subscribtion_history (customer_id,plan_code,subscibtion_id,amount,plan_status,plan_type,plan_duration,payment_status,startdate,end_date) VALUES (?,?,?,?,?,?,?,?,?,?)";
-                    connection.query(sql3, [subscription.customer_id, subscription.plan_code, subscription.subscibtion_id, subscription.amount, 1, 'live', 28, 0, currentDate, formattedEndDate], function (err, ins_res) {
+                    var sql2 = "UPDATE createaccount SET plan_status=0 WHERE customer_id='" + subscription.customer_id + "'";
+                    connection.query(sql2, function (err, up_res) {
                         if (err) {
                             console.log(err);
                         } else {
-                            var sql2 = "UPDATE createaccount SET plan_status=0 WHERE customer_id='" + subscription.customer_id + "' AND   ";
-                            connection.query(sql2, function (err, up_res) {
-                                if (err) {
-                                    console.log(err);
-                                } else {
-                                    console.log(`User ${subscription.customer_id}'s subscription has ended`);
-                                }
-                            })
+                            console.log(`User ${subscription.customer_id}'s subscription has ended`);
                         }
                     })
                 } else {
@@ -97,6 +90,41 @@ async function checkAllSubscriptions() {
 
         } else {
             console.log("No Customer Subscibe Plans");
+        }
+    })
+}
+
+async function check_trail_end() {
+    var sql1 = "SELECT ca.*,tpc.*,tpc.createdat AS start_date,tpc.updatedat AS end_date FROM createaccount AS ca JOIN trial_plan_details as tpc ON ca.id=tpc.user_id WHERE tpc.plan_status =1;";
+    connection.query(sql1, function (err, data1) {
+        if (err) {
+            console.log(err);
+        } else if (data1.length != 0) {
+
+            var currentDate = new Date();
+
+            data1.forEach(subscription => {
+
+                var start_date = subscription.start_date;
+                var startDateObject = new Date(start_date);
+                var duration = Math.ceil((currentDate - startDateObject) / (1000 * 60 * 60 * 24));
+
+                if (duration == 1) {
+                    var sql2 = "UPDATE createaccount SET plan_status=0 WHERE id=?";
+                    connection.query(sql2, [subscription.user_id], function (up_err, up_res) {
+                        if (err) {
+                            console.log(err);
+                        } else {
+                            console.log("Plan Status Updated");
+                        }
+                    })
+                } else {
+                    console.log("Not to end the Trail Plan");
+                }
+            });
+
+        } else {
+            console.log("No Need to Check the details");
         }
     })
 }
@@ -158,8 +186,97 @@ async function invoice_payments(req, res) {
     }
 }
 
-module.exports = { subscipition, checkAllSubscriptions, invoice_details, invoice_payments }
+async function new_subscription(req, res) {
 
+    var { customer_id, plan_code } = req.body;
+
+    if (!customer_id || !plan_code) {
+        return res.status(201).json({ message: "Missing Parameter ", statusCode: 201 })
+    }
+
+    var currentDate = new Date().toISOString().split('T')[0];
+
+    var apiEndpoint = "https://www.zohoapis.in/billing/v1/hostedpages/newsubscription";
+    var method = "POST";
+
+    var inbut_body = {
+        plan: {
+            plan_code: plan_code
+        },
+        customer_id: customer_id,
+        addons: [],
+        custom_fields: [],
+        redirect_url: req.body.redirect_url,
+        start_date: currentDate,
+        notes: "New User Subscribtion"
+    };
+    apiResponse(apiEndpoint, method, inbut_body).then(api_data => {
+        console.log('API Response:', api_data);
+
+        if (api_data.code == 0) {
+            return res.status(200).json({ message: api_data.message, data: api_data.hostedpage })
+        } else {
+            return res.status(201).json({ message: api_data.message, statusCode: 201, error: error })
+        }
+    })
+}
+
+async function webhook_status(req, res) {
+
+    var event = req.body.event;
+
+    console.log(event);
+
+    if (event === 'payment_successful') {
+
+        const paymentId = req.body.data.payment_id;
+        const subscriptionId = req.body.data.subscription_id;
+        const amount = req.body.data.amount;
+        var customer_id = req.body.data.customer_id;
+
+        var plan_code = 'one_rupee';
+        var plan_status = 1;
+        var plan_type = 'paid';
+        var plan_duration = 30;
+        var payment_status = 1;
+        var start_date = new Date();
+        var end_date = new Date();
+        end_date.setMonth(end_date.getMonth() + 1);
+
+        var sql1 = `INSERT INTO subscribtion_history 
+            (customer_id, plan_code, subscribtion_id, amount, plan_status, plan_type, plan_duration, payment_status, startdate, end_date) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        connection.query(sql1, [
+            customer_id, plan_code, subscriptionId, amount, plan_status, plan_type, plan_duration, payment_status, start_date, end_date
+        ], function (error, results, fields) {
+            if (error) {
+                console.error('Error executing query:', error);
+                // return res.status(201).json({ message: 'Database error' });
+            }
+
+            var sql2 = "UPDATE createaccount SET plan_status=1 WHERE customer_id=?";
+            connection.query(sql2, function (err, up_date) {
+                if (err) {
+                    console.log(err);
+                    // return res.status(201).json({ message: 'Database error' });
+                } else {
+                    console.log('Subscription history inserted:', results);
+                }
+            })
+        });
+        // res.status(200).send('Payment successful');
+
+        console.log(`Payment ${paymentId} for subscription ${subscriptionId} was successful. Amount: ${amount}`);
+
+    } else if (event === 'payment_failed') {
+        const paymentId = req.body.data.payment_id;
+        console.log(`Payment ${paymentId} failed.`);
+        res.status(200).send('Payment failed');
+    }
+}
+
+module.exports = { subscipition, invoice_details, invoice_payments, check_trail_end, checkAllSubscriptions, new_subscription, webhook_status }
 
 
 // async function new_subscription(req, res) {

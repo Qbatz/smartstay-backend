@@ -678,9 +678,13 @@ app.get('/invoice_details', (req, res) => {
 })
 
 // // Add Payment for Subscription
-// app.post('/new_subscription', (req, res) => {
-//     billings.new_subscription(req, res)
-// })
+app.post('/new_subscription', (req, res) => {
+    billings.new_subscription(req, res)
+})
+
+app.post('/webhook/payment-status', (req, res) => {
+    billings.webhook_status(req, res)
+})
 
 // Invoice Payment
 app.post('/invoice_record_payments', (req, res) => {
