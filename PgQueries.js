@@ -162,7 +162,7 @@ function createPG(connection, reqHostel, response, request) {
                                     response.status(201).json({ statusCode: 201, message: 'Cannot Insert Details' })
                                 }
                                 else {
-                                    response.status(200).json({ statusCode: 201, message: 'Succsessfully Added New Hostel' })
+                                    response.status(200).json({ statusCode: 200, message: 'Succsessfully Added New Hostel' })
                                 }
                             })
                         }
