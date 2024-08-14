@@ -449,7 +449,7 @@ function CreateRoom(connection, request, response) {
     var created_by = request.user_details.id;
 
     if (!reqsData) {
-        return response.status(400).json({ message: 'Missing Parameter' });
+        return response.status(201).json({ message: 'Missing Parameter' });
     }
 
    
