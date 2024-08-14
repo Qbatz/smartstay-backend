@@ -490,6 +490,16 @@ function payment_history(connection, response, request) {
 
 }
 
+function transactionHistory(connection, response, request){
+let query 
+connection.query(query,function(err,data){
+    if (err) {
+        response.status(201).json({ message: "Error while fetching transaction history", statusCode: 201 }) 
+    }
+    else{
+        response.status(200).json({ data:data, statusCode: 200 })
+    }
+})
+}
 
-
-module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount, get_user_details, forgotpassword_otp_response, payment_history, update_account_details }
+module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount, get_user_details, forgotpassword_otp_response, payment_history, update_account_details, transactionHistory }
