@@ -444,6 +444,7 @@ WHERE hos.hostel_id =  ${reqData.hostel_Id} AND hos.status= true`
 //     }
 // }
 
+
 function CreateRoom(connection, request, response) {
     var reqsData = request.body;
     var created_by = request.user_details.id;
