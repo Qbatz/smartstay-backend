@@ -159,10 +159,10 @@ function createPG(connection, reqHostel, response, request) {
                             connection.query(query, function (error, data) {
                                 if (error) {
                                     console.log("error", error);
-                                    response.status(201).json({ message: 'Cannot Insert Details' })
+                                    response.status(201).json({ statusCode: 201, message: 'Cannot Insert Details' })
                                 }
                                 else {
-                                    response.status(200).json({ message: 'Succsessfully Added New Hostel' })
+                                    response.status(200).json({ statusCode: 201, message: 'Succsessfully Added New Hostel' })
                                 }
                             })
                         }
@@ -702,12 +702,12 @@ function deleteFloor(connection, response, reqData) {
 
 function deleteRoom(connection, response, reqData) {
     if (reqData && reqData.hostelId && reqData.floorId && reqData.roomNo) {
-       let query = `select * from hostelrooms where Hostel_Id =${reqData.hostelId} and Floor_Id = ${reqData.floorId} and Room_Id = ${reqData.roomNo} and isActive = true;`;
-        connection.query(query,function(sel_Error,selData){
+        let query = `select * from hostelrooms where Hostel_Id =${reqData.hostelId} and Floor_Id = ${reqData.floorId} and Room_Id = ${reqData.roomNo} and isActive = true;`;
+        connection.query(query, function (sel_Error, selData) {
             if (sel_Error) {
                 response.status(201).json({ message: "Error while fetching Room details" });
             }
-            else{
+            else {
                 if (selData && selData.length > 0) {
                     if (selData[0].Number_Of_Beds == 0) {
                         connection.query(`UPDATE hostelrooms SET isActive = false WHERE Hostel_Id='${reqData.hostelId}' AND Room_Id= ${reqData.roomNo} AND Floor_Id=${reqData.floorId};`, function (error, data) {
@@ -717,18 +717,18 @@ function deleteRoom(connection, response, reqData) {
                             } else {
                                 response.status(200).json({ message: "Room Update Successfully" });
                             }
-                        });  
+                        });
                     }
-                    else{
+                    else {
                         response.status(201).json({ message: "This Room has some bed, so first delete the bed.", BedStatus: 201 });
                     }
-                   
+
                 } else {
                     response.status(201).json({ message: "No Data Found" });
                 }
             }
         })
-       
+
     }
     else {
         response.status(201).json({ message: "Missing parameter" });
