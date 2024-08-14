@@ -434,12 +434,13 @@ async function CreateRoom(connection, request, response) {
         }
 
         if (errorMessage) {
-            response.status(500).json({ message: errorMessage });
+            response.status(201).json({ message: errorMessage,statusCode:201 });
         } else {
+            
             response.status(200).json({ message: message && message.length > 0 ? message : 'Create Room Details successfully' });
         }
     } catch (error) {
-        response.status(500).json({ message: 'Database Error', error: error.message });
+        response.status(201).json({ message: 'Database Error', error: error.message });
     }
 }
 

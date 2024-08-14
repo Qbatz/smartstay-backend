@@ -486,6 +486,11 @@ app.post('/payment_history', (request, response) => {
     accountManagement.payment_history(connection, response, request)
 })
 
+// transactionHistory
+app.post('/hostel/transaction-history', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    accountManagement.transactionHistory(connection, response, request)
+})
 
 app.post('/add/amenity-history', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
