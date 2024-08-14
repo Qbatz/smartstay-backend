@@ -462,17 +462,19 @@ function CreateRoom(connection, request, response) {
 
             if (existingRoom.length > 0) {
                 return response.status(201).json({ message: 'Room ID already exists', statusCode: 201 });
+            }else{
+                const insertQuery = `INSERT INTO hostelrooms (Hostel_Id, Floor_Id, Room_Id, Created_By) VALUES ('${reqsData.hostel_id}', '${reqsData.floorId}', '${reqsData.roomId}',  '${created_by}')`;
+
+                connection.query(insertQuery, (error, results) => {
+                    if (error) {
+                        return response.status(500).json({ message: 'Database Error', error: error.message });
+                    }
+    
+                    return response.status(200).json({ message: 'Room created successfully' });
+                });
             }
 
-            const insertQuery = `INSERT INTO hostelrooms (Hostel_Id, Floor_Id, Room_Id, Created_By) VALUES ('${reqsData.hostel_id}', '${reqsData.floorId}', '${reqsData.roomId}',  '${created_by}')`;
-
-            connection.query(insertQuery, (error, results) => {
-                if (error) {
-                    return response.status(500).json({ message: 'Database Error', error: error.message });
-                }
-
-                return response.status(200).json({ message: 'Room created successfully' });
-            });
+           
         });
    
 }
