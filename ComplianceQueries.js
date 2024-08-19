@@ -199,11 +199,12 @@ function all_complaint_types(req, res) {
     connection.query(sql1, (sql_err, sel_res) => {
         if (sql_err) {
             return res.status(201).json({ statusCode: 201, message: "Unable to Get Complaint Types" })
-        } else if (sel_res.length > 0) {
-            return res.status(200).json({ statusCode: 200, message: "All Complaint Types", complaint_types: sel_res })
         } else {
-            return res.status(201).json({ statusCode: 201, message: "No Data Found" });
-        }
+            return res.status(200).json({ statusCode: 200, message: "All Complaint Types", complaint_types: sel_res })
+        } 
+        // else {
+        //     return res.status(201).json({ statusCode: 201, message: "No Data Found" });
+        // }
     })
 }
 
