@@ -123,7 +123,7 @@ function createPG(connection, reqHostel, response, request) {
                         if (update_Err) {
                             response.status(201).json({ message: 'Error while update the data' })
                         } else {
-                            response.status(200).json({ message: 'Data Updated Successfully', statusCode: 200 })
+                            response.status(200).json({ message: 'Hostel Details Updated Successfully', statusCode: 200 })
                         }
                     })
                 }
@@ -135,7 +135,7 @@ function createPG(connection, reqHostel, response, request) {
                 if (update_Err) {
                     response.status(201).json({ message: 'Error while update the data' })
                 } else {
-                    response.status(200).json({ message: 'Data Updated Successfully', statusCode: 200 })
+                    response.status(200).json({ message: 'Hostel Details Updated Successfully', statusCode: 200 })
                 }
             })
         }
@@ -146,15 +146,15 @@ function createPG(connection, reqHostel, response, request) {
             if (err) {
                 response.status(202).json({ message: 'Database error' });
             } else {
-                const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqHostel.hostel_Phone}\'`
-                connection.query(query2, function (error, datum) {
-                    if (datum && datum.length > 0) {
-                        response.status(201).json({ message: 'Phone already Saved', statusCode: 201 })
-                    }
-                    else {
-                        if (error) {
-                            response.status(201).json({ message: 'Error while fetching data', statusCode: 201 })
-                        } else {
+                // const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqHostel.hostel_Phone}\'`
+                // connection.query(query2, function (error, datum) {
+                //     if (datum && datum.length > 0) {
+                //         response.status(201).json({ message: 'Phone already Saved', statusCode: 201 })
+                //     }
+                //     else {
+                //         if (error) {
+                //             response.status(201).json({ message: 'Error while fetching data', statusCode: 201 })
+                //         } else {
                             const query = `INSERT INTO hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By, profile) VALUES (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\', \'${hostel_Logo}\')`
                             connection.query(query, function (error, data) {
                                 if (error) {
@@ -162,35 +162,39 @@ function createPG(connection, reqHostel, response, request) {
                                     response.status(201).json({ statusCode: 201, message: 'Cannot Insert Details' })
                                 }
                                 else {
-                                    response.status(200).json({ statusCode: 200, message: 'Succsessfully Added New Hostel' })
+                                    response.status(200).json({ statusCode: 200, message: 'Succsessfully added  a new hostel' })
                                 }
                             })
-                        }
-                    }
+                    //     }
+                    // }
 
-                })
+                // })
             }
         })
     } else {
-        var query2 = "SELECT * FROM hosteldetails WHERE Name = CONVERT(? USING utf8mb4);";
-        connection.query(query2, [reqHostel.hostel_Name], function (error, datum) {
-            if (error) {
-                console.log(error);
-                response.status(201).json({ message: 'Unable to Get Hostel Details', statusCode: 201 })
-            } else if (datum.length != 0) {
-                response.status(201).json({ message: 'Hostel Name Already Exists', statusCode: 201 })
-            } else {
+        // var query2 = "SELECT * FROM hosteldetails WHERE Name = CONVERT(? USING utf8mb4);";
+        // connection.query(query2, [reqHostel.hostel_Name], function (error, datum) {
+        //     if (error) {
+        //         console.log(error);
+        //         response.status(201).json({ message: 'Unable to Get Hostel Details', statusCode: 201 })
+        //     }
+        //      else if (datum.length != 0) {
+        //         response.status(201).json({ message: 'Hostel Name Already Exists', statusCode: 201 })
+        //     } 
+        //     else {
                 const query = `INSERT INTO hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) VALUES (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\')`
                 connection.query(query, function (error, data) {
                     if (error) {
                         console.log("error", error);
                         response.status(201).json({ statusCode: 201, message: 'Cannot Insert Details' })
                     } else {
-                        response.status(200).json({ statusCode: 200, message: 'Succsessfully Added New Hostel' })
+                        response.status(200).json({ statusCode: 200, message: 'Succsessfully added  a new hostel' })
                     }
                 })
-            }
-        })
+
+
+        //     }
+        // })
         // connection.query(query, function (error, data) {
         //     if (error) {
         //         console.log("error", error);
