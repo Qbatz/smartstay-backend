@@ -223,11 +223,9 @@ async function new_subscription(req, res) {
 
 async function webhook_status(req, res) {
 
-    var event = req.body.event;
+    var event = req.body.event_type;
 
-    console.log(event);
-
-    if (event === 'payment_successful') {
+    if (event == 'payment_thankyou') {
 
         const paymentId = req.body.data.payment_id;
         const subscriptionId = req.body.data.subscription_id;
@@ -244,35 +242,34 @@ async function webhook_status(req, res) {
         end_date.setMonth(end_date.getMonth() + 1);
 
         var sql1 = `INSERT INTO subscribtion_history 
-            (customer_id, plan_code, subscribtion_id, amount, plan_status, plan_type, plan_duration, payment_status, startdate, end_date) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (customer_id, plan_code, subscribtion_id, amount, plan_status, plan_type, plan_duration, payment_status, startdate, end_date,payment_id) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
         `;
         connection.query(sql1, [
-            customer_id, plan_code, subscriptionId, amount, plan_status, plan_type, plan_duration, payment_status, start_date, end_date
+            customer_id, plan_code, subscriptionId, amount, plan_status, plan_type, plan_duration, payment_status, start_date, end_date, paymentId
         ], function (error, results, fields) {
             if (error) {
                 console.error('Error executing query:', error);
-                // return res.status(201).json({ message: 'Database error' });
             }
 
             var sql2 = "UPDATE createaccount SET plan_status=1 WHERE customer_id=?";
             connection.query(sql2, function (err, up_date) {
                 if (err) {
                     console.log(err);
-                    // return res.status(201).json({ message: 'Database error' });
                 } else {
                     console.log('Subscription history inserted:', results);
                 }
             })
         });
-        // res.status(200).send('Payment successful');
-
         console.log(`Payment ${paymentId} for subscription ${subscriptionId} was successful. Amount: ${amount}`);
 
     } else if (event === 'payment_failed') {
         const paymentId = req.body.data.payment_id;
         console.log(`Payment ${paymentId} failed.`);
-        res.status(200).send('Payment failed');
+        // res.status(200).send('Payment failed');
+    } else {
+        console.log("In this Evenot not Success and Not Failure Event");
+        console.log(event);
     }
 }
 

@@ -10,13 +10,10 @@ const queries = [
         status TINYINT NULL,
         PRIMARY KEY (id));`,
 
-
-        
-        "ALTER TABLE transactions ADD COLUMN action INT NULL DEFAULT 1 AFTER createdAt",
+    "ALTER TABLE transactions ADD COLUMN action INT NULL DEFAULT 1 AFTER createdAt",
 
 
-        "ALTER TABLE assets ADD COLUMN `product_name` VARCHAR(255) NULL AFTER `vendor_id`;"
-
+    "ALTER TABLE assets ADD COLUMN `product_name` VARCHAR(255) NULL AFTER `vendor_id`;",
 
     "ALTER TABLE hostel ADD COLUMN created_by BIGINT(20) NULL DEFAULT '0' AFTER pending_advance",
 
@@ -42,8 +39,9 @@ const queries = [
 
     "CREATE TABLE trial_plan_details (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`plan_code` VARCHAR(45) NULL,`user_id` BIGINT(20) NULL,`customer_id` VARCHAR(255) NULL,`subscription_id` VARCHAR(255) NULL,`plan_status` INT(11) NULL DEFAULT '0',`plan_duration` INT(11) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,`updatedat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 
-    "ALTER TABLE `subscribtion_history` ADD COLUMN `gst` VARCHAR(45) NULL AFTER `plan_type`,ADD COLUMN `gst_percentage` VARCHAR(45) NULL AFTER `gst`;"
+    "ALTER TABLE subscribtion_history ADD COLUMN `gst` VARCHAR(45) NULL AFTER `plan_type`,ADD COLUMN `gst_percentage` VARCHAR(45) NULL AFTER `gst`;",
 
+    "ALTER TABLE subscribtion_history ADD COLUMN `payment_id` VARCHAR(255) NULL AFTER `plan_duration`;"
 ];
 
 queries.forEach(executeQuery);

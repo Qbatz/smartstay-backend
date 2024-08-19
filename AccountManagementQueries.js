@@ -241,7 +241,7 @@ function update_account_details(request, response) {
 function createnewAccount(request, response) {
 
     var reqBodyData = request.body;
-    if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.first_name && reqBodyData.password && reqBodyData.confirm_password && reqBodyData.plan_code) {
+    if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.first_name && reqBodyData.password && reqBodyData.confirm_password) {
 
         connection.query(
             `SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`,
@@ -267,14 +267,14 @@ function createnewAccount(request, response) {
 
                         var inbut_body = {
                             plan: {
-                                plan_code: reqBodyData.plan_code
+                                plan_code: 'one_day'
                             },
                             customer: {
                                 display_name: reqBodyData.first_name + ' ' + reqBodyData.last_name,
                                 first_name: reqBodyData.first_name,
                                 last_name: reqBodyData.last_name,
                                 email: reqBodyData.emailId,
-                                phone: reqBodyData.mobileNo
+                                mobile: reqBodyData.mobileNo
                             },
                             start_date: currentDate,
                             notes: "New User Subscribtion"
@@ -622,16 +622,16 @@ function payment_history(connection, response, request) {
 
 }
 
-function transactionHistory(connection, response, request){
-let query 
-connection.query(query,function(err,data){
-    if (err) {
-        response.status(201).json({ message: "Error while fetching transaction history", statusCode: 201 }) 
-    }
-    else{
-        response.status(200).json({ data:data, statusCode: 200 })
-    }
-})
+function transactionHistory(connection, response, request) {
+    let query
+    connection.query(query, function (err, data) {
+        if (err) {
+            response.status(201).json({ message: "Error while fetching transaction history", statusCode: 201 })
+        }
+        else {
+            response.status(200).json({ data: data, statusCode: 200 })
+        }
+    })
 }
 
 module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount, get_user_details, forgotpassword_otp_response, payment_history, update_account_details, transactionHistory }

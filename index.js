@@ -703,9 +703,3 @@ app.post('/webhook/payment-status', (req, res) => {
 app.post('/invoice_record_payments', (req, res) => {
     billings.invoice_payments(req, res)
 })
-
-// Completed ********
-
-// Get invoices
-// invoice Hosting Page
-// Created Customer
