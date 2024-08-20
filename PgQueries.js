@@ -155,7 +155,7 @@ function createPG(connection, reqHostel, response, request) {
                 //         if (error) {
                 //             response.status(201).json({ message: 'Error while fetching data', statusCode: 201 })
                 //         } else {
-                            const query = `INSERT INTO hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By, profile) VALUES (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\', \'${hostel_Logo}\')`
+                            const query = `INSERT INTO hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By, profile,isHostelBased) VALUES (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\', \'${hostel_Logo}\',0)`
                             connection.query(query, function (error, data) {
                                 if (error) {
                                     console.log("error", error);
@@ -182,7 +182,7 @@ function createPG(connection, reqHostel, response, request) {
         //         response.status(201).json({ message: 'Hostel Name Already Exists', statusCode: 201 })
         //     } 
         //     else {
-                const query = `INSERT INTO hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By) VALUES (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\')`
+                const query = `INSERT INTO hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By,isHostelBased) VALUES (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\',0)`
                 connection.query(query, function (error, data) {
                     if (error) {
                         console.log("error", error);

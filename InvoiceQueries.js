@@ -1013,7 +1013,7 @@ function InvoicePDf(connection, reqBodyData, response) {
             var logoPathimage = inv_data.Hostel_Logo ? inv_data.Hostel_Logo : defaultLogoPath;
             console.log(logoPathimage);
             const invdate = moment(inv_data.Date).format('DD/MM/YYYY');
-            htmlContent = htmlContent
+            var new_htmlContent = htmlContent
                 .replace('{{hostal_name}}', inv_data.Hostel_Name)
                 .replace('{{city}}', inv_data.HostelAddress)
                 .replace('{{Phone}}', inv_data.hostel_PhoneNo)
@@ -1029,12 +1029,10 @@ function InvoicePDf(connection, reqBodyData, response) {
 
 
             if (inv_data.invoice_type == 1) {
-                htmlContent = htmlContent.replace('{{Amount_name}}', "Rent Amount")
+                new_htmlContent = htmlContent.replace('{{Amount_name}}', "Rent Amount")
             } else {
-                htmlContent = htmlContent.replace('{{Amount_name}}', "Advance Amount")
+                new_htmlContent = htmlContent.replace('{{Amount_name}}', "Advance Amount")
             }
-
-
 
             const currentDate = moment().format('YYYY-MM-DD');
             const currentMonth = moment(currentDate).month() + 1;
@@ -1044,8 +1042,11 @@ function InvoicePDf(connection, reqBodyData, response) {
             const filename = `INV${currentMonth}${currentYear}${currentTime}${inv_data.User_Id}.pdf`;
             const outputPath = path.join(__dirname, filename);
 
+            console.log(new_htmlContent,"Content Values")
+			console.log(outputPath,"Output Path")   
+            console.log(phantomjs.path,"phantomjs.path")
             // Generate the PDF
-            pdf.create(htmlContent, { phantomPath: phantomjs.path }).toFile(outputPath, async (err, res) => {
+            pdf.create(new_htmlContent, { phantomPath: phantomjs.path }).toFile(outputPath, async (err, res) => {
                 if (err) {
                     console.error('Error generating PDF:', err);
                     return;
