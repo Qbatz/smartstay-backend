@@ -358,7 +358,7 @@ function loginAccount(connection, response, email_Id, password) {
                 response.status(500).json({ message: "Internal Server Error", statusCode: 500 });
             } else {
                 if (data.length > 0) {
-                    if (await bcrypt.compare(password, data[0].password) || data[0].password === password) {
+                    if (await bcrypt.compare(password, data[0].password)) {
                         const isEnable = data[0].isEnable;
                         const LoginId = data[0].id;
                         if (isEnable == 1) {
