@@ -5,6 +5,7 @@ const middleware = require('./middleware');
 const connection = require('./config/connection');
 const notifications = require('./notifications');
 const assets = require('./assets');
+const crons = require('./crons');
 
 const app = express()
 const userQueries = require('./UserQueries');
@@ -15,6 +16,7 @@ const complianceQueries = require('./ComplianceQueries')
 const pgQueries = require('./PgQueries')
 const vendorQueries = require('./vendorQueries')
 const expensesManagement = require('./ExpensesManagement')
+var billings = require('./zoho_billing/billings');
 
 const multer = require('multer');
 const request = require('request');
@@ -682,4 +684,22 @@ app.post("/aadhaar_otp_verification", (req, res) => {
 // Reports API
 app.post("/all_reports", (req, res) => {
     assets.all_reports(req, res)
+})
+
+app.get('/invoice_details', (req, res) => {
+    billings.invoice_details(req, res)
+})
+
+// // Add Payment for Subscription
+app.post('/new_subscription', (req, res) => {
+    billings.new_subscription(req, res)
+})
+
+app.post('/webhook/payment-status', (req, res) => {
+    billings.webhook_status(req, res)
+})
+
+// Invoice Payment
+app.post('/invoice_record_payments', (req, res) => {
+    billings.invoice_payments(req, res)
 })
