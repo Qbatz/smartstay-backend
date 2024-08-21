@@ -64,8 +64,10 @@ VALUES
                     response.status(201).json({ message: "Internal Server Error" });
                 }
                 else {
-
-                    var sql3 = `INSERT INTO transactions (user_id,invoice_id,amount,created_by,payment_type,payment_date,action) VALUES (0,${reqData.asset_id},${purchase_amount},${createdBy},'${reqData.payment_mode}','${purchase_date}',2)`;
+                    let query1 =`SELECT * FROM expenses order by id desc`;
+                    connection.query(query1,function(select_Err,select_Data){
+                        if (select_Data && select_Data.length > 0) {
+                            var sql3 = `INSERT INTO transactions (user_id,invoice_id,amount,created_by,payment_type,payment_date,action) VALUES (0,${select_Data[0].id},${purchase_amount},${createdBy},'${reqData.payment_mode}','${purchase_date}',2)`;
                     // [0, reqData.asset_id, purchase_amount, createdBy, reqData.payment_mode, purchase_date,2]
                     connection.query(sql3, function (ins_err, ins_res) {
                         if (ins_err) {
@@ -75,7 +77,17 @@ VALUES
                             response.status(200).json({ message: "Added Successfully" });
                         }
                     })
+ 
+                        }
+                        else{
+                            if (select_Err) {
+                                response.status(201).json({ message: "Error while fetching Data" ,statusCode: 201}); 
+                            }
+                        }
+                    })
 
+
+                   
                     // response.status(200).json({ message: "Data Saved successfully" });
                 }
             })
