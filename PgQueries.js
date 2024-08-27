@@ -458,66 +458,17 @@ function CreateRoom(connection, request, response) {
     }
 
 
-    const checkRoomQuery = `SELECT * FROM hostelrooms WHERE Hostel_Id = '${reqsData.hostel_id}' AND Floor_Id = '${reqsData.floorId}' AND Room_Id = '${reqsData.roomId}' AND isActive=1`;
+    const checkRoomQuery = `SELECT * FROM hostelrooms WHERE Hostel_Id = '${reqsData.hostel_id}' AND Floor_Id = '${reqsData.floorId}' AND Room_Id = '${reqsData.roomId}' AND isActive=1;`
 
     connection.query(checkRoomQuery, (error, existingRoom) => {
         if (error) {
             return response.status(500).json({ message: 'Database Error', error: error.message });
         }
 
-<<<<<<< HEAD
-        const hostelId = hostelData[0].id;
-        let errorMessage = null;
-        let message = null;
-
-        for (const currentRoom of reqsData.floorDetails) {
-            const checkRoomQuery = `SELECT Room_Id, Number_Of_Beds FROM hostelrooms WHERE Hostel_Id = '${hostelId}' AND Floor_Id = '${currentRoom.floorId}' AND Room_Id = '${currentRoom.roomId}' AND isActive=1`;
-
-            const existingRoom = await new Promise((resolve, reject) => {
-                connection.query(checkRoomQuery, (error, results) => {
-                    if (error) return reject(error);
-                    resolve(results);
-                });
-            });
-
-            if (existingRoom.length > 0) {
-                message = `Room ID is already exists.`;
-
-                if (currentRoom.number_of_beds && currentRoom.roomRent) {
-                    errorMessage = message;
-                } else {
-                    const bed = Number(existingRoom[0].Number_Of_Beds) + Number(currentRoom.number_of_beds);
-                    const updateQuery = `UPDATE hostelrooms SET Number_Of_Beds = '${bed}' WHERE Hostel_Id = '${hostelId}' AND Floor_Id = '${currentRoom.floorId}' AND Room_Id = '${currentRoom.roomId}'`;
-
-                    await new Promise((resolve, reject) => {
-                        connection.query(updateQuery, (error, results) => {
-                            if (error) return reject(error);
-                            resolve(results);
-                        });
-                    });
-                }
-            } else {
-                const insertQuery = `INSERT INTO hostelrooms (Hostel_Id, Floor_Id, Room_Id, Number_Of_Beds, Price,Created_By) VALUES ('${hostelId}', '${currentRoom.floorId}', '${currentRoom.roomId}', '${currentRoom.number_of_beds}', '${currentRoom.roomRent}','${created_by}')`;
-
-                await new Promise((resolve, reject) => {
-                    connection.query(insertQuery, (error, results) => {
-                        if (error) return reject(error);
-                        resolve(results);
-                    });
-                });
-            }
-        }
-
-        if (errorMessage) {
-            response.status(201).json({ message: errorMessage, statusCode: 201 });
-        } else {
-
-            response.status(200).json({ message: message && message.length > 0 ? message : 'Create Room Details successfully' });
-
         if (existingRoom.length > 0) {
             return response.status(201).json({ message: 'Room ID already exists', statusCode: 201 });
         } else {
-            const insertQuery = `INSERT INTO hostelrooms (Hostel_Id, Floor_Id, Room_Id, Created_By) VALUES ('${reqsData.hostel_id}', '${reqsData.floorId}', '${reqsData.roomId}',  '${created_by}')`;
+            const insertQuery = `INSERT INTO hostelrooms (Hostel_Id, Floor_Id, Room_Id, Created_By) VALUES ('${reqsData.hostel_id}', '${reqsData.floorId}', '${reqsData.roomId}',  '${created_by}');`
 
             connection.query(insertQuery, (error, results) => {
                 if (error) {
@@ -532,9 +483,6 @@ function CreateRoom(connection, request, response) {
     });
 
 }
-
-
-
 
 
 

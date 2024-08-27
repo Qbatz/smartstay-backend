@@ -153,6 +153,18 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                     });
                 }
             } else {
+                const checkVendorQuery = `SELECT * FROM Vendor WHERE Vendor_Email = '${reqInvoice.Vendor_Email}' OR Vendor_Mobile = '${reqInvoice.Vendor_Mobile}'`;
+
+                connection.query(checkVendorQuery, function (error, results) {
+                    if (error) {
+                        response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
+                    } else if (results.length > 0) {
+                      
+                        response.status(202).json({ message: "Vendor already exists", statusCode: 202 });
+                    }else{
+
+                    
+
                 if (reqInvoice.profile) {
                     uploadProfilePictureToS3Bucket('smartstaydevs', 'Vendor_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqInvoice.profile, (err, vendor_profile) => {
                         if (err) {
@@ -208,6 +220,8 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                         }
                     });
                 }
+            }
+        })
             }
         });
     } else {
