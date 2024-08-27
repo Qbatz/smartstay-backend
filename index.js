@@ -6,6 +6,8 @@ const connection = require('./config/connection');
 const notifications = require('./notifications');
 const assets = require('./assets');
 const crons = require('./crons');
+const payments = require('./payments');
+
 
 const app = express()
 const userQueries = require('./UserQueries');
@@ -412,7 +414,7 @@ app.get('/list/EbReading', (request, response) => {
 
 app.get('/list/Ebstartmeter', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-    invoiceQueries.getEbStart(connection, response,request)
+    invoiceQueries.getEbStart(connection, response, request)
 })
 app.post('/amenities/amnityUpdate', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
@@ -451,9 +453,9 @@ app.post('/invoice/invoiceUpdate', (request, response) => {
 
 // delete API 
 
-app.post('/delete/delete-hostel',(request,response)=>{
+app.post('/delete/delete-hostel', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    pgQueries.deleteHostel(request,response)
+    pgQueries.deleteHostel(request, response)
 })
 
 app.post('/delete/delete-floor', (request, response) => {
@@ -702,4 +704,13 @@ app.post('/webhook/payment-status', (req, res) => {
 // Invoice Payment
 app.post('/invoice_record_payments', (req, res) => {
     billings.invoice_payments(req, res)
+})
+
+// Add Razorpay details
+app.post('/add_payment_details', (req, res) => {
+    payments.add_payment_details(req, res)
+})
+
+app.get('/payment_details', (req, res) => {
+    payments.payment_details(req, res)
 })

@@ -41,7 +41,9 @@ const queries = [
 
     "ALTER TABLE subscribtion_history ADD COLUMN `gst` VARCHAR(45) NULL AFTER `plan_type`,ADD COLUMN `gst_percentage` VARCHAR(45) NULL AFTER `gst`;",
 
-    "ALTER TABLE subscribtion_history ADD COLUMN `payment_id` VARCHAR(255) NULL AFTER `plan_duration`;"
+    "ALTER TABLE subscribtion_history ADD COLUMN `payment_id` VARCHAR(255) NULL AFTER `plan_duration`;",
+
+    "CREATE TABLE payment_settings (id INT NOT NULL AUTO_INCREMENT,key_id INT NULL,key_secret VARCHAR(60) NULL,description VARCHAR(70) NULL,status TINYINT NOT NULL DEFAULT 1,created_by INT NULL,created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY (id));",
 ];
 
 queries.forEach(executeQuery);
