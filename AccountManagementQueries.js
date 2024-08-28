@@ -238,6 +238,112 @@ function update_account_details(request, response) {
 // }
 
 
+// function createnewAccount(request, response) {
+
+//     var reqBodyData = request.body;
+//     if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.first_name && reqBodyData.password && reqBodyData.confirm_password) {
+
+//         connection.query(
+//             `SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`,
+//             [reqBodyData.mobileNo, reqBodyData.emailId],
+//             async function (error, data) {
+//                 if (error) {
+//                     console.error("Database error:", error);
+//                     response.status(500).json({ message: 'Database error' });
+//                     return;
+//                 }
+
+//                 if (data.length === 0) {
+
+//                     var confirm_pass = reqBodyData.confirm_password;
+//                     var currentDate = new Date().toISOString().split('T')[0];
+
+//                     if (reqBodyData.password === confirm_pass) {
+
+//                         const hash_password = await bcrypt.hash(reqBodyData.password, 10);
+
+//                         var apiEndpoint = 'https://www.zohoapis.in/billing/v1/subscriptions';
+//                         var method = "POST";
+
+//                         var inbut_body = {
+//                             plan: {
+//                                 plan_code: 'one_day'
+//                             },
+//                             customer: {
+//                                 display_name: reqBodyData.first_name + ' ' + reqBodyData.last_name,
+//                                 first_name: reqBodyData.first_name,
+//                                 last_name: reqBodyData.last_name,
+//                                 email: reqBodyData.emailId,
+//                                 mobile: reqBodyData.mobileNo
+//                             },
+//                             start_date: currentDate,
+//                             notes: "New User Subscribtion"
+//                         };
+
+//                         apiResponse(apiEndpoint, method, inbut_body).then(api_data => {
+//                             console.log('API Response:', api_data);
+
+//                             if (api_data.code == 0) {
+
+//                                 var subscription_response = api_data.subscription;
+//                                 var plan_code = reqBodyData.plan_code;
+//                                 var customer_id = subscription_response.customer.customer_id;
+//                                 var subscription_id = subscription_response.subscription_id;
+//                                 var plan_duration = subscription_response.trial_remaining_days;
+
+//                                 var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status) VALUES (?,?,?,?,?,?,?,?,1)"
+//                                 connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, plan_code], function (error, result) {
+//                                     if (error) {
+//                                         console.log(error);
+//                                         return response.status(201).json({ message: 'Database error' });
+//                                     } else {
+//                                         var user_id = result.insertId;
+
+//                                         var sql2 = "INSERT INTO trial_plan_details (plan_code,user_id,customer_id,subscription_id,plan_status,plan_duration) VALUES (?,?,?,?,?,?)";
+//                                         connection.query(sql2, [plan_code, user_id, customer_id, subscription_id, 1, plan_duration], (err, ins_data) => {
+//                                             if (err) {
+//                                                 console.log(err);
+//                                                 return response.status(201).json({ message: "Unable to Add Subscribtion History", statusCode: 201 })
+//                                             } else {
+//                                                 return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
+//                                             }
+//                                         })
+//                                     }
+//                                 });
+//                             } else {
+//                                 response.status(201).json({ message: api_data.message, statusCode: 201 });
+//                             }
+//                         })
+//                             .catch(error => {
+//                                 console.error('Error:', error)
+//                                 response.status(201).json({ message: error, statusCode: 201 });
+//                             })
+//                     } else {
+//                         response.status(210).json({ message: 'Password and Confirm Password Not Matched', statusCode: 210 });
+//                     }
+
+//                 } else {
+//                     const mobileExists = data.some(record => record.mobileNo === reqBodyData.mobileNo);
+//                     const emailExists = data.some(record => record.email_Id === reqBodyData.emailId);
+
+//                     if (mobileExists && emailExists) {
+//                         response.status(203).json({ message: 'Mobile Number and Email ID already exist', statusCode: 203 });
+//                     } else if (emailExists) {
+//                         response.status(201).json({ message: 'Email ID already exists', statusCode: 201 });
+//                     } else if (mobileExists) {
+//                         response.status(202).json({ message: 'Mobile Number already exists', statusCode: 202 });
+//                     }
+//                     // else {
+//                     //     response.status(400).json({ message: 'Missing Parameter' });
+//                     // }
+//                 }
+//             }
+//         );
+//     } else {
+//         response.status(400).json({ message: 'Missing Parameter' });
+//     }
+// }
+
 function createnewAccount(request, response) {
 
     var reqBodyData = request.body;
@@ -262,62 +368,67 @@ function createnewAccount(request, response) {
 
                         const hash_password = await bcrypt.hash(reqBodyData.password, 10);
 
-                        var apiEndpoint = 'https://www.zohoapis.in/billing/v1/subscriptions';
-                        var method = "POST";
+                        // var apiEndpoint = 'https://www.zohoapis.in/billing/v1/subscriptions';
+                        // var method = "POST";
 
-                        var inbut_body = {
-                            plan: {
-                                plan_code: 'one_day'
-                            },
-                            customer: {
-                                display_name: reqBodyData.first_name + ' ' + reqBodyData.last_name,
-                                first_name: reqBodyData.first_name,
-                                last_name: reqBodyData.last_name,
-                                email: reqBodyData.emailId,
-                                mobile: reqBodyData.mobileNo
-                            },
-                            start_date: currentDate,
-                            notes: "New User Subscribtion"
-                        };
+                        // var inbut_body = {
+                        //     plan: {
+                        //         plan_code: 'one_day'
+                        //     },
+                        //     customer: {
+                        //         display_name: reqBodyData.first_name + ' ' + reqBodyData.last_name,
+                        //         first_name: reqBodyData.first_name,
+                        //         last_name: reqBodyData.last_name,
+                        //         email: reqBodyData.emailId,
+                        //         mobile: reqBodyData.mobileNo
+                        //     },
+                        //     start_date: currentDate,
+                        //     notes: "New User Subscribtion"
+                        // };
 
-                        apiResponse(apiEndpoint, method, inbut_body).then(api_data => {
-                            console.log('API Response:', api_data);
+                        // apiResponse(apiEndpoint, method, inbut_body).then(api_data => {
+                        //     console.log('API Response:', api_data);
 
-                            if (api_data.code == 0) {
+                        //     if (api_data.code == 0) {
 
-                                var subscription_response = api_data.subscription;
-                                var plan_code = reqBodyData.plan_code;
-                                var customer_id = subscription_response.customer.customer_id;
-                                var subscription_id = subscription_response.subscription_id;
-                                var plan_duration = subscription_response.trial_remaining_days;
+                        //         var subscription_response = api_data.subscription;
+                        //         var plan_code = reqBodyData.plan_code;
+                        //         var customer_id = subscription_response.customer.customer_id;
+                        //         var subscription_id = subscription_response.subscription_id;
+                        //         var plan_duration = subscription_response.trial_remaining_days;
+                        var customer_id = 0;
+                        var subscription_id = 0;
+                        var plan_code = 0;
 
-                                var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status) VALUES (?,?,?,?,?,?,?,?,1)"
-                                connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, plan_code], function (error, result) {
-                                    if (error) {
-                                        console.log(error);
-                                        return response.status(201).json({ message: 'Database error' });
-                                    } else {
-                                        var user_id = result.insertId;
-
-                                        var sql2 = "INSERT INTO trial_plan_details (plan_code,user_id,customer_id,subscription_id,plan_status,plan_duration) VALUES (?,?,?,?,?,?)";
-                                        connection.query(sql2, [plan_code, user_id, customer_id, subscription_id, 1, plan_duration], (err, ins_data) => {
-                                            if (err) {
-                                                console.log(err);
-                                                return response.status(201).json({ message: "Unable to Add Subscribtion History", statusCode: 201 })
-                                            } else {
-                                                return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
-                                            }
-                                        })
-                                    }
-                                });
+                        var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status) VALUES (?,?,?,?,?,?,?,?,1)"
+                        connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, plan_code], function (error, result) {
+                            if (error) {
+                                console.log(error);
+                                return response.status(201).json({ message: 'Database error' });
                             } else {
-                                response.status(201).json({ message: api_data.message, statusCode: 201 });
+                                var user_id = result.insertId;
+
+                                return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
+
+                                // var sql2 = "INSERT INTO trial_plan_details (plan_code,user_id,customer_id,subscription_id,plan_status,plan_duration) VALUES (?,?,?,?,?,?)";
+                                // connection.query(sql2, [plan_code, user_id, customer_id, subscription_id, 1, plan_duration], (err, ins_data) => {
+                                //     if (err) {
+                                //         console.log(err);
+                                //         return response.status(201).json({ message: "Unable to Add Subscribtion History", statusCode: 201 })
+                                //     } else {
+                                //         return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
+                                //     }
+                                // })
                             }
-                        })
-                            .catch(error => {
-                                console.error('Error:', error)
-                                response.status(201).json({ message: error, statusCode: 201 });
-                            })
+                        });
+                        // } else {
+                        //     response.status(201).json({ message: api_data.message, statusCode: 201 });
+                        // }
+                        // })
+                        //     .catch(error => {
+                        //         console.error('Error:', error)
+                        //         response.status(201).json({ message: error, statusCode: 201 });
+                        //     })
                     } else {
                         response.status(210).json({ message: 'Password and Confirm Password Not Matched', statusCode: 210 });
                     }
