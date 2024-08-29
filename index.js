@@ -714,3 +714,7 @@ app.post('/add_payment_details', (req, res) => {
 app.get('/payment_details', (req, res) => {
     payments.payment_details(req, res)
 })
+
+app.get('/conutry_list',(req, res) => {
+    userQueries.conutry_list(req, res)
+})

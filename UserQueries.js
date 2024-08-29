@@ -13,7 +13,7 @@ function getUsers(connection, response, request) {
 
     // Get values in middleware
     const userDetails = request.user_details;
-    const query = `SELECT * FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true WHERE hstlDetails.created_By ='${userDetails.id}' ORDER BY hstl.ID desc`;
+    const query = `SELECT * FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true LEFT JOIN country_list AS cl ON hstl.country_code=cl.country_code WHERE hstlDetails.created_By ='${userDetails.id}' ORDER BY hstl.ID desc`;
     connection.query(query, function (error, hostelData) {
         if (error) {
             console.error(error);
@@ -58,6 +58,7 @@ function createUser(connection, request, response) {
 
     var atten = request.body;
     var profile = request.file;
+    var country_code = atten.country_code;
 
     const FirstNameInitial = atten.firstname.charAt(0).toUpperCase();
     if (atten.lastname) {
@@ -134,7 +135,7 @@ function createUser(connection, request, response) {
 
                 bedDetails.check_bed_details(bed_details_obj).then(() => {
 
-                    connection.query(`UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${atten.Phone}', Email='${atten.Email}', Address='${atten.Address}', AadharNo='${atten.AadharNo}', PancardNo='${atten.PancardNo}',licence='${atten.licence}',HostelName='${atten.HostelName}',Hostel_Id='${atten.hostel_Id}', Floor='${atten.Floor}', Rooms='${atten.Rooms}', Bed='${atten.Bed}',profile='${profile_url}', AdvanceAmount='${atten.AdvanceAmount}', RoomRent='${atten.RoomRent}', BalanceDue='${atten.BalanceDue}', PaymentType='${atten.PaymentType}', Status='${Status}',paid_advance='${paid_advance}',pending_advance='${pending_advance}' WHERE ID='${atten.ID}'`, function (updateError, updateData) {
+                    connection.query(`UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${atten.Phone}', Email='${atten.Email}', Address='${atten.Address}', AadharNo='${atten.AadharNo}', PancardNo='${atten.PancardNo}',licence='${atten.licence}',HostelName='${atten.HostelName}',Hostel_Id='${atten.hostel_Id}', Floor='${atten.Floor}', Rooms='${atten.Rooms}', Bed='${atten.Bed}',profile='${profile_url}', AdvanceAmount='${atten.AdvanceAmount}', RoomRent='${atten.RoomRent}', BalanceDue='${atten.BalanceDue}', PaymentType='${atten.PaymentType}', Status='${Status}',paid_advance='${paid_advance}',pending_advance='${pending_advance}',country_code='${country_code}' WHERE ID='${atten.ID}'`, function (updateError, updateData) {
                         if (updateError) {
                             response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
                         } else {
@@ -322,7 +323,7 @@ function createUser(connection, request, response) {
                         var paid_advance = atten.paid_advance ? atten.paid_advance : 0;
                         var pending_advance = atten.AdvanceAmount - paid_advance;
 
-                        connection.query(`INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance,created_by) VALUES ('${Circle}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}','${paid_advance}','${pending_advance}','${created_by}')`, async function (insertError, insertData) {
+                        connection.query(`INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance,created_by,country_code) VALUES ('${Circle}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}','${paid_advance}','${pending_advance}','${created_by}','${country_code}')`, async function (insertError, insertData) {
                             if (insertError) {
                                 console.log("insertError", insertError);
                                 response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
@@ -768,7 +769,7 @@ function customer_details(req, res) {
     }
 
     // Check User Id valid or Invalid
-    var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
+    var sql1 = "SELECT * FROM hostel AS hs INNER JOIN country_list AS cl ON hs.country_code=cl.country_code WHERE hs.ID=? AND hs.isActive=1 ";
     connection.query(sql1, [user_id], (user_err, user_data) => {
         if (user_err) {
             return res.status(201).json({ message: "Unable to Get User Details", statusCode: 201 })
@@ -1133,4 +1134,16 @@ function aadhaar_otp_verify(req, res) {
 
 }
 
-module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details, user_amenities_history, getAmnitiesName, aadhar_verify_otp, aadhaar_otp_verify }
+function conutry_list(req, res) {
+
+    var sql1 = "SELECT * FROM country_list";
+    connection.query(sql1, function (err, data) {
+        if (err) {
+            return res.status(201).json({ message: "Unable to Get Country Details", statusCode: 201 })
+        } else {
+            return res.status(200).json({ message: "All Country Details", statusCode: 200, country_codes: data })
+        }
+    })
+}
+
+module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details, user_amenities_history, getAmnitiesName, aadhar_verify_otp, aadhaar_otp_verify, conutry_list }
