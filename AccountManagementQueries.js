@@ -566,7 +566,7 @@ function forgetPasswordOtpSend(connection, response, requestData) {
                             service: 'gmail',
                             auth: {
                                 user: 'smartstay1234@gmail.com',
-                                pass: 'afki rrvo jcke zjdt',
+                                pass: 'yhud ljoo ynhl kszs',
                             },
                             tls: {
                                 // do not fail on invalid certs
@@ -624,7 +624,7 @@ function sendOtpForMail(connection, response, Email_Id, LoginId) {
                     service: 'gmail',
                     auth: {
                         user: 'smartstay1234@gmail.com',
-                        pass: 'afki rrvo jcke zjdt',
+                        pass: 'yhud ljoo ynhl kszs',
                     },
                     tls: {
                         // do not fail on invalid certs
