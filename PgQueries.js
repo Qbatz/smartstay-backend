@@ -359,11 +359,49 @@ ON hos.hostel_id = hosroom.Hostel_Id AND hos.id = hosroom.Floor_Id
 WHERE hos.hostel_id =  ${reqData.hostel_Id} AND hos.status= true`
         // connection.query(`select * from hostelrooms where  Hostel_Id = \'${reqData.hostel_Id}\' and isActive= true`, function (error, hostel_data) {
         connection.query(query, function (error, hostel_data) {
-            if (hostel_data) {
-                response.status(200).json({ hostel_data: hostel_data })
+            if (error) {
+                response.status(201).json({ message: "No User Found" })
             }
             else {
-                response.status(201).json({ message: "No User Found" })
+                if (hostel_data && hostel_data.length > 0) {
+
+                    const floorsMap = new Map();
+
+                    hostel_data.forEach(row => {
+                        // If the floor does not exist in the map, add it
+                        if (!floorsMap.has(row.floor_id)) {
+                            floorsMap.set(row.floor_id, {
+                                id: row.id,
+                                hostel_id: row.hostel_id,
+                                floor_id: row.floor_id,
+                                floor_name: row.floor_name,
+                                status: row.status,
+                                floor_Details: []
+                            });
+                        }
+                        
+                        // Add room details if they exist
+                        if (row.Room_Id) {
+                            floorsMap.get(row.floor_id).floor_Details.push({
+                                Room_Id: row.Room_Id,
+                                Number_Of_Beds: row.Number_Of_Beds,
+                                Price: row.Price,
+                                Created_By: row.Created_By,
+                                Created_At: row.Created_At
+                            });
+                        }
+                    });
+                
+                    // Convert map values to an array
+                    // return Array.from(floorsMap.values());
+                    console.log("Array.from(floorsMap.values())",Array.from(floorsMap.values()));
+                    
+                response.status(200).json({ hostel_data: Array.from(floorsMap.values()) })
+                } else {
+                    
+                response.status(200).json({ hostel_data: hostel_data })
+                }
+               
             }
         })
     }
