@@ -340,17 +340,17 @@ WHERE expen.status = true AND expen.created_by = ${createdBy}`;
     if (start_date && !end_date) {
         const startDateRange = `${start_date} 00:00:00`;
         const endDateRange = `${start_date} 23:59:59`;
-        query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
-        // query += ` AND expen.purchase_date = '${startDateRange}' AND expen.purchase_date <= '${endDateRange}'`;
+        // query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
+        query += ` AND expen.purchase_date = '${startDateRange}' AND expen.purchase_date <= '${endDateRange}'`;
     }
     if (start_date && end_date) {
         const startDateRange = `${start_date} 00:00:00`;
         const endDateRange = `${end_date} 23:59:59`;
-        query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
+        // query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
 
-        // query += ` AND expen.purchase_date >= '${startDateRange}' AND expen.purchase_date <= '${endDateRange}'`;
+        query += ` AND expen.purchase_date >= '${startDateRange}' AND expen.purchase_date <= '${endDateRange}'`;
     }
-    // console.log("query", query);
+    console.log("query", query);
     connection.query(query, function (err, data) {
         if (err) {
             console.log("err", err);

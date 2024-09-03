@@ -41,7 +41,15 @@ const queries = [
 
     "ALTER TABLE subscribtion_history ADD COLUMN `gst` VARCHAR(45) NULL AFTER `plan_type`,ADD COLUMN `gst_percentage` VARCHAR(45) NULL AFTER `gst`;",
 
-    "ALTER TABLE subscribtion_history ADD COLUMN `payment_id` VARCHAR(255) NULL AFTER `plan_duration`;"
+    "ALTER TABLE subscribtion_history ADD COLUMN `payment_id` VARCHAR(255) NULL AFTER `plan_duration`;",
+
+    "CREATE TABLE payment_settings (id INT NOT NULL AUTO_INCREMENT,key_id INT NULL,key_secret VARCHAR(60) NULL,description VARCHAR(70) NULL,status TINYINT NOT NULL DEFAULT 1,created_by INT NULL,created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY (id));",
+
+    "ALTER TABLE createaccount ADD COLUMN `user_status` INT(11) NULL DEFAULT '1' AFTER `createdat`,ADD COLUMN `plan_type` VARCHAR(45) NULL AFTER `user_status`;",
+
+    "CREATE TABLE `country_list` (`country_id` INT NOT NULL AUTO_INCREMENT,`country_code` VARCHAR(45) NULL,`country_name` VARCHAR(255) NULL,`country_flag` VARCHAR(255) NULL,`currency_code` VARCHAR(255) NULL,`mobile_code` VARCHAR(45) NULL,`created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`country_id`));",
+
+    "ALTER TABLE `hostel` ADD COLUMN `country_code` BIGINT(20) NULL AFTER `Phone`;"
 ];
 
 queries.forEach(executeQuery);
