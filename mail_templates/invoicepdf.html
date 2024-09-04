@@ -92,8 +92,14 @@
         .invoice-info {
             flex: 1;
             text-align: right;
-            margin-top: -30px;    
+               
         } 
+        .invoiceNoOne{
+            margin-top: 10px;
+        }
+        .usernameone{
+            margin-top: 10px;
+        }
        
         @media (max-width: 600px) {
             .invoice-header {
@@ -129,12 +135,12 @@
         </div>
         <div class="invoicerow">
             <div class="cus-info">
-                <div>Name: {{user_name}}</div>
-                <div>Address: {{user_address}}</div>
+                <div class="usernamme">Name: {{user_name}}</div>
+                <div class="usernameone">Address: {{user_address}}</div>
             </div>
             <div class="invoice-info">
-                <div>Invoice No: {{invoice_number}}</div>
-                <div>Invoice Date: {{invoice_date}}</div>
+                <div class="invoiceNo">Invoice No: {{invoice_number}}</div>
+                <div class="invoiceNoOne">Invoice Date: {{invoice_date}}</div>
             </div>
         </div>
         
@@ -147,6 +153,16 @@
             <tr>
                 <td>1</td>
                 <td>{{Amount_name}}</td>
+                <td>{{amount}}</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>{{Paid_Amount}}</td>
+                <td>{{amount}}</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>{{Balance_Due}}</td>
                 <td>{{amount}}</td>
             </tr>
             
