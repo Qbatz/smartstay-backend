@@ -769,7 +769,7 @@ function customer_details(req, res) {
     }
 
     // Check User Id valid or Invalid
-    var sql1 = "SELECT * FROM hostel AS hs INNER JOIN country_list AS cl ON hs.country_code=cl.country_code WHERE hs.ID=? AND hs.isActive=1 ";
+    var sql1 = "SELECT * FROM hostel AS hs LEFT JOIN country_list AS cl ON hs.country_code=cl.country_code WHERE hs.ID=? AND hs.isActive=1 ";
     connection.query(sql1, [user_id], (user_err, user_data) => {
         if (user_err) {
             return res.status(201).json({ message: "Unable to Get User Details", statusCode: 201 })
@@ -781,7 +781,7 @@ function customer_details(req, res) {
 
             var amenn_user_id = user_data[0].User_Id;
             // All Amenties
-            var sql2 = "SELECT amname.Amnities_Name AS Amnities_Name,amen.setAsDefault AS free_amenity FROM AmenitiesHistory AS amhis JOIN AmnitiesName AS amname ON amname.id = amhis.amenity_Id JOIN Amenities AS amen ON amen.id=amhis.amenity_Id WHERE amhis.status = 1 AND amhis.user_id = '" + amenn_user_id + "' AND amen.createdBy='" + created_by + "' UNION SELECT amname.Amnities_Name AS Amnities_Name,amen.setAsDefault AS free_amenity FROM Amenities AS amen JOIN AmnitiesName AS amname ON amname.id = amen.Amnities_Id WHERE amen.setAsDefault = 1 AND amen.createdBy='" + created_by + "' AND amen.Hostel_Id='"+hostel_id+"' GROUP BY Amnities_Name";
+            var sql2 = "SELECT amname.Amnities_Name AS Amnities_Name,amen.setAsDefault AS free_amenity FROM AmenitiesHistory AS amhis JOIN AmnitiesName AS amname ON amname.id = amhis.amenity_Id JOIN Amenities AS amen ON amen.id=amhis.amenity_Id WHERE amhis.status = 1 AND amhis.user_id = '" + amenn_user_id + "' AND amen.createdBy='" + created_by + "' UNION SELECT amname.Amnities_Name AS Amnities_Name,amen.setAsDefault AS free_amenity FROM Amenities AS amen JOIN AmnitiesName AS amname ON amname.id = amen.Amnities_Id WHERE amen.setAsDefault = 1 AND amen.createdBy='" + created_by + "' AND amen.Hostel_Id='" + hostel_id + "' GROUP BY Amnities_Name";
             connection.query(sql2, (am_err, am_data) => {
                 if (am_err) {
                     // console.log(am_err);
