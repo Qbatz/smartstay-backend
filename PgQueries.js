@@ -23,7 +23,7 @@ function getHostelList(connection, response, request) {
         if (data && data.length > 0) {
             for (let i = 0; i < data.length; i++) {
                 console.log("data", data);
-                let query = `select * from Hostel_Floor where hostel_id = ${data[i].id} and status = true`;
+                let query = `select * from Hostel_Floor where hostel_id = ${data[i].id} and status = true order by floor_id`;
                 connection.query(query, function (error, floorDetails) {
 
                     if (error) {
@@ -243,7 +243,7 @@ WHERE hos.hostel_id =  ${requestData.hostel_Id} AND hos.status= true`
 function RoomList(connection, reqData, response) {
 
     if (reqData) {
-        connection.query(`select * from hostelrooms where Hostel_Id = \'${reqData.hostel_Id}\'  and isActive=1`, function (error, data) {
+        connection.query(`select * from hostelrooms where Hostel_Id = \'${reqData.hostel_Id}\' and Floor_Id =  \'${reqData.floor_Id}\' and isActive=1`, function (error, data) {
             if (data) {
                 response.status(200).json({ data: data })
             }
