@@ -45,29 +45,41 @@ function add_asset(req, res) {
                             return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
                         } else if (as_res.length > 0) {
 
-                            var total_price = data.price * data.product_count;
-
-                            var sql4 = "SELECT * FROM asset_names WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "'";
-                            connection.query(sql4, (err, asss_data) => {
+                            var sql6 = "SELECT * FROM assets  WHERE serial_number=? AND id !='" + data.id + "'";
+                            connection.query(sql6, [data.serial_number], function (err, ass_res) {
                                 if (err) {
-                                    return res.status(201).json({ message: "Unable to Get Asset Name Details", statusCode: 201 })
-                                } else if (asss_data.length != 0) {
+                                    return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
+                                } else if (ass_res.length != 0) {
+                                    return res.status(201).json({ message: "Serial Number Already Exists", statusCode: 201 })
+                                } else {
 
-                                    var sql5 = "INSERT INTO asset_names (asset_name) VALUES ('" + data.asset_name + "')";
-                                    connection.query(sql5, (err, ins_data) => {
+                                    var sql4 = "SELECT * FROM asset_names WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "'";
+                                    connection.query(sql4, (err, asss_data) => {
                                         if (err) {
-                                            return res.status(201).json({ message: "Unable to Add Asset Name", statusCode: 201 })
+                                            return res.status(201).json({ message: "Unable to Get Asset Name Details", statusCode: 201 })
+                                        } else if (asss_data.length == 0) {
+
+
+                                            var sql5 = "INSERT INTO asset_names (asset_name) VALUES ('" + data.asset_name + "')";
+                                            connection.query(sql5, (err, ins_data) => {
+                                                if (err) {
+                                                    return res.status(201).json({ message: "Unable to Add Asset Name", statusCode: 201 })
+                                                } else {
+                                                    var asset_id = ins_data.insertId;
+                                                    updated_data(asset_id)
+                                                }
+                                            })
                                         } else {
-                                            var asset_id = ins_data.insertId;
+                                            var asset_id = asss_data[0].id;
                                             updated_data(asset_id)
                                         }
                                     })
-
-                                } else {
-                                    var asset_id = asss_data[0].id;
-                                    updated_data(asset_id)
                                 }
                             })
+
+                            var total_price = data.price * data.product_count;
+
+
                             function updated_data(asset_id) {
 
                                 var sql3 = "UPDATE assets SET asset_id=?,vendor_id=?,product_name=?,brand_name=?,serial_number=?,product_count=?,purchase_date=?,price=?,total_price=? WHERE id=?";
@@ -97,30 +109,39 @@ function add_asset(req, res) {
                     return res.status(201).json({ message: "Unable to Get Vendor Details", statusCode: 201 })
                 } else if (sel_res.length != 0) {
 
-                    var total_price = data.price * data.product_count;
-
-                    var sql3 = "SELECT * FROM asset_names WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "'";
-                    connection.query(sql3, (err, asss_data) => {
+                    // Check Serial Number
+                    var sql5 = "SELECT * FROM assets WHERE serial_number=?";
+                    connection.query(sql5, [data.serial_number], function (err, ass_res) {
                         if (err) {
-                            return res.status(201).json({ message: "Unable to Get Asset Name Details", statusCode: 201 })
-                        } else if (asss_data.length == 0) {
-
-                            var sql4 = "INSERT INTO asset_names(asset_name) VALUES ('" + data.asset_name + "')";
-                            connection.query(sql4, (err, ins_data) => {
+                            return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
+                        } else if (ass_res.length != 0) {
+                            return res.status(201).json({ message: "Serial Number Already Exists", statusCode: 201 })
+                        } else {
+                            var sql3 = "SELECT * FROM asset_names WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "'";
+                            connection.query(sql3, (err, asss_data) => {
                                 if (err) {
-                                    console.log(err);
-                                    return res.status(201).json({ message: "Unable to Add Asset Name", statusCode: 201 })
+                                    return res.status(201).json({ message: "Unable to Get Asset Name Details", statusCode: 201 })
+                                } else if (asss_data.length == 0) {
+
+                                    var sql4 = "INSERT INTO asset_names(asset_name) VALUES ('" + data.asset_name + "')";
+                                    connection.query(sql4, (err, ins_data) => {
+                                        if (err) {
+                                            console.log(err);
+                                            return res.status(201).json({ message: "Unable to Add Asset Name", statusCode: 201 })
+                                        } else {
+                                            var asset_id = ins_data.insertId;
+                                            inserted_data(asset_id)
+                                        }
+                                    })
+
                                 } else {
-                                    var asset_id = ins_data.insertId;
+                                    var asset_id = asss_data[0].id;
                                     inserted_data(asset_id)
                                 }
                             })
-
-                        } else {
-                            var asset_id = asss_data[0].id;
-                            inserted_data(asset_id)
                         }
                     })
+                    var total_price = data.price * data.product_count;
 
                     function inserted_data(asset_id) {
 
@@ -252,19 +273,21 @@ function assign_validations(data) {
 
 function input_validations(data) {
 
-    if (!data.asset_name) {
+    if (!data.asset_name || data.asset_name.trim() === "") {
         return { message: "Please Add Asset Name", statusCode: 201 };
-    } else if (!data.vendor_id) {
+    } else if (!data.vendor_id || data.vendor_id.trim() === "") {
         return { message: "Please Add Vendor Details", statusCode: 201 };
-    } else if (!data.product_count) {
+    } else if (!data.product_count || data.product_count.trim() === "") {
         return { message: "Please Add Product Count", statusCode: 201 };
-    } else if (!data.purchase_date) {
+    } else if (!data.purchase_date || data.purchase_date.trim() === "") {
         return { message: "Please Add Purchase Date", statusCode: 201 };
-    } else if (!data.price) {
+    } else if (!data.serial_number || data.serial_number.trim() === "") {
+        return { message: "Please Add Serial Number", statusCode: 201 };
+    } else if (!data.price || data.price.trim() === "") {
         return { message: "Please Add Price Amount", statusCode: 201 };
     } else {
         return { message: "Validation passed", statusCode: 200 };
-    }
+    }    
 }
 
 function expense_validation(data) {

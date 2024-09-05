@@ -110,6 +110,11 @@
                 text-align: left;
             }
         }
+
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; color: white; font-weight: bold; }
+        .pending { background-color: orange; }
+        .success { background-color: green;width: max-content; }
+        .partial { background-color: blue; }
     </style>
 </head>
 <body>
@@ -126,9 +131,6 @@
                     <p>Phone: {{Phone}}</p>
                     <p>Email: {{email}}</p>
                 </div>
-           
-            <!-- <img src='{{logo}}'alt="Logo" class="logo" style="width: 100px; height: 40px;"> -->
-           
         </div>
         <div class="header">
             <p>Invoice Receipt</p>
@@ -153,22 +155,17 @@
             <tr>
                 <td>1</td>
                 <td>{{Amount_name}}</td>
-                <td>{{amount}}</td>
+                <td>{{first_amount}}</td>
             </tr>
             <tr>
                 <td>2</td>
-                <td>{{Paid_Amount}}</td>
-                <td>{{amount}}</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>{{Balance_Due}}</td>
-                <td>{{amount}}</td>
+                <td>Paid Amount</td>
+                <td>{{paid_amount}}</td>
             </tr>
             
             <tr class="tblbor">
-                <td colspan="2" style="padding-left: 120px;">Total</td>
-                <td>{{amount}}</td>
+                <td colspan="2" style="padding-left: 200px;">Balance Due</td>
+                <td>{{balance_amount}}</td>
             </tr>
         </table>
         <div class="footer" style="font-size: 15px;">
@@ -177,6 +174,11 @@
         <div class="footer" style="padding-top: 20px;">
             <p>This is a system generated receipt and no signature is required.</p>
         </div>
+        <div class="status {{payment_status_class}}">{{payment_status_text}}</div>
+
+        <!-- <div class="status pending">Pending</div>
+        <div class="status success">Success</div>
+        <div class="status partial">Partial Paid</div> -->
     </div>
 </body>
 </html>
