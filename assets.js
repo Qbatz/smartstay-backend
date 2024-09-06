@@ -206,7 +206,7 @@ function asseign_asset(req, res) {
                     } else if (as_res.length == 0) {
 
                         // Assign Asset
-                        var sql3 = "INSERT INTO assigned_assets (asset_id,hostel_id,floor_id,room_id,assigned_date,created_by) VALUES (?,?,?,?,?)";
+                        var sql3 = "INSERT INTO assigned_assets (asset_id,hostel_id,floor_id,room_id,assigned_date,created_by) VALUES (?,?,?,?,?,?)";
                         connection.query(sql3, [asset_id, data.hostel_id,data.floor_id, data.room_id, data.asseign_date, user_id], (ins_err, ins_res) => {
                             if (ins_err) {
                                 console.log(ins_err);
