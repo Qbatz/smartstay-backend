@@ -273,17 +273,17 @@ function assign_validations(data) {
 
 function input_validations(data) {
 
-    if (!data.asset_name || data.asset_name.trim() === "") {
+    if (!data.asset_name && data.asset_name.trim() === "") {
         return { message: "Please Add Asset Name", statusCode: 201 };
-    } else if (!data.vendor_id || data.vendor_id.trim() === "") {
+    } else if (!data.vendor_id && data.vendor_id.trim() === "") {
         return { message: "Please Add Vendor Details", statusCode: 201 };
-    } else if (!data.product_count || data.product_count.trim() === "") {
+    } else if (!data.product_count && data.product_count.trim() === "") {
         return { message: "Please Add Product Count", statusCode: 201 };
-    } else if (!data.purchase_date || data.purchase_date.trim() === "") {
+    } else if (!data.purchase_date && data.purchase_date.trim() === "") {
         return { message: "Please Add Purchase Date", statusCode: 201 };
-    } else if (!data.serial_number || data.serial_number.trim() === "") {
+    } else if (!data.serial_number && data.serial_number.trim() === "") {
         return { message: "Please Add Serial Number", statusCode: 201 };
-    } else if (!data.price || data.price.trim() === "") {
+    } else if (!data.price && data.price.trim() === "") {
         return { message: "Please Add Price Amount", statusCode: 201 };
     } else {
         return { message: "Validation passed", statusCode: 200 };
