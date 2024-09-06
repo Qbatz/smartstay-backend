@@ -77,7 +77,7 @@ function add_asset(req, res) {
                                 }
                             })
 
-                            var total_price = data.price * data.product_count;
+                            var total_price = data.price ;
 
 
                             function updated_data(asset_id) {
@@ -141,7 +141,7 @@ function add_asset(req, res) {
                             })
                         }
                     })
-                    var total_price = data.price * data.product_count;
+                    var total_price = data.price;
 
                     function inserted_data(asset_id) {
 
@@ -277,8 +277,8 @@ function input_validations(data) {
         return { message: "Please Add Asset Name", statusCode: 201 };
     } else if (!data.vendor_id && data.vendor_id.trim() === "") {
         return { message: "Please Add Vendor Details", statusCode: 201 };
-    } else if (!data.product_count && data.product_count.trim() === "") {
-        return { message: "Please Add Product Count", statusCode: 201 };
+        // } else if (!data.product_count && data.product_count.trim() === "") {
+        //     return { message: "Please Add Product Count", statusCode: 201 };
     } else if (!data.purchase_date && data.purchase_date.trim() === "") {
         return { message: "Please Add Purchase Date", statusCode: 201 };
     } else if (!data.serial_number && data.serial_number.trim() === "") {
@@ -287,7 +287,7 @@ function input_validations(data) {
         return { message: "Please Add Price Amount", statusCode: 201 };
     } else {
         return { message: "Validation passed", statusCode: 200 };
-    }    
+    }
 }
 
 function expense_validation(data) {
