@@ -324,11 +324,10 @@ async function calculateAndInsertInvoice(connection, user, users, isFirstTime) {
             const amenitiesData = await query(am_query);
             if (amenitiesData.length > 0) {
                 for (let j = 0; j < amenitiesData.length; j++) {
-                    // if (amenitiesData[j].setAsDefault === 0 && amenitiesData[j].Status === 1) {
-                    totalAmenitiesAmount += amenitiesData[j].Amount;
-                    // } else {
-                    dedctAmenitiesAmount += amenitiesData[j].Amount;
-                    // }
+                    if (amenitiesData[0].status == 1) {
+                        totalAmenitiesAmount += amenitiesData[j].Amount;
+                        dedctAmenitiesAmount += amenitiesData[j].Amount;
+                    }
                 }
             }
 
