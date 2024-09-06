@@ -166,7 +166,7 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
 
             else {
 
-                const checkVendorQuery = `SELECT * FROM Vendor WHERE Vendor_Email = '${reqInvoice.Vendor_Email}' OR Vendor_Mobile = '${reqInvoice.Vendor_Mobile}'`;
+                const checkVendorQuery = `SELECT * FROM Vendor WHERE Vendor_Email = '${reqInvoice.Vendor_Email}' OR Vendor_Mobile = '${reqInvoice.Vendor_Mobile}' AND Status = true`;
 
                 connection.query(checkVendorQuery, function (error, results) {
                     if (error) {
