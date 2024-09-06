@@ -1253,7 +1253,7 @@ function InvoicePDf(connection, reqBodyData, response) {
                                 else {
                                 }
                                 connection.query(`select * from hostel where  isActive =1`, async function (error, hosdata) {
-                                    console, log("hosdata", hosdata.length)
+                                  
 
                                     let hostelbasedEb = 0;
                                     let roombasedEb = 0;

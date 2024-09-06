@@ -718,3 +718,48 @@ app.get('/payment_details', (req, res) => {
 app.get('/conutry_list',(req, res) => {
     userQueries.conutry_list(req, res)
 })
+
+
+
+app.post('/whatsapp_message', (req, res) => {
+
+    const api_url = "https://graph.facebook.com/v20.0/419212591270391/messages";
+    const method = "POST";
+
+    const options = {
+        url: api_url,
+        method: method,
+        headers: {
+            Authorization: "Bearer EAAHVgyMqRjMBOyORrmc40ZBozdMZAGusy2OhZBZChQVEViE2ar0fHYyGMzKZA9BKP5Hd4anGfSrqHuiOQe8FdjfehOXPhZBDM43ziZBPaCkmOT6ZBGDU3IgR3QZCs6xLrjT5Y7Yn7XyLhNR1YPuWSRM2BrLlrHR2A33ZAd005ZCMplPtPrKETO5VepWOjqNMnxjuNyD1EzZAYH0ZCWWF2pJzOsSJIfZBXqmhYZD",
+            'Content-Type': 'application/json'
+        },
+        // body: JSON.stringify({
+        //     messaging_product: "whatsapp",
+        //     to: "919965003581",  
+        //     type: "text",
+        //     text: {
+        //         body: "Hello! Welcome to Smart Stay",
+        //     },
+        // })
+        body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: "919965003581",
+            type: "template",
+            template: {
+                name: "hello_world",  
+                language: { code: "en_US" },
+            },
+        })
+    };
+
+    request(options, (error, response, body) => {
+        if (error) {
+            console.error("error:", error);
+            res.status(201).send({ error: 'Message sending failed' });
+        } else {
+            console.log("response body", body);
+            res.status(200).send({ message: 'Message sent successfully' });
+        }
+    });
+
+});
