@@ -303,16 +303,35 @@ async function calculateAndInsertInvoice(connection, user, users, isFirstTime) {
 
             console.log(eb_Hostel, "Ending Eb AMount");
 
-            const amenitiesData = await query(`SELECT * FROM Amenities WHERE Hostel_Id = ?`, [existingData[0].hosHostel_Id]);
+            const today = new Date();
+            let lastMonth = today.getMonth(); // 0-based month (0 = January, 11 = December)
+            let year = today.getFullYear();
+
+            if (lastMonth === 0) { // If it's January, go back to December of the previous year
+                lastMonth = 11; // December
+                year -= 1;
+            } else {
+                lastMonth -= 1;
+            }
+
+            // Format lastMonth as a 2-digit number
+            const formattedMonth = (lastMonth + 1).toString().padStart(2, '0');
+
+            console.log(`Last month: ${formattedMonth}, Last year: ${year}`);
+
+
+            var am_query = "SELECT amen.id,amen.user_Id,amen.amenity_Id,hostel.Hostel_Id,amen.status,amen.created_At,amname.Amnities_Name,am.Amount FROM AmenitiesHistory AS amen JOIN hostel ON hostel.User_Id = amen.user_Id JOIN Amenities AS am ON am.Amnities_Id = amen.amenity_Id JOIN AmnitiesName AS amname ON am.Amnities_Id = amname.id WHERE amen.user_Id = '" + user.User_Id + "' AND YEAR(amen.created_At) = '" + year + "' AND MONTH(amen.created_At) <= '" + formattedMonth + "' ORDER BY amen.created_At DESC LIMIT 1;"
+            const amenitiesData = await query(am_query);
             if (amenitiesData.length > 0) {
                 for (let j = 0; j < amenitiesData.length; j++) {
-                    if (amenitiesData[j].setAsDefault === 0 && amenitiesData[j].Status === 1) {
-                        totalAmenitiesAmount += amenitiesData[j].Amount;
-                    } else {
-                        dedctAmenitiesAmount += amenitiesData[j].Amount;
-                    }
+                    // if (amenitiesData[j].setAsDefault === 0 && amenitiesData[j].Status === 1) {
+                    totalAmenitiesAmount += amenitiesData[j].Amount;
+                    // } else {
+                    dedctAmenitiesAmount += amenitiesData[j].Amount;
+                    // }
                 }
             }
+
             console.log("eb_Hostel....?", eb_Hostel)
             //  AdvanceAmount = ((roomPrice / moment(dueDate).daysInMonth()) * Number(numberOfDays)) + totalAmenitiesAmount +  Number(eb_Hostel);
 
@@ -1142,7 +1161,7 @@ function InvoicePDf(connection, reqBodyData, response) {
         INNER JOIN hosteldetails hostel ON hostel.id = invoice.Hostel_Id 
         WHERE invoice.User_Id = ? AND invoice.id = ?`;
         // console.log(sql1);
-        
+
         connection.query(sql1, [reqBodyData.User_Id, reqBodyData.id], async (err, data) => {
             console.log("datadata", data)
             if (err) {
