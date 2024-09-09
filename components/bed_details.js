@@ -13,9 +13,8 @@ function check_bed_details(bed_details_obj) {
                 if (err) {
                     reject(err)
                 } else if (up_res1.length != 0) {
-                    var bed_details_id = up_res1[0].bed_detail_id;
 
-                    var sql1 = "UPDATE bed_details SET isfilled=0, user_id=0 WHERE id='" + bed_details_id + "'";
+                    var sql1 = "UPDATE bed_details SET isfilled=0, user_id=0 WHERE user_id='" + bed_details_obj.user_id + "'";
                     console.log(sql1);
                     connection.query(sql1, (err, up_data) => {
                         if (err) {
