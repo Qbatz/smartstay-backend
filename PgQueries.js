@@ -730,7 +730,42 @@ function deleteHostel(request, response) {
                                     if (delErr) {
                                         response.status(201).json({ message: "doesn't update" });
                                     } else {
-                                        response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
+                                        connection.query(`select * from Hostel_Floor where hostel_id= ${req.hostel_Id}`, function (err, floorData) {
+                                            if (floorData && floorData.length > 0 || !err) {
+                                                connection.query(`UPDATE Hostel_Floor SET status= false WHERE hostel_id= ${req.hostel_Id}`, function (error, data) {
+                                                    if (error) {
+                                                        response.status(201).json({ message: "doesn't update" });
+                                                    } else {
+                                                        let query1 = `select * from hostelrooms where Hostel_Id =${req.hostel_Id} and isActive = true;`
+                                                        connection.query(query1, function (room_Error, room_Data) {
+                                                            if (room_Error) {
+                                                                response.status(201).json({ message: "Error while fetching Room details" });
+                                                            }
+                                                            else {
+                                                                if (room_Data && room_Data.length > 0) {
+                                                                    connection.query(`UPDATE hostelrooms SET isActive = false WHERE Hostel_Id='${req.hostel_Id}'`, function (error, data) {
+                                                                        if (error) {
+                                                                            response.status(201).json({ message: "doesn't update" });
+                                                                        } else {
+                                                                            response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
+                                                                            // response.status(200).json({ message: "Room Update Successfully" });
+                                                                        }
+                                                                    });
+                                                                } else {
+                                                                    response.status(201).json({ message: "Invalid Credential" });
+                                                                }
+                                                            }
+                                                        })
+                                        
+                                        // response.status(200).json({ message: "Floor Update Successfully" });
+                                                    }
+                                                });
+                                            }
+                                            else {
+                                                response.status(201).json({ message: "Invalid Credential" });
+                                            }
+                                        })
+                                        // response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
                                     }
                                 })
                             }
@@ -767,7 +802,30 @@ function deleteFloor(connection, response, reqData) {
                                 if (error) {
                                     response.status(201).json({ message: "doesn't update" });
                                 } else {
-                                    response.status(200).json({ message: "Floor Update Successfully" });
+
+                                    let query1 = `select * from hostelrooms where Hostel_Id =${reqData.id} and Floor_Id = ${reqData.floor_id} and isActive = true;`
+                                    connection.query(query1, function (room_Error, room_Data) {
+                                        if (room_Error) {
+                                            response.status(201).json({ message: "Error while fetching Room details" });
+                                        }
+                                        else {
+                                            if (room_Data && room_Data.length > 0) {
+                                                connection.query(`UPDATE hostelrooms SET isActive = false WHERE Hostel_Id='${reqData.id}' and Floor_Id = ${reqData.floor_id}`, function (error, data) {
+                                                    if (error) {
+                                                        response.status(201).json({ message: "doesn't update" });
+                                                    } else {
+                                                        response.status(200).json({ message: "Floor Deleted Successfully" });
+                                                        // response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
+                                                        // response.status(200).json({ message: "Room Update Successfully" });
+                                                    }
+                                                });
+                                            } else {
+                                                response.status(201).json({ message: "Invalid Credential" });
+                                            }
+                                        }
+                                    })
+
+                                    // response.status(200).json({ message: "Floor Update Successfully" });
                                 }
                             });
                         }
