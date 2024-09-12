@@ -133,8 +133,10 @@ function createUser(connection, request, response) {
                     user_id: atten.ID
                 }
 
-                bedDetails.check_bed_details(bed_details_obj).then(() => {
+                bedDetails.check_bed_details(bed_details_obj).then((okda) => {
 
+                    console.log(okda,"/////////////////////");
+                    
                     connection.query(`UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${atten.Phone}', Email='${atten.Email}', Address='${atten.Address}', AadharNo='${atten.AadharNo}', PancardNo='${atten.PancardNo}',licence='${atten.licence}',HostelName='${atten.HostelName}',Hostel_Id='${atten.hostel_Id}', Floor='${atten.Floor}', Rooms='${atten.Rooms}', Bed='${atten.Bed}',profile='${profile_url}', AdvanceAmount='${atten.AdvanceAmount}', RoomRent='${atten.RoomRent}', BalanceDue='${atten.BalanceDue}', PaymentType='${atten.PaymentType}', Status='${Status}',paid_advance='${paid_advance}',pending_advance='${pending_advance}',country_code='${country_code}' WHERE ID='${atten.ID}'`, function (updateError, updateData) {
                         if (updateError) {
                             response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
