@@ -166,7 +166,7 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
 
             else {
 
-                const checkVendorQuery = `SELECT * FROM Vendor WHERE Vendor_Email = '${reqInvoice.Vendor_Email}' OR Vendor_Mobile = '${reqInvoice.Vendor_Mobile}' AND Status = true`;
+                const checkVendorQuery = `SELECT * FROM Vendor WHERE  Vendor_Mobile = '${reqInvoice.Vendor_Mobile}' AND Status = true`;
 
                 connection.query(checkVendorQuery, function (error, results) {
                     if (error) {
@@ -178,14 +178,8 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                     if (results.length > 0) {
 
                         const existingVendor = results[0];
-                        console.log("Email", existingVendor.Vendor_Email, existingVendor.Vendor_Mobile)
-                        console.log("mobile", reqInvoice.Vendor_Email, reqInvoice.Vendor_Mobile)
-
-                        console.log("existingVendor.Vendor_Email === reqInvoice.Vendor_Email", existingVendor.Vendor_Email === reqInvoice.Vendor_Email)
-                        console.log("existingVendor.Vendor_Mobile === reqInvoice.Vendor_Mobile", existingVendor.Vendor_Mobile === reqInvoice.Vendor_Mobile)
-                        if (existingVendor.Vendor_Email === reqInvoice.Vendor_Email) {
-                            return response.status(202).json({ message: "Vendor with this email already exists", statusCode: 202 });
-                        }
+                                             
+                      
                         if (Number(existingVendor.Vendor_Mobile) === Number(reqInvoice.Vendor_Mobile)) {
                             return response.status(202).json({ message: "Vendor with this mobile number already exists", statusCode: 202 });
                         }
