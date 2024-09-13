@@ -7,7 +7,7 @@ const notifications = require('./notifications');
 const assets = require('./assets');
 const crons = require('./crons');
 const payments = require('./payments');
-
+const importFunc = require('./components/import_func');
 
 const app = express()
 const userQueries = require('./UserQueries');
@@ -19,6 +19,7 @@ const pgQueries = require('./PgQueries')
 const vendorQueries = require('./vendorQueries')
 const expensesManagement = require('./ExpensesManagement')
 var billings = require('./zoho_billing/billings');
+
 
 const multer = require('multer');
 const request = require('request');
@@ -715,7 +716,7 @@ app.get('/payment_details', (req, res) => {
     payments.payment_details(req, res)
 })
 
-app.get('/conutry_list',(req, res) => {
+app.get('/conutry_list', (req, res) => {
     userQueries.conutry_list(req, res)
 })
 
@@ -746,7 +747,7 @@ app.post('/whatsapp_message', (req, res) => {
             to: "919965003581",
             type: "template",
             template: {
-                name: "hello_world",  
+                name: "hello_world",
                 language: { code: "en_US" },
             },
         })
@@ -762,4 +763,12 @@ app.post('/whatsapp_message', (req, res) => {
         }
     });
 
+});
+
+app.post('/import_hostel_users', upload.single('xlfile'), (req, res) => {
+    importFunc.import_hostel_users(req, res)
+});
+
+app.post('/import_hostel_details', upload.single('hos_details'), (req, res) => {
+    importFunc.import_hostel_details(req, res)
 });
