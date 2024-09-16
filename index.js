@@ -398,8 +398,7 @@ app.post('/amenities/setting', (request, response) => {
 
 app.post('/ebamount/setting', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const atten = request.body
-    invoiceQueries.EbAmount(connection, atten, response)
+    invoiceQueries.EbAmount(connection, request, response)
 
 })
 // app.post('/AmnitiesName_list', (request, response) => {
