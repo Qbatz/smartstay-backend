@@ -137,7 +137,7 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                                 if (error) {
                                     response.status(201).json({ message: "Internal Server Error", statusCode: 201, updateError: error });
                                 } else {
-                                    response.status(200).json({ message: "Update Successfully", statusCode: 200 });
+                                    response.status(200).json({ message: "Vendor has been successfully updated!", statusCode: 200 });
                                 }
                             });
                         }
@@ -156,7 +156,7 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                         if (error) {
                             response.status(201).json({ message: "Internal Server Error", statusCode: 201, updateError: error });
                         } else {
-                            response.status(200).json({ message: "Update Successfully", statusCode: 200 });
+                            response.status(200).json({ message: "Vendor has been successfully updated!", statusCode: 200 });
                         }
                     });
                 }
@@ -197,7 +197,7 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                                         if (error) {
                                             response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
                                         } else {
-                                            response.status(200).json({ message: "Save Successfully", statusCode: 200 });
+                                            response.status(200).json({ message: "Succsessfully added  a new vendor", statusCode: 200 });
 
                                             // var Row_id = insertVendorData.insertId;
                                             // const Create_Vendor_Id = GeneratedVendorId(firstName, Row_id);
@@ -224,7 +224,7 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                                 if (error) {
                                     response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
                                 } else {
-                                    response.status(200).json({ message: "Save Successfully", statusCode: 200 });
+                                    response.status(200).json({ message: "Succsessfully added  a new vendor", statusCode: 200 });
 
                                     // var Row_id = insertVendorData.insertId;
                                     // const Create_Vendor_Id = GeneratedVendorId(firstName, Row_id);
@@ -314,7 +314,7 @@ function TodeleteVendorList(connection, response, request, reqVendor) {
             if (error) {
                 response.status(201).json({ message: "Internal Server Error", statusCode: 201, updateError: error });
             } else {
-                response.status(200).json({ message: "Update Successfully", statusCode: 200 });
+                response.status(200).json({ message: "Vendor has been successfully deleted", statusCode: 200 });
             }
         })
     } else {
