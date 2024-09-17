@@ -53,7 +53,9 @@ const queries = [
 
     "ALTER TABLE `Hostel_Floor` CHANGE COLUMN `status` `status` TINYINT NULL DEFAULT 1;",
 
-    "INSERT INTO `country_list` (`country_id`, `country_code`, `country_name`,`currency_code`, `mobile_code`,`country_flag`) VALUES ('1', '91', 'India', 'INR', '91','https://www.worldometers.info/img/flags/in-flag.gif');"
+    "INSERT INTO `country_list` (`country_id`, `country_code`, `country_name`,`currency_code`, `mobile_code`,`country_flag`) VALUES ('1', '91', 'India', 'INR', '91','https://www.worldometers.info/img/flags/in-flag.gif');",
+
+    "ALTER TABLE `assets` CHANGE COLUMN `asset_id` `asset_name` VARCHAR(255) NULL"
 ];
 
 queries.forEach(executeQuery);

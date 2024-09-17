@@ -19,14 +19,15 @@ const s3 = new AWS.S3();
 function AddExpense(request, response) {
     let reqData = request.body;
     var createdBy = request.user_details.id;
-    let purchase_date = moment(new Date(reqData.purchase_date)).format('YYYY-MM-DD')
+    let purchase_date = reqData.purchase_date ? moment(new Date(reqData.purchase_date)).format('YYYY-MM-DD') : ''
     console.log("purchase_date", purchase_date);
     let purchase_amount = Number(reqData.unit_count) * Number(reqData.unit_amount)
+    purchase_amount = isNaN(purchase_amount) ? reqData.unit_amount : purchase_amount;
     // console.log("purchase_amount", purchase_amount);
     let createdate = moment(new Date()).format('yyyy-MM-DD HH:mm:ss')
     // console.log("createdate", createdate);
     if (reqData) {
-        if (reqData.id != null && reqData.id != undefined) {
+        if (reqData.id != null && reqData.id != undefined && reqData.id != '') {
             let query = `UPDATE expenses SET
   vendor_id = ${reqData.vendor_id},
   asset_id = ${reqData.asset_id},
@@ -55,7 +56,7 @@ function AddExpense(request, response) {
             // console.log("createdate", createdate);
             let query = `INSERT INTO expenses ( vendor_id, asset_id, category_id, purchase_date, unit_count, unit_amount, purchase_amount, description, created_by,createdate,payment_mode,hostel_id)
 VALUES
-  (${reqData.vendor_id}, ${reqData.asset_id}, ${reqData.category_id}, '${purchase_date}', ${reqData.unit_count}, ${reqData.unit_amount},${purchase_amount}, '${reqData.description}', ${createdBy}, '${createdate}','${reqData.payment_mode}',${reqData.hostel_id});
+  ('${reqData.vendor_id}', '${reqData.asset_id}', '${reqData.category_id}', '${purchase_date}', '${reqData.unit_count}', '${reqData.unit_amount}','${purchase_amount}', '${reqData.description}', ${createdBy}, '${createdate}','${reqData.payment_mode}','${reqData.hostel_id}');
 `
             // console.log("query", query);
             connection.query(query, function (insertErr, insertData) {
@@ -223,11 +224,11 @@ function CalculateExpenses(request, response) {
 
 function getAllfilter(createdBy, response, data, total_amount) {
     let query = `select hos.Name as hostel_name,hos.email_id as hostel_email,hos.Address as hostel_address,hos.hostel_PhoneNo as hostel_phoneNo, expen.id,expen.category_id,expen.vendor_id,expen.asset_id,ven.Vendor_profile,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode,category.category_Name,ven.Vendor_Name,asname.asset_name from expenses expen
-    join Expense_Category_Name category on category.id = expen.category_id
-    join Vendor ven on ven.id = expen.vendor_id
-    join assets ast on ast.id = expen.asset_id
-    join asset_names asname on asname.id=ast.asset_id
-join hosteldetails hos on hos.id = expen.hostel_id
+    left join Expense_Category_Name category on category.id = expen.category_id
+    left join Vendor ven on ven.id = expen.vendor_id
+    left join assets ast on ast.id = expen.asset_id
+    left join asset_names asname on asname.id=expen.asset_id
+left join hosteldetails hos on hos.id = expen.hostel_id
         where expen.status = true and expen.created_by = ${createdBy}`
     connection.query(query, function (getErr, getData) {
         if (getErr) {
@@ -303,11 +304,11 @@ function GetHostelExpenses(request, response) {
 
     let query = `SELECT expen.hostel_id,hos.Name as hostel_name,hos.email_id as hostel_email,hos.Address as hostel_address,hos.hostel_PhoneNo as hostel_phoneNo, expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode, category.category_Name, ven.Vendor_Name, asname.asset_name 
 FROM expenses expen
-JOIN Expense_Category_Name category ON category.id = expen.category_id
-JOIN Vendor ven ON ven.id = expen.vendor_id
-JOIN assets ast ON ast.id = expen.asset_id
-JOIN asset_names asname ON asname.id=ast.asset_id
-JOIN hosteldetails hos ON hos.id = expen.hostel_id
+LEFT JOIN Expense_Category_Name category ON category.id = expen.category_id
+LEFT JOIN Vendor ven ON ven.id = expen.vendor_id
+LEFT JOIN assets ast ON ast.id = expen.asset_id
+LEFT JOIN asset_names asname ON asname.id=expen.asset_id
+LEFT JOIN hosteldetails hos ON hos.id = expen.hostel_id
 WHERE expen.status = true AND expen.created_by = ${createdBy}`;
 
     if (asset_id) {
@@ -475,11 +476,11 @@ function GenerateExpenseHistoryPDF(request, response) {
 
     let query = `SELECT expen.hostel_id,hos.Name as hostel_name,hos.email_id as hostel_email,hos.Address as hostel_address,hos.hostel_PhoneNo as hostel_phoneNo, expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode, category.category_Name, ven.Vendor_Name, asname.asset_name 
 FROM expenses expen
-JOIN Expense_Category_Name category ON category.id = expen.category_id
-JOIN Vendor ven ON ven.id = expen.vendor_id
-JOIN assets ast ON ast.id = expen.asset_id
-JOIN asset_names asname ON asname.id=ast.asset_id
-JOIN hosteldetails hos ON hos.id = expen.hostel_id
+LEFT JOIN Expense_Category_Name category ON category.id = expen.category_id
+LEFT JOIN Vendor ven ON ven.id = expen.vendor_id
+LEFT JOIN assets ast ON ast.id = expen.asset_id
+LEFT JOIN asset_names asname ON asname.id=ast.asset_id
+LEFT JOIN hosteldetails hos ON hos.id = expen.hostel_id
 WHERE expen.status = true AND expen.created_by = ${createdBy}`;
 
     if (asset_id) {
