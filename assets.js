@@ -51,15 +51,14 @@ function add_asset(req, res) {
                                     return res.status(201).json({ message: "Unable to Get Asset Name Details", statusCode: 201 })
                                 } else if (asss_data.length == 0) {
 
-                                    var sql5 = "INSERT INTO assets (asset_name,vendor_id,product_name,brand_name,serial_number,product_count,purchase_date,price,total_price,status,created_by) VALUES (?,?,?,?,?,1,?,?,?,1,?)";
-                                    connection.query(sql5, [data.asset_name, data.vendor_id, data.product_name, data.brand_name, data.serial_number, data.purchase_date, data.price, data.price, user_id], function (ins_err, ins_data) {
+                                    var sql5 = "UPDATE assets SET asset_name=?,vendor_id=?,product_name=?,brand_name=?,serial_number=?,purchase_date=?,price=?,total_price=? WHERE id=?";
+                                    connection.query(sql5, [data.asset_name, data.vendor_id, data.product_name, data.brand_name, data.serial_number, data.purchase_date, data.price, data.price, data.id], function (ins_err, ins_data) {
                                         if (ins_err) {
                                             return res.status(201).json({ message: "Unable to Add Asset Details", statusCode: 201 })
                                         } else {
                                             return res.status(200).json({ message: "Successfully Added Asset Details", statusCode: 200 })
                                         }
                                     })
-
                                 } else {
                                     return res.status(201).json({ message: "Asset Name Already Exists", statusCode: 201 })
                                 }
@@ -87,7 +86,7 @@ function add_asset(req, res) {
                             return res.status(201).json({ message: "Unable to Get Asset Name Details", statusCode: 201 })
                         } else if (asss_data.length == 0) {
                             var sql2 = "INSERT INTO assets (asset_name,vendor_id,product_name,brand_name,serial_number,product_count,purchase_date,price,total_price,status,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
-                            connection.query(sql2, [data.asset_name, data.vendor_id, data.product_name, data.brand_name, data.serial_number, 1, data.purchase_date, data.price, total_price, 1, user_id], (ins_err, ins_res) => {
+                            connection.query(sql2, [data.asset_name, data.vendor_id, data.product_name, data.brand_name, data.serial_number, 1, data.purchase_date, data.price, data.price, 1, user_id], (ins_err, ins_res) => {
                                 if (ins_err) {
                                     console.log(ins_err);
                                     return res.status(201).json({ message: "Unable to Add Asset Details", statusCode: 201 })
