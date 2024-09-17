@@ -831,6 +831,90 @@ where trans.status = true and trans.created_by = ${createdBy}
 
 }
 
+// transactionHistoryPDF
+function transactionHistoryPDF(connection, response, request) {
+    var createdBy = request.user_details.id;
+    let total_credit = 0;
+    let total_debit = 0;
+    let total_balance = 0;
+    let start_date = request.body?.start_date ? request.body.start_date : null;
+    let end_date = request.body?.end_date ? request.body.end_date : null;
+    // let query = `SELECT * FROM transactions WHERE created_by = ${createdBy} AND status = true`;
+    let query1 = `SELECT trans.id,trans.user_id,trans.invoice_id,trans.amount,trans.payment_date,trans.payment_type,trans.status,trans.createdAt,trans.created_by,trans.action,
+exp.category_id,exp.asset_id,exp.vendor_id,excat.category_Name,
+hos.Hostel_Id, hos_details.Name as hostel_Name,hos_details.profile
+FROM transactions trans Left Join expenses exp on exp.id = trans.invoice_id 
+Left Join Expense_Category_Name excat on excat.id = exp.category_id
+Left Join hostel hos on hos.ID = trans.user_id
+Left Join hosteldetails hos_details on hos_details.id = hos.Hostel_Id
+where trans.status = true and trans.created_by = ${createdBy} 
+`
+    // if (!start_date && !end_date) {
+    //    query1 += `group by trans.invoice_id;` 
+    // }
+
+    if (start_date && !end_date) {
+        const startDateRange = `${start_date} 00:00:00`;
+        const endDateRange = `${start_date} 23:59:59`;
+        query1 += `and trans.createdAt >=  '${startDateRange}' AND trans.createdAt <= '${endDateRange}'`
+        // console.log("query1",query1);
+    }
+
+
+    if (start_date && end_date) {
+        const startDateRange = `${start_date} 00:00:00`;
+        const endDateRange = `${end_date} 23:59:59`;
+        query1 += `and trans.createdAt >=  '${startDateRange}' AND trans.createdAt <= '${endDateRange}'`
+        // query1 += `and trans.createdAt BETWEEN  ${startDateRange} AND ${endDateRange}`
+    }
+
+    connection.query(query1, function (err, data) {
+        if (err) {
+            console.log("err", err);
+
+            response.status(201).json({ message: "Error while fetching transaction history", statusCode: 201 });
+        } else {
+            if (data && data.length > 0) {
+                let balance = 0;
+                let formattedData = data.map(item => {
+                    // let credit = item.status === 1 ? item.amount : 0; 
+                    // let debit = item.status === 0 ? item.amount : 0; 
+                    // balance += credit - debit; 
+                    // action
+                    let credit = item.action === 1 ? item.amount : 0;
+                    let debit = item.action === 2 ? item.amount : 0;
+                    balance += credit - debit;
+                    total_credit += credit;
+                    total_debit += debit;
+
+                    return {
+                        id: item.id,
+                        hostel_Name: item.hostel_Name,
+                        hostel_Profile: item.profile,
+                        date: formatDate(item.payment_date),
+                        payment_type: item.payment_type,
+                        category_Name: item.category_Name ? item.category_Name : null,
+                        credit: credit,
+                        debit: debit,
+                        balance: balance,
+                        createdAt: item.createdAt
+                    };
+
+                });
+                if (formattedData.length === data.length) {
+                    total_balance += total_credit - total_debit;
+                    // const htmlFilePath = path.join(__dirname, 'mail_templates', 'invoicepdf.html');
+                    // let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
+                    response.status(200).json({ data: formattedData, total_credit: total_credit, total_debit: total_debit, total_balance: total_balance, statusCode: 200 });
+                }
+            } else {
+                response.status(200).json({ data: [], statusCode: 200 });
+            }
+        }
+    });
+
+}
+
 // format the date
 function formatDate(dateString) {
     if (!dateString || dateString === "0000-00-00") return ""; // Handle invalid date
@@ -842,4 +926,4 @@ function formatDate(dateString) {
 }
 
 
-module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount, get_user_details, forgotpassword_otp_response, payment_history, update_account_details, transactionHistory }
+module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount, get_user_details, forgotpassword_otp_response, payment_history, update_account_details, transactionHistory,transactionHistoryPDF }
