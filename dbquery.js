@@ -54,10 +54,8 @@ const queries = [
     "ALTER TABLE `Hostel_Floor` CHANGE COLUMN `status` `status` TINYINT NULL DEFAULT 1;",
 
     "INSERT INTO `country_list` (`country_id`, `country_code`, `country_name`,`currency_code`, `mobile_code`,`country_flag`) VALUES ('1', '91', 'India', 'INR', '91','https://www.worldometers.info/img/flags/in-flag.gif');",
-    // "DROP TABLE table_name" //asset_names
-    "CREATE TABLE `product_names` (`product_id` BIGINT(20) NOT NULL,`product_name` VARCHAR(255) NULL,PRIMARY KEY (`product_id`));",
 
-    "ALTER TABLE `assets` CHANGE COLUMN `asset_id` `asset_name` VARCHAR(255) NULL,CHANGE COLUMN `product_name` `product_id` BIGINT(20) NULL DEFAULT NULL ;"
+    "ALTER TABLE `assets` CHANGE COLUMN `asset_id` `asset_name` VARCHAR(255) NULL"
 ];
 
 queries.forEach(executeQuery);
