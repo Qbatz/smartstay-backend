@@ -97,6 +97,22 @@ function createUser(connection, request, response) {
                 var old_floor = sel_res[0].Floor;
                 var old_bed = sel_res[0].Bed;
 
+                connection.query(`SELECT * FROM hostel WHERE Phone='${atten.Phone}' AND isActive = 1 AND ID !='${atten.ID}'`, function (error, data) {
+                    if(error){
+                        return response.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 });
+                    }
+                    if (data.length > 0) {
+                        response.status(202).json({ message: "Phone Number Already Exists", statusCode: 202 });
+                    } else {
+                        // Need to Check for the Mail Exist Error
+                        connection.query(`SELECT * FROM hostel WHERE Email='${atten.Email}' AND Email !='undefined' AND isActive = 1 AND ID !='${atten.ID}'`, async function (error, data) {
+                            if(error){
+                                return response.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 });
+                            }
+                            if (data.length > 0) {
+                        return response.status(203).json({ message: "Email Already Exists", statusCode: 203 });
+                    } else {
+
                 if (profile) {
                     try {
                         const timestamp = Date.now();
@@ -305,6 +321,10 @@ function createUser(connection, request, response) {
                         console.log(error);
                         return response.status(205).json({ message: "Invalid Bed Details", statusCode: 205 });
                     });
+                }
+            })
+        }
+    })
             } else {
                 response.status(202).json({ message: "Invalid User Id", statusCode: 202 });
             }
@@ -315,7 +335,7 @@ function createUser(connection, request, response) {
                 response.status(202).json({ message: "Phone Number Already Exists", statusCode: 202 });
             } else {
                 // Need to Check for the Mail Exist Error
-                connection.query(`SELECT * FROM hostel WHERE Email='${atten.Email}' AND isActive = 1`, async function (error, data) {
+                connection.query(`SELECT * FROM hostel WHERE Email='${atten.Email}' AND Email !='undefined' AND isActive = 1`, async function (error, data) {
                     if (data.length > 0) {
                         response.status(203).json({ message: "Email Already Exists", statusCode: 203 });
                     } else {
