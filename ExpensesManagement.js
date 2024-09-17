@@ -303,11 +303,11 @@ function GetHostelExpenses(request, response) {
 
     let query = `SELECT expen.hostel_id,hos.Name as hostel_name,hos.email_id as hostel_email,hos.Address as hostel_address,hos.hostel_PhoneNo as hostel_phoneNo, expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode, category.category_Name, ven.Vendor_Name, asname.asset_name 
 FROM expenses expen
-JOIN Expense_Category_Name category ON category.id = expen.category_id
-JOIN Vendor ven ON ven.id = expen.vendor_id
-JOIN assets ast ON ast.id = expen.asset_id
-JOIN asset_names asname ON asname.id=ast.asset_id
-JOIN hosteldetails hos ON hos.id = expen.hostel_id
+LEFT JOIN Expense_Category_Name category ON category.id = expen.category_id
+LEFT JOIN Vendor ven ON ven.id = expen.vendor_id
+LEFT JOIN assets ast ON ast.id = expen.asset_id
+LEFT JOIN asset_names asname ON asname.id=ast.asset_id
+LEFT JOIN hosteldetails hos ON hos.id = expen.hostel_id
 WHERE expen.status = true AND expen.created_by = ${createdBy}`;
 
     if (asset_id) {
@@ -475,11 +475,11 @@ function GenerateExpenseHistoryPDF(request, response) {
 
     let query = `SELECT expen.hostel_id,hos.Name as hostel_name,hos.email_id as hostel_email,hos.Address as hostel_address,hos.hostel_PhoneNo as hostel_phoneNo, expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode, category.category_Name, ven.Vendor_Name, asname.asset_name 
 FROM expenses expen
-JOIN Expense_Category_Name category ON category.id = expen.category_id
-JOIN Vendor ven ON ven.id = expen.vendor_id
-JOIN assets ast ON ast.id = expen.asset_id
-JOIN asset_names asname ON asname.id=ast.asset_id
-JOIN hosteldetails hos ON hos.id = expen.hostel_id
+LEFT JOIN Expense_Category_Name category ON category.id = expen.category_id
+LEFT JOIN Vendor ven ON ven.id = expen.vendor_id
+LEFT JOIN assets ast ON ast.id = expen.asset_id
+LEFT JOIN asset_names asname ON asname.id=ast.asset_id
+LEFT JOIN hosteldetails hos ON hos.id = expen.hostel_id
 WHERE expen.status = true AND expen.created_by = ${createdBy}`;
 
     if (asset_id) {
