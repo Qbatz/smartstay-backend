@@ -379,7 +379,7 @@ WHERE hos.hostel_id =  ${reqData.hostel_Id} AND hos.status= true`
                                 floor_Details: []
                             });
                         }
-                        
+
                         // Add room details if they exist
                         if (row.Room_Id) {
                             floorsMap.get(row.floor_id).floor_Details.push({
@@ -391,17 +391,17 @@ WHERE hos.hostel_id =  ${reqData.hostel_Id} AND hos.status= true`
                             });
                         }
                     });
-                
+
                     // Convert map values to an array
                     // return Array.from(floorsMap.values());
-                    console.log("Array.from(floorsMap.values())",Array.from(floorsMap.values()));
-                    
-                response.status(200).json({ hostel_data: Array.from(floorsMap.values()) })
+                    console.log("Array.from(floorsMap.values())", Array.from(floorsMap.values()));
+
+                    response.status(200).json({ hostel_data: Array.from(floorsMap.values()) })
                 } else {
-                    
-                response.status(200).json({ hostel_data: hostel_data })
+
+                    response.status(200).json({ hostel_data: hostel_data })
                 }
-               
+
             }
         })
     }
@@ -707,8 +707,9 @@ function listDashBoard(connection, response, request) {
 
 function deleteHostel(request, response) {
     let req = request.body
+
     if (req && req.hostel_Id) {
-        // let query = `select * from Hostel_Floor where hostel_id = ${req.hostel_Id} and status = true;`
+
         let query = `SELECT * FROM hostel where Hostel_Id = ${req.hostel_Id} and isActive = true;`
         connection.query(query, function (floorError, floorData) {
             if (floorError) {
@@ -731,7 +732,10 @@ function deleteHostel(request, response) {
                                         response.status(201).json({ message: "doesn't update" });
                                     } else {
                                         connection.query(`select * from Hostel_Floor where hostel_id= ${req.hostel_Id}`, function (err, floorData) {
-                                            if (floorData && floorData.length > 0 || !err) {
+                                            if (err) {
+                                                return response.status(201).json({ message: "Unable to Get Floor Details" });
+                                            }
+                                            if (floorData && floorData.length > 0) {
                                                 connection.query(`UPDATE Hostel_Floor SET status= false WHERE hostel_id= ${req.hostel_Id}`, function (error, data) {
                                                     if (error) {
                                                         response.status(201).json({ message: "doesn't update" });
@@ -752,17 +756,17 @@ function deleteHostel(request, response) {
                                                                         }
                                                                     });
                                                                 } else {
-                                                                    response.status(201).json({ message: "Invalid Credential" });
+                                                                    response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
                                                                 }
                                                             }
                                                         })
-                                        
-                                        // response.status(200).json({ message: "Floor Update Successfully" });
+
+                                                        // response.status(200).json({ message: "Floor Update Successfully" });
                                                     }
                                                 });
                                             }
                                             else {
-                                                response.status(201).json({ message: "Invalid Credential" });
+                                                response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
                                             }
                                         })
                                         // response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
@@ -815,22 +819,18 @@ function deleteFloor(connection, response, reqData) {
                                                         response.status(201).json({ message: "doesn't update" });
                                                     } else {
                                                         response.status(200).json({ message: "Floor Deleted Successfully" });
-                                                        // response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
-                                                        // response.status(200).json({ message: "Room Update Successfully" });
                                                     }
                                                 });
                                             } else {
-                                                response.status(201).json({ message: "Invalid Credential" });
+                                                response.status(200).json({ message: "Floor Deleted Successfully", statusCode: 200 });
                                             }
                                         }
                                     })
-
-                                    // response.status(200).json({ message: "Floor Update Successfully" });
                                 }
                             });
                         }
                         else {
-                            response.status(201).json({ message: "Invalid Credential" });
+                            response.status(200).json({ message: "Floor Deleted Successfully", statusCode: 200 });
                         }
                     })
                 }
@@ -870,7 +870,7 @@ function deleteRoom(connection, response, reqData) {
                                     }
                                 });
                             } else {
-                                response.status(201).json({ message: "Invalid Credential" });
+                                response.status(200).json({ message: "Room Update Successfully" });
                             }
                         }
                     })
