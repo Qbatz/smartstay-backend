@@ -107,21 +107,22 @@ function AddExpenseCategory(request, response) {
     if (!reqData.category_Name) {
         return response.status(201).json({ statusCode: 201, message: "Missing Category Name" })
     }
-    if (reqData) {
-        var sql1 = "SELECT * FROM Expense_Category_Name WHERE category_Name COLLATE latin1_general_ci = '" + reqData.category_Name + "' AND status=1 AND created_by ='" + created_by + "'";
+    if (reqData.category_Name) {
+        var category_Name = reqData.category_Name.replace(/\s+/g, '').toLowerCase();
+        var sql1 = "SELECT * FROM Expense_Category_Name WHERE REPLACE(LOWER(category_Name), ' ', '') = '" + category_Name + "' AND status=1 AND created_by ='" + created_by + "'";
         connection.query(sql1, function (error, data) {
             if (error) {
                 console.log("error", error);
                 response.status(201).json({ statusCode: 201, message: "Error Fetching Data" });
             }
-            else if (data.length > 0) {
+            else if (data && data.length > 0) {
 
                 if (!reqData.id) {
                     return response.status(201).json({ statusCode: 201, message: "Category Name Already Exist" });
                 }
                 if (reqData.sub_Category) {
-
-                    var sql3 = "SELECT * FROM Expense_Subcategory_Name WHERE subcategory COLLATE latin1_general_ci = '" + reqData.sub_Category + "' AND status=1 AND created_by ='" + created_by + "'";
+                    var subcategory = reqData.sub_Category.replace(/\s+/g, '').toLowerCase();
+                    var sql3 = "SELECT * FROM Expense_Subcategory_Name WHERE REPLACE(LOWER(subcategory), ' ', '') = '" + subcategory + "' AND status=1 AND created_by ='" + created_by + "'";
                     connection.query(sql3, function (err, sql3_res) {
                         if (err) {
                             return response.status(201).json({ statusCode: 201, message: "Unble to Get Subcategory Details" });
