@@ -23,7 +23,7 @@ function getHostelList(connection, response, request) {
         if (data && data.length > 0) {
             for (let i = 0; i < data.length; i++) {
                 console.log("data", data);
-                let query = `select * from Hostel_Floor where hostel_id = ${data[i].id} and status = true order by floor_id`;
+                let query = `select * from Hostel_Floor where hostel_id = ${data[i].id} and status = true order by id`;
                 connection.query(query, function (error, floorDetails) {
 
                     if (error) {
@@ -522,42 +522,86 @@ function CreateRoom(connection, request, response) {
 
 }
 
+function CreateFloor(req, res) {
 
+    var floor_name = req.body.floor_Id;
+    var hostel_id = req.body.hostel_Id;
 
-function CreateFloor(connection, reqDataFloor, response) {
-    if (reqDataFloor && reqDataFloor.hostel_Id && reqDataFloor.floor_Id) {
-        let floor_Name = reqDataFloor.floor_Name ? reqDataFloor.floor_Name : null;
-        let query1 = `select * from Hostel_Floor where hostel_id = ${reqDataFloor.hostel_Id} and floor_id = ${reqDataFloor.floor_Id} and status = true`
+    if (!floor_name || !hostel_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
 
-        connection.query(query1, function (select_err, select_data) {
-            if (select_err) {
-                console.log("select_err", select_err);
-                response.status(201).json({ message: 'Select Floor Details error' })
-            }
-            else {
-                if (select_data && select_data.length > 0) {
-                    response.status(202).json({ message: 'Floor Number is already exist' })
+    var normalizedFloorName = floor_name.replace(/\s+/g, '').toLowerCase();
+
+    var sq1 = "SELECT * FROM Hostel_Floor WHERE hostel_id =? AND REPLACE(LOWER(floor_name), ' ', '') = ?";
+    connection.query(sq1, [hostel_id, normalizedFloorName], function (err, floor_data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: 'Unable to Get Floor Details' })
+        } else if (floor_data.length == 0) {
+
+            var sql3 = "SELECT * FROM Hostel_Floor WHERE hostel_id='" + hostel_id + "' ORDER BY id DESC LIMIT 1";
+            connection.query(sql3, function (err, fl_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: 'Unable to Get Floor Details' })
                 } else {
-                    let query2 = `insert into Hostel_Floor(hostel_id,floor_id,floor_name) values(${reqDataFloor.hostel_Id},${reqDataFloor.floor_Id},'${floor_Name}');`
+                    var floor_id;
+                    if (fl_data.length != 0) {
+                        floor_id = fl_data[0].floor_id + 1;
+                    } else {
+                        floor_id = 1;
+                    }
 
-                    connection.query(query2, function (inserror, create_floor) {
-                        if (inserror) {
-                            console.log("inserror", inserror);
-                            response.status(201).json({ message: 'Cannot save Floor Details' })
+                    var sql2 = "INSERT INTO Hostel_Floor(hostel_id,floor_name,floor_id,status) VALUES (?,?,?,1)";
+                    connection.query(sql2, [hostel_id, floor_name, floor_id], function (err, ins_data) {
+                        if (err) {
+                            return res.status(201).json({ statusCode: 201, message: 'Unable to Add Floor Details' })
+                        } else {
+                            return res.status(200).json({ statusCode: 200, message: 'Successfully Added ' + floor_name })
                         }
-                        else {
-                            response.status(200).json({ message: 'Floor Details Saved Successfully' })
-                        }
-
                     })
                 }
-            }
-        })
-    }
-    else {
-        response.status(201).json({ message: 'Missing Parameter' })
-    }
+            })
+
+        } else {
+            return res.status(202).json({ statusCode: 202, message: 'Floor Name is Already Exist' })
+        }
+    })
 }
+
+
+// function CreateFloor(connection, reqDataFloor, response) {
+
+//     if (reqDataFloor && reqDataFloor.hostel_Id && reqDataFloor.floor_Id) {
+//         let floor_Name = reqDataFloor.floor_Name ? reqDataFloor.floor_Name : null;
+//         let query1 = `select * from Hostel_Floor where hostel_id = ${reqDataFloor.hostel_Id} and floor_name = ${reqDataFloor.floor_Id} and status = true`
+//         connection.query(query1, function (select_err, select_data) {
+//             if (select_err) {
+//                 console.log("select_err", select_err);
+//                 response.status(201).json({ message: 'Unable to Get Floor Details' })
+//             }
+//             else {
+//                 if (select_data && select_data.length > 0) {
+//                     response.status(202).json({ message: 'Floor Number is already exist' })
+//                 } else {
+//                     let query2 = `insert into Hostel_Floor(hostel_id,floor_name) values(${reqDataFloor.hostel_Id},${reqDataFloor.floor_Id},'${floor_Name}');`
+
+//                     connection.query(query2, function (inserror, create_floor) {
+//                         if (inserror) {
+//                             console.log("inserror", inserror);
+//                             response.status(201).json({ message: 'Cannot save Floor Details' })
+//                         }
+//                         else {
+//                             response.status(200).json({ message: 'Floor Details Saved Successfully' })
+//                         }
+//                     })
+//                 }
+//             }
+//         })
+//     }
+//     else {
+//         response.status(201).json({ message: 'Missing Parameter' })
+//     }
+// }
 
 
 function RoomFull(connection, reqFloorID, response) {
