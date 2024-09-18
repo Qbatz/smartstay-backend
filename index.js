@@ -353,11 +353,13 @@ app.post('/room/create-room', (request, response) => {
 
 app.post('/floor/create-floor', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const reqDataFloor = request.body;
-    pgQueries.CreateFloor(connection, reqDataFloor, response)
-
+    pgQueries.CreateFloor(request, response)
 })
 
+app.post('/update_floor', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    pgQueries.update_floor(request, response)
+})
 
 app.post('/check/room-full', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
@@ -398,8 +400,7 @@ app.post('/amenities/setting', (request, response) => {
 
 app.post('/ebamount/setting', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const atten = request.body
-    invoiceQueries.EbAmount(connection, atten, response)
+    invoiceQueries.EbAmount(connection, request, response)
 
 })
 // app.post('/AmnitiesName_list', (request, response) => {
@@ -495,6 +496,11 @@ app.post('/payment_history', (request, response) => {
 app.post('/hostel/transaction-history', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     accountManagement.transactionHistory(connection, response, request)
+})
+
+app.post('/hostel/transaction-pdf', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    accountManagement.transactionHistoryPDF(connection, response, request)
 })
 
 app.post('/add/amenity-history', (request, response) => {

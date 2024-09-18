@@ -6,7 +6,7 @@ function check_bed_details(bed_details_obj) {
 
         console.log(bed_details_obj, "====================");
 
-        if (bed_details_obj.old_hostel != bed_details_obj.hostel_id) {
+        if (bed_details_obj.old_hostel != 0 && bed_details_obj.old_hostel != bed_details_obj.hostel_id) {
 
             var up_query1 = "SELECT *,bd.id AS bed_detail_id FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id WHERE hr.Hostel_Id='" + bed_details_obj.hostel_id + "' AND bd.status=1 AND hr.isActive=1";
             connection.query(up_query1, function (err, up_res1) {

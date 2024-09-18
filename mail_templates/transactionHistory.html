@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amenity history</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        .logo{
+            margin-top: 30px;
+            padding-left: 50px;  
+        }
+        .invoice-container {
+            width: 90%;
+            max-width: 800px;
+            margin: auto;
+            border: 1px solid #ddd;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header, .footer {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .invoice-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .invoice-header img {
+            width: 80px;
+            height: 80px;
+        }
+        .invoice-details, .customer-details {
+            margin-bottom: 20px;
+        }
+        .customer-details, .invoice-details {
+            line-height: 1.5;
+        }
+        .invoice-details {
+            text-align: right;
+        }
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .invoice-table th, .invoice-table td {
+            border: 2px solid #030303;
+            padding: 10px;
+            text-align: center;
+        }
+        .invoice-table th {
+            background-color: #B2B5B8;
+        }
+        .line1 {
+            text-align: right;
+        }
+        .detail {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .header {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .tblbor {
+            text-align: center;
+        }
+        .tblbor td {
+            border-left: none !important;
+            border-right: none !important;
+            border-bottom: none !important;
+        }
+        @media (max-width: 600px) {
+            .invoice-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .invoice-details {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <div class="invoice-header">
+            <!-- <img src='{{logo}}'alt="Logo" class="logo" style="width: 100px; height: 40px;"> -->
+            <div class="line1">
+                <p>{{hostal_name}}</p>
+                <p>{{city}}</p>
+                <p>Phone: {{Phone}}</p>
+                <p>Email: {{email}}</p>
+            </div>
+        </div>
+        <div class="header">
+            <p>Transaction history</p>
+        </div>
+        <div class="detail">
+            <div class="customer-details">
+                <p>Name: {{user_name}}</p>
+                <p>Address: {{user_address}}</p>
+            </div>
+            <!-- <div class="invoice-details">
+                <p>Invoice No: {{invoice_number}}</p>
+                <p>Invoice Date: {{invoice_date}}</p>
+            </div> -->
+        </div>
+        <table class="invoice-table">
+            <tr>
+                <th>Month</th>
+                <th>Rent Details</th>
+                <th>Description</th>
+                <th>Amount</th>
+            </tr>
+            <!-- <tr>
+                <td>1</td>
+                <td>{{Amount_name}}</td>
+                <td>{{amount}}</td>
+            </tr> -->
+            {{invoice_rows}}
+            <tr class="tblbor">
+                <td colspan="3">Total</td>
+                <td>{{total_amount}}</td>
+            </tr>
+        </table>
+        <!-- <div class="footer" style="font-size: 15px;">
+            <p>We have received your payment of {{amount_in_words}} at {{current_time}}</p>
+        </div> -->
+        <div class="footer" style="padding-top: 20px;">
+            <p>This is a system generated receipt and no signature is required.</p>
+        </div>
+    </div>
+</body>
+</html>
