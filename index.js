@@ -356,6 +356,11 @@ app.post('/floor/create-floor', (request, response) => {
     pgQueries.CreateFloor(request, response)
 })
 
+app.post('/update_floor', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    pgQueries.update_floor(request, response)
+})
+
 app.post('/check/room-full', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const reqFloorID = request.body

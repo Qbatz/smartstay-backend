@@ -533,7 +533,7 @@ function CreateFloor(req, res) {
 
     var normalizedFloorName = floor_name.replace(/\s+/g, '').toLowerCase();
 
-    var sq1 = "SELECT * FROM Hostel_Floor WHERE hostel_id =? AND REPLACE(LOWER(floor_name), ' ', '') = ?";
+    var sq1 = "SELECT * FROM Hostel_Floor WHERE hostel_id =? AND REPLACE(LOWER(floor_name), ' ', '') = ? AND status=1";
     connection.query(sq1, [hostel_id, normalizedFloorName], function (err, floor_data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: 'Unable to Get Floor Details' })
@@ -559,6 +559,39 @@ function CreateFloor(req, res) {
                             return res.status(200).json({ statusCode: 200, message: 'Successfully Added ' + floor_name })
                         }
                     })
+                }
+            })
+
+        } else {
+            return res.status(202).json({ statusCode: 202, message: 'Floor Name is Already Exist' })
+        }
+    })
+}
+
+function update_floor(req, res) {
+
+    var floor_name = req.body.floor_Id;
+    var hostel_id = req.body.hostel_Id;
+    var id = req.body.id;
+
+    if (!floor_name || !hostel_id || !id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    var normalizedFloorName = floor_name.replace(/\s+/g, '').toLowerCase();
+
+    var sq1 = "SELECT * FROM Hostel_Floor WHERE hostel_id =? AND REPLACE(LOWER(floor_name), ' ', '') = ? AND status=1 AND id !='" + id + "'";
+    connection.query(sq1, [hostel_id, normalizedFloorName], function (err, floor_data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: 'Unable to Get Floor Details' })
+        } else if (floor_data.length == 0) {
+
+            var sql2 = "UPDATE Hostel_Floor SET floor_name=? WHERE id=?";
+            connection.query(sql2, [floor_name, id], function (err, up_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: 'Unable to Add Floor Details' })
+                } else {
+                    return res.status(200).json({ statusCode: 200, message: 'Successfully Updated ' + floor_name })
                 }
             })
 
@@ -1158,4 +1191,4 @@ function bed_details(req, res) {
     })
 }
 
-module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteHostel, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details }
+module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, update_floor, RoomFull, UpdateEB, listDashBoard, deleteHostel, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details }
