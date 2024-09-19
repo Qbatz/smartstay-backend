@@ -580,14 +580,14 @@ function update_floor(req, res) {
 
     var normalizedFloorName = floor_name.replace(/\s+/g, '').toLowerCase();
 
-    var sq1 = "SELECT * FROM Hostel_Floor WHERE hostel_id =? AND REPLACE(LOWER(floor_name), ' ', '') = ? AND status=1 AND id !='" + id + "'";
+    var sq1 = "SELECT * FROM Hostel_Floor WHERE hostel_id =? AND REPLACE(LOWER(floor_name), ' ', '') = ? AND status=1 AND floor_id !='" + id + "'";
     connection.query(sq1, [hostel_id, normalizedFloorName], function (err, floor_data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: 'Unable to Get Floor Details' })
         } else if (floor_data.length == 0) {
 
-            var sql2 = "UPDATE Hostel_Floor SET floor_name=? WHERE id=?";
-            connection.query(sql2, [floor_name, id], function (err, up_data) {
+            var sql2 = "UPDATE Hostel_Floor SET floor_name=? WHERE hostel_id=? AND floor_id=?";
+            connection.query(sql2, [floor_name, hostel_id, id], function (err, up_data) {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: 'Unable to Add Floor Details' })
                 } else {
