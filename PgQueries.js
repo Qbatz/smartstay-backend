@@ -23,7 +23,7 @@ function getHostelList(connection, response, request) {
         if (data && data.length > 0) {
             for (let i = 0; i < data.length; i++) {
                 console.log("data", data);
-                let query = `select * from Hostel_Floor where hostel_id = ${data[i].id} and status = true order by floor_id`;
+                let query = `select * from Hostel_Floor where hostel_id = ${data[i].id} and status = true order by id`;
                 connection.query(query, function (error, floorDetails) {
 
                     if (error) {
@@ -379,7 +379,7 @@ WHERE hos.hostel_id =  ${reqData.hostel_Id} AND hos.status= true`
                                 floor_Details: []
                             });
                         }
-                        
+
                         // Add room details if they exist
                         if (row.Room_Id) {
                             floorsMap.get(row.floor_id).floor_Details.push({
@@ -391,17 +391,17 @@ WHERE hos.hostel_id =  ${reqData.hostel_Id} AND hos.status= true`
                             });
                         }
                     });
-                
+
                     // Convert map values to an array
                     // return Array.from(floorsMap.values());
-                    console.log("Array.from(floorsMap.values())",Array.from(floorsMap.values()));
-                    
-                response.status(200).json({ hostel_data: Array.from(floorsMap.values()) })
+                    console.log("Array.from(floorsMap.values())", Array.from(floorsMap.values()));
+
+                    response.status(200).json({ hostel_data: Array.from(floorsMap.values()) })
                 } else {
-                    
-                response.status(200).json({ hostel_data: hostel_data })
+
+                    response.status(200).json({ hostel_data: hostel_data })
                 }
-               
+
             }
         })
     }
@@ -522,42 +522,119 @@ function CreateRoom(connection, request, response) {
 
 }
 
+function CreateFloor(req, res) {
 
+    var floor_name = req.body.floor_Id;
+    var hostel_id = req.body.hostel_Id;
 
-function CreateFloor(connection, reqDataFloor, response) {
-    if (reqDataFloor && reqDataFloor.hostel_Id && reqDataFloor.floor_Id) {
-        let floor_Name = reqDataFloor.floor_Name ? reqDataFloor.floor_Name : null;
-        let query1 = `select * from Hostel_Floor where hostel_id = ${reqDataFloor.hostel_Id} and floor_id = ${reqDataFloor.floor_Id} and status = true`
+    if (!floor_name || !hostel_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
 
-        connection.query(query1, function (select_err, select_data) {
-            if (select_err) {
-                console.log("select_err", select_err);
-                response.status(201).json({ message: 'Select Floor Details error' })
-            }
-            else {
-                if (select_data && select_data.length > 0) {
-                    response.status(202).json({ message: 'Floor Number is already exist' })
+    var normalizedFloorName = floor_name.replace(/\s+/g, '').toLowerCase();
+
+    var sq1 = "SELECT * FROM Hostel_Floor WHERE hostel_id =? AND REPLACE(LOWER(floor_name), ' ', '') = ? AND status=1";
+    connection.query(sq1, [hostel_id, normalizedFloorName], function (err, floor_data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: 'Unable to Get Floor Details' })
+        } else if (floor_data.length == 0) {
+
+            var sql3 = "SELECT * FROM Hostel_Floor WHERE hostel_id='" + hostel_id + "' ORDER BY id DESC LIMIT 1";
+            connection.query(sql3, function (err, fl_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: 'Unable to Get Floor Details' })
                 } else {
-                    let query2 = `insert into Hostel_Floor(hostel_id,floor_id,floor_name) values(${reqDataFloor.hostel_Id},${reqDataFloor.floor_Id},'${floor_Name}');`
+                    var floor_id;
+                    if (fl_data.length != 0) {
+                        floor_id = fl_data[0].floor_id + 1;
+                    } else {
+                        floor_id = 1;
+                    }
 
-                    connection.query(query2, function (inserror, create_floor) {
-                        if (inserror) {
-                            console.log("inserror", inserror);
-                            response.status(201).json({ message: 'Cannot save Floor Details' })
+                    var sql2 = "INSERT INTO Hostel_Floor(hostel_id,floor_name,floor_id,status) VALUES (?,?,?,1)";
+                    connection.query(sql2, [hostel_id, floor_name, floor_id], function (err, ins_data) {
+                        if (err) {
+                            return res.status(201).json({ statusCode: 201, message: 'Unable to Add Floor Details' })
+                        } else {
+                            return res.status(200).json({ statusCode: 200, message: 'Successfully Added ' + floor_name })
                         }
-                        else {
-                            response.status(200).json({ message: 'Floor Details Saved Successfully' })
-                        }
-
                     })
                 }
-            }
-        })
-    }
-    else {
-        response.status(201).json({ message: 'Missing Parameter' })
-    }
+            })
+
+        } else {
+            return res.status(202).json({ statusCode: 202, message: 'Floor Name is Already Exist' })
+        }
+    })
 }
+
+function update_floor(req, res) {
+
+    var floor_name = req.body.floor_Id;
+    var hostel_id = req.body.hostel_Id;
+    var id = req.body.id;
+
+    if (!floor_name || !hostel_id || !id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    var normalizedFloorName = floor_name.replace(/\s+/g, '').toLowerCase();
+
+    var sq1 = "SELECT * FROM Hostel_Floor WHERE hostel_id =? AND REPLACE(LOWER(floor_name), ' ', '') = ? AND status=1 AND floor_id !='" + id + "'";
+    connection.query(sq1, [hostel_id, normalizedFloorName], function (err, floor_data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: 'Unable to Get Floor Details' })
+        } else if (floor_data.length == 0) {
+
+            var sql2 = "UPDATE Hostel_Floor SET floor_name=? WHERE hostel_id=? AND floor_id=?";
+            connection.query(sql2, [floor_name, hostel_id, id], function (err, up_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: 'Unable to Add Floor Details' })
+                } else {
+                    return res.status(200).json({ statusCode: 200, message: 'Successfully Updated ' + floor_name })
+                }
+            })
+
+        } else {
+            return res.status(202).json({ statusCode: 202, message: 'Floor Name is Already Exist' })
+        }
+    })
+}
+
+
+// function CreateFloor(connection, reqDataFloor, response) {
+
+//     if (reqDataFloor && reqDataFloor.hostel_Id && reqDataFloor.floor_Id) {
+//         let floor_Name = reqDataFloor.floor_Name ? reqDataFloor.floor_Name : null;
+//         let query1 = `select * from Hostel_Floor where hostel_id = ${reqDataFloor.hostel_Id} and floor_name = ${reqDataFloor.floor_Id} and status = true`
+//         connection.query(query1, function (select_err, select_data) {
+//             if (select_err) {
+//                 console.log("select_err", select_err);
+//                 response.status(201).json({ message: 'Unable to Get Floor Details' })
+//             }
+//             else {
+//                 if (select_data && select_data.length > 0) {
+//                     response.status(202).json({ message: 'Floor Number is already exist' })
+//                 } else {
+//                     let query2 = `insert into Hostel_Floor(hostel_id,floor_name) values(${reqDataFloor.hostel_Id},${reqDataFloor.floor_Id},'${floor_Name}');`
+
+//                     connection.query(query2, function (inserror, create_floor) {
+//                         if (inserror) {
+//                             console.log("inserror", inserror);
+//                             response.status(201).json({ message: 'Cannot save Floor Details' })
+//                         }
+//                         else {
+//                             response.status(200).json({ message: 'Floor Details Saved Successfully' })
+//                         }
+//                     })
+//                 }
+//             }
+//         })
+//     }
+//     else {
+//         response.status(201).json({ message: 'Missing Parameter' })
+//     }
+// }
 
 
 function RoomFull(connection, reqFloorID, response) {
@@ -707,8 +784,9 @@ function listDashBoard(connection, response, request) {
 
 function deleteHostel(request, response) {
     let req = request.body
+
     if (req && req.hostel_Id) {
-        // let query = `select * from Hostel_Floor where hostel_id = ${req.hostel_Id} and status = true;`
+
         let query = `SELECT * FROM hostel where Hostel_Id = ${req.hostel_Id} and isActive = true;`
         connection.query(query, function (floorError, floorData) {
             if (floorError) {
@@ -731,7 +809,10 @@ function deleteHostel(request, response) {
                                         response.status(201).json({ message: "doesn't update" });
                                     } else {
                                         connection.query(`select * from Hostel_Floor where hostel_id= ${req.hostel_Id}`, function (err, floorData) {
-                                            if (floorData && floorData.length > 0 || !err) {
+                                            if (err) {
+                                                return response.status(201).json({ message: "Unable to Get Floor Details" });
+                                            }
+                                            if (floorData && floorData.length > 0) {
                                                 connection.query(`UPDATE Hostel_Floor SET status= false WHERE hostel_id= ${req.hostel_Id}`, function (error, data) {
                                                     if (error) {
                                                         response.status(201).json({ message: "doesn't update" });
@@ -752,17 +833,17 @@ function deleteHostel(request, response) {
                                                                         }
                                                                     });
                                                                 } else {
-                                                                    response.status(201).json({ message: "Invalid Credential" });
+                                                                    response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
                                                                 }
                                                             }
                                                         })
-                                        
-                                        // response.status(200).json({ message: "Floor Update Successfully" });
+
+                                                        // response.status(200).json({ message: "Floor Update Successfully" });
                                                     }
                                                 });
                                             }
                                             else {
-                                                response.status(201).json({ message: "Invalid Credential" });
+                                                response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
                                             }
                                         })
                                         // response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
@@ -815,22 +896,18 @@ function deleteFloor(connection, response, reqData) {
                                                         response.status(201).json({ message: "doesn't update" });
                                                     } else {
                                                         response.status(200).json({ message: "Floor Deleted Successfully" });
-                                                        // response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
-                                                        // response.status(200).json({ message: "Room Update Successfully" });
                                                     }
                                                 });
                                             } else {
-                                                response.status(201).json({ message: "Invalid Credential" });
+                                                response.status(200).json({ message: "Floor Deleted Successfully", statusCode: 200 });
                                             }
                                         }
                                     })
-
-                                    // response.status(200).json({ message: "Floor Update Successfully" });
                                 }
                             });
                         }
                         else {
-                            response.status(201).json({ message: "Invalid Credential" });
+                            response.status(200).json({ message: "Floor Deleted Successfully", statusCode: 200 });
                         }
                     })
                 }
@@ -870,7 +947,7 @@ function deleteRoom(connection, response, reqData) {
                                     }
                                 });
                             } else {
-                                response.status(201).json({ message: "Invalid Credential" });
+                                response.status(200).json({ message: "Room Update Successfully" });
                             }
                         }
                     })
@@ -1114,4 +1191,4 @@ function bed_details(req, res) {
     })
 }
 
-module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, RoomFull, UpdateEB, listDashBoard, deleteHostel, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details }
+module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, update_floor, RoomFull, UpdateEB, listDashBoard, deleteHostel, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details }

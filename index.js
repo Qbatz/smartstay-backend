@@ -7,7 +7,7 @@ const notifications = require('./notifications');
 const assets = require('./assets');
 const crons = require('./crons');
 const payments = require('./payments');
-
+const importFunc = require('./components/import_func');
 
 const app = express()
 const userQueries = require('./UserQueries');
@@ -19,6 +19,7 @@ const pgQueries = require('./PgQueries')
 const vendorQueries = require('./vendorQueries')
 const expensesManagement = require('./ExpensesManagement')
 var billings = require('./zoho_billing/billings');
+
 
 const multer = require('multer');
 const request = require('request');
@@ -352,11 +353,13 @@ app.post('/room/create-room', (request, response) => {
 
 app.post('/floor/create-floor', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const reqDataFloor = request.body;
-    pgQueries.CreateFloor(connection, reqDataFloor, response)
-
+    pgQueries.CreateFloor(request, response)
 })
 
+app.post('/update_floor', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    pgQueries.update_floor(request, response)
+})
 
 app.post('/check/room-full', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
@@ -397,8 +400,7 @@ app.post('/amenities/setting', (request, response) => {
 
 app.post('/ebamount/setting', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const atten = request.body
-    invoiceQueries.EbAmount(connection, atten, response)
+    invoiceQueries.EbAmount(connection, request, response)
 
 })
 // app.post('/AmnitiesName_list', (request, response) => {
@@ -720,6 +722,59 @@ app.get('/payment_details', (req, res) => {
     payments.payment_details(req, res)
 })
 
-app.get('/conutry_list',(req, res) => {
+app.get('/conutry_list', (req, res) => {
     userQueries.conutry_list(req, res)
 })
+
+
+
+app.post('/whatsapp_message', (req, res) => {
+
+    const api_url = "https://graph.facebook.com/v20.0/419212591270391/messages";
+    const method = "POST";
+
+    const options = {
+        url: api_url,
+        method: method,
+        headers: {
+            Authorization: "Bearer EAAHVgyMqRjMBOyORrmc40ZBozdMZAGusy2OhZBZChQVEViE2ar0fHYyGMzKZA9BKP5Hd4anGfSrqHuiOQe8FdjfehOXPhZBDM43ziZBPaCkmOT6ZBGDU3IgR3QZCs6xLrjT5Y7Yn7XyLhNR1YPuWSRM2BrLlrHR2A33ZAd005ZCMplPtPrKETO5VepWOjqNMnxjuNyD1EzZAYH0ZCWWF2pJzOsSJIfZBXqmhYZD",
+            'Content-Type': 'application/json'
+        },
+        // body: JSON.stringify({
+        //     messaging_product: "whatsapp",
+        //     to: "919965003581",  
+        //     type: "text",
+        //     text: {
+        //         body: "Hello! Welcome to Smart Stay",
+        //     },
+        // })
+        body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: "919965003581",
+            type: "template",
+            template: {
+                name: "hello_world",
+                language: { code: "en_US" },
+            },
+        })
+    };
+
+    request(options, (error, response, body) => {
+        if (error) {
+            console.error("error:", error);
+            res.status(201).send({ error: 'Message sending failed' });
+        } else {
+            console.log("response body", body);
+            res.status(200).send({ message: 'Message sent successfully' });
+        }
+    });
+
+});
+
+app.post('/import_hostel_users', upload.single('xlfile'), (req, res) => {
+    importFunc.import_hostel_users(req, res)
+});
+
+app.post('/import_hostel_details', upload.single('hos_details'), (req, res) => {
+    importFunc.import_hostel_details(req, res)
+});

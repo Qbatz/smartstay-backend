@@ -5,12 +5,14 @@ function all_assets(req, res) {
 
     const user_id = req.user_details.id;
 
+
     // var sql1 = "SELECT assets.*,ven.Vendor_Name,aa.asset_id,aa.hostel_id,aa.room_id,aa.assigned_date FROM assets JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id WHERE assets.created_by=? AND assets.status=1 ORDER BY assets.id DESC";
     // var sql1 = "SELECT assets.*,aname.asset_name,ven.Vendor_Name,aa.asset_id AS Asset_id,aa.hostel_id,aa.room_id,aa.assigned_date FROM assets JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id JOIN asset_names AS aname ON assets.asset_id=aname.id WHERE assets.created_by=? AND assets.status=1 ORDER BY assets.id DESC"
     var sql1 = `SELECT distinct assets.*,hos.Name as hostel_Name,hosfloor.floor_name,aa.room_id,aname.asset_name,ven.Vendor_Name,aa.asset_id AS Asset_id,aa.hostel_id,
 aa.room_id,aa.assigned_date FROM assets JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id 
 LEFT JOIN asset_names AS aname ON aa.asset_id=aname.id LEFT JOIN hosteldetails hos ON hos.id = aa.hostel_id LEFT JOIN Hostel_Floor hosfloor ON
  hosfloor.floor_id = aa.floor_id AND hosfloor.hostel_id = aa.hostel_id WHERE assets.created_by=? AND assets.status=true ORDER BY assets.id DESC`
+
     connection.query(sql1, [user_id], (err, data) => {
         if (err) {
             return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
@@ -37,109 +39,72 @@ function add_asset(req, res) {
 
         if (data.id) {
             // Update Process
-            var sql1 = "SELECT * FROM Vendor WHERE id=?";
-            connection.query(sql1, [data.vendor_id], (sel_err, sel_res) => {
-                if (sel_err) {
-                    return res.status(201).json({ message: "Unable to Get Vendor Details", statusCode: 201 })
-                } else if (sel_res.length != 0) {
-                    // Check asset 
-                    var sql2 = "SELECT * FROM assets WHERE id=?";
-                    connection.query(sql2, [data.id], (as_err, as_res) => {
-                        if (as_err) {
+            var sql2 = "SELECT * FROM assets WHERE id=?";
+            connection.query(sql2, [data.id], (as_err, as_res) => {
+                if (as_err) {
+                    return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
+                } else if (as_res.length > 0) {
+
+                    var sql6 = "SELECT * FROM assets WHERE serial_number=? AND id !='" + data.id + "'";
+                    connection.query(sql6, [data.serial_number], function (err, ass_res) {
+                        if (err) {
                             return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
-                        } else if (as_res.length > 0) {
-
-                            var total_price = data.price * data.product_count;
-
-                            var sql4 = "SELECT * FROM asset_names WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "'";
+                        } else if (ass_res.length != 0) {
+                            return res.status(201).json({ message: "Serial Number Already Exists", statusCode: 201 })
+                        } else {
+                            var sql4 = "SELECT * FROM assets WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "' AND id !='" + data.id + "'";
                             connection.query(sql4, (err, asss_data) => {
                                 if (err) {
                                     return res.status(201).json({ message: "Unable to Get Asset Name Details", statusCode: 201 })
-                                } else if (asss_data.length != 0) {
+                                } else if (asss_data.length == 0) {
 
-                                    var sql5 = "INSERT INTO asset_names (asset_name) VALUES ('" + data.asset_name + "')";
-                                    connection.query(sql5, (err, ins_data) => {
-                                        if (err) {
-                                            return res.status(201).json({ message: "Unable to Add Asset Name", statusCode: 201 })
+                                    var sql5 = "UPDATE assets SET asset_name=?,vendor_id=?,product_name=?,brand_name=?,serial_number=?,purchase_date=?,price=?,total_price=? WHERE id=?";
+                                    connection.query(sql5, [data.asset_name, data.vendor_id, data.product_name, data.brand_name, data.serial_number, data.purchase_date, data.price, data.price, data.id], function (ins_err, ins_data) {
+                                        if (ins_err) {
+                                            return res.status(201).json({ message: "Unable to Add Asset Details", statusCode: 201 })
                                         } else {
-                                            var asset_id = ins_data.insertId;
-                                            updated_data(asset_id)
+                                            return res.status(200).json({ message: "Asset has been successfully updated!", statusCode: 200 })
                                         }
                                     })
-
                                 } else {
-                                    var asset_id = asss_data[0].id;
-                                    updated_data(asset_id)
+                                    return res.status(202).json({ message: "Asset Name Already Exists", statusCode: 201 })
                                 }
                             })
-                            function updated_data(asset_id) {
-
-                                var sql3 = "UPDATE assets SET asset_id=?,vendor_id=?,product_name=?,brand_name=?,serial_number=?,product_count=?,purchase_date=?,price=?,total_price=? WHERE id=?";
-                                connection.query(sql3, [asset_id, data.vendor_id, data.product_name, data.brand_name, data.serial_number, data.product_count, data.purchase_date, data.price, total_price, data.id], (up_err, up_res) => {
-                                    if (up_err) {
-                                        return res.status(201).json({ message: "Unable to Update Asset Details", statusCode: 201 })
-                                    } else {
-                                        return res.status(200).json({ message: "Asset Update Succsssfully", statusCode: 200 })
-                                    }
-                                })
-                            }
-                        } else {
-                            return res.status(201).json({ message: "Invalid Asset Details", statusCode: 201 })
                         }
                     })
                 } else {
-                    return res.status(201).json({ message: "Invalid Vendor Details", statusCode: 201 })
+                    return res.status(201).json({ message: "Invalid Asset Details", statusCode: 201 })
                 }
             })
+
         } else {
-
             // Add Process
-            //  Check vendor id valid or invalid
-            var sql1 = "SELECT * FROM Vendor WHERE id=?";
-            connection.query(sql1, [data.vendor_id], (sel_err, sel_res) => {
-                if (sel_err) {
-                    return res.status(201).json({ message: "Unable to Get Vendor Details", statusCode: 201 })
-                } else if (sel_res.length != 0) {
-
-                    var total_price = data.price * data.product_count;
-
-                    var sql3 = "SELECT * FROM asset_names WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "'";
+            // Check Serial Number
+            var sql5 = "SELECT * FROM assets WHERE serial_number=?";
+            connection.query(sql5, [data.serial_number], function (err, ass_res) {
+                if (err) {
+                    return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
+                } else if (ass_res.length != 0) {
+                    return res.status(201).json({ message: "Serial Number Already Exists", statusCode: 201 })
+                } else {
+                    var sql3 = "SELECT * FROM assets WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "'";
                     connection.query(sql3, (err, asss_data) => {
                         if (err) {
                             return res.status(201).json({ message: "Unable to Get Asset Name Details", statusCode: 201 })
                         } else if (asss_data.length == 0) {
-
-                            var sql4 = "INSERT INTO asset_names(asset_name) VALUES ('" + data.asset_name + "')";
-                            connection.query(sql4, (err, ins_data) => {
-                                if (err) {
-                                    console.log(err);
-                                    return res.status(201).json({ message: "Unable to Add Asset Name", statusCode: 201 })
+                            var sql2 = "INSERT INTO assets (asset_name,vendor_id,product_name,brand_name,serial_number,product_count,purchase_date,price,total_price,status,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+                            connection.query(sql2, [data.asset_name, data.vendor_id, data.product_name, data.brand_name, data.serial_number, 1, data.purchase_date, data.price, data.price, 1, user_id], (ins_err, ins_res) => {
+                                if (ins_err) {
+                                    console.log(ins_err);
+                                    return res.status(201).json({ message: "Unable to Add Asset Details", statusCode: 201 })
                                 } else {
-                                    var asset_id = ins_data.insertId;
-                                    inserted_data(asset_id)
+                                    return res.status(200).json({ message: "Asset Added Successfully", statusCode: 200 })
                                 }
                             })
-
                         } else {
-                            var asset_id = asss_data[0].id;
-                            inserted_data(asset_id)
+                            return res.status(202).json({ message: "Asset Name Already Exists", statusCode: 201 })
                         }
                     })
-
-                    function inserted_data(asset_id) {
-
-                        var sql2 = "INSERT INTO assets (asset_id,vendor_id,product_name,brand_name,serial_number,product_count,purchase_date,price,total_price,status,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
-                        connection.query(sql2, [asset_id, data.vendor_id, data.product_name, data.brand_name, data.serial_number, data.product_count, data.purchase_date, data.price, total_price, 1, user_id], (ins_err, ins_res) => {
-                            if (ins_err) {
-                                console.log(ins_err);
-                                return res.status(201).json({ message: "Unable to Add Asset Details", statusCode: 201 })
-                            } else {
-                                return res.status(200).json({ message: "Asset Added Successfully", statusCode: 200 })
-                            }
-                        })
-                    }
-                } else {
-                    return res.status(201).json({ message: "Invalid Vendor Details", statusCode: 201 })
                 }
             })
         }
@@ -211,7 +176,7 @@ function asseign_asset(req, res) {
 
                         // Assign Asset
                         var sql3 = "INSERT INTO assigned_assets (asset_id,hostel_id,floor_id,room_id,assigned_date,created_by) VALUES (?,?,?,?,?,?)";
-                        connection.query(sql3, [asset_id, data.hostel_id,data.floor_id, data.room_id, data.asseign_date, user_id], (ins_err, ins_res) => {
+                        connection.query(sql3, [asset_id, data.hostel_id, data.floor_id, data.room_id, data.asseign_date, user_id], (ins_err, ins_res) => {
                             if (ins_err) {
                                 console.log(ins_err);
                                 return res.status(201).json({ message: "Unable to Add Assign Asset Details", statusCode: 201 })
@@ -223,7 +188,7 @@ function asseign_asset(req, res) {
 
                         // Reassign Asset
                         var sql4 = "UPDATE assigned_assets SET hostel_id=?,floor_id=?,room_id=?,assigned_date=?,updated_by=? WHERE asset_id=?";
-                        connection.query(sql4, [data.hostel_id,data.floor_id, data.room_id, data.asseign_date, user_id, asset_id], (up_err, up_res) => {
+                        connection.query(sql4, [data.hostel_id, data.floor_id, data.room_id, data.asseign_date, user_id, asset_id], (up_err, up_res) => {
                             if (up_err) {
                                 return res.status(201).json({ message: "Unable to Update Assign Asset Details", statusCode: 201 })
                             } else {
@@ -256,15 +221,13 @@ function assign_validations(data) {
 
 function input_validations(data) {
 
-    if (!data.asset_name) {
+    if (!data.asset_name && data.asset_name.trim() === "") {
         return { message: "Please Add Asset Name", statusCode: 201 };
-    } else if (!data.vendor_id) {
-        return { message: "Please Add Vendor Details", statusCode: 201 };
-    } else if (!data.product_count) {
-        return { message: "Please Add Product Count", statusCode: 201 };
-    } else if (!data.purchase_date) {
+    } else if (!data.purchase_date && data.purchase_date.trim() === "") {
         return { message: "Please Add Purchase Date", statusCode: 201 };
-    } else if (!data.price) {
+    } else if (!data.serial_number && data.serial_number.trim() === "") {
+        return { message: "Please Add Serial Number", statusCode: 201 };
+    } else if (!data.price && data.price.trim() === "") {
         return { message: "Please Add Price Amount", statusCode: 201 };
     } else {
         return { message: "Validation passed", statusCode: 200 };
