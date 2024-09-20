@@ -434,7 +434,8 @@ function createnewAccount(request, response) {
                     }
 
                 } else {
-                    const mobileExists = data.some(record => record.mobileNo === reqBodyData.mobileNo);
+                    const mobileExists = data.some(record => Number(record.mobileNo) === Number(reqBodyData.mobileNo));
+
                     const emailExists = data.some(record => record.email_Id === reqBodyData.emailId);
 
                     if (mobileExists && emailExists) {

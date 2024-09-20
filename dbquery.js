@@ -49,7 +49,13 @@ const queries = [
 
     "CREATE TABLE `country_list` (`country_id` INT NOT NULL AUTO_INCREMENT,`country_code` VARCHAR(45) NULL,`country_name` VARCHAR(255) NULL,`country_flag` VARCHAR(255) NULL,`currency_code` VARCHAR(255) NULL,`mobile_code` VARCHAR(45) NULL,`created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`country_id`));",
 
-    "ALTER TABLE `hostel` ADD COLUMN `country_code` BIGINT(20) NULL AFTER `Phone`;"
+    "ALTER TABLE `hostel` ADD COLUMN `country_code` BIGINT(20) NULL AFTER `Phone`;",
+
+    "ALTER TABLE `Hostel_Floor` CHANGE COLUMN `status` `status` TINYINT NULL DEFAULT 1;",
+
+    "INSERT INTO `country_list` (`country_id`, `country_code`, `country_name`,`currency_code`, `mobile_code`,`country_flag`) VALUES ('1', '91', 'India', 'INR', '91','https://www.worldometers.info/img/flags/in-flag.gif');",
+
+    "ALTER TABLE `assets` CHANGE COLUMN `asset_id` `asset_name` VARCHAR(255) NULL"
 ];
 
 queries.forEach(executeQuery);
