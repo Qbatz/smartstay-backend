@@ -22,7 +22,7 @@ function getHostelList(connection, response, request) {
     connection.query(`select * from hosteldetails where created_By = '${userDetails.id}' and isActive = true ORDER BY create_At DESC`, function (err, data) {
         if (data && data.length > 0) {
             for (let i = 0; i < data.length; i++) {
-                console.log("data", data);
+                // console.log("data", data);
                 let query = `select * from Hostel_Floor where hostel_id = ${data[i].id} and status = true order by id`;
                 connection.query(query, function (error, floorDetails) {
 
@@ -394,7 +394,7 @@ WHERE hos.hostel_id =  ${reqData.hostel_Id} AND hos.status= true`
 
                     // Convert map values to an array
                     // return Array.from(floorsMap.values());
-                    console.log("Array.from(floorsMap.values())", Array.from(floorsMap.values()));
+                    // console.log("Array.from(floorsMap.values())", Array.from(floorsMap.values()));
 
                     response.status(200).json({ hostel_data: Array.from(floorsMap.values()) })
                 } else {
