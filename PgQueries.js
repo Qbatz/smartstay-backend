@@ -676,7 +676,10 @@ function listDashBoard(connection, response, request) {
     let endingYear = new Date().getFullYear();
     // console.log("endingYear", endingYear);
 
-    var sql1 = `select creaccount.first_name,creaccount.last_name,COALESCE((select count(id) from hosteldetails where created_By=details.created_By AND isActive=1),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id AND isActive=1)),0) as roomCount, COALESCE(sum((select COUNT(bd.id) from hostelrooms AS hs JOIN bed_details AS bd ON hs.id=bd.hos_detail_id where hs.Hostel_Id=details.id AND bd.status=1)),0) as Bed ,COALESCE(sum((select COUNT(bd.id) from hostelrooms AS hs JOIN bed_details AS bd ON hs.id=bd.hos_detail_id where hs.Hostel_Id=details.id AND bd.status=1 AND bd.isfilled=1)),0) as occupied_Bed ,
+    // COALESCE(sum((select COUNT(bd.id) from hostelrooms AS hs JOIN bed_details AS bd ON hs.id=bd.hos_detail_id where hs.Hostel_Id=details.id AND bd.status=1)),0) as Bed ,
+    var sql1 = `select creaccount.first_name,creaccount.last_name,COALESCE((select count(id) from hosteldetails where created_By=details.created_By AND isActive=1),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id AND isActive=1)),0) as roomCount, 
+    COALESCE((select COUNT(hos.Bed) as availableBed from hostelrooms hosroom INNER JOIN hostel hos on hosroom.Room_Id = hos.Rooms where hosroom.isActive=1),0) as Bed,
+    COALESCE(sum((select COUNT(bd.id) from hostelrooms AS hs JOIN bed_details AS bd ON hs.id=bd.hos_detail_id where hs.Hostel_Id=details.id AND bd.status=1 AND bd.isfilled=1)),0) as occupied_Bed ,
     (select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue
     FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By='${created_by}') AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue
     FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By='${created_by}' AND icv.BalanceDue != 0) AS overdue from hosteldetails details
@@ -745,11 +748,11 @@ function listDashBoard(connection, response, request) {
                                     else {
                                         if (data.length > 0) {
                                             // console.log("data",data);
-                                            
+
                                             let total_amount = 0
                                             for (let i of data) {
                                                 // console.log("i",i);
-                                                
+
                                                 total_amount += i.purchase_amount;
                                             }
                                             response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, total_amount: total_amount, categoryList: data, com_data: com_data });
@@ -820,8 +823,32 @@ function deleteHostel(request, response) {
                                                                         if (error) {
                                                                             response.status(201).json({ message: "doesn't update" });
                                                                         } else {
-                                                                            response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
+                                                                            // response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
                                                                             // response.status(200).json({ message: "Room Update Successfully" });
+                                                                            let query = `select * from bed_details where hos_detail_id = ${req.hostel_Id} and status = true`
+                                                                            connection.query(query, function (bed_Err, bed_Data) {
+                                                                                if (bed_Err) {
+                                                                                    res.status(201).json({ message: "Unable to Fetch bed Details", statusCode: 201 });
+                                                                                }
+                                                                                else {
+                                                                                    if (bed_Data && bed_Data.length > 0) {
+                                                                                        var sql2 = "UPDATE bed_details SET status= false WHERE hos_detail_id='" + req.hostel_Id + "'";
+                                                                                        connection.query(sql2, (err, data) => {
+                                                                                            if (err) {
+                                                                                                res.status(201).json({ message: "Unable to Remove Hostel Details", statusCode: 201 });
+                                                                                            } else {
+                                                                                                response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
+                                                                                            }
+                                                                                        })
+                                                                                    }
+                                                                                    else {
+                                                                                        response.status(200).json({ message: "Hostel Deleted Successfully", statusCode: 200 });
+                                                                                    }
+                                                                                }
+                                                                            })
+
+
+
                                                                         }
                                                                     });
                                                                 } else {
@@ -887,6 +914,7 @@ function deleteFloor(connection, response, reqData) {
                                                     if (error) {
                                                         response.status(201).json({ message: "doesn't update" });
                                                     } else {
+
                                                         response.status(200).json({ message: "Floor Deleted Successfully" });
                                                     }
                                                 });
