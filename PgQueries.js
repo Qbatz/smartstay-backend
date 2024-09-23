@@ -743,12 +743,18 @@ function listDashBoard(connection, response, request) {
                                         response.status(201).json({ message: "Error fetching Data" });
                                     }
                                     else {
-
-                                        if (data.length > 0) {                                           
-                                                response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, totalAmount: totalAmount, categoryList: data, com_data: com_data });
-
-                                                // response.status(200).json({ totalAmount, resArray });
+                                        if (data.length > 0) {
+                                            // console.log("data",data);
                                             
+                                            let total_amount = 0
+                                            for (let i of data) {
+                                                // console.log("i",i);
+                                                
+                                                total_amount += i.purchase_amount;
+                                            }
+                                            response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, total_amount: total_amount, categoryList: data, com_data: com_data });
+                                            // response.status(200).json({ totalAmount, resArray });
+
                                         } else {
                                             response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, totalAmount: [], categoryList: [], com_data: com_data });
                                         }
