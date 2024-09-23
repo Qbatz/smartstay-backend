@@ -730,12 +730,12 @@ function listDashBoard(connection, response, request) {
                                 return;
                             } else {
                                 // expense category
-                                let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode, sum(expen.purchase_amount) as total_amount, category.category_Name from expenses expen
+                                let query = `select sum(expen.purchase_amount) as purchase_amount, expen.category_id, category.category_Name from expenses expen
                                 join Expense_Category_Name category on category.id = expen.category_id
                                 where expen.status = true AND expen.created_by = ${created_by}
                                 AND YEAR(expen.createdate) BETWEEN  ${startingYear} AND ${endingYear}
                                            GROUP BY 
-                                        expen.id`
+                                        expen.category_id`
                                 // console.log("query", query);
                                 connection.query(query, function (error, data) {
                                     if (error) {
@@ -743,26 +743,12 @@ function listDashBoard(connection, response, request) {
                                         response.status(201).json({ message: "Error fetching Data" });
                                     }
                                     else {
-                                        if (data.length > 0) {
-                                            // console.log("data", data);
-                                            let resArray = [];
-                                            let totalAmount = 0;
-                                            for (let i = 0; i < data.length; i++) {
-                                                totalAmount += data[i].total_amount;
-                                                let temp = {
-                                                    id: data[i].id,
-                                                    first_name: data[i].first_name,
-                                                    last_name: data[i].last_name,
-                                                    category_Name: data[i].category_Name,
-                                                    Amount: data[i].purchase_amount
-                                                }
-                                                resArray.push(temp);
-                                            }
-                                            // console.log("resArray", resArray.length);
-                                            if (data.length === resArray.length) {
-                                                response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, totalAmount: totalAmount, categoryList: resArray, com_data: com_data });
+
+                                        if (data.length > 0) {                                           
+                                                response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, totalAmount: totalAmount, categoryList: data, com_data: com_data });
+
                                                 // response.status(200).json({ totalAmount, resArray });
-                                            }
+                                            
                                         } else {
                                             response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, totalAmount: [], categoryList: [], com_data: com_data });
                                         }
