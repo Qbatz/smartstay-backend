@@ -2,6 +2,9 @@ const nodemailer = require('nodemailer');
 const AWS = require('aws-sdk');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const moment = require('moment');
+const pdf = require('html-pdf');
+const phantomjs = require('phantomjs-prebuilt');
 
 require('dotenv').config();
 const fs = require('fs');
@@ -929,8 +932,95 @@ where trans.status = true and trans.created_by = ${createdBy}
                 });
                 if (formattedData.length === data.length) {
                     total_balance += total_credit - total_debit;
-                    // const htmlFilePath = path.join(__dirname, 'mail_templates', 'invoicepdf.html');
-                    // let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
+                    const htmlFilePath = path.join(__dirname, 'mail_templates', 'transactionHistory.html');
+                    let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
+                    let invoiceRows = '';
+                    for (let i = 0; i < data.length; i++) {
+                        // let purchase_date = moment(data[i].purchase_date).format('DD-MM-YYYY')
+                        invoiceRows += `
+                            <tr>
+                                <td>${formatDate(data[i].payment_date)}</td>
+                                <td>${data[i].Vendor_Name}</td>
+                                <td>${data[i].asset_name}</td>
+                                <td>${data[i].unit_amount}</td>
+                                <td>${data[i].unit_count}</td>
+                                <td></td>
+                                <td>${data[i].purchase_amount}</td>
+                            </tr>
+                        `;
+                    }
+                    htmlContent = htmlContent
+                        .replace('{{hostal_name}}', data[0].hostel_name)
+                        .replace('{{Phone}}', data[0].hostel_phoneNo)
+                        .replace('{{email}}', data[0].hostel_email)
+                        .replace('{{city}}', data[0].hostel_address)
+                        .replace('{{invoice_rows}}', invoiceRows)
+                        // .replace('{{total_amount}}', total_amount)
+                    const outputPath = path.join(__dirname, 'transactionHistory.pdf');
+        
+                    // Generate the PDF
+                    pdf.create(htmlContent, { phantomPath: phantomjs.path }).toFile(outputPath, async (err, res) => {
+                        if (err) {
+                            console.error('Error generating PDF:', err);
+                            return;
+                        }
+        
+                        // console.log('PDF generated:', res.filename);
+                        if (res.filename) {
+                            console.log("res", res);
+                            //upload to s3 bucket
+        
+                            let uploadedPDFs = 0;
+                            let pdfInfo = [];
+                            const fileContent = fs.readFileSync(res.filename);
+                            const key = `transaction/${res.filename}`;
+                            const BucketName = 'smartstaydevs';
+                            const params = {
+                                Bucket: BucketName,
+                                Key: key,
+                                Body: fileContent,
+                                ContentType: 'application/pdf'
+                            };
+        
+                            s3.upload(params, function (err, uploadData) {
+                                if (err) {
+                                    console.error("Error uploading PDF", err);
+                                    response.status(500).json({ message: 'Error uploading PDF to S3' });
+                                } else {
+                                    // console.log("PDF uploaded successfully", uploadData.Location);
+                                    uploadedPDFs++;
+        
+                                    const pdfInfoItem = {
+                                        // user: user,
+                                        url: uploadData.Location
+                                    };
+                                    pdfInfo.push(pdfInfoItem);
+        
+                                    if (pdfInfo.length > 0) {
+        
+                                        var pdf_url = []
+                                        pdfInfo.forEach(pdf => {
+                                            console.log(pdf.url);
+                                            pdf_url.push(pdf.url)
+                                        });
+        
+                                        if (pdf_url.length > 0) {
+                                            response.status(200).json({ message: 'Insert PDF successfully', pdf_url: pdf_url[0] });
+                                            deletePDfs(res.filename);
+                                        } else {
+                                            response.status(201).json({ message: 'Cannot Insert PDF to Database' });
+                                        }
+        
+                                    }
+                                }
+                            });
+                        }
+                    });
+
+
+
+
+
                     response.status(200).json({ data: formattedData, total_credit: total_credit, total_debit: total_debit, total_balance: total_balance, statusCode: 200 });
                 }
             } else {
@@ -940,6 +1030,8 @@ where trans.status = true and trans.created_by = ${createdBy}
     });
 
 }
+
+
 
 // format the date
 function formatDate(dateString) {

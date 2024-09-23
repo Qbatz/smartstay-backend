@@ -105,7 +105,7 @@ function createPG(connection, reqHostel, response, request) {
     const userDetails = request.user_details;
     const timestamp = Date.now();
 
-    if (!reqHostel.hostel_Name || !reqHostel.hostel_Phone || !reqHostel.hostel_email_Id) {
+    if (!reqHostel.hostel_Name || !reqHostel.hostel_Phone) {
         return response.status(201).json({ message: "Please Add All Required Fields", statusCode: 201 })
     }
 
