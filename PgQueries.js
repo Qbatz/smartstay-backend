@@ -669,24 +669,23 @@ function UpdateEB(connection, atten, response) {
 };
 function listDashBoard(connection, response, request) {
 
-    var userDetails = request.user_details;
     var created_by = request.user_details.id;
     let startingYear = new Date().getFullYear() - 1;
     // console.log("startingYear", startingYear);
     let endingYear = new Date().getFullYear();
-    // console.log("endingYear", endingYear);
 
-    
     // COALESCE((select COUNT(hos.Bed) as availableBed from hostelrooms hosroom INNER JOIN hostel hos on hosroom.Room_Id = hos.Rooms where hosroom.isActive=1),0) as Bed,
     // COALESCE(sum((select COUNT(bd.id) from hostelrooms AS hs JOIN bed_details AS bd ON hs.id=bd.hos_detail_id where hs.Hostel_Id=details.id AND bd.status=1)),0) as Bed ,
-    var sql1 = `select creaccount.first_name,creaccount.last_name,COALESCE((select count(id) from hosteldetails where created_By=details.created_By AND isActive=1),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id AND isActive=1)),0) as roomCount, 
-   COALESCE(sum((select COUNT(bd.id) from hostelrooms AS hs JOIN bed_details AS bd ON hs.id=bd.hos_detail_id inner join hostelrooms hosroom on  hosroom.Hostel_Id = bd.hos_detail_id where hs.Hostel_Id=details.id AND hosroom.isActive=true)),0) as Bed,
-    COALESCE(sum((select COUNT(bd.id) from hostelrooms AS hs JOIN bed_details AS bd ON hs.id=bd.hos_detail_id where hs.Hostel_Id=details.id AND bd.status=1 AND bd.isfilled=1)),0) as occupied_Bed,
-    (select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue
-    FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By='${created_by}') AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue
-    FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By='${created_by}' AND icv.BalanceDue != 0) AS overdue from hosteldetails details
-    join createaccount creaccount on creaccount.id = details.created_by
-    where details.created_By='${created_by}';`
+    //     var sql1 = `select creaccount.first_name,creaccount.last_name,COALESCE((select count(id) from hosteldetails where created_By=details.created_By AND isActive=1),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id AND isActive=1)),0) as roomCount, 
+    //    COALESCE(sum((select COUNT(bd.id) from hostelrooms AS hs JOIN bed_details AS bd ON hs.id=bd.hos_detail_id inner join hostelrooms hosroom on  hosroom.Hostel_Id = bd.hos_detail_id where hs.Hostel_Id=details.id AND hosroom.isActive=true)),0) as Bed,
+    //     COALESCE(sum((select COUNT(bd.id) from hostelrooms AS hs JOIN bed_details AS bd ON hs.id=bd.hos_detail_id where hs.Hostel_Id=details.id AND bd.status=1 AND bd.isfilled=1)),0) as occupied_Bed,
+    //     (select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue
+    //     FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By='${created_by}') AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue
+    //     FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By='${created_by}' AND icv.BalanceDue != 0) AS overdue from hosteldetails details
+    //     join createaccount creaccount on creaccount.id = details.created_by
+    //     where details.created_By='${created_by}';`
+
+    var sql1 = "select creaccount.first_name,creaccount.last_name,COALESCE((select count(id) from hosteldetails where created_By=details.created_By AND isActive=1),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id AND isActive=1)),0) as roomCount,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=0 AND hd.created_By='" + created_by + "'),0) as Bed,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By='" + created_by + "'),0) as occupied_Bed,(select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By='" + created_by + "') AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By='" + created_by + "' AND icv.BalanceDue != 0) AS overdue from hosteldetails details join createaccount creaccount on creaccount.id = details.created_by where details.created_By='" + created_by + "' GROUP BY creaccount.id"
     connection.query(sql1, function (error, data) {
         if (error) {
             console.log(error, "Error Message");
@@ -706,7 +705,7 @@ function listDashBoard(connection, response, request) {
                     obj = {
                         hostelCount: item.hostelCount,
                         roomCount: item.roomCount,
-                        TotalBed: item.Bed,
+                        TotalBed: item.occupied_Bed + item.Bed,
                         occupied_Bed: item.occupied_Bed,
                         availableBed: item.Bed,
                         Revenue: item.Revenue,
