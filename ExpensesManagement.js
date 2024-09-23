@@ -428,7 +428,7 @@ function DeleteExpensesCategory(request, response) {
                             response.status(201).json({ message: 'Error While Deleting Category' });
                         }
                         else {
-                            response.status(200).json({ message: 'Category Dleted Successfully' });
+                            response.status(200).json({ message: 'Category Deleted Successfully' });
                         }
                     })
 

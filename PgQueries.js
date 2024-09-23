@@ -708,7 +708,7 @@ function listDashBoard(connection, response, request) {
                         roomCount: item.roomCount,
                         TotalBed: item.Bed,
                         occupied_Bed: item.occupied_Bed,
-                        availableBed: item.Bed - item.occupied_Bed,
+                        availableBed: item.Bed,
                         Revenue: item.Revenue,
                         overdue: item.overdue,
                         current: current,
