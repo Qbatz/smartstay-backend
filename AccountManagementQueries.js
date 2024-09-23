@@ -100,51 +100,75 @@ function update_account_details(request, response) {
     var user_id = request.user_details.id;
     var profile = request.file;
 
+    // console.log(request.body);
+
+
     if (!first_name || !email_id || !phone || !address) {
         response.status(201).json({ message: "Please Add Mandatory Details", statusCode: 201 });
     } else {
+
         var sql1 = "SELECT * FROM createaccount WHERE id='" + user_id + "'";
         connection.query(sql1, async function (err, data) {
             if (err) {
                 response.status(201).json({ message: "Unable to Get Admin Details", statusCode: 201 });
             } else if (data.length != 0) {
 
-                var old_profile = data[0].profile;
-
-                console.log(old_profile);
-
-                if (profile) {
-                    try {
-                        const timestamp = Date.now();
-                        profile_url = await uploadImage.uploadProfilePictureToS3Bucket('smartstaydevs', 'Profile/', 'Profile' + user_id + timestamp + '.jpg', profile);
-
-                        if (old_profile != null && old_profile != undefined && old_profile != 0) {
-                            const old_profile_key = getKeyFromUrl(old_profile);
-                            var deleteResponse = await uploadImage.deleteImageFromS3Bucket('smartstaydevs', old_profile_key);
-                            console.log("Image deleted successfully:", deleteResponse);
-                        } else {
-                            console.error("Failed to extract key from URL:", old_profile);
-                        }
-                    } catch (err) {
-                        console.log(err);
-                        profile_url = 0;
-                    }
-                } else {
-                    profile_url = 0;
-                }
-
-                if (!profile) {
-                    profile_url = request.body.profile || 0;
-                }
-
-                console.log(profile_url);
-
-                var sql2 = "UPDATE createaccount SET first_name=?,last_name=?,mobileNo=?,email_Id=?,Address=?,profile=? WHERE id='" + user_id + "'";
-                connection.query(sql2, [first_name, last_name, phone, email_id, address, profile_url], function (err, up_data) {
+                var sql3 = "SELECT * FROM createaccount WHERE email_Id=? AND id !='" + user_id + "'"
+                connection.query(sql3, [email_id], function (err, email_data) {
                     if (err) {
-                        response.status(201).json({ message: "Unable to Update Admin Details", statusCode: 201 });
+                        response.status(201).json({ message: "Unable to Get Admin Details", statusCode: 201 });
+                    } else if (email_data.length == 0) {
+
+                        var sql4 = "SELECT * FROM createaccount WHERE mobileNo=? AND id !='" + user_id + "'"
+                        connection.query(sql4, [phone], async function (err, mob_data) {
+                            if (err) {
+                                response.status(201).json({ message: "Unable to Get Admin Details", statusCode: 201 });
+                            } else if (mob_data.length == 0) {
+
+                                var old_profile = data[0].profile;
+
+                                // console.log(old_profile);
+
+                                if (profile) {
+                                    try {
+                                        const timestamp = Date.now();
+                                        profile_url = await uploadImage.uploadProfilePictureToS3Bucket('smartstaydevs', 'Profile/', 'Profile' + user_id + timestamp + '.jpg', profile);
+
+                                        if (old_profile != null && old_profile != undefined && old_profile != 0 && old_profile != '') {
+                                            const old_profile_key = getKeyFromUrl(old_profile);
+                                            var deleteResponse = await uploadImage.deleteImageFromS3Bucket('smartstaydevs', old_profile_key);
+                                            console.log("Image deleted successfully:", deleteResponse);
+                                        } else {
+                                            console.error("Failed to extract key from URL:", old_profile);
+                                        }
+                                    } catch (err) {
+                                        console.log(err);
+                                        profile_url = 0;
+                                    }
+                                } else {
+                                    profile_url = 0;
+                                }
+
+                                if (!profile) {
+                                    profile_url = request.body.profile || 0;
+                                }
+
+                                // console.log(profile_url);
+
+                                var sql2 = "UPDATE createaccount SET first_name=?,last_name=?,mobileNo=?,email_Id=?,Address=?,profile=? WHERE id='" + user_id + "'";
+                                connection.query(sql2, [first_name, last_name, phone, email_id, address, profile_url], function (err, up_data) {
+                                    if (err) {
+                                        response.status(201).json({ message: "Unable to Update Admin Details", statusCode: 201 });
+                                    } else {
+                                        response.status(200).json({ message: "Successfully Updated Admin Details", statusCode: 200 });
+                                    }
+                                })
+                            } else {
+                                response.status(201).json({ message: "Mobile Number Already Exists", statusCode: 201 });
+                            }
+                        })
                     } else {
-                        response.status(200).json({ message: "Successfully Updated Admin Details", statusCode: 200 });
+                        response.status(201).json({ message: "Email Id Already Exists", statusCode: 201 });
                     }
                 })
 
@@ -558,7 +582,10 @@ function forgetPasswordOtpSend(connection, response, requestData) {
     // console.log("requestData", requestData.email)
     if (requestData.email) {
         connection.query(`SELECT * FROM createaccount WHERE email_id= \'${requestData.email}\'`, function (error, data) {
-            if (data && data.length > 0) {
+            if (error) {
+                response.status(201).json({ message: "Unable to Get User Details", statusCode: 201 });
+            } else if (data.length != 0) {
+
                 const otp = Math.floor(100000 + Math.random() * 900000).toString();
                 console.log("otp is ", otp);
 
@@ -593,12 +620,12 @@ function forgetPasswordOtpSend(connection, response, requestData) {
                             html: htmlContent
                         };
                         transporter.sendMail(mailOptions, function (err, otpData) {
-                            console.log(" otpData*", otpData);
-                            console.log("otp send error", err);
+                            // console.log(" otpData*", otpData);
+                            // console.log("otp send error", err);
                             if (err) {
                                 response.status(203).json({ message: "Failed to send OTP to email", statusCode: 203 });
                             } else {
-                                console.log('Email sent: ' + otp);
+                                // console.log('Email sent: ' + otp);
                                 response.status(200).json({ message: "Otp send  Successfully", otp: otp });
                             }
                         });
@@ -610,18 +637,16 @@ function forgetPasswordOtpSend(connection, response, requestData) {
                 response.status(201).json({ message: `${requestData.email} is doesn't exist`, statusCode: 201 });
             }
         });
-    }
-    else {
+    } else {
         response.status(203).json({ message: "Missing parameter", statusCode: 203 });
     }
-
 }
 
 function sendOtpForMail(connection, response, Email_Id, LoginId) {
     if (Email_Id) {
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        console.log("otp is ", otp);
+        // console.log("otp is ", otp);
         connection.query(`UPDATE createaccount SET Otp= \'${otp}\' WHERE email_id=\'${Email_Id}\' AND id = \'${LoginId}\' `, function (error, data) {
             if (data) {
                 const transporter = nodemailer.createTransport({
@@ -651,12 +676,12 @@ function sendOtpForMail(connection, response, Email_Id, LoginId) {
                     html: htmlContent
                 };
                 transporter.sendMail(mailOptions, function (err, otpData) {
-                    console.log(" otpData*", otpData);
-                    console.log("otp send error", err);
+                    // console.log(" otpData*", otpData);
+                    // console.log("otp send error", err);
                     if (err) {
                         response.status(203).json({ message: "Failed to send OTP to email", statusCode: 203 });
                     } else {
-                        console.log('Email sent: ' + otp);
+                        // console.log('Email sent: ' + otp);
                         response.status(200).json({ message: "Otp send  Successfully", otp: otp });
                     }
                 });
@@ -677,7 +702,7 @@ function sendResponseOtp(connection, response, requestData) {
     connection.query(`SELECT * FROM createaccount WHERE email_id= \'${requestData.Email_Id}\' `, function (error, resData) {
         if (resData.length > 0 && resData[0].Otp == requestData.OTP) {
             const token = generateToken(resData[0]); // token is generated
-            console.log(`token`, token);
+            // console.log(`token`, token);
             response.status(200).json({ message: "OTP Verified Success", statusCode: 200, token: token })
         } else {
             response.status(201).json({ message: "Enter Valid Otp", statusCode: 201 })
@@ -707,7 +732,7 @@ function payment_history(connection, response, request) {
 
     var user_id = request.body.user_id;
 
-    console.log(user_id);
+    // console.log(user_id);
 
     if (!user_id) {
         response.status(201).json({ message: "Missing User Id" })
@@ -1019,4 +1044,4 @@ function formatDate(dateString) {
 }
 
 
-module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount, get_user_details, forgotpassword_otp_response, payment_history, update_account_details, transactionHistory,transactionHistoryPDF }
+module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount, get_user_details, forgotpassword_otp_response, payment_history, update_account_details, transactionHistory, transactionHistoryPDF }
