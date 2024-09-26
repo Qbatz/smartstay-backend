@@ -55,7 +55,9 @@ const queries = [
 
     "INSERT INTO `country_list` (`country_id`, `country_code`, `country_name`,`currency_code`, `mobile_code`,`country_flag`) VALUES ('1', '91', 'India', 'INR', '91','https://www.worldometers.info/img/flags/in-flag.gif');",
 
-    "ALTER TABLE `assets` CHANGE COLUMN `asset_id` `asset_name` VARCHAR(255) NULL"
+    "ALTER TABLE `assets` CHANGE COLUMN `asset_id` `asset_name` VARCHAR(255) NULL",
+
+    "ALTER TABLE `EbAmount` ADD COLUMN `date` DATE DEFAULT '0000-00-00' AFTER `EbAmount`"
 ];
 
 queries.forEach(executeQuery);

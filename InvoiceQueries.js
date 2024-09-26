@@ -1953,11 +1953,17 @@ function convertAmountToWords(amount) {
 
 
 function EbAmount(connection, request, response) {
+
     var atten = request.body;
 
     if (!atten) {
         return response.status(201).json({ message: 'Missing parameter' });
     }
+
+    console.log(atten);
+
+
+    const date = atten.date;
 
     var sql2 = "SELECT * FROM eb_settings WHERE hostel_id=?";
     connection.query(sql2, [atten.Hostel_Id], function (err, amount_details) {
@@ -1973,9 +1979,9 @@ function EbAmount(connection, request, response) {
                 if (datum.length > 0) {
                     if (atten.id) {
                         const isHostelBasedUpdated = datum[0].isHostelBased;
-                        const updateQuery = isHostelBasedUpdated ?
-                            `UPDATE EbAmount SET EbAmount=${atten.EbAmount} WHERE Hostel_Id= ${atten.Hostel_Id}` :
-                            `UPDATE EbAmount SET EbAmount=${atten.EbAmount}  where Hostel_Id = ${atten.Hostel_Id}, Floor= ${atten.Floor},Room= ${atten.Room}`;
+                        const updateQuery = `UPDATE EbAmount SET date='${atten.date}'  WHERE id=${atten.id}`;
+                        console.log(updateQuery);
+
                         connection.query(updateQuery, function (error, data) {
                             if (error) {
                                 console.error(error);
@@ -1986,27 +1992,40 @@ function EbAmount(connection, request, response) {
                         });
                     } else {
 
-                        const date = new Date();
-                        const year = date.getFullYear();
-                        const month = ('0' + (date.getMonth() + 1)).slice(-2);
-                        const formattedDate = `${year}-${month}`; // Format as 'YYYY-MM'
+                        // const date = new Date();
+                        // const year = date.getFullYear();
+                        // const month = ('0' + (date.getMonth() + 1)).slice(-2);
+                        // const formattedDate = `${year}-${month}`; // Format as 'YYYY-MM'
 
-                        var sql1 = "SELECT * FROM EbAmount WHERE DATE_FORMAT(createAt, '%Y-%m') = '" + formattedDate + "' AND hostel_Id='" + atten.Hostel_Id + "' AND Floor='" + atten.Floor + "' AND Room='" + atten.Room + "';"
-                        connection.query(sql1, function (err, eb_res) {
+                        // var sql1 = "SELECT * FROM EbAmount WHERE DATE_FORMAT(createAt, '%Y-%m') = '" + formattedDate + "' AND hostel_Id='" + atten.Hostel_Id + "' AND Floor='" + atten.Floor + "' AND Room='" + atten.Room + "';"
+                        // connection.query(sql1, function (err, eb_res) {
+                        //     if (err) {
+                        //         return response.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Details' });
+                        //     } else if (eb_res.length == 0) {
+
+                        var sql_1 = "SELECT * FROM EbAmount WHERE Hostel_Id = '" + atten.Hostel_Id + "' AND Floor= '" + atten.Floor + "'AND Room= '" + atten.Room + "' ORDER BY id DESC";
+                        connection.query(sql_1, function (err, eb_data_list) {
                             if (err) {
-                                return response.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Details' });
-                            } else if (eb_res.length == 0) {
+                                return response.status(202).json({ message: 'Unable to Get Eb Amount Details', error: err });
+                            } else {
 
+                                let previous_reading;
+
+                                if (eb_data_list.length == 0) {
+                                    previous_reading = 0;
+                                } else {
+                                    previous_reading = eb_data_list[0].end_Meter_Reading;
+                                }
                                 const isHostelBased = datum[0].isHostelBased;
-                                const startMeterReading = atten.startMeterReading;
+                                const startMeterReading = previous_reading;
                                 const end_Meter_Reading = atten.end_Meter_Reading;
                                 const total_reading = end_Meter_Reading - startMeterReading;
                                 const particular_amount = amount_details[0].amount;
                                 const total_amount = particular_amount * total_reading;
 
                                 const insertQuery = isHostelBased ?
-                                    `INSERT INTO EbAmount (hostel_Id, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit) VALUES (${atten.Hostel_Id}, ${startMeterReading}, ${atten.end_Meter_Reading}, ${total_amount},${total_reading})` :
-                                    `INSERT INTO EbAmount (hostel_Id, Floor, Room, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit) VALUES (${atten.Hostel_Id}, ${atten.Floor}, ${atten.Room}, ${startMeterReading}, '${end_Meter_Reading}', '${total_amount}',${total_reading})`;
+                                    `INSERT INTO EbAmount (hostel_Id, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit,date) VALUES (${atten.Hostel_Id}, ${startMeterReading}, ${atten.end_Meter_Reading}, ${total_amount},${total_reading},${date})` :
+                                    `INSERT INTO EbAmount (hostel_Id, Floor, Room, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit,date) VALUES (${atten.Hostel_Id}, ${atten.Floor}, ${atten.Room}, ${startMeterReading}, '${end_Meter_Reading}', '${total_amount}',${total_reading},${date})`;
 
                                 connection.query(insertQuery, function (error, data) {
                                     if (error) {
@@ -2014,56 +2033,11 @@ function EbAmount(connection, request, response) {
                                         return response.status(202).json({ message: 'Insertion failed', error: error });
                                     }
                                     else {
-                                        // console.log("Inserted successfully");
                                         return response.status(200).json({ message: 'Successfully Added Eb Amount' });
                                     }
                                 });
-                            } else {
-                                return response.status(201).json({ statusCode: 201, message: 'Already Added This Month Eb Amount' });
                             }
                         })
-
-                        // connection.query(`SELECT * FROM EbAmount WHERE hostel_Id = ${atten.Hostel_Id} AND Floor = '${atten.Floor}' AND Room = '${atten.Room}' ORDER BY id DESC LIMIT 1`, function (err, temdata) {
-                        //     if (err) {
-                        //         console.error(err);
-                        //         response.status(203).json({ message: 'Database error' });
-                        //         return;
-                        //     }
-
-                        //     let startMeterReading;
-
-                        //     const previousEndMeterReading = temdata.length > 0 ? temdata[0].end_Meter_Reading : 0;
-                        //     const isHostelBased = datum[0].isHostelBased;
-
-                        //     if (isHostelBased) {
-                        //         startMeterReading = previousEndMeterReading;
-                        //     } else {
-                        //         let sameRoomFound = temdata.length > 0;
-                        //         if (!sameRoomFound) {
-                        //             startMeterReading = 0;
-                        //         } else {
-                        //             startMeterReading = previousEndMeterReading;
-                        //         }
-                        //     }
-                        //     const difference = atten.end_Meter_Reading - startMeterReading;
-
-                        //     const insertQuery = isHostelBased ?
-                        //         `INSERT INTO EbAmount (hostel_Id, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit) VALUES (${atten.Hostel_Id}, ${startMeterReading}, ${atten.end_Meter_Reading}, ${atten.EbAmount},${difference})` :
-                        //         `INSERT INTO EbAmount (hostel_Id, Floor, Room, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit) VALUES (${atten.Hostel_Id}, ${atten.Floor}, ${atten.Room}, ${startMeterReading}, '${atten.end_Meter_Reading}', '${atten.EbAmount}',${difference})`;
-
-                        //     connection.query(insertQuery, function (error, data) {
-                        //         if (error) {
-                        //             console.error(error);
-                        //             response.status(202).json({ message: 'Insertion failed', error: error });
-                        //             return;
-                        //         }
-                        //         else {
-                        //             console.log("Inserted successfully");
-                        //             response.status(200).json({ message: 'Inserted successfully' });
-                        //         }
-
-                        //     });
-                        // });
                     }
                 }
             });
