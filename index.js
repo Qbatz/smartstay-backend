@@ -41,7 +41,7 @@ app.use(function (req, res, next) {
 })
 const dbquery = require('./dbquery');
 
-var PORT=2001
+var PORT = 2001
 
 app.use(middleware);
 
@@ -779,4 +779,18 @@ app.post('/import_hostel_users', upload.single('xlfile'), (req, res) => {
 
 app.post('/import_hostel_details', upload.single('hos_details'), (req, res) => {
     importFunc.import_hostel_details(req, res)
+});
+
+app.post('/add_manual_invoice', (req, res) => {
+    invoiceQueries.add_manual_invoice(req, res)
+});
+
+// Show Invoice Id
+app.post('/get_invoice_id', (req, res) => {
+    userQueries.get_invoice_id(req, res)
+});
+
+// Get Rent, Eb and Amenity Amount
+app.post('/get_user_amounts', (req, res) => {
+    userQueries.get_user_amounts(req, res)
 });

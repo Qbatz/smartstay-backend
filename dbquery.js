@@ -57,7 +57,9 @@ const queries = [
 
     "ALTER TABLE `assets` CHANGE COLUMN `asset_id` `asset_name` VARCHAR(255) NULL",
 
-    "ALTER TABLE `EbAmount` ADD COLUMN `date` DATE DEFAULT '0000-00-00' AFTER `EbAmount`"
+    "ALTER TABLE `EbAmount` ADD COLUMN `date` DATE DEFAULT '0000-00-00' AFTER `EbAmount`",
+    
+    "ALTER TABLE `invoicedetails` ADD COLUMN `action` VARCHAR(45) NULL DEFAULT 'auto' AFTER `numberofdays`;"
 ];
 
 queries.forEach(executeQuery);

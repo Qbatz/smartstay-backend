@@ -63,8 +63,8 @@ function createUser(connection, request, response) {
 
     const created_by = request.user_details.id;
 
-    if(atten.Email == undefined){
-        atten.Email='NA'
+    if (atten.Email == undefined) {
+        atten.Email = 'NA'
     }
 
     if (atten.ID) {
@@ -97,7 +97,7 @@ function createUser(connection, request, response) {
                     } else {
                         // Need to Check for the Mail Exist Error
                         connection.query(`SELECT * FROM hostel WHERE Email='${atten.Email}' AND Email !='NA' AND isActive = 1 AND ID !='${atten.ID}'`, async function (error, data) {
-                            if(error){
+                            if (error) {
                                 return response.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 });
                             }
                             if (data.length > 0) {
@@ -1159,4 +1159,215 @@ function conutry_list(req, res) {
     })
 }
 
-module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details, user_amenities_history, getAmnitiesName, aadhar_verify_otp, aadhaar_otp_verify, conutry_list }
+function get_invoice_id(req, res) {
+
+    var user_id = req.body.user_id;
+    var hostel_id = req.body.hostel_id;
+    var created_by = req.user_details.id;
+
+    if (!user_id || !hostel_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    var sql1 = "SELECT * FROM hosteldetails WHERE id=? AND isActive=1 AND created_by=?";
+    connection.query(sql1, [hostel_id, created_by], function (err, hos_details) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
+        } else if (hos_details.length != 0) {
+
+            var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? ORDER BY id DESC;";
+            connection.query(sql2, [hostel_id], function (err, inv_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
+                } else if (inv_data.length != 0) {
+
+                    var invoice_number = inv_data[0].Invoices;
+                    const newInvoiceNumber = invoice_number.slice(0, -1) + (parseInt(invoice_number.slice(-1)) + 1); // Increment the last digit
+
+                    return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: newInvoiceNumber })
+
+                } else {
+                    var prefix = hos_details[0].prefix;
+                    var suffix = hos_details[0].suffix;
+
+                    const month = moment(new Date()).month() + 1;
+                    const year = moment(new Date()).year();
+
+                    if (prefix != null || suffix != null) {
+                        var newInvoiceNumber = `${prefix}${suffix}`;
+                    } else {
+                        var newInvoiceNumber = `${hos_details[0].Name}${month}${year}001`;
+                    }
+
+                    return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: newInvoiceNumber })
+                }
+            })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Hostel Details" })
+        }
+    })
+}
+
+const calculateEbAmount = (total_ebamount, room_data, start_date, end_date) => {
+    let activeUsers = 0;
+    let userStayDetails = [];
+
+    // Convert start_date and end_date strings to Date objects for comparison
+    const calcStartDate = new Date(start_date);
+    const calcEndDate = new Date(end_date);
+
+    // Calculate the number of active users and their stay duration
+    room_data.forEach(user => {
+        if (user.isActive) {
+            // Check if the user is still in the room or has a checkout date
+            const stayStart = new Date(user.createdAt);
+            const stayEnd = user.checkoutDate ? new Date(user.checkoutDate) : calcEndDate;
+
+            // Determine overlap between user stay and calculation period
+            const effectiveStartDate = new Date(Math.max(stayStart, calcStartDate));
+            const effectiveEndDate = new Date(Math.min(stayEnd, calcEndDate));
+
+            // Calculate number of active days in the specified period
+            const totalStayDays = Math.round((effectiveEndDate - effectiveStartDate) / (1000 * 60 * 60 * 24)) + 1;
+            userStayDetails.push({ userId: user.UserId, stayDays: totalStayDays });
+
+            // If user has active days in the calculation period, consider in EB distribution
+            if (totalStayDays > 0) {
+                activeUsers += 1;
+            }
+        }
+    });
+
+    // Calculate per-head EB amount for active users
+    const perHeadEbAmount = activeUsers > 0 ? parseFloat((total_ebamount / activeUsers).toFixed(2)) : total_ebamount;
+
+    return { perHeadEbAmount, activeUsers, userStayDetails };
+}
+
+
+function get_user_amounts(req, res) {
+
+    var { user_id, start_date, end_date } = req.body;
+    var created_by = req.user_details.id;
+
+    if (!start_date || !end_date) {
+        return res.status(201).json({ message: "Missing Mandatory Fields", statusCode: 201 })
+    }
+
+    // Rent Amount
+    var sql1 = "SELECT * FROM hostel WHERE ID=? OR User_Id=? AND isActive=1 AND created_by=?";
+    connection.query(sql1, [user_id, user_id, created_by], (err, data) => {
+        if (err) {
+            return res.status(201).json({ message: "Unable to Get User Details", statusCode: 201 })
+        } else if (data.length != 0) {
+
+            var total_array = [];
+
+            var uniq_user = data[0].User_Id;
+            var hostel_id = data[0].Hostel_Id;
+            var room_id = data[0].Rooms;
+            var floor = data[0].Floor;
+            const startDate = new Date(start_date);
+            const endDate = new Date(end_date);
+
+            const diff_dates = endDate - startDate;
+            const total_days = Math.ceil(diff_dates / (1000 * 60 * 60 * 24));
+            var room_rent = data[0].RoomRent;
+            const daysInCurrentMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate(); // Get total days in start date's month
+            const oneDayAmount = room_rent / daysInCurrentMonth; // Daily rent
+            const totalRent = parseFloat((oneDayAmount * total_days).toFixed(2)); // Total rent rounded to 2 decimal places
+
+            total_array.push({ description: "Room Rent", total_amount: room_rent, amount: totalRent })
+
+            var sql2 = "SELECT amname.Amnities_Name,am.Amount,am.Amnities_Id FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id LEFT JOIN AmenitiesHistory AS amhis ON amhis.amenity_Id=am.Amnities_Id AND amhis.user_Id=? WHERE am.Hostel_Id=? AND am.setAsDefault=0 AND am.Status=1 AND am.createdBy=? GROUP BY amname.Amnities_Name"
+            connection.query(sql2, [uniq_user, hostel_id, created_by], function (err, am_data) {
+                if (err) {
+                    return res.status(201).json({ message: "Unable to Get Amenity Details", statusCode: 201 })
+                } else {
+                    if (am_data.length != 0) {
+                        for (let i = 0; i < am_data.length; i++) {
+                            total_array.push({ description: am_data[i].Amnities_Name, total_amount: am_data[i].Amount, amount: am_data[i].Amount })
+                        }
+                    }
+                    var sql3 = "SELECT SUM(EbAmount) AS eb_amount FROM EbAmount WHERE date BETWEEN ? AND ?;";
+                    connection.query(sql3, [start_date, end_date], function (err, eb_data) {
+                        if (err) {
+                            return res.status(201).json({ message: "Unable to Get Eb Details", statusCode: 201 })
+                        } else {
+                            if (eb_data.length != 0) {
+
+                                var total_ebamount = eb_data[0].eb_amount;
+
+                                var sql4 = "SELECT * FROM hostel WHERE Rooms='" + room_id + "' AND Hostel_Id='" + hostel_id + "' AND Floor='" + floor + "'";
+                                connection.query(sql4, function (err, room_data) {
+                                    if (err) {
+                                        return res.status(201).json({ message: "Unable to Get User all Details", statusCode: 201 })
+                                    } else {
+                                        if (room_data.length != 0) {
+
+                                            const start_date = new Date(req.body.start_date);
+                                            const end_date = new Date(req.body.end_date);
+
+                                            let activeUsers = 0;
+                                            let userStayDetails = [];
+
+                                            room_data.forEach(user => {
+                                                if (user.isActive) {
+                                                    const stayStart = new Date(user.createdAt);
+                                                    const stayEnd = user.checkoutDate ? new Date(user.checkoutDate) : end_date;
+
+                                                    const effectiveStartDate = new Date(Math.max(stayStart, start_date));
+
+                                                    const effectiveEndDate = new Date(Math.min(stayEnd, end_date));
+
+                                                    if (effectiveStartDate <= effectiveEndDate) {
+                                                        const totalStayDays = Math.round((effectiveEndDate - effectiveStartDate) / (1000 * 60 * 60 * 24)) + 1;
+
+                                                        userStayDetails.push({ userId: user.ID, stayDays: totalStayDays });
+
+                                                        if (totalStayDays > 0) {
+                                                            activeUsers += 1;
+                                                        }
+                                                    }
+                                                }
+                                            });
+
+                                            var total_days = userStayDetails.reduce((sum, user) => sum + user.stayDays, 0);
+
+                                            var eb_amount = total_ebamount / total_days;
+
+                                            userStayDetails.forEach(user => {
+                                                user.ebShare = parseFloat((user.stayDays * eb_amount).toFixed(2));
+                                                console.log(`User ${user.userId} EB Share: ₹${user.ebShare}`);
+                                            });
+
+                                            const per_user_amount = userStayDetails.find(user => user.userId == user_id);
+
+                                            total_array.push({ description: 'Eb Amount', total_amount: total_ebamount, amount: per_user_amount.ebShare });
+
+                                            // Respond with the calculated EB data
+                                            return res.status(200).json({
+                                                statusCode: 200,
+                                                message: "User Amount Details",
+                                                total_array: total_array
+                                            });
+                                        } else {
+                                            total_array.push({ description: 'Eb Amount', total_amount: total_ebamount, amount: total_ebamount });
+                                            return res.status(200).json({ statusCode: 200, message: "User Amount Details", total_array: total_array, room_data: room_data });
+                                        }
+                                    }
+                                });
+                            } else {
+                                return res.status(200).json({ statusCode: 200, message: "User Amount Details", total_array: total_array })
+                            }
+                        }
+                    })
+                }
+            })
+        } else {
+            return res.status(201).json({ message: "Invalid User Details", statusCode: 201 })
+        }
+    })
+}
+
+module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details, user_amenities_history, getAmnitiesName, aadhar_verify_otp, aadhaar_otp_verify, conutry_list, get_invoice_id, get_user_amounts }

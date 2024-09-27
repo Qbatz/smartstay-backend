@@ -923,8 +923,8 @@ function getInvoiceListForAll(connection, response) {
 
 function getInvoiceList(connection, response, request) {
     const userDetails = request.user_details;
-    const query = `SELECT * FROM hosteldetails  hstlDetails inner join invoicedetails  invoice  on invoice.Hostel_Id=hstlDetails.id  WHERE hstlDetails.created_By ='${userDetails.id}' ORDER BY invoice.id DESC`;
-    connection.query(query, function (error, data) {
+    const sql1 = `SELECT hstlDetails.*,invoice.*,hos.profile as user_profile,hstlDetails.profile AS hostel_profile FROM hosteldetails hstlDetails inner join invoicedetails  invoice  on invoice.Hostel_Id=hstlDetails.id JOIN hostel as hos ON hos.ID=invoice.hos_user_id WHERE hstlDetails.created_By ='${userDetails.id}' ORDER BY invoice.id DESC`;
+    connection.query(sql1, function (error, data) {
         if (error) {
             response.status(403).json({ message: 'not connected' })
         } else {
@@ -2030,7 +2030,7 @@ function EbAmount(connection, request, response) {
                                 connection.query(insertQuery, function (error, data) {
                                     if (error) {
                                         console.error(error);
-                                        return response.status(202).json({ message: 'Insertion failed', error: error });
+                                        return response.status(202).json({ message: 'Unable to Add Eb Amount', error: error });
                                     }
                                     else {
                                         return response.status(200).json({ message: 'Successfully Added Eb Amount' });
@@ -2537,14 +2537,29 @@ function AmenitiesPDF(hostelDetails, monthData, response) {
         }
 
     });
+}
 
+function add_manual_invoice(req, res) {
+
+    var { user_id, due_date, date, invoice_id, room_rent, eb_amount, amenity_amount } = req.body;
+
+    var sql1 = "SELECT * FROM hostel WHERE ID=? OR User_Id=? AND isActive=1";
+    connection.query(sql1, [user_id, user_id], function (err, user_details) {
+        if (err) {
+            console.log(err);
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
+        } else if (user_details.length != 0) {
+
+            var user_data = user_details[0];
+
+
+
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+        }
+    })
 
 }
 
 
-
-
-
-
-
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory }
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice }
