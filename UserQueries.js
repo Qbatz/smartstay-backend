@@ -1162,52 +1162,65 @@ function conutry_list(req, res) {
 function get_invoice_id(req, res) {
 
     var user_id = req.body.user_id;
-    var hostel_id = req.body.hostel_id;
     var created_by = req.user_details.id;
 
-    if (!user_id || !hostel_id) {
+    if (!user_id) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
     }
 
-    var sql1 = "SELECT * FROM hosteldetails WHERE id=? AND isActive=1 AND created_by=?";
-    connection.query(sql1, [hostel_id, created_by], function (err, hos_details) {
+    var sql_1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
+    connection.query(sql_1, [user_id], function (err, user_data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
-        } else if (hos_details.length != 0) {
+        } else if (user_data.length != 0) {
 
-            var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? ORDER BY id DESC;";
-            connection.query(sql2, [hostel_id], function (err, inv_data) {
+            var hostel_id = user_data[0].Hostel_Id;
+
+            var sql1 = "SELECT * FROM hosteldetails WHERE id=? AND isActive=1 AND created_by=?";
+            connection.query(sql1, [hostel_id, created_by], function (err, hos_details) {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
-                } else if (inv_data.length != 0) {
+                } else if (hos_details.length != 0) {
 
-                    var invoice_number = inv_data[0].Invoices;
-                    console.log(invoice_number);
-                    
-                    const newInvoiceNumber = invoice_number.slice(0, -1) + (parseInt(invoice_number.slice(-1)) + 1);
+                    var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? ORDER BY id DESC;";
+                    connection.query(sql2, [hostel_id], function (err, inv_data) {
+                        if (err) {
+                            return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
+                        } else if (inv_data.length != 0) {
 
-                    return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: newInvoiceNumber })
+                            var invoice_number = inv_data[0].Invoices;
+                            console.log(invoice_number);
 
+                            const newInvoiceNumber = invoice_number.slice(0, -1) + (parseInt(invoice_number.slice(-1)) + 1);
+
+                            return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: newInvoiceNumber, hostel_id: hostel_id })
+
+                        } else {
+                            var prefix = hos_details[0].prefix;
+                            var suffix = hos_details[0].suffix;
+
+                            const month = moment(new Date()).month() + 1;
+                            const year = moment(new Date()).year();
+
+                            if (prefix != null || suffix != null) {
+                                var newInvoiceNumber = `${prefix}${suffix}`;
+                            } else {
+                                var newInvoiceNumber = `${hos_details[0].Name}${month}${year}001`;
+                            }
+
+                            return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: newInvoiceNumber, hostel_id: hostel_id })
+                        }
+                    })
                 } else {
-                    var prefix = hos_details[0].prefix;
-                    var suffix = hos_details[0].suffix;
-
-                    const month = moment(new Date()).month() + 1;
-                    const year = moment(new Date()).year();
-
-                    if (prefix != null || suffix != null) {
-                        var newInvoiceNumber = `${prefix}${suffix}`;
-                    } else {
-                        var newInvoiceNumber = `${hos_details[0].Name}${month}${year}001`;
-                    }
-
-                    return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: newInvoiceNumber })
+                    return res.status(201).json({ statusCode: 201, message: "Invalid Hostel Details" })
                 }
             })
         } else {
-            return res.status(201).json({ statusCode: 201, message: "Invalid Hostel Details" })
+            return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
         }
     })
+
+
 }
 
 function get_user_amounts(req, res) {
