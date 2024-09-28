@@ -107,11 +107,11 @@ function getHostelList(connection, response, request) {
                         console.error("Error fetching additional details: ", additionalErr);
                         return response.status(201).json({ statusCode: 201, message: 'Error fetching additional details' });
                     }
-                    
+
                     hostelDetails.push({
                         ...hostel,
                         floorDetails: floorDetails || [],
-                        list_details: additionalDetails[0]
+                        ...additionalDetails[0]
                     });
 
                     processedHostels++;
