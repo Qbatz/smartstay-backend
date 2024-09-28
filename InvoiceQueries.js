@@ -120,7 +120,6 @@ async function calculateAndInsertInvoice(connection, user, users, isFirstTime) {
             WHERE 
                 hstl.isActive = 1 AND hstl.id = ?
         `, [user.ID]);
-        console.log("existingData", existingData);
 
         if (existingData.length != 0) {
 
@@ -233,8 +232,6 @@ async function calculateAndInsertInvoice(connection, user, users, isFirstTime) {
 
                     let userAmount = userAmounts.find(x => x.user_id === user.User_Id);
 
-                    console.log(userAmount, ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;");
-
                     eb_Hostel = userAmount ? userAmount.amount.toFixed() : 0;
 
                     console.log("EB Hostel:", eb_Hostel);
@@ -246,7 +243,6 @@ async function calculateAndInsertInvoice(connection, user, users, isFirstTime) {
             }
             else {
 
-
                 let tempArray = users.filter(item => {
                     const createdAtDate = moment(item.createdAt);
                     const createdAtMonth = createdAtDate.month() + 1; // month() is zero-based
@@ -257,8 +253,7 @@ async function calculateAndInsertInvoice(connection, user, users, isFirstTime) {
 
                 if (tempArray.length > 0) {
                     let totalNumberOfDays = 0;
-
-
+                    
                     let userDayAmounts = tempArray.map(user => {
 
                         const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
@@ -283,13 +278,10 @@ async function calculateAndInsertInvoice(connection, user, users, isFirstTime) {
 
                     const roombase = existingData[0].ebBill / totalNumberOfDays;
 
-
                     let userAmounts = userDayAmounts.map(user => ({
                         user_id: user.user_id,
                         amount: roombase * user.numberOfDays
                     }));
-
-                    console.log("User Amounts:", userAmounts);
 
                     let userAmount = userAmounts.find(user_id => user_id.user_id === user.User_Id);
 
@@ -300,8 +292,6 @@ async function calculateAndInsertInvoice(connection, user, users, isFirstTime) {
                 }
                 eb_Hostel = 0;
             }
-
-            console.log(eb_Hostel, "Ending Eb AMount");
 
             const today = new Date();
             let lastMonth = today.getMonth(); // 0-based month (0 = January, 11 = December)
@@ -330,84 +320,111 @@ async function calculateAndInsertInvoice(connection, user, users, isFirstTime) {
                     }
                 }
             }
-
-            console.log("eb_Hostel....?", eb_Hostel)
             //  AdvanceAmount = ((roomPrice / moment(dueDate).daysInMonth()) * Number(numberOfDays)) + totalAmenitiesAmount +  Number(eb_Hostel);
 
             AdvanceAmount = ((roomPrice / moment(dueDate).daysInMonth()) * Number(numberOfDays)) + totalAmenitiesAmount + parseInt(eb_amount_total) + parseInt(eb_Hostel);
-
-            console.log(AdvanceAmount);
-
             let invoiceNo;
 
-            if (existingData[0].prefix && existingData[0].suffix) {
-                let numericSuffix;
-                if (existingData[0].InvoiceDetails != null) {
-                    numericSuffix = parseInt(existingData[0].InvoiceDetails.substring(existingData[0].prefix.length)) || 0;
-                    numericSuffix++;
+            const userID = user.User_Id.toString().slice(0, 4); // First 4 characters of User ID
+            const month = moment(new Date()).format("MM"); // Current month in MM format
+            var inv_year = moment(new Date()).format("YYYY"); // Current inv_year in YYYY format
+            const baseInvoicePrefix = `INVC${month}${inv_year}${userID}`;
+
+            var sql_12 = `SELECT Invoices FROM invoicedetails WHERE Hostel_id=? ORDER BY id DESC LIMIT 1;`;
+            connection.query(sql_12, [user.Hostel_Id], async function (err, result) {
+                if (err) {
+                    console.log("Unable to Get Invoice Details");
+                    return;
                 } else {
-                    numericSuffix = existingData[0].suffix;
+
+                    console.log(result[0].Invoices);
+                    
+                    let numericSuffix;
+                    if (result.length > 0) {
+                        const lastInvoice = result[0].Invoices;
+                        const lastSuffix = lastInvoice.substring(baseInvoicePrefix.length); // Extract suffix part
+                        numericSuffix = parseInt(lastSuffix, 10) || 0; // Convert to number (or use 0 if NaN)
+                        numericSuffix++; // Increment the suffix for the new invoice
+                    } else {
+                        numericSuffix = 1;
+                    }
+
+                    const incrementedSuffix = numericSuffix.toString().padStart(2, '0'); // Pad with '0' for consistency
+                    const invoiceNo = `${baseInvoicePrefix}${incrementedSuffix}`; // Complete invoice number
+
+                    console.log(`Generated Invoice Number: ${invoiceNo}`);
+
+                    // return;
+
+                    // if (existingData[0].prefix && existingData[0].suffix) {
+                    //     let numericSuffix;
+                    //     if (existingData[0].InvoiceDetails != null) {
+                    //         numericSuffix = parseInt(existingData[0].InvoiceDetails.substring(existingData[0].prefix.length)) || 0;
+                    //         numericSuffix++;
+                    //     } else {
+                    //         numericSuffix = existingData[0].suffix;
+                    //     }
+                    //     invoiceNo = existingData[0].prefix + numericSuffix;
+                    // } else {
+                    //     const userID = user.User_Id.toString().slice(0, 4);
+                    //     const month = moment(new Date()).month() + 1;
+                    //     const year = moment(new Date()).year();
+                    //     invoiceNo = 'INVC' + month + year + userID;
+                    // }
+
+                    let tempObj = {
+                        invoiceDate: invoiceDate,
+                        invoiceNo: invoiceNo,
+                        dueDate: dueDate,
+                        ebBill: existingData[0].ebBill,
+                        totalAmenitiesAmount: totalAmenitiesAmount,
+                        HostelBasedEb: eb_Hostel,
+                        dedctAmenitiesAmount: dedctAmenitiesAmount,
+                        roomPrice: roomPrice,
+                        roomBasedEb: eb_amount_total,
+                        AdvanceAmount: AdvanceAmount,
+                        numberOfDays: numberOfDays
+                    };
+
+
+                    await query(`INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Amnities_deduction_Amount, Hostel_Based, Room_Based, Bed,numberofdays,hos_user_id,BalanceDue) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${tempObj.AdvanceAmount}, '${user.Address}', '${tempObj.invoiceDate}', '${tempObj.dueDate}', '${tempObj.invoiceNo}', '${user.Status}', '${user.User_Id}', ${tempObj.roomPrice}, ${tempObj.ebBill}, ${tempObj.totalAmenitiesAmount},${tempObj.dedctAmenitiesAmount}, ${tempObj.HostelBasedEb}, ${tempObj.roomBasedEb},${user.Bed},${tempObj.numberOfDays},${user.ID},${tempObj.AdvanceAmount})`)
+                    if (isFirstTime) {
+                        var sql1 = "SELECT * FROM createaccount";
+                        connection.query(sql1, async function (err, data) {
+                            if (err) {
+                                console.log(err);
+                            } else {
+                                var unseen_users = data.map(x => x.id)
+                                console.log(unseen_users);
+
+                                var title = "Invoice Generation";
+                                var user_type = 1;
+                                var user_id = 0;
+                                var message = "New Invoice Generate for All Users";
+
+                                await addNotification.add_notification(user_id, title, user_type, message, unseen_users)
+                            }
+                        })
+
+                        var sql1 = "SELECT * FROM hostel WHERE isActive=1";
+                        connection.query(sql1, async function (err, data) {
+                            if (err) {
+                                console.log(err);
+                            } else {
+                                var unseen_users = data.map(x => x.ID)
+                                console.log(unseen_users);
+
+                                var title = "Invoice Generation";
+                                var user_type = 0;
+                                var user_id = 0;
+                                var message = "New Month Invoice Generated";
+
+                                await addNotification.add_notification(user_id, title, user_type, message, unseen_users)
+                            }
+                        })
+                    }
                 }
-                invoiceNo = existingData[0].prefix + numericSuffix;
-            } else {
-                const userID = user.User_Id.toString().slice(0, 4);
-                const month = moment(new Date()).month() + 1;
-                const year = moment(new Date()).year();
-                invoiceNo = 'INVC' + month + year + userID;
-            }
-
-            let tempObj = {
-                invoiceDate: invoiceDate,
-                invoiceNo: invoiceNo,
-                dueDate: dueDate,
-                ebBill: existingData[0].ebBill,
-                totalAmenitiesAmount: totalAmenitiesAmount,
-                HostelBasedEb: eb_Hostel,
-                dedctAmenitiesAmount: dedctAmenitiesAmount,
-                roomPrice: roomPrice,
-                roomBasedEb: eb_amount_total,
-                AdvanceAmount: AdvanceAmount,
-                numberOfDays: numberOfDays
-            };
-
-
-            await query(`INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Amnities_deduction_Amount, Hostel_Based, Room_Based, Bed,numberofdays,hos_user_id,BalanceDue) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${tempObj.AdvanceAmount}, '${user.Address}', '${tempObj.invoiceDate}', '${tempObj.dueDate}', '${tempObj.invoiceNo}', '${user.Status}', '${user.User_Id}', ${tempObj.roomPrice}, ${tempObj.ebBill}, ${tempObj.totalAmenitiesAmount},${tempObj.dedctAmenitiesAmount}, ${tempObj.HostelBasedEb}, ${tempObj.roomBasedEb},${user.Bed},${tempObj.numberOfDays},${user.ID},${tempObj.AdvanceAmount})`)
-            if (isFirstTime) {
-                var sql1 = "SELECT * FROM createaccount";
-                connection.query(sql1, async function (err, data) {
-                    if (err) {
-                        console.log(err);
-                    } else {
-                        var unseen_users = data.map(x => x.id)
-                        console.log(unseen_users);
-
-                        var title = "Invoice Generation";
-                        var user_type = 1;
-                        var user_id = 0;
-                        var message = "New Invoice Generate for All Users";
-
-                        await addNotification.add_notification(user_id, title, user_type, message, unseen_users)
-                    }
-                })
-
-                var sql1 = "SELECT * FROM hostel WHERE isActive=1";
-                connection.query(sql1, async function (err, data) {
-                    if (err) {
-                        console.log(err);
-                    } else {
-                        var unseen_users = data.map(x => x.ID)
-                        console.log(unseen_users);
-
-                        var title = "Invoice Generation";
-                        var user_type = 0;
-                        var user_id = 0;
-                        var message = "New Month Invoice Generated";
-
-                        await addNotification.add_notification(user_id, title, user_type, message, unseen_users)
-                    }
-                })
-            }
-
+            })
         } else {
             console.log("No existing data found for the given user ID");
         }
@@ -1078,7 +1095,7 @@ function InvoicePDf(connection, reqBodyData, response) {
             htmlContent = htmlContent
                 .replace('{{payment_status_class}}', paymentStatusClass)
                 .replace('{{payment_status_text}}', paymentStatusText)
-                // .replace('{{Amount_name}}', amountName);
+            // .replace('{{Amount_name}}', amountName);
 
             const currentDate = moment().format('YYYY-MM-DD');
             const currentMonth = moment(currentDate).month() + 1;

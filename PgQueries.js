@@ -15,42 +15,113 @@ AWS.config.update({
 const s3 = new AWS.S3();
 
 
+// function getHostelList(connection, response, request) {
+//     const userDetails = request.user_details;
+//     let hostelDetails = [];
+//     let errorMessage = '';
+//     connection.query(`select * from hosteldetails where created_By = '${userDetails.id}' and isActive = true ORDER BY create_At DESC`, function (err, data) {
+//         if (data && data.length > 0) {
+//             for (let i = 0; i < data.length; i++) {
+//                 // console.log("data", data);
+//                 let query = `select * from Hostel_Floor where hostel_id = ${data[i].id} and status = true order by id`;
+//                 connection.query(query, function (error, floorDetails) {
+//                     if (error) {
+//                         errorMessage = error
+//                         console.log("error", error);
+//                     }
+//                     else {
+//                         if (floorDetails && floorDetails.length > 0) {
+//                             hostelDetails.push({ ...data[i], floorDetails })
+//                         }
+//                         else {
+//                             hostelDetails.push({ ...data[i], floorDetails: [] })
+//                         }
+
+//                         var sql2 = "SELECT COALESCE(sum((select count(id) from Hostel_Floor where Hostel_Id='" + data[i].id + "' AND status=1)),0) as floorcount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id='" + data[i].id + "' AND isActive=1)),0) as roomCount,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=0 AND hr.Hostel_Id='" + data[i].id + "'),0) as Bed,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By='" + userDetails.id + "' AND hr.Hostel_Id='" + data[i].id + "'),0) as occupied_Bed from hosteldetails details join createaccount creaccount on creaccount.id = details.created_by where details.created_By='"+userDetails.id+"' AND details.id='"+data[i].id+"' GROUP BY creaccount.id"
+//                         console.log(sql2);
+//                         connection.query(sql2)
+//                     }
+//                     if (hostelDetails && hostelDetails.length == data.length) {
+//                         response.status(200).json({ data: hostelDetails })
+//                     }
+//                 })
+//             }
+
+
+//         }
+//         else {
+//             console.log("err", err);
+//             response.status(201).json({ message: 'No Data Found' })
+//         }
+//     })
+// }
+
 function getHostelList(connection, response, request) {
     const userDetails = request.user_details;
     let hostelDetails = [];
-    let errorMessage = '';
-    connection.query(`select * from hosteldetails where created_By = '${userDetails.id}' and isActive = true ORDER BY create_At DESC`, function (err, data) {
-        if (data && data.length > 0) {
-            for (let i = 0; i < data.length; i++) {
-                // console.log("data", data);
-                let query = `select * from Hostel_Floor where hostel_id = ${data[i].id} and status = true order by id`;
-                connection.query(query, function (error, floorDetails) {
 
-                    if (error) {
-                        errorMessage = error
-                        console.log("error", error);
-                    }
-                    else {
-                        if (floorDetails && floorDetails.length > 0) {
-                            hostelDetails.push({ ...data[i], floorDetails })
-                        }
-                        else {
-                            hostelDetails.push({ ...data[i], floorDetails: [] })
-                        }
-                    }
-                    if (hostelDetails && hostelDetails.length == data.length) {
-                        response.status(200).json({ data: hostelDetails })
-                    }
-                })
-            }
+    const queryHostelList = `SELECT * FROM hosteldetails WHERE created_By = '${userDetails.id}' AND isActive = true ORDER BY create_At DESC`;
 
-
+    // Query to get the hostels
+    connection.query(queryHostelList, function (err, hostels) {
+        if (err) {
+            console.error("Error fetching hostels: ", err);
+            return response.status(201).json({ statusCode: 201, message: 'Internal Server Error' });
         }
-        else {
-            console.log("err", err);
-            response.status(201).json({ message: 'No Data Found' })
+
+        if (!hostels || hostels.length === 0) {
+            return response.status(201).json({ statusCode: 201, message: 'No Data Found' });
         }
-    })
+
+        let processedHostels = 0;
+
+        hostels.forEach((hostel, index) => {
+            const queryFloorDetails = `SELECT * FROM Hostel_Floor WHERE hostel_id = ${hostel.id} AND status = true ORDER BY id`;
+
+            connection.query(queryFloorDetails, function (floorErr, floorDetails) {
+                if (floorErr) {
+                    console.error("Error fetching floor details: ", floorErr);
+                    return response.status(201).json({ statusCode: 201, message: 'Error fetching floor details' });
+                }
+
+                // Fetch additional details
+                const additionalDetailsQuery = `
+                    SELECT 
+                        COALESCE(SUM((SELECT COUNT(id) FROM Hostel_Floor WHERE Hostel_Id='${hostel.id}' AND status=1)), 0) AS floorcount,
+                        COALESCE(SUM((SELECT COUNT(Room_Id) FROM hostelrooms WHERE Hostel_Id='${hostel.id}' AND isActive=1)), 0) AS roomCount,
+                        COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr 
+                            JOIN bed_details AS bd ON bd.hos_detail_id=hr.id 
+                            JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id 
+                            WHERE hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=0 AND hr.Hostel_Id='${hostel.id}'), 0) AS Bed,
+                        COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr 
+                            JOIN bed_details AS bd ON bd.hos_detail_id=hr.id 
+                            JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id 
+                            WHERE hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By='${userDetails.id}' AND hr.Hostel_Id='${hostel.id}'), 0) AS occupied_Bed 
+                    FROM hosteldetails details 
+                    JOIN createaccount creaccount ON creaccount.id = details.created_by 
+                    WHERE details.created_By='${userDetails.id}' AND details.id='${hostel.id}' 
+                    GROUP BY creaccount.id`;
+
+                connection.query(additionalDetailsQuery, function (additionalErr, additionalDetails) {
+                    if (additionalErr) {
+                        console.error("Error fetching additional details: ", additionalErr);
+                        return response.status(201).json({ statusCode: 201, message: 'Error fetching additional details' });
+                    }
+                    
+                    hostelDetails.push({
+                        ...hostel,
+                        floorDetails: floorDetails || [],
+                        list_details: additionalDetails[0]
+                    });
+
+                    processedHostels++;
+                    if (processedHostels === hostels.length) {
+                        response.status(200).json({ data: hostelDetails });
+                    }
+                });
+            });
+        });
+    });
 }
 
 
