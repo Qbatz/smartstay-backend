@@ -63,7 +63,8 @@ const queries = [
 
     "CREATE TABLE `manual_invoice_amenities` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`am_name` VARCHAR(255) NULL,`user_id` VARCHAR(255) NULL,`amount` BIGINT(20) NULL,`created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`id`));",
 
-    "ALTER TABLE `manual_invoice_amenities` ADD COLUMN `invoice_id` BIGINT(20) NULL AFTER `created_at`;"
+    "ALTER TABLE `manual_invoice_amenities` ADD COLUMN `invoice_id` BIGINT(20) NULL AFTER `created_at`;",
+    "ALTER TABLE `hostel` CHANGE COLUMN `Floor` `Floor` VARCHAR(255) NOT NULL ,CHANGE COLUMN `Rooms` `Rooms` VARCHAR(255) NOT NULL ,CHANGE COLUMN `Bed` `Bed` VARCHAR(255) NOT NULL ;"
 ];
 
 queries.forEach(executeQuery);

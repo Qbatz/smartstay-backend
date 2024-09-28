@@ -1013,25 +1013,31 @@ function deleteFloor(connection, response, reqData) {
 }
 
 function deleteRoom(connection, response, reqData) {
+
     if (reqData && reqData.hostelId && reqData.floorId && reqData.roomNo) {
-        let query = `SELECT * FROM hostel where Hostel_Id = ${reqData.hostelId} and Floor = ${reqData.floorId} and Rooms = ${reqData.roomNo} and isActive = true;`
+
+        let query = `SELECT * FROM hostel where Hostel_Id = ${reqData.hostelId} and Floor = '${reqData.floorId}' and Rooms = '${reqData.roomNo}' and isActive = true;`
         // let query = `select * from hostelrooms where Hostel_Id =${reqData.hostelId} and Floor_Id = ${reqData.floorId} and Room_Id = ${reqData.roomNo} and isActive = true;`;
+        console.log(query);
         connection.query(query, function (sel_Error, selData) {
             if (sel_Error) {
+                console.log(sel_Error);
                 response.status(201).json({ message: "Error while fetching user details" });
             }
             else {
-                if (selData && selData.length > 0) {
+                if (selData.length != 0) {
                     response.status(201).json({ message: "This Room has some users, so first delete the users.", BedStatus: 201 });
                 } else {
-                    let query1 = `select * from hostelrooms where Hostel_Id =${reqData.hostelId} and Floor_Id = ${reqData.floorId} and Room_Id = ${reqData.roomNo} and isActive = true;`
+                    let query1 = `select * from hostelrooms where Hostel_Id =${reqData.hostelId} and Floor_Id = '${reqData.floorId}' and Room_Id = '${reqData.roomNo}' and isActive = true;`
+                    console.log(query1);
                     connection.query(query1, function (room_Error, room_Data) {
                         if (room_Error) {
+                            console.log(room_Error);
                             response.status(201).json({ message: "Error while fetching Room details" });
                         }
                         else {
                             if (room_Data && room_Data.length > 0) {
-                                connection.query(`UPDATE hostelrooms SET isActive = false WHERE Hostel_Id='${reqData.hostelId}' AND Room_Id= ${reqData.roomNo} AND Floor_Id=${reqData.floorId};`, function (error, data) {
+                                connection.query(`UPDATE hostelrooms SET isActive = false WHERE Hostel_Id='${reqData.hostelId}' AND Room_Id= '${reqData.roomNo}' AND Floor_Id='${reqData.floorId}';`, function (error, data) {
                                     if (error) {
                                         response.status(201).json({ message: "doesn't update" });
                                     } else {
