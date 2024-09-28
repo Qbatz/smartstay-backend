@@ -1182,7 +1182,9 @@ function get_invoice_id(req, res) {
                 } else if (inv_data.length != 0) {
 
                     var invoice_number = inv_data[0].Invoices;
-                    const newInvoiceNumber = invoice_number.slice(0, -1) + (parseInt(invoice_number.slice(-1)) + 1); // Increment the last digit
+                    console.log(invoice_number);
+                    
+                    const newInvoiceNumber = invoice_number.slice(0, -1) + (parseInt(invoice_number.slice(-1)) + 1);
 
                     return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: newInvoiceNumber })
 
@@ -1207,43 +1209,6 @@ function get_invoice_id(req, res) {
         }
     })
 }
-
-const calculateEbAmount = (total_ebamount, room_data, start_date, end_date) => {
-    let activeUsers = 0;
-    let userStayDetails = [];
-
-    // Convert start_date and end_date strings to Date objects for comparison
-    const calcStartDate = new Date(start_date);
-    const calcEndDate = new Date(end_date);
-
-    // Calculate the number of active users and their stay duration
-    room_data.forEach(user => {
-        if (user.isActive) {
-            // Check if the user is still in the room or has a checkout date
-            const stayStart = new Date(user.createdAt);
-            const stayEnd = user.checkoutDate ? new Date(user.checkoutDate) : calcEndDate;
-
-            // Determine overlap between user stay and calculation period
-            const effectiveStartDate = new Date(Math.max(stayStart, calcStartDate));
-            const effectiveEndDate = new Date(Math.min(stayEnd, calcEndDate));
-
-            // Calculate number of active days in the specified period
-            const totalStayDays = Math.round((effectiveEndDate - effectiveStartDate) / (1000 * 60 * 60 * 24)) + 1;
-            userStayDetails.push({ userId: user.UserId, stayDays: totalStayDays });
-
-            // If user has active days in the calculation period, consider in EB distribution
-            if (totalStayDays > 0) {
-                activeUsers += 1;
-            }
-        }
-    });
-
-    // Calculate per-head EB amount for active users
-    const perHeadEbAmount = activeUsers > 0 ? parseFloat((total_ebamount / activeUsers).toFixed(2)) : total_ebamount;
-
-    return { perHeadEbAmount, activeUsers, userStayDetails };
-}
-
 
 function get_user_amounts(req, res) {
 

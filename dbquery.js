@@ -58,8 +58,12 @@ const queries = [
     "ALTER TABLE `assets` CHANGE COLUMN `asset_id` `asset_name` VARCHAR(255) NULL",
 
     "ALTER TABLE `EbAmount` ADD COLUMN `date` DATE DEFAULT '0000-00-00' AFTER `EbAmount`",
-    
-    "ALTER TABLE `invoicedetails` ADD COLUMN `action` VARCHAR(45) NULL DEFAULT 'auto' AFTER `numberofdays`;"
+
+    "ALTER TABLE `invoicedetails` ADD COLUMN `action` VARCHAR(45) NULL DEFAULT 'auto' AFTER `numberofdays`;",
+
+    "CREATE TABLE `manual_invoice_amenities` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`am_name` VARCHAR(255) NULL,`user_id` VARCHAR(255) NULL,`amount` BIGINT(20) NULL,`created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`id`));",
+
+    "ALTER TABLE `manual_invoice_amenities` ADD COLUMN `invoice_id` BIGINT(20) NULL AFTER `created_at`;"
 ];
 
 queries.forEach(executeQuery);
