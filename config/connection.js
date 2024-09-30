@@ -1,29 +1,20 @@
 const mysql = require("mysql");
 
-const dbConfig = require("./db_config");
-
-// var conn = mysql.createConnection({
-//     host: dbConfig.HOST,
-//     user: dbConfig.USER,
-//     password: dbConfig.PASSWORD,
-//     database: dbConfig.DATABASE,
-//     multipleStatements: dbConfig.multipleStatements
-// });
 let conn;
 
 function handleDisconnect() {
     conn = mysql.createConnection({
-        host: dbConfig.HOST,
-        user: dbConfig.USER,
-        password: dbConfig.PASSWORD,
-        database: dbConfig.DATABASE,
-        multipleStatements: dbConfig.multipleStatements
-    });
+        host: process.env.HOST,
+        user: process.env.USER,
+        password: process.env.PASSWORD,
+        database: process.env.DATABASE,
+        multipleStatements: true
+    }); 
 
     conn.connect((err) => {
         if (err) {
             console.error('Error connecting to database:', err.message);
-            setTimeout(handleDisconnect, 2000); 
+            setTimeout(handleDisconnect, 2000);
         }
     });
 
@@ -32,26 +23,11 @@ function handleDisconnect() {
         if (err.code === 'PROTOCOL_CONNECTION_LOST') {
             handleDisconnect();
         } else {
-            throw err; 
+            throw err;
         }
     });
 }
 
-handleDisconnect(); 
-
-// // Example function to execute queries
-// function executeQuery(query, params, callback) {
-//     conn.query(query, params, (queryErr, results) => {
-//         if (queryErr) {
-//             console.error('Error executing query:', queryErr.message);
-//             callback(queryErr, null); // Handle query error
-//             return;
-//         }
-//         callback(null, results); // Return results
-//     });
-// }
-
-
-
+handleDisconnect();
 
 module.exports = conn;

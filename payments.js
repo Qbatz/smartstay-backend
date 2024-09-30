@@ -1,4 +1,4 @@
-const connection = require('./config/db_config')
+const connection = require('./config/connection');
 
 function add_payment_details(req, res) {
 
@@ -54,7 +54,7 @@ function payment_details(req, res) {
             console.log(err);
             return res.status(201).json({ statusCode: 201, message: "Unable to Get Payment Settings" })
         } else {
-            return res.status(200).json({ statusCode: 200, message: "Successfully Get Payment Settings" })
+            return res.status(200).json({ statusCode: 200, message: "Successfully Get Payment Settings", payment_details: data })
         }
     })
 }

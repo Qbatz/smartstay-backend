@@ -42,12 +42,10 @@ app.use(function (req, res, next) {
 })
 const dbquery = require('./dbquery');
 
-var PORT = 2001
-
 app.use(middleware);
 
-app.listen(PORT, function () {
-    console.log("node is started at " + PORT + "")
+app.listen(process.env.PORT, function () {
+    console.log("node is started at " + process.env.PORT + "")
 })
 
 // ExpensesManagement 
