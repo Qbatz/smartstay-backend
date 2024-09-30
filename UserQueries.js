@@ -1348,4 +1348,25 @@ function get_user_amounts(req, res) {
     })
 }
 
-module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details, user_amenities_history, getAmnitiesName, aadhar_verify_otp, aadhaar_otp_verify, conutry_list, get_invoice_id, get_user_amounts }
+function get_beduser_details(req, res) {
+
+    var { hostel_id, floor_id, room_id, bed } = req.body;
+    var created_by = req.user_details.id;
+
+    if (!hostel_id || !floor_id || !room_id || !bed) {
+        return res.status(201).json({ message: "Missing Mandatory Fields", statusCode: 201 })
+    }
+
+    var sql1 = "SELECT Name,Phone,RoomRent,createdAt,User_Id FROM hostel WHERE Hostel_Id=? AND Floor =? AND Rooms=? AND Bed=? AND isActive=1 AND created_by=?";
+    connection.query(sql1, [hostel_id, floor_id, room_id, bed, created_by], function (err, data) {
+        if (err) {
+            return res.status(201).json({ message: "Unable to Get User Details", statusCode: 201 })
+        } else if (data.length != 0) {
+            return res.status(200).json({ statusCode: 200, message: "Assigned User Details", user_details: data })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+        }
+    })
+}
+
+module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details, user_amenities_history, getAmnitiesName, aadhar_verify_otp, aadhaar_otp_verify, conutry_list, get_invoice_id, get_user_amounts, get_beduser_details }

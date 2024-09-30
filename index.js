@@ -840,3 +840,8 @@ app.post('/export_invoices', (req, res) => {
         }
     })
 });
+
+// Show Invoice Id
+app.post('/get_beduser_details', (req, res) => {
+    userQueries.get_beduser_details(req, res)
+});
