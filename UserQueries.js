@@ -1233,7 +1233,7 @@ function get_user_amounts(req, res) {
     }
 
     // Rent Amount
-    var sql1 = "SELECT * FROM hostel WHERE ID=? OR User_Id=? AND isActive=1 AND created_by=?";
+    var sql1 = "SELECT * FROM hostel AS hs LEFT JOIN  eb_settings AS eb ON hs.Hostel_Id=eb.hostel_id WHERE hs.ID=? OR hs.User_Id=? AND hs.isActive=1 AND hs.created_by=?";
     connection.query(sql1, [user_id, user_id, created_by], (err, data) => {
         if (err) {
             return res.status(201).json({ message: "Unable to Get User Details", statusCode: 201 })
@@ -1241,6 +1241,7 @@ function get_user_amounts(req, res) {
 
             var total_array = [];
 
+            var per_unit_amount = data[0].amount;
             var uniq_user = data[0].User_Id;
             var hostel_id = data[0].Hostel_Id;
             var room_id = data[0].Rooms;
@@ -1267,7 +1268,7 @@ function get_user_amounts(req, res) {
                             total_array.push({ description: am_data[i].Amnities_Name, total_amount: am_data[i].Amount, amount: am_data[i].Amount })
                         }
                     }
-                    var sql3 = "SELECT SUM(EbAmount) AS eb_amount FROM EbAmount WHERE date BETWEEN ? AND ?;";
+                    var sql3 = "SELECT SUM(EbAmount) AS eb_amount,SUM(Eb_Unit) AS eb_unit FROM EbAmount WHERE date BETWEEN ? AND ?;";
                     connection.query(sql3, [start_date, end_date], function (err, eb_data) {
                         if (err) {
                             return res.status(201).json({ message: "Unable to Get Eb Details", statusCode: 201 })
@@ -1275,6 +1276,7 @@ function get_user_amounts(req, res) {
                             if (eb_data.length != 0) {
 
                                 var total_ebamount = eb_data[0].eb_amount;
+                                var total_eb_units = eb_data[0].eb_unit;
 
                                 var sql4 = "SELECT * FROM hostel WHERE Rooms='" + room_id + "' AND Hostel_Id='" + hostel_id + "' AND Floor='" + floor + "'";
                                 connection.query(sql4, function (err, room_data) {
@@ -1311,17 +1313,24 @@ function get_user_amounts(req, res) {
                                             });
 
                                             var total_days = userStayDetails.reduce((sum, user) => sum + user.stayDays, 0);
-
+                                            var eb_units_per_day = total_eb_units / total_days;
+                                            console.log(eb_units_per_day);
+                                            
                                             var eb_amount = total_ebamount / total_days;
 
                                             userStayDetails.forEach(user => {
+                                                user.totalUnits = parseFloat((user.stayDays * eb_units_per_day).toFixed(2)); // Total EB Units
                                                 user.ebShare = parseFloat((user.stayDays * eb_amount).toFixed(2));
                                                 console.log(`User ${user.userId} EB Share: ₹${user.ebShare}`);
                                             });
 
                                             const per_user_amount = userStayDetails.find(user => user.userId == user_id);
 
-                                            total_array.push({ description: 'Eb Amount', total_amount: total_ebamount, amount: per_user_amount.ebShare });
+                                            if (per_user_amount) {
+                                                total_array.push({
+                                                    description: 'Eb Amount', total_amount: total_ebamount, amount: per_user_amount.ebShare, per_unit_amount: per_unit_amount, used_unit: per_user_amount.totalUnits,
+                                                });
+                                            }
 
                                             // Respond with the calculated EB data
                                             return res.status(200).json({
