@@ -361,8 +361,11 @@ function RoomCount(connection, reqFloorID, response) {
 
     if (reqFloorID) {
 
-        connection.query(`SELECT *,COALESCE(SUM(Number_Of_Beds),0) AS total_beds FROM hostelrooms WHERE Floor_Id = '${reqFloorID.floor_Id}' AND Hostel_Id = '${reqFloorID.hostel_Id}' AND isActive=1 GROUP BY Room_Id`, function (error, RoomsData) {
+        var sql1="SELECT * FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Floor_Id=? AND hs.Hostel_Id=? AND isActive=1 GROUP BY Room_Id";
+        connection.query(sql1,[reqFloorID.floor_Id,reqFloorID.hostel_Id], function (error, RoomsData) {
             if (error) {
+                console.log(error);
+                
                 return response.status(201).json({ message: "Error occurred while fetching data" });
             }
 
@@ -382,7 +385,7 @@ function RoomCount(connection, reqFloorID, response) {
                                 Hostel_Id: RoomsData[i].Hostel_Id,
                                 Floor_Id: RoomsData[i].Floor_Id,
                                 Room_Id: RoomsData[i].Room_Id,
-                                Number_Of_Beds: RoomsData[i].total_beds,
+                                Number_Of_Beds: RoomsData[i].Number_Of_Beds,
                                 Room_Rent: RoomsData[i].Price,
                                 isActive: RoomsData[i].isActive
                             };
@@ -566,31 +569,49 @@ function CreateRoom(connection, request, response) {
         return response.status(201).json({ message: 'Missing Parameter' });
     }
 
+    if (reqsData.id) {
 
-    const checkRoomQuery = `SELECT * FROM hostelrooms WHERE Hostel_Id = '${reqsData.hostel_id}' AND Floor_Id = '${reqsData.floorId}' AND Room_Id = '${reqsData.roomId}' AND isActive=1;`
+        var sql1 = "SELECT * FROM hostelrooms WHERE id='" + reqsData.id + "'";
+        connection.query(sql1, function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Unable to Get Room Details" })
+            } else if (data.length != 0) {
 
-    connection.query(checkRoomQuery, (error, existingRoom) => {
-        if (error) {
-            return response.status(500).json({ message: 'Database Error', error: error.message });
-        }
+                var sql2 = "UPDATE hostelrooms SET Room_Id=? WHERE id=?";
+                connection.query(sql2, [reqsData.roomId, reqsData.id], function (err, ins_data) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Update Room Details" })
+                    } else {
+                        return res.status(200).json({ statusCode: 200, message: "Successfully Room Updated" })
+                    }
+                })
+            } else {
+                return res.status(201).json({ statusCode: 201, message: "Invalid Room Details" })
+            }
+        })
+    } else {
+        const checkRoomQuery = `SELECT * FROM hostelrooms WHERE Hostel_Id = '${reqsData.hostel_id}' AND Floor_Id = '${reqsData.floorId}' AND Room_Id = '${reqsData.roomId}' AND isActive=1;`
+        connection.query(checkRoomQuery, (error, existingRoom) => {
+            if (error) {
+                return response.status(500).json({ message: 'Database Error', error: error.message });
+            }
+            if (existingRoom.length > 0) {
+                return response.status(201).json({ message: 'Room ID already exists', statusCode: 201 });
+            } else {
+                const insertQuery = `INSERT INTO hostelrooms (Hostel_Id, Floor_Id, Room_Id, Created_By) VALUES ('${reqsData.hostel_id}', '${reqsData.floorId}', '${reqsData.roomId}',  '${created_by}');`
 
-        if (existingRoom.length > 0) {
-            return response.status(201).json({ message: 'Room ID already exists', statusCode: 201 });
-        } else {
-            const insertQuery = `INSERT INTO hostelrooms (Hostel_Id, Floor_Id, Room_Id, Created_By) VALUES ('${reqsData.hostel_id}', '${reqsData.floorId}', '${reqsData.roomId}',  '${created_by}');`
+                connection.query(insertQuery, (error, results) => {
+                    if (error) {
+                        return response.status(500).json({ message: 'Database Error', error: error.message });
+                    }
 
-            connection.query(insertQuery, (error, results) => {
-                if (error) {
-                    return response.status(500).json({ message: 'Database Error', error: error.message });
-                }
-
-                return response.status(200).json({ message: 'Room created successfully' });
-            });
-        }
+                    return response.status(200).json({ message: 'Room created successfully' });
+                });
+            }
 
 
-    });
-
+        });
+    }
 }
 
 function CreateFloor(req, res) {
@@ -1263,13 +1284,13 @@ function bed_details(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
         } else if (hs_data.length != 0) {
 
-            var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND Room_Id=? AND isActive=1 AND Created_By=?";
+            var sql2="SELECT *,hs.id AS bed_details_id FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Hostel_Id=? AND hs.Floor_Id=? AND hs.Room_Id=? AND hs.isActive=1 AND hs.Created_By=?"
             connection.query(sql2, [hostel_id, floor_id, room_id, created_by], (err, hs_res) => {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Room Details" })
-                } else if (hs_res.length > 0) {
+                } else if (hs_res.length != 0) {
 
-                    var hos_detail_id = hs_res[0].id;
+                    var hos_detail_id = hs_res[0].bed_details_id;
 
                     var sql3 = "SELECT * FROM bed_details WHERE hos_detail_id='" + hos_detail_id + "' AND status=1 AND isfilled=0 AND createdby='" + created_by + "'";
                     connection.query(sql3, (err, bed_data) => {
