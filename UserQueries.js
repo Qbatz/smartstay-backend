@@ -144,7 +144,7 @@ function createUser(connection, request, response) {
 
                                     console.log(okda, "/////////////////////");
 
-                                    connection.query(`UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${atten.Phone}', Email='${atten.Email}', Address='${atten.Address}', AadharNo='${atten.AadharNo}', PancardNo='${atten.PancardNo}',licence='${atten.licence}',HostelName='${atten.HostelName}',Hostel_Id='${atten.hostel_Id}', Floor='${atten.Floor}', Rooms='${atten.Rooms}', Bed='${atten.Bed}',profile='${profile_url}', AdvanceAmount='${atten.AdvanceAmount}', RoomRent='${atten.RoomRent}', BalanceDue='${atten.BalanceDue}', PaymentType='${atten.PaymentType}', Status='${Status}',paid_advance='${paid_advance}',pending_advance='${pending_advance}',country_code='${country_code}' WHERE ID='${atten.ID}'`, function (updateError, updateData) {
+                                    connection.query(`UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${atten.Phone}', Email='${atten.Email}', Address='${atten.Address}', AadharNo='${atten.AadharNo}', PancardNo='${atten.PancardNo}',licence='${atten.licence}',HostelName='${atten.HostelName}',Hostel_Id='${atten.hostel_Id}', Floor='${atten.Floor}', Rooms='${atten.Rooms}', Bed='${atten.Bed}',profile='${profile_url}', AdvanceAmount='${atten.AdvanceAmount}', RoomRent='${atten.RoomRent}', BalanceDue='${atten.BalanceDue}', PaymentType='${atten.PaymentType}', Status='${Status}',paid_advance='${paid_advance}',pending_advance='${pending_advance}',country_code='${country_code}',joining_Date='${atten.joining_date}' WHERE ID='${atten.ID}'`, function (updateError, updateData) {
                                         if (updateError) {
                                             response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
                                         } else {
@@ -336,7 +336,7 @@ function createUser(connection, request, response) {
                         var paid_advance = atten.paid_advance ? atten.paid_advance : 0;
                         var pending_advance = atten.AdvanceAmount - paid_advance;
 
-                        connection.query(`INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance,created_by,country_code) VALUES ('${Circle}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}','${paid_advance}','${pending_advance}','${created_by}','${country_code}')`, async function (insertError, insertData) {
+                        connection.query(`INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance,created_by,country_code,joining_Date) VALUES ('${Circle}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}','${paid_advance}','${pending_advance}','${created_by}','${country_code}','${atten.joining_date}')`, async function (insertError, insertData) {
                             if (insertError) {
                                 console.log("insertError", insertError);
                                 response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
@@ -444,17 +444,17 @@ function createUser(connection, request, response) {
                                         }
                                     })
                                 })
-                                    .catch(error => {
-                                        console.log(error);
-                                        var del_query = "DELETE FROM hostel WHERE ID=?";
-                                        connection.query(del_query, [user_ids], function (err, del_res) {
-                                            if (err) {
-                                                return response.status(201).json({ message: "Unable to Delete Bed Details", statusCode: 205 });
-                                            } else {
-                                                return response.status(201).json({ message: "Invalid Bed Details", statusCode: 205 });
-                                            }
-                                        })
-                                    });
+                                .catch(error => {
+                                    console.log(error);
+                                    var del_query = "DELETE FROM hostel WHERE ID=?";
+                                    connection.query(del_query, [user_ids], function (err, del_res) {
+                                        if (err) {
+                                            return response.status(201).json({ message: "Unable to Delete Bed Details", statusCode: 205 });
+                                        } else {
+                                            return response.status(201).json({ message: "Invalid Bed Details", statusCode: 205 });
+                                        }
+                                    })
+                                });
                             }
                         });
                     }
