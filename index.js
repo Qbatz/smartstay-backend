@@ -843,3 +843,7 @@ app.post('/export_invoices', (req, res) => {
 app.post('/get_beduser_details', (req, res) => {
     userQueries.get_beduser_details(req, res)
 });
+
+app.get('/get_bill_details', (req, res) => {
+    userQueries.get_bill_details(req, res)
+});

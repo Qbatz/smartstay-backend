@@ -1315,7 +1315,7 @@ function get_user_amounts(req, res) {
                                             var total_days = userStayDetails.reduce((sum, user) => sum + user.stayDays, 0);
                                             var eb_units_per_day = total_eb_units / total_days;
                                             console.log(eb_units_per_day);
-                                            
+
                                             var eb_amount = total_ebamount / total_days;
 
                                             userStayDetails.forEach(user => {
@@ -1378,4 +1378,18 @@ function get_beduser_details(req, res) {
     })
 }
 
-module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details, user_amenities_history, getAmnitiesName, aadhar_verify_otp, aadhaar_otp_verify, conutry_list, get_invoice_id, get_user_amounts, get_beduser_details }
+function get_bill_details(req, res) {
+
+    const created_by = res.user_details.id;
+    var sql1 = "SELECT inv.* FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id WHERE hs.created_By=? AND inv.action='manual';";
+    connection.query(sql1, [created_by], function (err, data) {
+        if (err) {
+            return res.status(201).json({ message: "Unable to Get Bill Details", statusCode: 201 })
+        } else {
+            return res.status(200).json({ message: "All Bill Details", statusCode: 200, bill_details: data })
+        }
+    })
+
+}
+
+module.exports = { getUsers, createUser, getPaymentDetails, CheckOutUser, transitionlist, customer_details, user_amenities_history, getAmnitiesName, aadhar_verify_otp, aadhaar_otp_verify, conutry_list, get_invoice_id, get_user_amounts, get_beduser_details, get_bill_details }

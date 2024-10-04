@@ -361,7 +361,7 @@ function RoomCount(connection, reqFloorID, response) {
 
     if (reqFloorID) {
 
-        var sql1="SELECT * FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hf.floor_name=? AND hs.Hostel_Id=? AND isActive=1 GROUP BY Room_Id";
+        var sql1="SELECT * FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Floor_Id=? AND hs.Hostel_Id=? AND isActive=1 GROUP BY Room_Id";
         connection.query(sql1,[reqFloorID.floor_Id,reqFloorID.hostel_Id], function (error, RoomsData) {
             if (error) {
                 console.log(error);
@@ -1284,7 +1284,7 @@ function bed_details(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
         } else if (hs_data.length != 0) {
 
-            var sql2="SELECT *,hs.id AS bed_details_id FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Hostel_Id=? AND hf.floor_name=? AND hs.Room_Id=? AND hs.isActive=1 AND hs.Created_By=?"
+            var sql2="SELECT *,hs.id AS bed_details_id FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Hostel_Id=? AND hs.Floor_Id=? AND hs.Room_Id=? AND hs.isActive=1 AND hs.Created_By=?"
             connection.query(sql2, [hostel_id, floor_id, room_id, created_by], (err, hs_res) => {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Room Details" })
