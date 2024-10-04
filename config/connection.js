@@ -5,11 +5,12 @@ let conn;
 function handleDisconnect() {
     conn = mysql.createConnection({
         host: process.env.HOST,
-        user: process.env.USER,
+        user: process.env.HOST_USER,
         password: process.env.PASSWORD,
         database: process.env.DATABASE,
         multipleStatements: true
     }); 
+    console.log('Database Details:', process.env.HOST, process.env.HOST_USER, process.env.PASSWORD, process.env.DATABASE);
 
     conn.connect((err) => {
         if (err) {

@@ -569,31 +569,49 @@ function CreateRoom(connection, request, response) {
         return response.status(201).json({ message: 'Missing Parameter' });
     }
 
+    if (reqsData.id) {
 
-    const checkRoomQuery = `SELECT * FROM hostelrooms WHERE Hostel_Id = '${reqsData.hostel_id}' AND Floor_Id = '${reqsData.floorId}' AND Room_Id = '${reqsData.roomId}' AND isActive=1;`
+        var sql1 = "SELECT * FROM hostelrooms WHERE id='" + reqsData.id + "'";
+        connection.query(sql1, function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Unable to Get Room Details" })
+            } else if (data.length != 0) {
 
-    connection.query(checkRoomQuery, (error, existingRoom) => {
-        if (error) {
-            return response.status(500).json({ message: 'Database Error', error: error.message });
-        }
+                var sql2 = "UPDATE hostelrooms SET Room_Id=? WHERE id=?";
+                connection.query(sql2, [reqsData.roomId, reqsData.id], function (err, ins_data) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Update Room Details" })
+                    } else {
+                        return res.status(200).json({ statusCode: 200, message: "Successfully Room Updated" })
+                    }
+                })
+            } else {
+                return res.status(201).json({ statusCode: 201, message: "Invalid Room Details" })
+            }
+        })
+    } else {
+        const checkRoomQuery = `SELECT * FROM hostelrooms WHERE Hostel_Id = '${reqsData.hostel_id}' AND Floor_Id = '${reqsData.floorId}' AND Room_Id = '${reqsData.roomId}' AND isActive=1;`
+        connection.query(checkRoomQuery, (error, existingRoom) => {
+            if (error) {
+                return response.status(500).json({ message: 'Database Error', error: error.message });
+            }
+            if (existingRoom.length > 0) {
+                return response.status(201).json({ message: 'Room ID already exists', statusCode: 201 });
+            } else {
+                const insertQuery = `INSERT INTO hostelrooms (Hostel_Id, Floor_Id, Room_Id, Created_By) VALUES ('${reqsData.hostel_id}', '${reqsData.floorId}', '${reqsData.roomId}',  '${created_by}');`
 
-        if (existingRoom.length > 0) {
-            return response.status(201).json({ message: 'Room ID already exists', statusCode: 201 });
-        } else {
-            const insertQuery = `INSERT INTO hostelrooms (Hostel_Id, Floor_Id, Room_Id, Created_By) VALUES ('${reqsData.hostel_id}', '${reqsData.floorId}', '${reqsData.roomId}',  '${created_by}');`
+                connection.query(insertQuery, (error, results) => {
+                    if (error) {
+                        return response.status(500).json({ message: 'Database Error', error: error.message });
+                    }
 
-            connection.query(insertQuery, (error, results) => {
-                if (error) {
-                    return response.status(500).json({ message: 'Database Error', error: error.message });
-                }
-
-                return response.status(200).json({ message: 'Room created successfully' });
-            });
-        }
+                    return response.status(200).json({ message: 'Room created successfully' });
+                });
+            }
 
 
-    });
-
+        });
+    }
 }
 
 function CreateFloor(req, res) {
