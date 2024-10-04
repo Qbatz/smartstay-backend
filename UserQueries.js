@@ -1182,7 +1182,7 @@ function get_invoice_id(req, res) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
                 } else if (hos_details.length != 0) {
 
-                    var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? ORDER BY id DESC;";
+                    var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? AND invoice_type=1 ORDER BY id DESC;";
                     connection.query(sql2, [hostel_id], function (err, inv_data) {
                         if (err) {
                             return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
@@ -1256,16 +1256,17 @@ function get_user_amounts(req, res) {
             const oneDayAmount = room_rent / daysInCurrentMonth; // Daily rent
             const totalRent = parseFloat((oneDayAmount * total_days).toFixed(2)); // Total rent rounded to 2 decimal places
 
-            total_array.push({ description: "Room Rent", total_amount: room_rent, amount: totalRent })
+            total_array.push({ id:50,description: "Room Rent", total_amount: room_rent, amount: totalRent })
 
             var sql2 = "SELECT amname.Amnities_Name,am.Amount,am.Amnities_Id FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id LEFT JOIN AmenitiesHistory AS amhis ON amhis.amenity_Id=am.Amnities_Id AND amhis.user_Id=? WHERE am.Hostel_Id=? AND am.setAsDefault=0 AND am.Status=1 AND am.createdBy=? GROUP BY amname.Amnities_Name"
             connection.query(sql2, [uniq_user, hostel_id, created_by], function (err, am_data) {
                 if (err) {
                     return res.status(201).json({ message: "Unable to Get Amenity Details", statusCode: 201 })
                 } else {
+                    var id=1
                     if (am_data.length != 0) {
                         for (let i = 0; i < am_data.length; i++) {
-                            total_array.push({ description: am_data[i].Amnities_Name, total_amount: am_data[i].Amount, amount: am_data[i].Amount })
+                            total_array.push({id:id ++, description: am_data[i].Amnities_Name, total_amount: am_data[i].Amount, amount: am_data[i].Amount })
                         }
                     }
                     var sql3 = "SELECT SUM(EbAmount) AS eb_amount,SUM(Eb_Unit) AS eb_unit FROM EbAmount WHERE date BETWEEN ? AND ?;";
@@ -1327,7 +1328,7 @@ function get_user_amounts(req, res) {
                                             const per_user_amount = userStayDetails.find(user => user.userId == user_id);
 
                                             if (per_user_amount) {
-                                                total_array.push({
+                                                total_array.push({id:10,
                                                     description: 'Eb Amount', total_amount: total_ebamount, amount: per_user_amount.ebShare, per_unit_amount: per_unit_amount, used_unit: per_user_amount.totalUnits,
                                                 });
                                             }
