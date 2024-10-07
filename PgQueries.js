@@ -1123,8 +1123,9 @@ function createBed(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
         } else if (hs_data.length != 0) {
 
-            var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND Room_Id=? AND isActive=1 AND Created_By='" + created_by + "'";
+            var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND id=? AND isActive=1 AND Created_By='" + created_by + "'";
             connection.query(sql2, [hostel_id, floor_id, room_id], (err, hs_res) => {
+                
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Room Details" })
                 } else if (hs_res.length > 0) {
@@ -1160,6 +1161,7 @@ function createBed(req, res) {
                         }
                     })
                 } else {
+                    
                     return res.status(201).json({ statusCode: 201, message: "Invalid Hostel Details" })
                 }
             })
