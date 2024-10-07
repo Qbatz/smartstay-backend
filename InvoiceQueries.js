@@ -120,7 +120,6 @@ async function calculateAndInsertInvoice(connection, user, users, isFirstTime) {
             WHERE 
                 hstl.isActive = 1 AND hstl.id = ?
         `, [user.ID]);
-        console.log("existingData", existingData);
 
         if (existingData.length != 0) {
 
@@ -233,8 +232,6 @@ async function calculateAndInsertInvoice(connection, user, users, isFirstTime) {
 
                     let userAmount = userAmounts.find(x => x.user_id === user.User_Id);
 
-                    console.log(userAmount, ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;");
-
                     eb_Hostel = userAmount ? userAmount.amount.toFixed() : 0;
 
                     console.log("EB Hostel:", eb_Hostel);
@@ -246,7 +243,6 @@ async function calculateAndInsertInvoice(connection, user, users, isFirstTime) {
             }
             else {
 
-
                 let tempArray = users.filter(item => {
                     const createdAtDate = moment(item.createdAt);
                     const createdAtMonth = createdAtDate.month() + 1; // month() is zero-based
@@ -257,7 +253,6 @@ async function calculateAndInsertInvoice(connection, user, users, isFirstTime) {
 
                 if (tempArray.length > 0) {
                     let totalNumberOfDays = 0;
-
 
                     let userDayAmounts = tempArray.map(user => {
 
@@ -283,13 +278,10 @@ async function calculateAndInsertInvoice(connection, user, users, isFirstTime) {
 
                     const roombase = existingData[0].ebBill / totalNumberOfDays;
 
-
                     let userAmounts = userDayAmounts.map(user => ({
                         user_id: user.user_id,
                         amount: roombase * user.numberOfDays
                     }));
-
-                    console.log("User Amounts:", userAmounts);
 
                     let userAmount = userAmounts.find(user_id => user_id.user_id === user.User_Id);
 
@@ -300,8 +292,6 @@ async function calculateAndInsertInvoice(connection, user, users, isFirstTime) {
                 }
                 eb_Hostel = 0;
             }
-
-            console.log(eb_Hostel, "Ending Eb AMount");
 
             const today = new Date();
             let lastMonth = today.getMonth(); // 0-based month (0 = January, 11 = December)
@@ -330,84 +320,111 @@ async function calculateAndInsertInvoice(connection, user, users, isFirstTime) {
                     }
                 }
             }
-
-            console.log("eb_Hostel....?", eb_Hostel)
             //  AdvanceAmount = ((roomPrice / moment(dueDate).daysInMonth()) * Number(numberOfDays)) + totalAmenitiesAmount +  Number(eb_Hostel);
 
             AdvanceAmount = ((roomPrice / moment(dueDate).daysInMonth()) * Number(numberOfDays)) + totalAmenitiesAmount + parseInt(eb_amount_total) + parseInt(eb_Hostel);
-
-            console.log(AdvanceAmount);
-
             let invoiceNo;
 
-            if (existingData[0].prefix && existingData[0].suffix) {
-                let numericSuffix;
-                if (existingData[0].InvoiceDetails != null) {
-                    numericSuffix = parseInt(existingData[0].InvoiceDetails.substring(existingData[0].prefix.length)) || 0;
-                    numericSuffix++;
+            const userID = user.User_Id.toString().slice(0, 4); // First 4 characters of User ID
+            const month = moment(new Date()).format("MM"); // Current month in MM format
+            var inv_year = moment(new Date()).format("YYYY"); // Current inv_year in YYYY format
+            const baseInvoicePrefix = `INVC${month}${inv_year}${userID}`;
+
+            var sql_12 = `SELECT Invoices FROM invoicedetails WHERE Hostel_id=? ORDER BY id DESC LIMIT 1;`;
+            connection.query(sql_12, [user.Hostel_Id], async function (err, result) {
+                if (err) {
+                    console.log("Unable to Get Invoice Details");
+                    return;
                 } else {
-                    numericSuffix = existingData[0].suffix;
+
+                    console.log(result[0].Invoices);
+
+                    let numericSuffix;
+                    if (result.length > 0) {
+                        const lastInvoice = result[0].Invoices;
+                        const lastSuffix = lastInvoice.substring(baseInvoicePrefix.length); // Extract suffix part
+                        numericSuffix = parseInt(lastSuffix, 10) || 0; // Convert to number (or use 0 if NaN)
+                        numericSuffix++; // Increment the suffix for the new invoice
+                    } else {
+                        numericSuffix = 1;
+                    }
+
+                    const incrementedSuffix = numericSuffix.toString().padStart(2, '0'); // Pad with '0' for consistency
+                    const invoiceNo = `${baseInvoicePrefix}${incrementedSuffix}`; // Complete invoice number
+
+                    console.log(`Generated Invoice Number: ${invoiceNo}`);
+
+                    // return;
+
+                    // if (existingData[0].prefix && existingData[0].suffix) {
+                    //     let numericSuffix;
+                    //     if (existingData[0].InvoiceDetails != null) {
+                    //         numericSuffix = parseInt(existingData[0].InvoiceDetails.substring(existingData[0].prefix.length)) || 0;
+                    //         numericSuffix++;
+                    //     } else {
+                    //         numericSuffix = existingData[0].suffix;
+                    //     }
+                    //     invoiceNo = existingData[0].prefix + numericSuffix;
+                    // } else {
+                    //     const userID = user.User_Id.toString().slice(0, 4);
+                    //     const month = moment(new Date()).month() + 1;
+                    //     const year = moment(new Date()).year();
+                    //     invoiceNo = 'INVC' + month + year + userID;
+                    // }
+
+                    let tempObj = {
+                        invoiceDate: invoiceDate,
+                        invoiceNo: invoiceNo,
+                        dueDate: dueDate,
+                        ebBill: existingData[0].ebBill,
+                        totalAmenitiesAmount: totalAmenitiesAmount,
+                        HostelBasedEb: eb_Hostel,
+                        dedctAmenitiesAmount: dedctAmenitiesAmount,
+                        roomPrice: roomPrice,
+                        roomBasedEb: eb_amount_total,
+                        AdvanceAmount: AdvanceAmount,
+                        numberOfDays: numberOfDays
+                    };
+
+
+                    await query(`INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Amnities_deduction_Amount, Hostel_Based, Room_Based, Bed,numberofdays,hos_user_id,BalanceDue) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${tempObj.AdvanceAmount}, '${user.Address}', '${tempObj.invoiceDate}', '${tempObj.dueDate}', '${tempObj.invoiceNo}', '${user.Status}', '${user.User_Id}', ${tempObj.roomPrice}, ${tempObj.ebBill}, ${tempObj.totalAmenitiesAmount},${tempObj.dedctAmenitiesAmount}, ${tempObj.HostelBasedEb}, ${tempObj.roomBasedEb},${user.Bed},${tempObj.numberOfDays},${user.ID},${tempObj.AdvanceAmount})`)
+                    if (isFirstTime) {
+                        var sql1 = "SELECT * FROM createaccount";
+                        connection.query(sql1, async function (err, data) {
+                            if (err) {
+                                console.log(err);
+                            } else {
+                                var unseen_users = data.map(x => x.id)
+                                console.log(unseen_users);
+
+                                var title = "Invoice Generation";
+                                var user_type = 1;
+                                var user_id = 0;
+                                var message = "New Invoice Generate for All Users";
+
+                                await addNotification.add_notification(user_id, title, user_type, message, unseen_users)
+                            }
+                        })
+
+                        var sql1 = "SELECT * FROM hostel WHERE isActive=1";
+                        connection.query(sql1, async function (err, data) {
+                            if (err) {
+                                console.log(err);
+                            } else {
+                                var unseen_users = data.map(x => x.ID)
+                                console.log(unseen_users);
+
+                                var title = "Invoice Generation";
+                                var user_type = 0;
+                                var user_id = 0;
+                                var message = "New Month Invoice Generated";
+
+                                await addNotification.add_notification(user_id, title, user_type, message, unseen_users)
+                            }
+                        })
+                    }
                 }
-                invoiceNo = existingData[0].prefix + numericSuffix;
-            } else {
-                const userID = user.User_Id.toString().slice(0, 4);
-                const month = moment(new Date()).month() + 1;
-                const year = moment(new Date()).year();
-                invoiceNo = 'INVC' + month + year + userID;
-            }
-
-            let tempObj = {
-                invoiceDate: invoiceDate,
-                invoiceNo: invoiceNo,
-                dueDate: dueDate,
-                ebBill: existingData[0].ebBill,
-                totalAmenitiesAmount: totalAmenitiesAmount,
-                HostelBasedEb: eb_Hostel,
-                dedctAmenitiesAmount: dedctAmenitiesAmount,
-                roomPrice: roomPrice,
-                roomBasedEb: eb_amount_total,
-                AdvanceAmount: AdvanceAmount,
-                numberOfDays: numberOfDays
-            };
-
-
-            await query(`INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Amnities_deduction_Amount, Hostel_Based, Room_Based, Bed,numberofdays,hos_user_id,BalanceDue) VALUES ('${user.Name}', ${user.Phone}, '${user.Email}', '${user.HostelName}', ${user.Hostel_Id}, ${user.Floor}, ${user.Rooms}, ${tempObj.AdvanceAmount}, '${user.Address}', '${tempObj.invoiceDate}', '${tempObj.dueDate}', '${tempObj.invoiceNo}', '${user.Status}', '${user.User_Id}', ${tempObj.roomPrice}, ${tempObj.ebBill}, ${tempObj.totalAmenitiesAmount},${tempObj.dedctAmenitiesAmount}, ${tempObj.HostelBasedEb}, ${tempObj.roomBasedEb},${user.Bed},${tempObj.numberOfDays},${user.ID},${tempObj.AdvanceAmount})`)
-            if (isFirstTime) {
-                var sql1 = "SELECT * FROM createaccount";
-                connection.query(sql1, async function (err, data) {
-                    if (err) {
-                        console.log(err);
-                    } else {
-                        var unseen_users = data.map(x => x.id)
-                        console.log(unseen_users);
-
-                        var title = "Invoice Generation";
-                        var user_type = 1;
-                        var user_id = 0;
-                        var message = "New Invoice Generate for All Users";
-
-                        await addNotification.add_notification(user_id, title, user_type, message, unseen_users)
-                    }
-                })
-
-                var sql1 = "SELECT * FROM hostel WHERE isActive=1";
-                connection.query(sql1, async function (err, data) {
-                    if (err) {
-                        console.log(err);
-                    } else {
-                        var unseen_users = data.map(x => x.ID)
-                        console.log(unseen_users);
-
-                        var title = "Invoice Generation";
-                        var user_type = 0;
-                        var user_id = 0;
-                        var message = "New Month Invoice Generated";
-
-                        await addNotification.add_notification(user_id, title, user_type, message, unseen_users)
-                    }
-                })
-            }
-
+            })
         } else {
             console.log("No existing data found for the given user ID");
         }
@@ -923,8 +940,8 @@ function getInvoiceListForAll(connection, response) {
 
 function getInvoiceList(connection, response, request) {
     const userDetails = request.user_details;
-    const query = `SELECT * FROM hosteldetails  hstlDetails inner join invoicedetails  invoice  on invoice.Hostel_Id=hstlDetails.id  WHERE hstlDetails.created_By ='${userDetails.id}' ORDER BY invoice.id DESC`;
-    connection.query(query, function (error, data) {
+    const sql1 = `SELECT hstlDetails.*,invoice.*,hos.profile as user_profile,hstlDetails.profile AS hostel_profile FROM hosteldetails hstlDetails inner join invoicedetails  invoice  on invoice.Hostel_Id=hstlDetails.id JOIN hostel as hos ON hos.ID=invoice.hos_user_id WHERE hstlDetails.created_By ='${userDetails.id}' ORDER BY invoice.id DESC`;
+    connection.query(sql1, function (error, data) {
         if (error) {
             response.status(403).json({ message: 'not connected' })
         } else {
@@ -1005,11 +1022,382 @@ function InvoicePDf(connection, reqBodyData, response) {
     // console.log("reqBodyData", reqBodyData)
 
     var invocice_type = reqBodyData.invoice_type;
+    var action_type = reqBodyData.action_type;
 
-    if (!invocice_type || invocice_type == undefined) {
-        var invocice_type = 1
+    const generatemanualPDF = async (data) => {
+        try {
+            var inv_data = data[0];
+            const htmlFilePath = path.join(__dirname, 'mail_templates', 'manual_invoice.html');
+            let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
+
+            const amountInWords = converter.toWords(inv_data.PaidAmount);
+            const currentTimeFormatted = moment().format('hh:mm A');
+            const defaultLogoPath = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg';
+            var logoPathimage = inv_data.hostel_profile ? inv_data.hostel_profile : defaultLogoPath;
+            // console.log(logoPathimage);
+            const invdate = moment(inv_data.Date).format('DD/MM/YYYY');
+
+            const tableData = [
+                { description: 'Room Rent', amount: inv_data.RoomRent },
+                { description: 'Eb Amount', amount: inv_data.EbAmount }
+            ];
+
+            data.forEach((row) => {
+                if (row.am_name && row.amount) {
+                    tableData.push({ description: row.am_name, amount: row.amount });
+                }
+            });
+
+            let tableRows = '';
+            tableData.forEach((item, index) => {
+                tableRows += `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${item.description}</td>
+            <td>${item.amount}</td>
+        </tr>
+    `;
+            });
+
+            htmlContent = htmlContent
+                .replace('{{hostal_name}}', inv_data.Hostel_Name)
+                .replace('{{city}}', inv_data.hostel_address)
+                .replace('{{user_name}}', inv_data.Name)
+                .replace('{{user_address}}', inv_data.user_address)
+                .replace('{{invoice_number}}', inv_data.Invoices)
+                .replace('{{invoice_date}}', invdate)
+                .replace('{{amount_in_words}}', amountInWords)
+                .replace('{{current_time}}', currentTimeFormatted)
+                .replace('{{logo}}', logoPathimage)
+                .replace('{{paid_amount}}', inv_data.PaidAmount)
+                .replace('{{total_amount}}', inv_data.Amount)
+                .replace('{{balance_amount}}', inv_data.BalanceDue)
+                .replace('{{tableRows}}', tableRows);
+
+            // Determine payment status based on amounts
+            let paymentStatusClass = '';
+            let paymentStatusText = '';
+
+            if (inv_data.Amount === inv_data.BalanceDue) {
+                paymentStatusClass = 'pending';
+                paymentStatusText = 'Pending';
+            } else if (inv_data.BalanceDue === 0) {
+                paymentStatusClass = 'success';
+                paymentStatusText = 'Success';
+            } else {
+                paymentStatusClass = 'partial';
+                paymentStatusText = 'Partial Paid';
+            }
+
+            // const amountName = (inv_data.invoice_type === 1) ? 'Rent Amount' : 'Advance Amount';
+
+            // Replace all placeholders in the HTML content
+            htmlContent = htmlContent
+                .replace('{{payment_status_class}}', paymentStatusClass)
+                .replace('{{payment_status_text}}', paymentStatusText)
+            // .replace('{{Amount_name}}', amountName);
+
+            const currentDate = moment().format('YYYY-MM-DD');
+            const currentMonth = moment(currentDate).month() + 1;
+            const currentYear = moment(currentDate).year();
+            const currentTime = moment().format('HHmmss');
+
+            const filename = `INV${currentMonth}${currentYear}${currentTime}${inv_data.User_Id}.pdf`;
+            const outputPath = path.join(__dirname, filename);
+
+            const browser = await puppeteer.launch();
+            const page = await browser.newPage();
+
+            await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
+
+            // Generate PDF
+            await page.pdf({ path: outputPath, format: 'A4' });
+
+            await browser.close();
+            console.log('PDF created successfully!');
+            var inv_id = inv_data.id;
+            await uploadToS3(outputPath, filename, inv_id);
+            fs.unlinkSync(outputPath);
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    };
+
+    if (action_type == 'manual') {
+
+        var sql1 = "SELECT inv.*,man.*,hs.Address AS user_address,hsv.Address AS hostel_address,hsv.profile AS hostel_profile FROM invoicedetails AS inv JOIN hostel AS hs ON hs.ID=inv.hos_user_id LEFT JOIN manual_invoice_amenities AS man ON man.invoice_id=inv.id JOIN hosteldetails AS hsv ON hsv.id=inv.Hostel_Id WHERE inv.id=?;";
+        connection.query(sql1, [reqBodyData.id], function (err, inv_data) {
+            if (err) {
+                return response.status(201).json({ message: "Unable to Get Invoice Details", statusCode: 201 })
+            } else if (inv_data.length != 0) {
+
+                generatemanualPDF(inv_data);
+
+            } else {
+                return response.status(201).json({ message: "Invalid Invoice Details", statusCode: 201 })
+            }
+        })
+
+
+    } else {
+        if (!invocice_type || invocice_type == undefined) {
+            var invocice_type = 1
+        }
+
+        // Assuming required libraries are imported at the beginning of the script
+
+        if (invocice_type == 2) {
+            const sql1 = `
+            SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No, invoice.Hostel_Id as Inv_Hostel_Id,invoice.PaidAmount,invoice.BalanceDue,invoice.Amount AS inv_amount,
+            hostel.id as Hostel_Id, invoice.RoomRent, invoice.EbAmount, invoice.id, invoice.Name as UserName, 
+            invoice.User_Id, invoice.UserAddress, invoice.Invoices, invoice.DueDate, invoice.Date,invoice.PaidAmount,
+            hostel.hostel_PhoneNo, hostel.Address as HostelAddress, hostel.Name as Hostel_Name, 
+            hostel.email_id as HostelEmail_Id, hostel.profile as Hostel_Logo, invoice.Amount 
+            FROM invoicedetails invoice 
+            INNER JOIN hosteldetails hostel ON hostel.id = invoice.Hostel_Id 
+            WHERE invoice.User_Id = ? AND invoice.id = ?`;
+            // console.log(sql1);
+
+            connection.query(sql1, [reqBodyData.User_Id, reqBodyData.id], async (err, data) => {
+                console.log("datadata", data)
+                if (err) {
+                    console.error('SQL query error:', err);
+                    return;
+                }
+
+                if (data.length === 0) {
+                    console.log('No data found');
+                    return;
+                }
+
+                generatePDF(data[0]);
+                // response.status(200).json({ message: 'Insert PDF successfully' });
+            });
+        }
+        else {
+            connection.query(`SELECT hos.User_Id,hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,invoice.PaidAmount,invoice.BalanceDue,hostel.id as Hostel_Id,invoice.RoomRent AS inv_amount,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.invoice_type,invoice.AmnitiesAmount,invoice.User_Id,invoice.UserAddress,invoice.PaidAmount, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount,hstlroom.Hostel_Id AS roomHostel_Id ,hstlroom.Floor_Id AS roomFloor_Id,hstlroom.Room_Id AS roomRoom_Id,hos.Hostel_Id AS hoshostel_id,hos.Floor AS hosfloor,hos.Rooms AS hosrooms,hos.createdAt,hos.User_Id FROM invoicedetails invoice INNER JOIN hosteldetails hostel INNER JOIN hostelrooms hstlroom INNER JOIN hostel hos on hostel.id = invoice.Hostel_Id WHERE hos.User_Id =? AND DATE(invoice.Date) = ? AND invoice.id = ? AND hos.isActive = 1 group by hos.id`,
+
+                [reqBodyData.User_Id, reqBodyData.Date, reqBodyData.id], function (error, data) {
+                    console.log("data", data)
+                    if (error) {
+                        console.log(error);
+                        response.status(500).json({ message: 'Internal server error' });
+                    } else if (data.length > 0) {
+                        console.log("data[0].AmnitiesAmount", data[0].invoice_type)
+                        // return
+
+                        if (data[0].EbAmount == 0 && data[0].invoice_type == 1 && data[0].AmnitiesAmount == 0) {
+                            generatePDF(data[0]);
+                            // response.status(200).json({ message: 'Insert PDF successfully' });
+
+                            console.log("vghghjhjh")
+                        }
+
+
+                        else {
+                            data.forEach((hostel, index) => {
+                                console.log("hostel", hostel)
+                                let breakUpTable = []
+                                const currentDate = moment().format('YYYY-MM-DD');
+                                const joinDate = moment(hostel.createdAt).format('YYYY-MM-DD');
+                                const currentMonth = moment(currentDate).month() + 1;
+                                const currentYear = moment(currentDate).year();
+                                const createdAtMonth = moment(joinDate).month() + 1;
+                                const createdAtYear = moment(joinDate).year();
+                                let dueDate, invoiceDate;
+
+                                if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+                                    dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+                                    invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+                                } else {
+                                    dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+                                    invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
+                                }
+
+
+                                const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+                                const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+                                const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+                                console.log("numberOfDays,,,,,,ere", numberOfDays)
+
+                                const JoiningWiseRoomRent = (hostel.RoomRent / moment(dueDate).daysInMonth()) * numberOfDays
+                                console.log("JoiningWiseRoomRent", hostel.RoomRent)
+
+                                let RoomRent = {
+                                    Rent: Math.round(JoiningWiseRoomRent),
+
+                                }
+                                console.log("RoomRent....?112", RoomRent)
+                                breakUpTable.push(RoomRent)
+                                connection.query(`select * from Amenities AmeList INNER JOIN AmnitiesName AmeName ON AmeList.Amnities_Id = AmeName.id  where AmeList.Hostel_Id = \'${hostel.Hostel_Id} \'`, async function (error, Amenitiesdata) {
+
+
+                                    if (Amenitiesdata.length > 0) {
+                                        for (let i = 0; i < Amenitiesdata.length; i++) {
+                                            const tempObj = {};
+                                            if (Amenitiesdata[i].setAsDefault == 0 && Amenitiesdata[i].Status == 1) {
+                                                tempObj[Amenitiesdata[i].Amnities_Name] = Amenitiesdata[i].Amount
+                                            } else if (Amenitiesdata[i].setAsDefault == 1 && Amenitiesdata[i].Status == 1) {
+                                                tempObj[Amenitiesdata[i].Amnities_Name] = Amenitiesdata[i].Amount;
+                                                RoomRent.Rent -= Amenitiesdata[i].Amount;
+                                                console.log("Amenitiesdata[i].Amount", Amenitiesdata[i].Amount)
+                                            }
+                                            breakUpTable.push(tempObj);
+
+                                        }
+                                    }
+                                    else {
+                                    }
+                                    connection.query(`select * from hostel where  isActive =1`, async function (error, hosdata) {
+                                        console.log("hosdata", hosdata.length)
+
+                                        let hostelbasedEb = 0;
+                                        let roombasedEb = 0;
+                                        let eb_amount_total;
+                                        let eb_Hostel = 0
+                                        let AdvanceAmount = 0;
+                                        const previousMonthDate = moment().subtract(1, 'months');
+                                        const previousMonth = previousMonthDate.month() + 1; // month() is zero-based
+                                        const previousYear = previousMonthDate.year();
+
+                                        if (data[0].isHostelBased === 1) {
+                                            // Get the previous month's date
+                                            const previousMonthDate = moment().subtract(1, 'months');
+                                            const previousMonth = previousMonthDate.month() + 1; // month() is zero-based
+                                            const previousYear = previousMonthDate.year();
+
+                                            console.log("Previous Month:", previousMonth, "Previous Year:", previousYear);
+
+                                            // Filter users based on the Hostel_Id and createdAt month/year being the previous month/year
+                                            let filteredArray = hosdata.filter(item => {
+                                                const createdAtDate = moment(item.createdAt);
+                                                if (!createdAtDate.isValid()) {
+                                                    console.error("Invalid date:", item.createdAt);
+                                                    return false;
+                                                }
+
+                                                const createdAtMonth = createdAtDate.month() + 1; // moment.js months are 0-based
+                                                const createdAtYear = createdAtDate.year();
+
+                                                return item.Hostel_Id == data[0].Hostel_Id && createdAtMonth === previousMonth && createdAtYear === previousYear;
+                                            });
+
+                                            console.log("filteredArray.length", filteredArray.length);
+
+                                            if (filteredArray.length > 0) {
+                                                let totalNumberOfDays = 0;
+
+                                                // Map through filtered users to calculate the number of days and amounts
+                                                let userDayAmounts = filteredArray.map(user => {
+                                                    const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
+                                                    const dueDate = previousMonthDate.endOf('month').format('YYYY-MM-DD');
+                                                    const invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+                                                    const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+                                                    const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+                                                    const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+
+                                                    totalNumberOfDays += numberOfDays;
+
+                                                    return { numberOfDays: numberOfDays, hostel_id: user.Hostel_Id, user_id: user.User_Id };
+                                                });
+
+                                                // Calculate the room base cost per day
+                                                const roombase = data[0].EbAmount / totalNumberOfDays;
+
+                                                console.log(userDayAmounts, "<<<<<<<<<<<<<<<<<<.............>>>>>>>>>>>>>>>>>>>>>");
+
+                                                // Calculate the amount each user owes
+                                                let userAmounts = userDayAmounts.map(user => ({
+                                                    user_id: user.user_id,
+                                                    hostel_id: user.hostel_id,
+                                                    amount: roombase * user.numberOfDays
+                                                }));
+
+                                                console.log("User Amounts:", userAmounts);
+                                                console.log(reqBodyData.User_Id, "tytyy");
+
+                                                let userAmount = userAmounts.find(x => x.user_id === reqBodyData.User_Id);
+
+                                                console.log(userAmount, ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;");
+
+                                                eb_Hostel = userAmount ? userAmount.amount.toFixed() : 0;
+
+                                                console.log("EB Hostel:", eb_Hostel);
+
+                                                breakUpTable.push({ EbAmount: eb_Hostel });
+                                            } else {
+                                                eb_Hostel = 0;
+                                                breakUpTable.push({ EbAmount: eb_Hostel });
+                                            }
+
+                                            generatePDFFor(breakUpTable, hosdata, hostel, data, response, connection);
+                                        } else {
+                                            let tempArray = hosdata.filter(item => {
+                                                const createdAtDate = moment(item.createdAt);
+                                                const createdAtMonth = createdAtDate.month() + 1; // month() is zero-based
+                                                const createdAtYear = createdAtDate.year();
+                                                return item.Hostel_Id == data[0].Hostel_Id && item.Floor == data[0].Floor_Id && item.Rooms == data[0].Room_No && createdAtMonth === previousMonth && createdAtYear === previousYear;
+                                            });
+                                            console.log("tempArray", tempArray);
+
+                                            if (tempArray.length > 0) {
+                                                let totalNumberOfDays = 0;
+
+                                                let userDayAmounts = tempArray.map(user => {
+                                                    const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
+                                                    const dueDate = previousMonthDate.endOf('month').format('YYYY-MM-DD');
+                                                    const invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+                                                    const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+                                                    const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+                                                    const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+
+                                                    totalNumberOfDays += numberOfDays;
+
+                                                    return { numberOfDays: numberOfDays, hostel_id: user.Hostel_Id, user_id: user.User_Id };
+                                                });
+
+                                                const roombase = data[0].EbAmount / totalNumberOfDays;
+
+                                                let userAmounts = userDayAmounts.map(user => ({
+                                                    user_id: user.user_id,
+                                                    amount: roombase * user.numberOfDays
+                                                }));
+
+                                                console.log("User Amounts:", userAmounts);
+                                                console.log(reqBodyData.User_Id, "[][][][][][][]");
+                                                let userAmount = userAmounts.find(x => x.user_id === reqBodyData.User_Id);
+
+                                                eb_amount_total = userAmount ? userAmount.amount.toFixed() : 0;
+                                                console.log("eb_amount_total123", eb_amount_total);
+
+                                                breakUpTable.push({ EbAmount: eb_amount_total });
+                                            } else {
+                                                eb_amount_total = 0;
+                                                breakUpTable.push({ EbAmount: eb_amount_total });
+                                            }
+
+                                            eb_Hostel = 0;
+                                            generatePDFFor(breakUpTable, hosdata, hostel, data, response, connection);
+                                        }
+
+
+                                        console.log(eb_Hostel, "Ending Eb AMount.....?");
+                                    })
+                                })
+
+
+                            })
+                        }
+
+
+
+                    } else {
+                        response.status(404).json({ message: 'No data found' });
+                    }
+
+                });
+        }
     }
-
 
     const generatePDF = async (inv_data) => {
         try {
@@ -1083,29 +1471,8 @@ function InvoicePDf(connection, reqBodyData, response) {
             await browser.close();
             console.log('PDF created successfully!');
             var inv_id = inv_data.id;
-
             await uploadToS3(outputPath, filename, inv_id);
             fs.unlinkSync(outputPath);
-
-            // Generate the PDF
-            // pdf.create(new_htmlContent, { phantomPath: phantomjs.path }).toFile(outputPath, async (err, res) => {
-            //     if (err) {
-            //         console.error('Error generating PDF:', err);
-            //         return;
-            //     }
-
-            //     console.log('PDF generated:', res.filename);
-
-            //     var inv_id = inv_data.id;
-
-            //     // Upload the PDF to S3
-            //     await uploadToS3(outputPath, filename, inv_id);
-
-            //     // Remove the local PDF file after upload
-            //     fs.unlinkSync(outputPath);
-
-            // });
-
         } catch (error) {
             console.error('Error:', error);
         }
@@ -1146,260 +1513,6 @@ function InvoicePDf(connection, reqBodyData, response) {
             console.error('Error uploading PDF:', err);
         }
     };
-
-    // Assuming required libraries are imported at the beginning of the script
-
-    if (invocice_type == 2) {
-        const sql1 = `
-        SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No, invoice.Hostel_Id as Inv_Hostel_Id,invoice.PaidAmount,invoice.BalanceDue,invoice.Amount AS inv_amount,
-        hostel.id as Hostel_Id, invoice.RoomRent, invoice.EbAmount, invoice.id, invoice.Name as UserName, 
-        invoice.User_Id, invoice.UserAddress, invoice.Invoices, invoice.DueDate, invoice.Date,invoice.PaidAmount,
-        hostel.hostel_PhoneNo, hostel.Address as HostelAddress, hostel.Name as Hostel_Name, 
-        hostel.email_id as HostelEmail_Id, hostel.profile as Hostel_Logo, invoice.Amount 
-        FROM invoicedetails invoice 
-        INNER JOIN hosteldetails hostel ON hostel.id = invoice.Hostel_Id 
-        WHERE invoice.User_Id = ? AND invoice.id = ?`;
-        // console.log(sql1);
-
-        connection.query(sql1, [reqBodyData.User_Id, reqBodyData.id], async (err, data) => {
-            console.log("datadata", data)
-            if (err) {
-                console.error('SQL query error:', err);
-                return;
-            }
-
-            if (data.length === 0) {
-                console.log('No data found');
-                return;
-            }
-
-            generatePDF(data[0]);
-            // response.status(200).json({ message: 'Insert PDF successfully' });
-        });
-    }
-    else {
-        connection.query(`SELECT hos.User_Id,hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,invoice.PaidAmount,invoice.BalanceDue,hostel.id as Hostel_Id,invoice.RoomRent AS inv_amount,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.invoice_type,invoice.AmnitiesAmount,invoice.User_Id,invoice.UserAddress,invoice.PaidAmount, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount,hstlroom.Hostel_Id AS roomHostel_Id ,hstlroom.Floor_Id AS roomFloor_Id,hstlroom.Room_Id AS roomRoom_Id,hos.Hostel_Id AS hoshostel_id,hos.Floor AS hosfloor,hos.Rooms AS hosrooms,hos.createdAt,hos.User_Id FROM invoicedetails invoice INNER JOIN hosteldetails hostel INNER JOIN hostelrooms hstlroom INNER JOIN hostel hos on hostel.id = invoice.Hostel_Id WHERE hos.User_Id =? AND DATE(invoice.Date) = ? AND invoice.id = ? AND hos.isActive = 1 group by hos.id`,
-
-            [reqBodyData.User_Id, reqBodyData.Date, reqBodyData.id], function (error, data) {
-                console.log("data", data)
-                if (error) {
-                    console.log(error);
-                    response.status(500).json({ message: 'Internal server error' });
-                } else if (data.length > 0) {
-                    console.log("data[0].AmnitiesAmount", data[0].invoice_type)
-                    // return
-
-                    if (data[0].EbAmount == 0 && data[0].invoice_type == 1 && data[0].AmnitiesAmount == 0) {
-                        generatePDF(data[0]);
-                        // response.status(200).json({ message: 'Insert PDF successfully' });
-
-                        console.log("vghghjhjh")
-                    }
-
-
-                    else {
-                        data.forEach((hostel, index) => {
-                            console.log("hostel", hostel)
-                            let breakUpTable = []
-                            const currentDate = moment().format('YYYY-MM-DD');
-                            const joinDate = moment(hostel.createdAt).format('YYYY-MM-DD');
-                            const currentMonth = moment(currentDate).month() + 1;
-                            const currentYear = moment(currentDate).year();
-                            const createdAtMonth = moment(joinDate).month() + 1;
-                            const createdAtYear = moment(joinDate).year();
-                            let dueDate, invoiceDate;
-
-                            if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
-                                dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
-                                invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-                            } else {
-                                dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
-                                invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
-                            }
-
-
-                            const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-                            const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-                            const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
-                            console.log("numberOfDays,,,,,,ere", numberOfDays)
-
-                            const JoiningWiseRoomRent = (hostel.RoomRent / moment(dueDate).daysInMonth()) * numberOfDays
-                            console.log("JoiningWiseRoomRent", hostel.RoomRent)
-
-                            let RoomRent = {
-                                Rent: Math.round(JoiningWiseRoomRent),
-
-                            }
-                            console.log("RoomRent....?112", RoomRent)
-                            breakUpTable.push(RoomRent)
-                            connection.query(`select * from Amenities AmeList INNER JOIN AmnitiesName AmeName ON AmeList.Amnities_Id = AmeName.id  where AmeList.Hostel_Id = \'${hostel.Hostel_Id} \'`, async function (error, Amenitiesdata) {
-
-
-                                if (Amenitiesdata.length > 0) {
-                                    for (let i = 0; i < Amenitiesdata.length; i++) {
-                                        const tempObj = {};
-                                        if (Amenitiesdata[i].setAsDefault == 0 && Amenitiesdata[i].Status == 1) {
-                                            tempObj[Amenitiesdata[i].Amnities_Name] = Amenitiesdata[i].Amount
-                                        } else if (Amenitiesdata[i].setAsDefault == 1 && Amenitiesdata[i].Status == 1) {
-                                            tempObj[Amenitiesdata[i].Amnities_Name] = Amenitiesdata[i].Amount;
-                                            RoomRent.Rent -= Amenitiesdata[i].Amount;
-                                            console.log("Amenitiesdata[i].Amount", Amenitiesdata[i].Amount)
-                                        }
-                                        breakUpTable.push(tempObj);
-
-                                    }
-                                }
-                                else {
-                                }
-                                connection.query(`select * from hostel where  isActive =1`, async function (error, hosdata) {
-                                    console.log("hosdata", hosdata.length)
-
-                                    let hostelbasedEb = 0;
-                                    let roombasedEb = 0;
-                                    let eb_amount_total;
-                                    let eb_Hostel = 0
-                                    let AdvanceAmount = 0;
-                                    const previousMonthDate = moment().subtract(1, 'months');
-                                    const previousMonth = previousMonthDate.month() + 1; // month() is zero-based
-                                    const previousYear = previousMonthDate.year();
-
-                                    if (data[0].isHostelBased === 1) {
-                                        // Get the previous month's date
-                                        const previousMonthDate = moment().subtract(1, 'months');
-                                        const previousMonth = previousMonthDate.month() + 1; // month() is zero-based
-                                        const previousYear = previousMonthDate.year();
-
-                                        console.log("Previous Month:", previousMonth, "Previous Year:", previousYear);
-
-                                        // Filter users based on the Hostel_Id and createdAt month/year being the previous month/year
-                                        let filteredArray = hosdata.filter(item => {
-                                            const createdAtDate = moment(item.createdAt);
-                                            if (!createdAtDate.isValid()) {
-                                                console.error("Invalid date:", item.createdAt);
-                                                return false;
-                                            }
-
-                                            const createdAtMonth = createdAtDate.month() + 1; // moment.js months are 0-based
-                                            const createdAtYear = createdAtDate.year();
-
-                                            return item.Hostel_Id == data[0].Hostel_Id && createdAtMonth === previousMonth && createdAtYear === previousYear;
-                                        });
-
-                                        console.log("filteredArray.length", filteredArray.length);
-
-                                        if (filteredArray.length > 0) {
-                                            let totalNumberOfDays = 0;
-
-                                            // Map through filtered users to calculate the number of days and amounts
-                                            let userDayAmounts = filteredArray.map(user => {
-                                                const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-                                                const dueDate = previousMonthDate.endOf('month').format('YYYY-MM-DD');
-                                                const invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-                                                const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-                                                const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-                                                const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
-
-                                                totalNumberOfDays += numberOfDays;
-
-                                                return { numberOfDays: numberOfDays, hostel_id: user.Hostel_Id, user_id: user.User_Id };
-                                            });
-
-                                            // Calculate the room base cost per day
-                                            const roombase = data[0].EbAmount / totalNumberOfDays;
-
-                                            console.log(userDayAmounts, "<<<<<<<<<<<<<<<<<<.............>>>>>>>>>>>>>>>>>>>>>");
-
-                                            // Calculate the amount each user owes
-                                            let userAmounts = userDayAmounts.map(user => ({
-                                                user_id: user.user_id,
-                                                hostel_id: user.hostel_id,
-                                                amount: roombase * user.numberOfDays
-                                            }));
-
-                                            console.log("User Amounts:", userAmounts);
-                                            console.log(reqBodyData.User_Id, "tytyy");
-
-                                            let userAmount = userAmounts.find(x => x.user_id === reqBodyData.User_Id);
-
-                                            console.log(userAmount, ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;");
-
-                                            eb_Hostel = userAmount ? userAmount.amount.toFixed() : 0;
-
-                                            console.log("EB Hostel:", eb_Hostel);
-
-                                            breakUpTable.push({ EbAmount: eb_Hostel });
-                                        } else {
-                                            eb_Hostel = 0;
-                                            breakUpTable.push({ EbAmount: eb_Hostel });
-                                        }
-
-                                        generatePDFFor(breakUpTable, hosdata, hostel, data, response, connection);
-                                    } else {
-                                        let tempArray = hosdata.filter(item => {
-                                            const createdAtDate = moment(item.createdAt);
-                                            const createdAtMonth = createdAtDate.month() + 1; // month() is zero-based
-                                            const createdAtYear = createdAtDate.year();
-                                            return item.Hostel_Id == data[0].Hostel_Id && item.Floor == data[0].Floor_Id && item.Rooms == data[0].Room_No && createdAtMonth === previousMonth && createdAtYear === previousYear;
-                                        });
-                                        console.log("tempArray", tempArray);
-
-                                        if (tempArray.length > 0) {
-                                            let totalNumberOfDays = 0;
-
-                                            let userDayAmounts = tempArray.map(user => {
-                                                const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-                                                const dueDate = previousMonthDate.endOf('month').format('YYYY-MM-DD');
-                                                const invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-                                                const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-                                                const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-                                                const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
-
-                                                totalNumberOfDays += numberOfDays;
-
-                                                return { numberOfDays: numberOfDays, hostel_id: user.Hostel_Id, user_id: user.User_Id };
-                                            });
-
-                                            const roombase = data[0].EbAmount / totalNumberOfDays;
-
-                                            let userAmounts = userDayAmounts.map(user => ({
-                                                user_id: user.user_id,
-                                                amount: roombase * user.numberOfDays
-                                            }));
-
-                                            console.log("User Amounts:", userAmounts);
-                                            console.log(reqBodyData.User_Id, "[][][][][][][]");
-                                            let userAmount = userAmounts.find(x => x.user_id === reqBodyData.User_Id);
-
-                                            eb_amount_total = userAmount ? userAmount.amount.toFixed() : 0;
-                                            console.log("eb_amount_total123", eb_amount_total);
-
-                                            breakUpTable.push({ EbAmount: eb_amount_total });
-                                        } else {
-                                            eb_amount_total = 0;
-                                            breakUpTable.push({ EbAmount: eb_amount_total });
-                                        }
-
-                                        eb_Hostel = 0;
-                                        generatePDFFor(breakUpTable, hosdata, hostel, data, response, connection);
-                                    }
-
-
-                                    console.log(eb_Hostel, "Ending Eb AMount.....?");
-                                })
-                            })
-
-
-                        })
-                    }
-
-
-
-                } else {
-                    response.status(404).json({ message: 'No data found' });
-                }
-
-            });
-    }
 }
 
 function generatePDFFor(breakUpTable, hosdata, hostel, data, response, connection) {
@@ -1953,120 +2066,74 @@ function convertAmountToWords(amount) {
 
 
 function EbAmount(connection, request, response) {
-    var atten = request.body;
 
+    var atten = request.body;
     if (!atten) {
         return response.status(201).json({ message: 'Missing parameter' });
     }
+    console.log(atten);
 
     var sql2 = "SELECT * FROM eb_settings WHERE hostel_id=?";
     connection.query(sql2, [atten.Hostel_Id], function (err, amount_details) {
         if (err) {
             return response.status(201).json({ statusCode: 201, message: 'Database error' });
         } else if (amount_details.length != 0) {
-            connection.query(`SELECT isHostelBased FROM hosteldetails where id=${atten.Hostel_Id}`, function (err, datum) {
-                console.log("datum..?", datum)
+
+            var sql_1 = "SELECT * FROM EbAmount WHERE Hostel_Id = '" + atten.Hostel_Id + "' AND Floor= '" + atten.Floor + "'AND Room= '" + atten.Room + "' ORDER BY id DESC";
+            connection.query(sql_1, function (err, eb_data_list) {
                 if (err) {
-                    console.error(err);
-                    return response.status(203).json({ message: 'Database error' });
-                }
-                if (datum.length > 0) {
-                    if (atten.id) {
-                        const isHostelBasedUpdated = datum[0].isHostelBased;
-                        const updateQuery = isHostelBasedUpdated ?
-                            `UPDATE EbAmount SET EbAmount=${atten.EbAmount} WHERE Hostel_Id= ${atten.Hostel_Id}` :
-                            `UPDATE EbAmount SET EbAmount=${atten.EbAmount}  where Hostel_Id = ${atten.Hostel_Id}, Floor= ${atten.Floor},Room= ${atten.Room}`;
-                        connection.query(updateQuery, function (error, data) {
-                            if (error) {
-                                console.error(error);
-                                response.status(201).json({ message: 'Update failed' });
-                            } else {
-                                response.status(200).json({ message: 'Update successful' });
-                            }
-                        });
-                    } else {
+                    return response.status(202).json({ message: 'Unable to Get Eb Amount Details', error: err });
+                } else if (eb_data_list.length == 0) {
 
-                        const date = new Date();
-                        const year = date.getFullYear();
-                        const month = ('0' + (date.getMonth() + 1)).slice(-2);
-                        const formattedDate = `${year}-${month}`; // Format as 'YYYY-MM'
+                    var sql_2 = "INSERT INTO EbAmount (hostel_id,Floor,Room,date,start_Meter_Reading,end_Meter_Reading,Eb_Unit,EbAmount) VALUES (?,?,?,?,?,0,0,0)";
+                    connection.query(sql_2, [atten.Hostel_Id, atten.Floor, atten.Room, atten.date, atten.end_Meter_Reading], function (err, data) {
+                        if (err) {
+                            console.error(err);
+                            return response.status(202).json({ message: 'Unable to Add Eb Amount', error: err });
+                        } else {
+                            return response.status(200).json({ message: 'Successfully Added Eb Amount' });
+                        }
+                    })
+                } else {
 
-                        var sql1 = "SELECT * FROM EbAmount WHERE DATE_FORMAT(createAt, '%Y-%m') = '" + formattedDate + "' AND hostel_Id='" + atten.Hostel_Id + "' AND Floor='" + atten.Floor + "' AND Room='" + atten.Room + "';"
-                        connection.query(sql1, function (err, eb_res) {
+                    let previous_reading = eb_data_list[0].end_Meter_Reading; //old meter Reading
+                    var startMeterReading = previous_reading; // Set as Start Meter Reading
+                    var end_Meter_Reading = atten.end_Meter_Reading; 
+                    var total_reading = end_Meter_Reading - startMeterReading; //  Get Total Reading
+                    var particular_amount = amount_details[0].amount;  // Get Single Amount
+                    var total_amount = particular_amount * total_reading;  // Get Total Amount
+ 
+                    if (eb_data_list.length == 1 && eb_data_list[0].EbAmount == 0) {
+
+                        var id = eb_data_list[0].id; // Set as id for Update
+
+                        var total_reading = end_Meter_Reading - eb_data_list[0].start_Meter_Reading;
+                        var total_amount = particular_amount * total_reading;
+
+                        var sql_3 = "UPDATE EbAmount SET date=?,end_Meter_Reading=?,EbAmount=?,Eb_Unit=? WHERE id=?";
+                        connection.query(sql_3, [atten.date, end_Meter_Reading, total_amount, total_reading, id], function (err, data) {
                             if (err) {
-                                return response.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Details' });
-                            } else if (eb_res.length == 0) {
-
-                                const isHostelBased = datum[0].isHostelBased;
-                                const startMeterReading = atten.startMeterReading;
-                                const end_Meter_Reading = atten.end_Meter_Reading;
-                                const total_reading = end_Meter_Reading - startMeterReading;
-                                const particular_amount = amount_details[0].amount;
-                                const total_amount = particular_amount * total_reading;
-
-                                const insertQuery = isHostelBased ?
-                                    `INSERT INTO EbAmount (hostel_Id, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit) VALUES (${atten.Hostel_Id}, ${startMeterReading}, ${atten.end_Meter_Reading}, ${total_amount},${total_reading})` :
-                                    `INSERT INTO EbAmount (hostel_Id, Floor, Room, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit) VALUES (${atten.Hostel_Id}, ${atten.Floor}, ${atten.Room}, ${startMeterReading}, '${end_Meter_Reading}', '${total_amount}',${total_reading})`;
-
-                                connection.query(insertQuery, function (error, data) {
-                                    if (error) {
-                                        console.error(error);
-                                        return response.status(202).json({ message: 'Insertion failed', error: error });
-                                    }
-                                    else {
-                                        // console.log("Inserted successfully");
-                                        return response.status(200).json({ message: 'Successfully Added Eb Amount' });
-                                    }
-                                });
+                                console.error(err);
+                                return response.status(202).json({ message: 'Unable to Update Eb Amount', error: err });
                             } else {
-                                return response.status(201).json({ statusCode: 201, message: 'Already Added This Month Eb Amount' });
+                                return response.status(200).json({ message: 'Successfully Updated Eb Amount' });
                             }
                         })
 
-                        // connection.query(`SELECT * FROM EbAmount WHERE hostel_Id = ${atten.Hostel_Id} AND Floor = '${atten.Floor}' AND Room = '${atten.Room}' ORDER BY id DESC LIMIT 1`, function (err, temdata) {
-                        //     if (err) {
-                        //         console.error(err);
-                        //         response.status(203).json({ message: 'Database error' });
-                        //         return;
-                        //     }
-
-                        //     let startMeterReading;
-
-                        //     const previousEndMeterReading = temdata.length > 0 ? temdata[0].end_Meter_Reading : 0;
-                        //     const isHostelBased = datum[0].isHostelBased;
-
-                        //     if (isHostelBased) {
-                        //         startMeterReading = previousEndMeterReading;
-                        //     } else {
-                        //         let sameRoomFound = temdata.length > 0;
-                        //         if (!sameRoomFound) {
-                        //             startMeterReading = 0;
-                        //         } else {
-                        //             startMeterReading = previousEndMeterReading;
-                        //         }
-                        //     }
-                        //     const difference = atten.end_Meter_Reading - startMeterReading;
-
-                        //     const insertQuery = isHostelBased ?
-                        //         `INSERT INTO EbAmount (hostel_Id, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit) VALUES (${atten.Hostel_Id}, ${startMeterReading}, ${atten.end_Meter_Reading}, ${atten.EbAmount},${difference})` :
-                        //         `INSERT INTO EbAmount (hostel_Id, Floor, Room, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit) VALUES (${atten.Hostel_Id}, ${atten.Floor}, ${atten.Room}, ${startMeterReading}, '${atten.end_Meter_Reading}', '${atten.EbAmount}',${difference})`;
-
-                        //     connection.query(insertQuery, function (error, data) {
-                        //         if (error) {
-                        //             console.error(error);
-                        //             response.status(202).json({ message: 'Insertion failed', error: error });
-                        //             return;
-                        //         }
-                        //         else {
-                        //             console.log("Inserted successfully");
-                        //             response.status(200).json({ message: 'Inserted successfully' });
-                        //         }
-
-                        //     });
-                        // });
+                    } else {
+                        const insertQuery = `INSERT INTO EbAmount (hostel_Id, Floor, Room, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit,date) VALUES (${atten.Hostel_Id}, ${atten.Floor}, ${atten.Room}, ${startMeterReading}, '${end_Meter_Reading}', '${total_amount}',${total_reading},'${atten.date}')`;
+                        connection.query(insertQuery, function (error, data) {
+                            if (error) {
+                                console.error(error);
+                                return response.status(202).json({ message: 'Unable to Add Eb Amount', error: error });
+                            }
+                            else {
+                                return response.status(200).json({ message: 'Successfully Added Eb Amount' });
+                            }
+                        });
                     }
                 }
-            });
+            })
         } else {
             return response.status(201).json({ statusCode: 201, message: 'Kindly Add Eb Setings' });
         }
@@ -2563,14 +2630,56 @@ function AmenitiesPDF(hostelDetails, monthData, response) {
         }
 
     });
+}
 
+function add_manual_invoice(req, res) {
+
+    var { user_id, due_date, date, invoice_id, room_rent, eb_amount, total_amount, amenity } = req.body;
+
+    var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
+    connection.query(sql1, [user_id], function (err, user_details) {
+        if (err) {
+            console.log(err);
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
+        } else if (user_details.length != 0) {
+
+            var user_data = user_details[0];
+
+            var total_am_amount = amenity && amenity.length > 0 ? amenity.reduce((sum, user) => sum + user.amount, 0) : 0;
+
+            var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,RoomRent,EbAmount,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, total_amount, due_date, date, invoice_id, 'pending', user_data.User_Id, room_rent, eb_amount, total_am_amount, user_data.Bed, total_amount, 'manual', 1, user_id], function (err, ins_data) {
+                if (err) {
+                    console.log(err);
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
+                } else {
+                    var inv_id = ins_data.insertId;
+                    if (amenity && amenity.length > 0) {
+                        var remaining = amenity.length;
+                        amenity.forEach(item => {
+                            var sql3 = "INSERT INTO manual_invoice_amenities (am_name, user_id, amount,invoice_id) VALUES (?, ?, ?,?)";
+                            connection.query(sql3, [item.am_name, user_id, item.amount, inv_id], function (err) {
+                                if (err) {
+                                    console.log("Error inserting amenity details:", err);
+                                }
+                                remaining -= 1;
+                                if (remaining === 0) {
+                                    return res.status(200).json({ statusCode: 200, message: "Invoice and Amenity Details Added Successfully" });
+                                }
+                            });
+                        });
+                    } else {
+                        return res.status(200).json({ statusCode: 200, message: "Invoice Added Successfully" });
+                    }
+                }
+            })
+
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+        }
+    })
 
 }
 
 
-
-
-
-
-
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory }
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice }

@@ -20,7 +20,9 @@ module.exports = (req, res, next) => {
         '/invoice_record_payments',
         '/new_subscription',
         '/webhook/payment-status',
-        '/conutry_list'
+        '/conutry_list',
+        '/export_expenses',
+        '/export_invoices'
     ];
 
     if (openEndpoints.includes(req.originalUrl) || req.originalUrl.startsWith('/login/login?')) {
