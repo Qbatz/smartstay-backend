@@ -2067,13 +2067,15 @@ function convertAmountToWords(amount) {
 
 function EbAmount(connection, request, response) {
 
+    var created_by = request.user_details.id;
+
     var atten = request.body;
     if (!atten) {
         return response.status(201).json({ message: 'Missing parameter' });
     }
     console.log(atten);
 
-    var sql2 = "SELECT * FROM eb_settings WHERE hostel_id=?";
+    var sql2 = "SELECT * FROM eb_settings WHERE hostel_id=? ORDER BY id DESC";
     connection.query(sql2, [atten.Hostel_Id], function (err, amount_details) {
         if (err) {
             return response.status(201).json({ statusCode: 201, message: 'Database error' });
@@ -2085,7 +2087,7 @@ function EbAmount(connection, request, response) {
                     return response.status(202).json({ message: 'Unable to Get Eb Amount Details', error: err });
                 } else if (eb_data_list.length == 0) {
 
-                    var sql_2 = "INSERT INTO EbAmount (hostel_id,Floor,Room,date,start_Meter_Reading,end_Meter_Reading,Eb_Unit,EbAmount) VALUES (?,?,?,?,?,0,0,0)";
+                    var sql_2 = "INSERT INTO EbAmount (hostel_id,Floor,Room,initial_date,start_Meter_Reading,end_Meter_Reading,Eb_Unit,EbAmount) VALUES (?,?,?,?,?,0,0,0)";
                     connection.query(sql_2, [atten.Hostel_Id, atten.Floor, atten.Room, atten.date, atten.end_Meter_Reading], function (err, data) {
                         if (err) {
                             console.error(err);
@@ -2098,11 +2100,13 @@ function EbAmount(connection, request, response) {
 
                     let previous_reading = eb_data_list[0].end_Meter_Reading; //old meter Reading
                     var startMeterReading = previous_reading; // Set as Start Meter Reading
-                    var end_Meter_Reading = atten.end_Meter_Reading; 
+                    var end_Meter_Reading = atten.end_Meter_Reading;
                     var total_reading = end_Meter_Reading - startMeterReading; //  Get Total Reading
                     var particular_amount = amount_details[0].amount;  // Get Single Amount
                     var total_amount = particular_amount * total_reading;  // Get Total Amount
- 
+
+                    var last_cal_date = amount_details[0].date;
+
                     if (eb_data_list.length == 1 && eb_data_list[0].EbAmount == 0) {
 
                         var id = eb_data_list[0].id; // Set as id for Update
@@ -2116,23 +2120,80 @@ function EbAmount(connection, request, response) {
                                 console.error(err);
                                 return response.status(202).json({ message: 'Unable to Update Eb Amount', error: err });
                             } else {
-                                return response.status(200).json({ message: 'Successfully Updated Eb Amount' });
+
+                                var last_cal_date = eb_data_list[0].initial_date;
+                                split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, function (response) {
+                                    if (response.status === 200) {
+                                        return response.status(200).json({ message: response.message });
+                                    } else {
+                                        return response.status(response.status).json({ message: response.message, error: response.error });
+                                    }
+                                });
                             }
                         })
-
                     } else {
                         const insertQuery = `INSERT INTO EbAmount (hostel_Id, Floor, Room, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit,date) VALUES (${atten.Hostel_Id}, ${atten.Floor}, ${atten.Room}, ${startMeterReading}, '${end_Meter_Reading}', '${total_amount}',${total_reading},'${atten.date}')`;
                         connection.query(insertQuery, function (error, data) {
                             if (error) {
                                 console.error(error);
                                 return response.status(202).json({ message: 'Unable to Add Eb Amount', error: error });
-                            }
-                            else {
-                                return response.status(200).json({ message: 'Successfully Added Eb Amount' });
+                            } else {
+                                split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, function (response) {
+                                    if (response.status === 200) {
+                                        return response.status(200).json({ statusCode: 200, message: response.message });
+                                    } else {
+                                        return response.status(201).json({ statusCode: 201, message: response.message, error: response.error });
+                                    }
+                                });
                             }
                         });
                     }
                 }
+
+                function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, callback) {
+                    var current_date = new Date().toISOString().split('T')[0].replace(/-/g, '/');
+                    // Check Eb Amounts
+                    var sql1 = "SELECT *, CASE WHEN checkoutDate IS NULL THEN DATEDIFF(CURDATE(), joining_date) ELSE DATEDIFF(checkoutDate, joining_date) END AS days_stayed FROM hostel WHERE Hostel_Id = ? AND Floor = ? AND Rooms = ? AND joining_date >= ? AND (checkoutDate <= ? OR checkoutDate IS NULL) AND customer_Role='user'";
+
+                    connection.query(sql1, [atten.Hostel_Id, atten.Floor, atten.Room, last_cal_date, current_date], function (err, user_data) {
+                        if (err) {
+                            // Send error response if the query fails
+                            console.error('Error fetching user details:', err);
+                            return callback({ statusCode: 201, message: 'Unable to Get User Details', error: err });
+                        }
+
+                        if (user_data.length !== 0) {
+                            let totalDays = user_data.reduce((acc, user) => acc + user.days_stayed, 0); // Total days stayed
+                            const amountPerDay = total_amount / totalDays; // Calculate amount per day
+                            let insertCounter = 0;
+
+                            user_data.forEach(user => {
+                                const user_id = user.ID; // User ID from the result set
+                                const userDays = user.days_stayed; // Get the days stayed for this user
+                                const userAmount = userDays * amountPerDay; // Calculate amount for this user
+                                let per_unit = userAmount / total_reading; // Calculate per unit based on total reading
+
+                                console.log(`User ID: ${user_id}, Per Unit: ₹${per_unit.toFixed(2)}, User Amount: ₹${userAmount.toFixed(2)}`);
+
+                                var sql2 = "INSERT INTO customer_eb_amount (user_id, start_meter, end_meter, unit, amount, created_by) VALUES (?, ?, ?, ?, ?, ?)";
+                                connection.query(sql2, [user_id, startMeterReading, end_Meter_Reading, per_unit, userAmount, created_by], function (err) {
+                                    if (err) {
+                                        console.error('Error inserting customer EB amount:', err);
+                                        return callback({ statusCode: 201, message: 'Unable to Add EB Amount for User', error: err });
+                                    } else {
+                                        insertCounter++;
+                                        if (insertCounter === user_data.length) {
+                                            return callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
+                                        }
+                                    }
+                                });
+                            });
+                        } else {
+                            return callback({ status: 200, message: 'Successfully Added EB Amount' });
+                        }
+                    });
+                }
+
             })
         } else {
             return response.status(201).json({ statusCode: 201, message: 'Kindly Add Eb Setings' });
@@ -2681,5 +2742,12 @@ function add_manual_invoice(req, res) {
 
 }
 
+function customer_readings(req, res) {
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice }
+    var created_by = req.user_details.id;
+
+    // var sql1="SELECT * FROM "
+}
+
+
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice, customer_readings }

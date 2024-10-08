@@ -70,6 +70,12 @@ const queries = [
     "ALTER TABLE `EbAmount` CHANGE COLUMN `date` `date` DATE NULL DEFAULT NULL ;",
 
     "CREATE TABLE `bookings` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`first_name` VARCHAR(255) NULL,`last_name` VARCHAR(255) NULL,`joining_date` DATE NULL,`amount` VARCHAR(45) NULL,`hostel_id` BIGINT(20) NULL,`floor_id` BIGINT(20) NULL,`room_id` BIGINT(20) NULL,`bed_id` BIGINT(20) NULL,`comments` VARCHAR(255) NULL,`status` BIGINT(20) NULL DEFAULT 1,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+
+    "CREATE TABLE `customer_eb_amount` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`user_id` BIGINT(20) NULL,`start_meter` BIGINT(20) NULL,`end_meter` BIGINT(20) NULL,`unit` VARCHAR(255) NULL,`amount` VARCHAR(45) NULL,`status` INT NULL DEFAULT 0,`created_by` BIGINT(20) NULL,`createdat` VARCHAR(45) NULL DEFAULT 'CURRENT_TIMESTAMP',PRIMARY KEY (`id`));",
+
+    "ALTER TABLE `hostel` CHANGE COLUMN `customer_Role` `customer_Role` VARCHAR(55) NULL DEFAULT 'user' ;",
+
+    "ALTER TABLE `EbAmount` ADD COLUMN `initial_date` DATE NULL AFTER `date`,CHANGE COLUMN `EbAmount` `EbAmount` BIGINT(20) NULL DEFAULT NULL AFTER `end_Meter_Reading`,CHANGE COLUMN `createAt` `createAt` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP AFTER `Eb_Unit`;"
 ];
 
 queries.forEach(executeQuery);

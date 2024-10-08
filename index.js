@@ -731,7 +731,6 @@ app.get('/conutry_list', (req, res) => {
 })
 
 
-
 app.post('/whatsapp_message', (req, res) => {
 
     const api_url = "https://graph.facebook.com/v20.0/419212591270391/messages";
@@ -865,3 +864,9 @@ app.post('/delete_booking', (req, res) => {
 });
 
 // Assign Booking
+
+
+// Customer Eb Reading
+// app.post('/customer_readings', (req, res) => {
+//     invoiceQueries.customer_readings(req, res)
+// });
