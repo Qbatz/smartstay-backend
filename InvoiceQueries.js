@@ -2709,11 +2709,11 @@ function add_manual_invoice(req, res) {
             var total_am_amount = amenity && amenity.length > 0 ? amenity.reduce((sum, user) => sum + user.amount, 0) : 0;
 
             console.log(total_am_amount);
-            
-            if(total_am_amount){
-                total_am_amount=total_am_amount;
-            }else{
-                total_am_amount=0
+
+            if (total_am_amount) {
+                total_am_amount = total_am_amount;
+            } else {
+                total_am_amount = 0
             }
 
             var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,RoomRent,EbAmount,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
@@ -2754,7 +2754,14 @@ function customer_readings(req, res) {
 
     var created_by = req.user_details.id;
 
-    // var sql1="SELECT * FROM "
+    var sql1 = "SELECT * FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id WHERE cb.created_by=?";
+    connection.query(sql1, [created_by], function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get Eb Details" })
+        } else {
+            return res.status(200).json({ statusCode: 200, message: "Customer Eb Details", eb_details: data })
+        }
+    })
 }
 
 
