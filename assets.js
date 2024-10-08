@@ -41,9 +41,9 @@ function add_asset(req, res) {
 
     if (validationResult.statusCode == 200) {
 
-        if (!data.serial_number || data.serial_number == undefined) {
-            data.serial_number = 0;
-        }
+        // if (!data.serial_number || data.serial_number == undefined) {
+        //     data.serial_number = 0;
+        // }
 
         if (data.id) {
             // Update Process
@@ -53,14 +53,14 @@ function add_asset(req, res) {
                     return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
                 } else if (as_res.length > 0) {
 
-                    var sql6 = "SELECT * FROM assets WHERE serial_number=? AND id !='" + data.id + "'";
+                    var sql6 = "SELECT * FROM assets WHERE serial_number=? AND id !='" + data.id + "' AND status=1";
                     connection.query(sql6, [data.serial_number], function (err, ass_res) {
                         if (err) {
                             return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
                         } else if (ass_res.length != 0) {
                             return res.status(201).json({ message: "Serial Number Already Exists", statusCode: 201 })
                         } else {
-                            var sql4 = "SELECT * FROM assets WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "' AND id !='" + data.id + "'";
+                            var sql4 = "SELECT * FROM assets WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "' AND id !='" + data.id + "' AND status=1";
                             connection.query(sql4, (err, asss_data) => {
                                 if (err) {
                                     return res.status(201).json({ message: "Unable to Get Asset Name Details", statusCode: 201 })
@@ -88,14 +88,14 @@ function add_asset(req, res) {
         } else {
             // Add Process
             // Check Serial Number
-            var sql5 = "SELECT * FROM assets WHERE serial_number=?";
+            var sql5 = "SELECT * FROM assets WHERE serial_number=? AND status=1";
             connection.query(sql5, [data.serial_number], function (err, ass_res) {
                 if (err) {
                     return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
                 } else if (ass_res.length != 0) {
                     return res.status(201).json({ message: "Serial Number Already Exists", statusCode: 201 })
                 } else {
-                    var sql3 = "SELECT * FROM assets WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "'";
+                    var sql3 = "SELECT * FROM assets WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "' AND status=1";
                     connection.query(sql3, (err, asss_data) => {
                         if (err) {
                             return res.status(201).json({ message: "Unable to Get Asset Name Details", statusCode: 201 })

@@ -10,6 +10,9 @@ const payments = require('./payments');
 const importFunc = require('./components/import_func');
 const xlsx = require('xlsx');
 const fs = require('fs');
+const bookings = require('./bookings');
+
+
 const app = express()
 const userQueries = require('./UserQueries');
 const accountManagement = require('./AccountManagementQueries')
@@ -847,3 +850,18 @@ app.post('/get_beduser_details', (req, res) => {
 app.get('/get_bill_details', (req, res) => {
     userQueries.get_bill_details(req, res)
 });
+
+// Bookings
+app.post('/add_booking', (req, res) => {
+    bookings.add_booking(req, res)
+});
+
+app.get('/all_bookings', (req, res) => {
+    bookings.all_bookings(req, res)
+});
+
+app.post('/delete_booking', (req, res) => {
+    bookings.delete_booking(req, res)
+});
+
+// Assign Booking
