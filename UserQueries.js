@@ -2134,7 +2134,7 @@ function get_beduser_details(req, res) {
 }
 
 function get_bill_details(req, res) {
-  const created_by = res.user_details.id;
+  const created_by = req.user_details.id;
   var sql1 =
     "SELECT inv.* FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id WHERE hs.created_By=? AND inv.action='manual';";
   connection.query(sql1, [created_by], function (err, data) {
