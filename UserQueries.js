@@ -1833,33 +1833,20 @@ function get_invoice_id(req, res) {
     } else if (user_data.length != 0) {
       var hostel_id = user_data[0].Hostel_Id;
 
-      var sql1 =
-        "SELECT * FROM hosteldetails WHERE id=? AND isActive=1 AND created_by=?";
-      connection.query(
-        sql1,
-        [hostel_id, created_by],
-        function (err, hos_details) {
-          if (err) {
-            return res
-              .status(201)
-              .json({
-                statusCode: 201,
-                message: "Unable to Get Hostel Details",
-              });
-          } else if (hos_details.length != 0) {
-            var sql2 =
-              "SELECT * FROM invoicedetails WHERE Hostel_Id=? ORDER BY id DESC;";
-            connection.query(sql2, [hostel_id], function (err, inv_data) {
-              if (err) {
-                return res
-                  .status(201)
-                  .json({
-                    statusCode: 201,
-                    message: "Unable to Get Hostel Details",
-                  });
-              } else if (inv_data.length != 0) {
-                var invoice_number = inv_data[0].Invoices;
-                console.log(invoice_number);
+            var sql1 = "SELECT * FROM hosteldetails WHERE id=? AND isActive=1 AND created_by=?";
+            connection.query(sql1, [hostel_id, created_by], function (err, hos_details) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
+                } else if (hos_details.length != 0) {
+
+                    var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? ORDER BY id DESC;";
+                    connection.query(sql2, [hostel_id], function (err, inv_data) {
+                        if (err) {
+                            return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
+                        } else if (inv_data.length != 0) {
+
+                            var invoice_number = inv_data[0].Invoices;
+                            console.log(invoice_number);
 
                 const newInvoiceNumber =
                   invoice_number.slice(0, -1) +
@@ -1951,52 +1938,28 @@ function get_user_amounts(req, res) {
       const oneDayAmount = room_rent / daysInCurrentMonth; // Daily rent
       const totalRent = parseFloat((oneDayAmount * total_days).toFixed(2)); // Total rent rounded to 2 decimal places
 
-      total_array.push({
-        description: "Room Rent",
-        total_amount: room_rent,
-        amount: totalRent,
-      });
+            total_array.push({ id:50,description: "Room Rent", total_amount: room_rent, amount: totalRent })
 
-      var sql2 =
-        "SELECT amname.Amnities_Name,am.Amount,am.Amnities_Id FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id LEFT JOIN AmenitiesHistory AS amhis ON amhis.amenity_Id=am.Amnities_Id AND amhis.user_Id=? WHERE am.Hostel_Id=? AND am.setAsDefault=0 AND am.Status=1 AND am.createdBy=? GROUP BY amname.Amnities_Name";
-      connection.query(
-        sql2,
-        [uniq_user, hostel_id, created_by],
-        function (err, am_data) {
-          if (err) {
-            return res
-              .status(201)
-              .json({
-                message: "Unable to Get Amenity Details",
-                statusCode: 201,
-              });
-          } else {
-            if (am_data.length != 0) {
-              for (let i = 0; i < am_data.length; i++) {
-                total_array.push({
-                  description: am_data[i].Amnities_Name,
-                  total_amount: am_data[i].Amount,
-                  amount: am_data[i].Amount,
-                });
-              }
-            }
-            var sql3 =
-              "SELECT SUM(EbAmount) AS eb_amount,SUM(Eb_Unit) AS eb_unit FROM EbAmount WHERE date BETWEEN ? AND ?;";
-            connection.query(
-              sql3,
-              [start_date, end_date],
-              function (err, eb_data) {
+            var sql2 = "SELECT amname.Amnities_Name,am.Amount,am.Amnities_Id FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id LEFT JOIN AmenitiesHistory AS amhis ON amhis.amenity_Id=am.Amnities_Id AND amhis.user_Id=? WHERE am.Hostel_Id=? AND am.setAsDefault=0 AND am.Status=1 AND am.createdBy=? GROUP BY amname.Amnities_Name"
+            connection.query(sql2, [uniq_user, hostel_id, created_by], function (err, am_data) {
                 if (err) {
-                  return res
-                    .status(201)
-                    .json({
-                      message: "Unable to Get Eb Details",
-                      statusCode: 201,
-                    });
+                    return res.status(201).json({ message: "Unable to Get Amenity Details", statusCode: 201 })
                 } else {
-                  if (eb_data.length != 0) {
-                    var total_ebamount = eb_data[0].eb_amount;
-                    var total_eb_units = eb_data[0].eb_unit;
+                    var id=1
+                    if (am_data.length != 0) {
+                        for (let i = 0; i < am_data.length; i++) {
+                            total_array.push({id:id ++, description: am_data[i].Amnities_Name, total_amount: am_data[i].Amount, amount: am_data[i].Amount })
+                        }
+                    }
+                    var sql3 = "SELECT SUM(EbAmount) AS eb_amount,SUM(Eb_Unit) AS eb_unit FROM EbAmount WHERE date BETWEEN ? AND ?;";
+                    connection.query(sql3, [start_date, end_date], function (err, eb_data) {
+                        if (err) {
+                            return res.status(201).json({ message: "Unable to Get Eb Details", statusCode: 201 })
+                        } else {
+                            if (eb_data.length != 0) {
+
+                                var total_ebamount = eb_data[0].eb_amount;
+                                var total_eb_units = eb_data[0].eb_unit;
 
                     var sql4 =
                       "SELECT * FROM hostel WHERE Rooms='" +
@@ -2081,15 +2044,11 @@ function get_user_amounts(req, res) {
                             (user) => user.userId == user_id
                           );
 
-                          if (per_user_amount) {
-                            total_array.push({
-                              description: "Eb Amount",
-                              total_amount: total_ebamount,
-                              amount: per_user_amount.ebShare,
-                              per_unit_amount: per_unit_amount,
-                              used_unit: per_user_amount.totalUnits,
-                            });
-                          }
+                                            if (per_user_amount) {
+                                                total_array.push({id:10,
+                                                    description: 'Eb Amount', total_amount: total_ebamount, amount: per_user_amount.ebShare, per_unit_amount: per_unit_amount, used_unit: per_user_amount.totalUnits,
+                                                });
+                                            }
 
                           // Respond with the calculated EB data
                           return res.status(200).json({
@@ -2175,7 +2134,7 @@ function get_beduser_details(req, res) {
 }
 
 function get_bill_details(req, res) {
-  const created_by = res.user_details.id;
+  const created_by = req.user_details.id;
   var sql1 =
     "SELECT inv.* FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id WHERE hs.created_By=? AND inv.action='manual';";
   connection.query(sql1, [created_by], function (err, data) {

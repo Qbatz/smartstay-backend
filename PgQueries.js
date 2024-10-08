@@ -361,7 +361,7 @@ function RoomCount(connection, reqFloorID, response) {
 
     if (reqFloorID) {
 
-        var sql1 = "SELECT * FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Floor_Id=? AND hs.Hostel_Id=? AND isActive=1 GROUP BY Room_Id";
+        var sql1 = "SELECT *,hs.id AS room_id FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Floor_Id=? AND hs.Hostel_Id=? AND isActive=1";
         connection.query(sql1, [reqFloorID.floor_Id, reqFloorID.hostel_Id], function (error, RoomsData) {
             if (error) {
                 console.log(error);
@@ -374,7 +374,8 @@ function RoomCount(connection, reqFloorID, response) {
                 let roomsProcessed = 0;
 
                 for (let i = 0; i < RoomsData.length; i++) {
-                    const Room_Id = RoomsData[i].id;
+                    const Room_Id = RoomsData[i].room_id;
+
 
                     connection.query(`SELECT COUNT('Bed') AS bookedBedCount, hos.Hostel_Id AS hostel_Id, hos.Floor, hos.Rooms FROM hostel hos WHERE Floor = '${reqFloorID.floor_Id}' AND Hostel_Id = '${reqFloorID.hostel_Id}' AND Rooms = '${Room_Id}' AND hos.isActive = true`, function (error, hostelData) {
                         if (error) {
@@ -384,7 +385,7 @@ function RoomCount(connection, reqFloorID, response) {
                                 bookedBedCount: hostelData[0].bookedBedCount,
                                 Hostel_Id: RoomsData[i].Hostel_Id,
                                 Floor_Id: RoomsData[i].Floor_Id,
-                                Room_Id: RoomsData[i].id,
+                                Room_Id: RoomsData[i].room_id,
                                 Room_Name: RoomsData[i].Room_Id,
                                 Number_Of_Beds: RoomsData[i].Number_Of_Beds,
                                 Room_Rent: RoomsData[i].Price,
@@ -393,7 +394,7 @@ function RoomCount(connection, reqFloorID, response) {
 
                             responseData.push(objectFormation);
 
-                            var bed_query = `SELECT bd.bed_no, bd.bed_amount, bd.isfilled FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id = hr.id WHERE hr.Hostel_Id = '${objectFormation.Hostel_Id}' AND hr.Floor_Id = '${objectFormation.Floor_Id}' AND hr.Room_Id = '${objectFormation.Room_Id}' AND bd.status = 1 AND hr.isActive = 1`;
+                            var bed_query = `SELECT bd.bed_no, bd.bed_amount, bd.isfilled FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id = hr.id WHERE hr.Hostel_Id = '${objectFormation.Hostel_Id}' AND hr.Floor_Id = '${objectFormation.Floor_Id}' AND hr.id = '${objectFormation.Room_Id}' AND bd.status = 1 AND hr.isActive = 1`;
 
                             connection.query(bed_query, (err, bed_data) => {
                                 if (err) {
@@ -1330,7 +1331,7 @@ function bed_details(req, res) {
         } else if (hs_data.length != 0) {
 
             // var sql2="SELECT *,hs.id AS bed_details_id FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Hostel_Id=? AND hs.Floor_Id=? AND hs.Room_Id=? AND hs.isActive=1 AND hs.Created_By=?"
-            var sql2="SELECT hs.id as Room_Id,hs.Hostel_Id,hs.Floor_Id,hs.Room_Id as Room_Name,hs.Number_Of_Beds,hs.isActive as Room_Status,hs.Created_By,hf.id,hf.floor_id,hf.floor_name,hf.status as Floor_Status,hs.id AS bed_details_id FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Hostel_Id=? AND hs.Floor_Id=? AND hs.Room_Id=? AND hs.isActive=1 AND hs.Created_By=?"
+            var sql2="SELECT hs.id as Room_Id,hs.Hostel_Id,hs.Floor_Id,hs.Room_Id as Room_Name,hs.Number_Of_Beds,hs.isActive as Room_Status,hs.Created_By,hf.id,hf.floor_id,hf.floor_name,hf.status as Floor_Status,hs.id AS bed_details_id FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Hostel_Id=? AND hs.Floor_Id=? AND hs.id=? AND hs.isActive=1 AND hs.Created_By=?"
             connection.query(sql2, [hostel_id, floor_id, room_id, created_by], (err, hs_res) => {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Room Details" })
