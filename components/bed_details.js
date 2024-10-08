@@ -36,7 +36,7 @@ function check_bed_details(bed_details_obj) {
                 resolve("Success")
 
             } else {
-                var be_query1 = "SELECT *,bd.id AS bed_detail_id FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id WHERE bd.bed_no='" + bed_details_obj.bed + "' AND hr.Hostel_Id='" + bed_details_obj.hostel_id + "' AND hr.Floor_Id='" + bed_details_obj.floor_id + "' AND hr.Room_Id='" + bed_details_obj.room + "' AND bd.isfilled=0 AND bd.status=1 AND hr.isActive=1";
+                var be_query1 = "SELECT *,bd.id AS bed_detail_id FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id WHERE bd.bed_no='" + bed_details_obj.bed + "' AND hr.Hostel_Id='" + bed_details_obj.hostel_id + "' AND hr.Floor_Id='" + bed_details_obj.floor_id + "' AND hr.id='" + bed_details_obj.room + "' AND bd.isfilled=0 AND bd.status=1 AND hr.isActive=1";
                 console.log(be_query1);
                 connection.query(be_query1, (err, be_res) => {
                     if (err) {
@@ -52,7 +52,7 @@ function check_bed_details(bed_details_obj) {
 
                                 if (bed_details_obj.old_bed != undefined && bed_details_obj.old_bed != 0) {
 
-                                    var sql2 = "SELECT *,bd.id AS bed_detail_id FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id WHERE bd.bed_no='" + bed_details_obj.old_bed + "' AND hr.Hostel_Id='" + bed_details_obj.old_hostel + "' AND hr.Floor_Id='" + bed_details_obj.old_floor + "' AND hr.Room_Id='" + bed_details_obj.old_room + "' AND bd.status=1 AND hr.isActive=1";
+                                    var sql2 = "SELECT *,bd.id AS bed_detail_id FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id WHERE bd.bed_no='" + bed_details_obj.old_bed + "' AND hr.Hostel_Id='" + bed_details_obj.old_hostel + "' AND hr.Floor_Id='" + bed_details_obj.old_floor + "' AND hr.id='" + bed_details_obj.old_room + "' AND bd.status=1 AND hr.isActive=1";
                                     connection.query(sql2, (err, sql2_res) => {
                                         if (err) {
                                             reject(err)
