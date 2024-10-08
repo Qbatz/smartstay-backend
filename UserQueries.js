@@ -1287,10 +1287,15 @@ function customer_details(req, res) {
   }
 
   // Check User Id valid or Invalid
+
+  // var sql1 ="SELECT * FROM hostel AS hs LEFT JOIN country_list AS cl ON hs.country_code=cl.country_code WHERE hs.ID=? AND hs.isActive=1 ";
+  
   var sql1 =
-    "SELECT * FROM hostel AS hs LEFT JOIN country_list AS cl ON hs.country_code=cl.country_code WHERE hs.ID=? AND hs.isActive=1 ";
+    'SELECT hs.*,cl.*,hosroom.id as Room_Id,hosroom.Room_Id as Room_Name FROM hostel AS hs LEFT JOIN hostelrooms hosroom ON hosroom.id = hs.Rooms LEFT JOIN country_list AS cl ON hs.country_code=cl.country_code WHERE hs.ID=? AND hs.isActive=1';
   connection.query(sql1, [user_id], (user_err, user_data) => {
     if (user_err) {
+      console.log("user_err",user_err);
+      
       return res
         .status(201)
         .json({ message: "Unable to Get User Details", statusCode: 201 });

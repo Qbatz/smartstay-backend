@@ -772,7 +772,7 @@ function update_floor(req, res) {
 
 function RoomFull(connection, reqFloorID, response) {
     if (reqFloorID) {
-        const query1 = `SELECT hos.Hostel_Id,hosRoom.Hostel_Id as hostel_Id, hos.Floor,hos.Rooms, hosRoom.Floor_Id,hosRoom.Room_Id, COUNT(hos.bed)as occupiedBeds ,hosRoom.Number_Of_Beds FROM hostel hos INNER JOIN hostelrooms hosRoom on hos.Floor = hosRoom.Floor_Id and hos.Rooms = hosRoom.Room_Id WHERE hosroom.Hostel_Id = \'${reqFloorID.hostel_Id}\' and hosroom.Floor_Id = \'${reqFloorID.floor_Id}\' and hosroom.Room_Id = \'${reqFloorID.room_Id}\' and hosroom.isActive=1`
+        const query1 = `SELECT hos.Hostel_Id,hosRoom.Hostel_Id as hostel_Id, hos.Floor,hos.Rooms, hosRoom.Floor_Id,hosRoom.id as Room_Id,hosRoom.Room_Id as Room_Name, COUNT(hos.bed)as occupiedBeds ,hosRoom.Number_Of_Beds FROM hostel hos INNER JOIN hostelrooms hosRoom on hos.Floor = hosRoom.Floor_Id and hos.Rooms = hosRoom.Room_Id WHERE hosroom.Hostel_Id = \'${reqFloorID.hostel_Id}\' and hosroom.Floor_Id = \'${reqFloorID.floor_Id}\' and hosroom.id = \'${reqFloorID.room_Id}\' and hosroom.isActive=1`
         connection.query(query1, function (error, data) {
             if (data) {
                 response.status(200).json({ data: data })
@@ -1172,7 +1172,8 @@ function get_room_details(connection, request, response) {
                 response.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 });
             } else if (sq_res.length != 0) {
 
-                var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND Room_Id=? AND isActive= true;";
+                // var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND Room_Id=? AND isActive= true;";
+                var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND id=? AND isActive= true;";
                 connection.query(sql2, [hostel_id, floor_id, room_id], function (room_err, room_res) {
                     if (room_err) {
                         response.status(201).json({ message: "Unable to Get Room Details", statusCode: 201 });
@@ -1204,7 +1205,8 @@ function update_room_details(connection, request, response) {
                 response.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 });
             } else if (sq_res.length != 0) {
 
-                var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND Room_Id=?";
+                // var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND Room_Id=?";
+                var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND id=?";
                 connection.query(sql2, [hostel_id, floor_id, room_id], function (room_err, room_res) {
                     if (room_err) {
                         response.status(201).json({ message: "Unable to Get Room Details", statusCode: 201 });
@@ -1262,8 +1264,9 @@ function createBed(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
         } else if (hs_data.length != 0) {
 
-            var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND Room_Id=? AND isActive=1 AND Created_By='" + created_by + "'";
+            var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND id=? AND isActive= true AND Created_By='" + created_by + "'";
             connection.query(sql2, [hostel_id, floor_id, room_id], (err, hs_res) => {
+                
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Room Details" })
                 } else if (hs_res.length > 0) {
@@ -1299,6 +1302,7 @@ function createBed(req, res) {
                         }
                     })
                 } else {
+                    
                     return res.status(201).json({ statusCode: 201, message: "Invalid Hostel Details" })
                 }
             })
@@ -1325,7 +1329,8 @@ function bed_details(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
         } else if (hs_data.length != 0) {
 
-            var sql2 = "SELECT *,hs.id AS bed_details_id FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Hostel_Id=? AND hs.Floor_Id=? AND hs.Room_Id=? AND hs.isActive=1 AND hs.Created_By=?"
+            // var sql2="SELECT *,hs.id AS bed_details_id FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Hostel_Id=? AND hs.Floor_Id=? AND hs.Room_Id=? AND hs.isActive=1 AND hs.Created_By=?"
+            var sql2="SELECT hs.id as Room_Id,hs.Hostel_Id,hs.Floor_Id,hs.Room_Id as Room_Name,hs.Number_Of_Beds,hs.isActive as Room_Status,hs.Created_By,hf.id,hf.floor_id,hf.floor_name,hf.status as Floor_Status,hs.id AS bed_details_id FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Hostel_Id=? AND hs.Floor_Id=? AND hs.Room_Id=? AND hs.isActive=1 AND hs.Created_By=?"
             connection.query(sql2, [hostel_id, floor_id, room_id, created_by], (err, hs_res) => {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Room Details" })
