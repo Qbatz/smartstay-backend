@@ -67,7 +67,9 @@ const queries = [
 
     "ALTER TABLE `hostel` CHANGE COLUMN `Floor` `Floor` VARCHAR(255) NOT NULL ,CHANGE COLUMN `Rooms` `Rooms` VARCHAR(255) NOT NULL ,CHANGE COLUMN `Bed` `Bed` VARCHAR(255) NOT NULL ;",
 
-    "ALTER TABLE `EbAmount` CHANGE COLUMN `date` `date` DATE NULL DEFAULT NULL ;"
+    "ALTER TABLE `EbAmount` CHANGE COLUMN `date` `date` DATE NULL DEFAULT NULL ;",
+
+    "CREATE TABLE `bookings` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`first_name` VARCHAR(255) NULL,`last_name` VARCHAR(255) NULL,`joining_date` DATE NULL,`amount` VARCHAR(45) NULL,`hostel_id` BIGINT(20) NULL,`floor_id` BIGINT(20) NULL,`room_id` BIGINT(20) NULL,`bed_id` BIGINT(20) NULL,`comments` VARCHAR(255) NULL,`status` BIGINT(20) NULL DEFAULT 1,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 ];
 
 queries.forEach(executeQuery);
