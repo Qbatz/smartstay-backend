@@ -864,7 +864,9 @@ app.post('/delete_booking', (req, res) => {
 });
 
 // Assign Booking
-
+// app.post('/assign_booking', (req, res) => {
+//     bookings.assign_booking(req, res)
+// });
 
 // Customer Eb Reading
 app.get('/customer_readings', (req, res) => {

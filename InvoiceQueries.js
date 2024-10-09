@@ -2210,7 +2210,7 @@ function EbAmount(connection, request, response) {
                                 }
                             });
                         } else {
-                            return callback({ status: 200, message: 'Successfully Added EB Amount' });
+                            return callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
                         }
                     });
                 }
