@@ -148,7 +148,7 @@ function AddCompliance(connection, request, response) {
 function GetComplianceList(connection, response, request) {
     const userDetails = request.user_details;
 
-    const query1 = `SELECT comp.*,ct.complaint_name FROM hosteldetails hstlDetails inner join compliance comp  on comp.Hostel_id=hstlDetails.id JOIN complaint_type AS ct ON ct.id=comp.Complainttype WHERE hstlDetails.created_By ='${userDetails.id}' ORDER BY comp.ID DESC`;
+    const query1 = `SELECT comp.*,ct.complaint_name,hf.floor_name AS floor_name,hr.Room_Id AS room_name FROM hosteldetails hstlDetails inner join compliance comp on comp.Hostel_id=hstlDetails.id JOIN complaint_type AS ct ON ct.id=comp.Complainttype JOIN Hostel_Floor AS hf ON hf.floor_id=comp.Floor_id AND hf.hostel_id=comp.Hostel_id JOIN hostelrooms AS hr ON hr.id=comp.Room WHERE hstlDetails.created_By ='${userDetails.id}' ORDER BY comp.ID DESC`;
     connection.query(query1, function (error, hostelData) {
         if (error) {
             console.error(error);
@@ -201,7 +201,7 @@ function all_complaint_types(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Unable to Get Complaint Types" })
         } else {
             return res.status(200).json({ statusCode: 200, message: "All Complaint Types", complaint_types: sel_res })
-        } 
+        }
         // else {
         //     return res.status(201).json({ statusCode: 201, message: "No Data Found" });
         // }
