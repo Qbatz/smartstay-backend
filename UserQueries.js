@@ -19,7 +19,7 @@ function getUsers(connection, response, request) {
 
   // var sql1 = "SELECT COUNT(*) as totalItems FROM hostel WHERE created_by='" + userDetails.id + "' AND isActive=1;";
   var query =
-    "SELECT *,DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true LEFT JOIN country_list AS cl ON hstl.country_code=cl.country_code WHERE hstlDetails.created_By ='" +
+    "SELECT *,hsroom.Room_Id,DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true LEFT JOIN country_list AS cl ON hstl.country_code=cl.country_code Left Join hostelrooms hsroom ON hsroom.Hostel_Id = hstlDetails.id and hsroom.Floor_Id = hstl.Floor and hsroom.id = hstl.Rooms WHERE hstlDetails.created_By ='" +
     userDetails.id +
     "' ORDER BY hstl.ID DESC";
   connection.query(query, function (error, hostelData) {
