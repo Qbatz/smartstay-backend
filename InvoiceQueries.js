@@ -2180,7 +2180,7 @@ function EbAmount(connection, request, response) {
                                 const userDays = user.days_stayed; // Get the days stayed for this user
                                 const userAmount = Math.round(userDays * amountPerDay); // Calculate and round the amount for this user
                                 let per_unit = Math.round((userAmount / total_amount) * total_reading); // Calculate and round the per unit
-                                
+
                                 console.log("Stay Date", user.days_stayed);
 
                                 console.log(`User ID: ${user_id}, Per Unit: ₹${per_unit.toFixed(2)}, User Amount: ₹${userAmount.toFixed(2)}`);
@@ -2771,9 +2771,10 @@ function customer_readings(req, res) {
 
     var created_by = req.user_details.id;
 
-    var sql1 = "SELECT * FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id WHERE cb.created_by=?";
+    var sql1 = "SELECT cb.*,hos.Name,hos.profile,hos.HostelName,hf.floor_name,hr.Room_Id, DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id JOIN Hostel_Floor AS hf ON hf.floor_id=hos.Floor AND hf.hostel_id=hos.Hostel_Id JOIN hostelrooms AS hr ON hr.id=hos.Rooms WHERE cb.created_by=?";
     connection.query(sql1, [created_by], function (err, data) {
         if (err) {
+            console.log(err);
             return res.status(201).json({ statusCode: 201, message: "Unable to Get Eb Details" })
         } else {
             return res.status(200).json({ statusCode: 200, message: "Customer Eb Details", eb_details: data })
