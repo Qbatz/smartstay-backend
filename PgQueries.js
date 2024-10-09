@@ -361,7 +361,7 @@ function RoomCount(connection, reqFloorID, response) {
 
     if (reqFloorID) {
 
-        var sql1 = "SELECT *,hs.id AS room_id FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Floor_Id=? AND hs.Hostel_Id=? AND isActive=1";
+        var sql1 = "SELECT *,hs.id AS room_id FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Floor_Id=? AND hs.Hostel_Id=? AND hs.isActive=true";
         connection.query(sql1, [reqFloorID.floor_Id, reqFloorID.hostel_Id], function (error, RoomsData) {
             if (error) {
                 console.log(error);
@@ -1091,7 +1091,7 @@ function deleteRoom(connection, response, reqData) {
                 if (selData.length != 0) {
                     response.status(201).json({ message: "This Room has some users, so first delete the users.", BedStatus: 201 });
                 } else {
-                    let query1 = `select * from hostelrooms where Hostel_Id =${reqData.hostelId} and Floor_Id = '${reqData.floorId}' and Room_Id = '${reqData.roomNo}' and isActive = true;`
+                    let query1 = `select * from hostelrooms where Hostel_Id =${reqData.hostelId} and Floor_Id = '${reqData.floorId}' and id = '${reqData.roomNo}' and isActive = true;`
                     console.log(query1);
                     connection.query(query1, function (room_Error, room_Data) {
                         if (room_Error) {
@@ -1100,7 +1100,7 @@ function deleteRoom(connection, response, reqData) {
                         }
                         else {
                             if (room_Data && room_Data.length > 0) {
-                                connection.query(`UPDATE hostelrooms SET isActive = false WHERE Hostel_Id='${reqData.hostelId}' AND Room_Id= '${reqData.roomNo}' AND Floor_Id='${reqData.floorId}';`, function (error, data) {
+                                connection.query(`UPDATE hostelrooms SET isActive = false WHERE Hostel_Id='${reqData.hostelId}' AND id= '${reqData.roomNo}' AND Floor_Id='${reqData.floorId}';`, function (error, data) {
                                     if (error) {
                                         response.status(201).json({ message: "doesn't update" });
                                     } else {
@@ -1133,7 +1133,7 @@ function deleteBed(req, res) {
         return res.status(201).json({ statusCode: 201, message: "Missing Required Fields" })
     }
 
-    var sql1 = "SELECT *,bd.id AS bed_detail_id FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id WHERE bd.bed_no='" + bed_id + "' AND hr.Hostel_Id='" + hostelId + "' AND hr.Floor_Id='" + floorId + "' AND hr.Room_Id='" + roomNo + "' AND bd.status=1 AND hr.isActive= true"
+    var sql1 = "SELECT *,bd.id AS bed_detail_id FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id WHERE bd.bed_no='" + bed_id + "' AND hr.Hostel_Id='" + hostelId + "' AND hr.Floor_Id='" + floorId + "' AND hr.id='" + roomNo + "' AND bd.status=1 AND hr.isActive= true"
     connection.query(sql1, (err, data) => {
         if (err) {
             res.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 });
