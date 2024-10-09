@@ -2159,7 +2159,7 @@ function EbAmount(connection, request, response) {
                 function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, callback) {
                     // Check Eb Amounts
                     // var sql1 = "SELECT *,CASE WHEN checkoutDate IS NULL THEN DATEDIFF(LEAST(CURDATE(), '" + atten.date + "'), GREATEST(joining_date, '" + last_cal_date + "')) + 1 ELSE DATEDIFF(LEAST(checkoutDate, '" + atten.date + "'), GREATEST(joining_date, '" + last_cal_date + "')) + 1 END AS days_stayed FROM hostel WHERE Hostel_Id = ? AND Floor = ? AND Rooms = ? AND joining_date <= '" + atten.date + "' AND (checkoutDate >= '" + last_cal_date + "' OR checkoutDate IS NULL) AND customer_Role = 'user';";
-                    var sql1="SELECT *, CASE WHEN checkoutDate IS NULL THEN DATEDIFF(LEAST(CURDATE(), '" + atten.date + "'), GREATEST(joining_date, '" + last_cal_date + "')) + 1 ELSE DATEDIFF(LEAST(checkoutDate, '" + atten.date + "'), GREATEST(joining_date, '" + last_cal_date + "')) + 1 END AS days_stayed FROM hostel WHERE Hostel_Id = ? AND Floor = ? AND Rooms = ? AND joining_date <= '" + atten.date + "' AND (checkoutDate >= '" + last_cal_date + "' OR checkoutDate IS NULL);"
+                    var sql1 = "SELECT *, CASE WHEN checkoutDate IS NULL THEN DATEDIFF(LEAST(CURDATE(), '" + atten.date + "'), GREATEST(joining_date, '" + last_cal_date + "')) + 1 ELSE DATEDIFF(LEAST(checkoutDate, '" + atten.date + "'), GREATEST(joining_date, '" + last_cal_date + "')) + 1 END AS days_stayed FROM hostel WHERE Hostel_Id = ? AND Floor = ? AND Rooms = ? AND joining_date <= '" + atten.date + "' AND (checkoutDate >= '" + last_cal_date + "' OR checkoutDate IS NULL);"
                     console.log(sql1);
 
                     connection.query(sql1, [atten.Hostel_Id, atten.Floor, atten.Room, last_cal_date, atten.date], function (err, user_data) {
@@ -2178,14 +2178,15 @@ function EbAmount(connection, request, response) {
                             user_data.forEach(user => {
                                 const user_id = user.ID; // User ID from the result set
                                 const userDays = user.days_stayed; // Get the days stayed for this user
-                                const userAmount = userDays * amountPerDay; // Calculate amount for this user
-                                let per_unit = (userAmount / total_amount) * total_reading;
+                                const userAmount = Math.round(userDays * amountPerDay); // Calculate and round the amount for this user
+                                let per_unit = Math.round((userAmount / total_amount) * total_reading); // Calculate and round the per unit
+                                
                                 console.log("Stay Date", user.days_stayed);
 
                                 console.log(`User ID: ${user_id}, Per Unit: ₹${per_unit.toFixed(2)}, User Amount: ₹${userAmount.toFixed(2)}`);
                                 if (userAmount != 0) {
-                                    var sql2 = "INSERT INTO customer_eb_amount (user_id, start_meter, end_meter, unit, amount, created_by) VALUES (?, ?, ?, ?, ?, ?)";
-                                    connection.query(sql2, [user_id, startMeterReading, end_Meter_Reading, per_unit, userAmount, created_by], function (err) {
+                                    var sql2 = "INSERT INTO customer_eb_amount (user_id, start_meter, end_meter, unit, amount, created_by,date) VALUES (?, ?, ?, ?, ?, ?,?)";
+                                    connection.query(sql2, [user_id, startMeterReading, end_Meter_Reading, per_unit, userAmount, created_by, atten.date], function (err) {
                                         if (err) {
                                             console.error('Error inserting customer EB amount:', err);
                                             return callback({ statusCode: 201, message: 'Unable to Add EB Amount for User', error: err });

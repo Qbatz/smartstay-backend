@@ -77,7 +77,9 @@ const queries = [
 
     "ALTER TABLE `EbAmount` ADD COLUMN `initial_date` DATE NULL AFTER `date`,CHANGE COLUMN `EbAmount` `EbAmount` BIGINT(20) NULL DEFAULT NULL AFTER `end_Meter_Reading`,CHANGE COLUMN `createAt` `createAt` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP AFTER `Eb_Unit`;",
 
-    "ALTER TABLE `customer_eb_amount` CHANGE COLUMN `createdat` `createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ;"
+    "ALTER TABLE `customer_eb_amount` CHANGE COLUMN `createdat` `createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ;",
+
+    "ALTER TABLE `customer_eb_amount` ADD COLUMN `date` DATE NULL AFTER `amount`,CHANGE COLUMN `status` `status` INT(11) NULL DEFAULT 1 ;"
 ];
 
 queries.forEach(executeQuery);
