@@ -29,8 +29,8 @@ function AddExpense(request, response) {
     if (reqData) {
         if (reqData.id != null && reqData.id != undefined && reqData.id != '') {
             let query = `UPDATE expenses SET
-  vendor_id = ${reqData.vendor_id},
-  asset_id = ${reqData.asset_id},
+  vendor_id = '${reqData.vendor_id}',
+  asset_id = '${reqData.asset_id}',
   category_id = ${reqData.category_id},
   purchase_date = '${purchase_date}',
   unit_count = ${reqData.unit_count},
@@ -44,6 +44,8 @@ function AddExpense(request, response) {
    WHERE id = ${reqData.id};`
             connection.query(query, function (updateErr, updateData) {
                 if (updateErr) {
+                    console.log(updateErr);
+                    
                     response.status(201).json({ message: "Internal Server Error" });
                 }
                 else {

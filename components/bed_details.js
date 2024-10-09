@@ -50,7 +50,7 @@ function check_bed_details(bed_details_obj) {
                                 reject(err)
                             } else {
 
-                                if (bed_details_obj.old_bed != 0) {
+                                if (bed_details_obj.old_bed != 'undefined' && bed_details_obj.old_bed != 0) {
 
                                     var sql2 = "SELECT *,bd.id AS bed_detail_id FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id WHERE bd.id='" + bed_details_obj.old_bed + "' AND hr.Hostel_Id='" + bed_details_obj.old_hostel + "' AND hr.Floor_Id='" + bed_details_obj.old_floor + "' AND hr.id='" + bed_details_obj.old_room + "' AND bd.status=1 AND hr.isActive=1";
                                     connection.query(sql2, (err, sql2_res) => {
