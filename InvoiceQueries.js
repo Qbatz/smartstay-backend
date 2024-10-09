@@ -2118,15 +2118,15 @@ function EbAmount(connection, request, response) {
                         connection.query(sql_3, [atten.date, end_Meter_Reading, total_amount, total_reading, id], function (err, data) {
                             if (err) {
                                 console.error(err);
-                                return response.status(202).json({ message: 'Unable to Update Eb Amount', error: err });
+                                return response.status(201).json({ message: 'Unable to Update Eb Amount', error: err });
                             } else {
 
                                 var last_cal_date = eb_data_list[0].initial_date;
                                 split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, function (result) {
                                     if (result.statusCode === 200) {
-                                        return response.status(200).json({ message: response.message });
+                                        return response.status(200).json({ statusCode: 200, message: result.message });
                                     } else {
-                                        return response.status(response.status).json({ message: response.message, error: response.error });
+                                        return response.status(201).json({ statusCode: 201, message: result.message, error: result.error });
                                     }
                                 });
                             }
@@ -2146,9 +2146,9 @@ function EbAmount(connection, request, response) {
 
                                 split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, function (result) {
                                     if (result.statusCode === 200) {
-                                        return response.status(200).json({ statusCode: 200, message: response.message });
+                                        return response.status(200).json({ statusCode: 200, message: result.message });
                                     } else {
-                                        return response.status(201).json({ statusCode: 201, message: response.message, error: response.error });
+                                        return response.status(201).json({ statusCode: 201, message: result.message, result: response.error });
                                     }
                                 });
                             }
@@ -2158,11 +2158,8 @@ function EbAmount(connection, request, response) {
 
                 function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, callback) {
                     // Check Eb Amounts
-
-                    console.log(atten.date);
-
-                    // var sql1 = "SELECT *, CASE WHEN checkoutDate IS NULL THEN DATEDIFF(CURDATE(), joining_date) ELSE DATEDIFF(checkoutDate, joining_date) END AS days_stayed FROM hostel WHERE Hostel_Id = ? AND Floor = ? AND Rooms = ? AND joining_date >= '"+last_cal_date+"' AND (checkoutDate <= '"+atten.date+"' OR checkoutDate IS NULL) AND customer_Role='user'";
-                    var sql1 = "SELECT *,CASE WHEN checkoutDate IS NULL THEN DATEDIFF(LEAST(CURDATE(), '" + atten.date + "'), GREATEST(joining_date, '" + last_cal_date + "')) ELSE DATEDIFF(LEAST(checkoutDate, '" + atten.date + "'), GREATEST(joining_date, '" + last_cal_date + "')) END AS days_stayed FROM hostel WHERE Hostel_Id = ? AND Floor = ? AND Rooms = ? AND joining_date <= '" + atten.date + "' AND (checkoutDate >= '" + last_cal_date + "' OR checkoutDate IS NULL) AND customer_Role = 'user';";
+                    // var sql1 = "SELECT *,CASE WHEN checkoutDate IS NULL THEN DATEDIFF(LEAST(CURDATE(), '" + atten.date + "'), GREATEST(joining_date, '" + last_cal_date + "')) + 1 ELSE DATEDIFF(LEAST(checkoutDate, '" + atten.date + "'), GREATEST(joining_date, '" + last_cal_date + "')) + 1 END AS days_stayed FROM hostel WHERE Hostel_Id = ? AND Floor = ? AND Rooms = ? AND joining_date <= '" + atten.date + "' AND (checkoutDate >= '" + last_cal_date + "' OR checkoutDate IS NULL) AND customer_Role = 'user';";
+                    var sql1="SELECT *, CASE WHEN checkoutDate IS NULL THEN DATEDIFF(LEAST(CURDATE(), '" + atten.date + "'), GREATEST(joining_date, '" + last_cal_date + "')) + 1 ELSE DATEDIFF(LEAST(checkoutDate, '" + atten.date + "'), GREATEST(joining_date, '" + last_cal_date + "')) + 1 END AS days_stayed FROM hostel WHERE Hostel_Id = ? AND Floor = ? AND Rooms = ? AND joining_date <= '" + atten.date + "' AND (checkoutDate >= '" + last_cal_date + "' OR checkoutDate IS NULL);"
                     console.log(sql1);
 
                     connection.query(sql1, [atten.Hostel_Id, atten.Floor, atten.Room, last_cal_date, atten.date], function (err, user_data) {
@@ -2185,7 +2182,6 @@ function EbAmount(connection, request, response) {
                                 let per_unit = (userAmount / total_amount) * total_reading;
                                 console.log("Stay Date", user.days_stayed);
 
-
                                 console.log(`User ID: ${user_id}, Per Unit: ₹${per_unit.toFixed(2)}, User Amount: ₹${userAmount.toFixed(2)}`);
                                 if (userAmount != 0) {
                                     var sql2 = "INSERT INTO customer_eb_amount (user_id, start_meter, end_meter, unit, amount, created_by) VALUES (?, ?, ?, ?, ?, ?)";
@@ -2202,7 +2198,7 @@ function EbAmount(connection, request, response) {
                                     });
                                 } else {
                                     console.log(`User ID: ${user_id} has a zero amount, skipping insertion.`);
-                                    insertCounter++; 
+                                    insertCounter++;
                                     // return callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
                                     if (insertCounter === user_data.length) {
                                         return callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
@@ -2210,11 +2206,10 @@ function EbAmount(connection, request, response) {
                                 }
                             });
                         } else {
-                            return callback({ status: 200, message: 'Successfully Added EB Amount' });
+                            return callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
                         }
                     });
                 }
-
             })
         } else {
             return response.status(201).json({ statusCode: 201, message: 'Kindly Add Eb Setings' });

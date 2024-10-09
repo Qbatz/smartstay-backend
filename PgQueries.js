@@ -394,7 +394,7 @@ function RoomCount(connection, reqFloorID, response) {
 
                             responseData.push(objectFormation);
 
-                            var bed_query = `SELECT bd.bed_no, bd.bed_amount, bd.isfilled FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id = hr.id WHERE hr.Hostel_Id = '${objectFormation.Hostel_Id}' AND hr.Floor_Id = '${objectFormation.Floor_Id}' AND hr.id = '${objectFormation.Room_Id}' AND bd.status = 1 AND hr.isActive = 1`;
+                            var bed_query = `SELECT bd.id,bd.bed_no, bd.bed_amount, bd.isfilled FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id = hr.id WHERE hr.Hostel_Id = '${objectFormation.Hostel_Id}' AND hr.Floor_Id = '${objectFormation.Floor_Id}' AND hr.id = '${objectFormation.Room_Id}' AND bd.status = 1 AND hr.isActive = 1`;
 
                             connection.query(bed_query, (err, bed_data) => {
                                 if (err) {
