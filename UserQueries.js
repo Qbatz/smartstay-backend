@@ -47,6 +47,7 @@ function createUser(connection, request, response) {
   var profile = request.file;
   var country_code = atten.country_code;
 
+
   const FirstNameInitial = atten.firstname.charAt(0).toUpperCase();
   if (atten.lastname) {
     var LastNameInitial = atten.lastname.charAt(0).toUpperCase();
@@ -813,7 +814,7 @@ function createUser(connection, request, response) {
                                   .status(201)
                                   .json({
                                     message: "Invalid Bed Details",
-                                    statusCode: 205,
+                                    statusCode: 201,
                                   });
                               }
                             }
