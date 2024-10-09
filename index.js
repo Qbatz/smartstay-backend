@@ -867,6 +867,6 @@ app.post('/delete_booking', (req, res) => {
 
 
 // Customer Eb Reading
-// app.post('/customer_readings', (req, res) => {
-//     invoiceQueries.customer_readings(req, res)
-// });
+app.get('/customer_readings', (req, res) => {
+    invoiceQueries.customer_readings(req, res)
+});

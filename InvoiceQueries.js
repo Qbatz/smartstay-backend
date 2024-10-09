@@ -2775,7 +2775,14 @@ function customer_readings(req, res) {
 
     var created_by = req.user_details.id;
 
-    // var sql1="SELECT * FROM "
+    var sql1 = "SELECT * FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id WHERE cb.created_by=?";
+    connection.query(sql1, [created_by], function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get Eb Details" })
+        } else {
+            return res.status(200).json({ statusCode: 200, message: "Customer Eb Details", eb_details: data })
+        }
+    })
 }
 
 
