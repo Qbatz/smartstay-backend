@@ -8,25 +8,25 @@ function all_assets(req, res) {
 
     // var sql1 = "SELECT assets.*,ven.Vendor_Name,aa.asset_id,aa.hostel_id,aa.room_id,aa.assigned_date FROM assets JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id WHERE assets.created_by=? AND assets.status=1 ORDER BY assets.id DESC";
     // var sql1 = "SELECT assets.*,aname.asset_name,ven.Vendor_Name,aa.asset_id AS Asset_id,aa.hostel_id,aa.room_id,aa.assigned_date FROM assets JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id JOIN asset_names AS aname ON assets.asset_id=aname.id WHERE assets.created_by=? AND assets.status=1 ORDER BY assets.id DESC"
-    var sql1 = `SELECT distinct assets.*,hos.Name as hostel_Name,hosfloor.floor_name,aa.room_id,aname.asset_name as asset,ven.Vendor_Name,aa.asset_id AS Asset_id,aa.hostel_id,
-aa.room_id,aa.assigned_date FROM assets LEFT JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id 
-LEFT JOIN asset_names AS aname ON aa.asset_id=aname.id LEFT JOIN hosteldetails hos ON hos.id = aa.hostel_id LEFT JOIN Hostel_Floor hosfloor ON
- hosfloor.floor_id = aa.floor_id AND hosfloor.hostel_id = aa.hostel_id WHERE assets.created_by=? AND assets.status=true ORDER BY assets.id DESC`
+    var sql1 = `SELECT distinct assets.*,hos.Name as hostel_Name,hosfloor.floor_name,hr.Room_id AS room_name,aa.room_id,aname.asset_name as asset,ven.Vendor_Name,aa.asset_id AS Asset_id,aa.hostel_id,
+                aa.room_id,aa.assigned_date FROM assets LEFT JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id 
+                LEFT JOIN asset_names AS aname ON aa.asset_id=aname.id LEFT JOIN hosteldetails hos ON hos.id = aa.hostel_id LEFT JOIN Hostel_Floor hosfloor ON
+                hosfloor.floor_id = aa.floor_id AND hosfloor.hostel_id = aa.hostel_id JOIN hostelrooms AS hr ON hr.id=aa.room_id WHERE assets.created_by=? AND assets.status=true ORDER BY assets.id DESC`
 
     connection.query(sql1, [user_id], (err, data) => {
         if (err) {
             return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
         }
-        else if(data && data.length > 0){
-            console.log("data",data);
-            
+        else if (data && data.length > 0) {
+            console.log("data", data);
+
             return res.status(200).json({ message: "All Asset Details", statusCode: 200, assets: data })
         }
-        else{
-            return res.status(200).json({ message: "All Asset Details", statusCode: 200, assets: data })  
+        else {
+            return res.status(200).json({ message: "All Asset Details", statusCode: 200, assets: data })
         }
 
-       
+
     })
 
 }
