@@ -79,7 +79,9 @@ const queries = [
 
     "ALTER TABLE `customer_eb_amount` CHANGE COLUMN `createdat` `createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ;",
 
-    "ALTER TABLE `customer_eb_amount` ADD COLUMN `date` DATE NULL AFTER `amount`,CHANGE COLUMN `status` `status` INT(11) NULL DEFAULT 1 ;"
+    "ALTER TABLE `customer_eb_amount` ADD COLUMN `date` DATE NULL AFTER `amount`,CHANGE COLUMN `status` `status` INT(11) NULL DEFAULT 1 ;",
+
+    "ALTER TABLE `hostel` ADD COLUMN `joining_Date` DATE NULL AFTER `created_by`;"
 ];
 
 queries.forEach(executeQuery);

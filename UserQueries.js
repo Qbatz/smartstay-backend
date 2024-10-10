@@ -18,10 +18,7 @@ function getUsers(connection, response, request) {
   // var offset = (page - 1) * limit;
 
   // var sql1 = "SELECT COUNT(*) as totalItems FROM hostel WHERE created_by='" + userDetails.id + "' AND isActive=1;";
-  var query =
-    "SELECT *,hsroom.Room_Id,DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true LEFT JOIN country_list AS cl ON hstl.country_code=cl.country_code Left Join hostelrooms hsroom ON hsroom.Hostel_Id = hstlDetails.id and hsroom.Floor_Id = hstl.Floor and hsroom.id = hstl.Rooms WHERE hstlDetails.created_By ='" +
-    userDetails.id +
-    "' ORDER BY hstl.ID DESC";
+  var query = "SELECT *,hsroom.Room_Id,DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true LEFT JOIN country_list AS cl ON hstl.country_code=cl.country_code Left Join hostelrooms hsroom ON hsroom.Hostel_Id = hstlDetails.id and hsroom.Floor_Id = hstl.Floor and hsroom.id = hstl.Rooms WHERE hstlDetails.created_By ='" + userDetails.id + "' ORDER BY hstl.ID DESC";
   connection.query(query, function (error, hostelData) {
     if (error) {
       console.error(error);
@@ -1290,13 +1287,13 @@ function customer_details(req, res) {
   // Check User Id valid or Invalid
 
   // var sql1 ="SELECT * FROM hostel AS hs LEFT JOIN country_list AS cl ON hs.country_code=cl.country_code WHERE hs.ID=? AND hs.isActive=1 ";
-  
+
   var sql1 =
     'SELECT hs.*,cl.*,hosroom.id as Room_Id,hosroom.Room_Id as Room_Name FROM hostel AS hs LEFT JOIN hostelrooms hosroom ON hosroom.id = hs.Rooms LEFT JOIN country_list AS cl ON hs.country_code=cl.country_code WHERE hs.ID=? AND hs.isActive=1';
   connection.query(sql1, [user_id], (user_err, user_data) => {
     if (user_err) {
-      console.log("user_err",user_err);
-      
+      console.log("user_err", user_err);
+
       return res
         .status(201)
         .json({ message: "Unable to Get User Details", statusCode: 201 });
@@ -1834,62 +1831,62 @@ function get_invoice_id(req, res) {
     } else if (user_data.length != 0) {
       var hostel_id = user_data[0].Hostel_Id;
 
-            var sql1 = "SELECT * FROM hosteldetails WHERE id=? AND isActive=1 AND created_by=?";
-            connection.query(sql1, [hostel_id, created_by], function (err, hos_details) {
-                if (err) {
-                    return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
-                } else if (hos_details.length != 0) {
+      var sql1 = "SELECT * FROM hosteldetails WHERE id=? AND isActive=1 AND created_by=?";
+      connection.query(sql1, [hostel_id, created_by], function (err, hos_details) {
+        if (err) {
+          return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
+        } else if (hos_details.length != 0) {
 
-                    var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? ORDER BY id DESC;";
-                    connection.query(sql2, [hostel_id], function (err, inv_data) {
-                        if (err) {
-                            return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
-                        } else if (inv_data.length != 0) {
+          var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? ORDER BY id DESC;";
+          connection.query(sql2, [hostel_id], function (err, inv_data) {
+            if (err) {
+              return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
+            } else if (inv_data.length != 0) {
 
-                            var invoice_number = inv_data[0].Invoices;
-                            console.log(invoice_number);
+              var invoice_number = inv_data[0].Invoices;
+              console.log(invoice_number);
 
-                const newInvoiceNumber =
-                  invoice_number.slice(0, -1) +
-                  (parseInt(invoice_number.slice(-1)) + 1);
+              const newInvoiceNumber =
+                invoice_number.slice(0, -1) +
+                (parseInt(invoice_number.slice(-1)) + 1);
 
-                return res
-                  .status(200)
-                  .json({
-                    statusCode: 200,
-                    message: "Get Invoice Number",
-                    invoice_number: newInvoiceNumber,
-                    hostel_id: hostel_id,
-                  });
+              return res
+                .status(200)
+                .json({
+                  statusCode: 200,
+                  message: "Get Invoice Number",
+                  invoice_number: newInvoiceNumber,
+                  hostel_id: hostel_id,
+                });
+            } else {
+              var prefix = hos_details[0].prefix;
+              var suffix = hos_details[0].suffix;
+
+              const month = moment(new Date()).month() + 1;
+              const year = moment(new Date()).year();
+
+              if (prefix != null || suffix != null) {
+                var newInvoiceNumber = `${prefix}${suffix}`;
               } else {
-                var prefix = hos_details[0].prefix;
-                var suffix = hos_details[0].suffix;
-
-                const month = moment(new Date()).month() + 1;
-                const year = moment(new Date()).year();
-
-                if (prefix != null || suffix != null) {
-                  var newInvoiceNumber = `${prefix}${suffix}`;
-                } else {
-                  var newInvoiceNumber = `${hos_details[0].Name}${month}${year}001`;
-                }
-
-                return res
-                  .status(200)
-                  .json({
-                    statusCode: 200,
-                    message: "Get Invoice Number",
-                    invoice_number: newInvoiceNumber,
-                    hostel_id: hostel_id,
-                  });
+                var newInvoiceNumber = `${hos_details[0].Name}${month}${year}001`;
               }
-            });
-          } else {
-            return res
-              .status(201)
-              .json({ statusCode: 201, message: "Invalid Hostel Details" });
-          }
+
+              return res
+                .status(200)
+                .json({
+                  statusCode: 200,
+                  message: "Get Invoice Number",
+                  invoice_number: newInvoiceNumber,
+                  hostel_id: hostel_id,
+                });
+            }
+          });
+        } else {
+          return res
+            .status(201)
+            .json({ statusCode: 201, message: "Invalid Hostel Details" });
         }
+      }
       );
     } else {
       return res
@@ -1900,199 +1897,210 @@ function get_invoice_id(req, res) {
 }
 
 function get_user_amounts(req, res) {
+  
   var { user_id, start_date, end_date } = req.body;
   var created_by = req.user_details.id;
 
   if (!start_date || !end_date) {
-    return res
-      .status(201)
-      .json({ message: "Missing Mandatory Fields", statusCode: 201 });
+    return res.status(201).json({ message: "Missing Mandatory Fields", statusCode: 201 });
   }
 
   // Rent Amount
-  var sql1 =
-    "SELECT * FROM hostel AS hs LEFT JOIN  eb_settings AS eb ON hs.Hostel_Id=eb.hostel_id WHERE hs.ID=? OR hs.User_Id=? AND hs.isActive=1 AND hs.created_by=?";
-  connection.query(sql1, [user_id, user_id, created_by], (err, data) => {
+  // var sql1 = "SELECT * FROM hostel AS hs LEFT JOIN  eb_settings AS eb ON hs.Hostel_Id=eb.hostel_id WHERE hs.ID=? OR hs.User_Id=? AND hs.isActive=1 AND hs.created_by=?";
+  var sql1 = "SELECT *, CASE WHEN checkoutDate IS NULL THEN DATEDIFF(LEAST(CURDATE(), '" + end_date + "'), GREATEST(joining_date, '" + start_date + "')) + 1 ELSE DATEDIFF(LEAST(checkoutDate, '" + end_date + "'), GREATEST(joining_date, '" + start_date + "')) + 1 END AS days_stayed FROM hostel WHERE Rooms!= 'undefined' AND Floor!='undefined' AND joining_date <= '" + end_date + "' AND (checkoutDate >= '" + start_date + "' OR checkoutDate IS NULL) AND isActive=1 AND ID=?";
+  connection.query(sql1, [user_id], (err, data) => {
     if (err) {
-      return res
-        .status(201)
-        .json({ message: "Unable to Get User Details", statusCode: 201 });
+      return res.status(201).json({ message: "Unable to Get User Details", statusCode: 201 });
     } else if (data.length != 0) {
       var total_array = [];
 
       var per_unit_amount = data[0].amount;
       var uniq_user = data[0].User_Id;
       var hostel_id = data[0].Hostel_Id;
-      var room_id = data[0].Rooms;
-      var floor = data[0].Floor;
-      const startDate = new Date(start_date);
-      const endDate = new Date(end_date);
 
-      const diff_dates = endDate - startDate;
-      const total_days = Math.ceil(diff_dates / (1000 * 60 * 60 * 24));
+      const startDate = new Date(start_date);
+      // const endDate = new Date(end_date);
+
+      var total_days = data[0].days_stayed;
+      // const diff_dates = endDate - startDate;
+      // const total_days = Math.ceil(diff_dates / (1000 * 60 * 60 * 24));
       var room_rent = data[0].RoomRent;
-      const daysInCurrentMonth = new Date(
-        startDate.getFullYear(),
-        startDate.getMonth() + 1,
-        0
-      ).getDate(); // Get total days in start date's month
+      const daysInCurrentMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate(); // Get total days in start date's month
+      // console.log(daysInCurrentMonth);
+
       const oneDayAmount = room_rent / daysInCurrentMonth; // Daily rent
+      // console.log(oneDayAmount);
       const totalRent = parseFloat((oneDayAmount * total_days).toFixed(2)); // Total rent rounded to 2 decimal places
 
-            total_array.push({ id:50,description: "Room Rent", total_amount: room_rent, amount: totalRent })
+      var rom_am = Math.round(totalRent)
+      total_array.push({ id: 50, description: "Room Rent", total_amount: room_rent, amount: rom_am })
 
-            var sql2 = "SELECT amname.Amnities_Name,am.Amount,am.Amnities_Id FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id LEFT JOIN AmenitiesHistory AS amhis ON amhis.amenity_Id=am.Amnities_Id AND amhis.user_Id=? WHERE am.Hostel_Id=? AND am.setAsDefault=0 AND am.Status=1 AND am.createdBy=? GROUP BY amname.Amnities_Name"
-            connection.query(sql2, [uniq_user, hostel_id, created_by], function (err, am_data) {
-                if (err) {
-                    return res.status(201).json({ message: "Unable to Get Amenity Details", statusCode: 201 })
-                } else {
-                    var id=1
-                    if (am_data.length != 0) {
-                        for (let i = 0; i < am_data.length; i++) {
-                            total_array.push({id:id ++, description: am_data[i].Amnities_Name, total_amount: am_data[i].Amount, amount: am_data[i].Amount })
-                        }
-                    }
-                    var sql3 = "SELECT SUM(EbAmount) AS eb_amount,SUM(Eb_Unit) AS eb_unit FROM EbAmount WHERE date BETWEEN ? AND ?;";
-                    connection.query(sql3, [start_date, end_date], function (err, eb_data) {
-                        if (err) {
-                            return res.status(201).json({ message: "Unable to Get Eb Details", statusCode: 201 })
-                        } else {
-                            if (eb_data.length != 0) {
-
-                                var total_ebamount = eb_data[0].eb_amount;
-                                var total_eb_units = eb_data[0].eb_unit;
-
-                    var sql4 =
-                      "SELECT * FROM hostel WHERE Rooms='" +
-                      room_id +
-                      "' AND Hostel_Id='" +
-                      hostel_id +
-                      "' AND Floor='" +
-                      floor +
-                      "'";
-                    connection.query(sql4, function (err, room_data) {
-                      if (err) {
-                        return res
-                          .status(201)
-                          .json({
-                            message: "Unable to Get User all Details",
-                            statusCode: 201,
-                          });
-                      } else {
-                        if (room_data.length != 0) {
-                          const start_date = new Date(req.body.start_date);
-                          const end_date = new Date(req.body.end_date);
-
-                          let activeUsers = 0;
-                          let userStayDetails = [];
-
-                          room_data.forEach((user) => {
-                            if (user.isActive) {
-                              const stayStart = new Date(user.createdAt);
-                              const stayEnd = user.checkoutDate
-                                ? new Date(user.checkoutDate)
-                                : end_date;
-
-                              const effectiveStartDate = new Date(
-                                Math.max(stayStart, start_date)
-                              );
-
-                              const effectiveEndDate = new Date(
-                                Math.min(stayEnd, end_date)
-                              );
-
-                              if (effectiveStartDate <= effectiveEndDate) {
-                                const totalStayDays =
-                                  Math.round(
-                                    (effectiveEndDate - effectiveStartDate) /
-                                      (1000 * 60 * 60 * 24)
-                                  ) + 1;
-
-                                userStayDetails.push({
-                                  userId: user.ID,
-                                  stayDays: totalStayDays,
-                                });
-
-                                if (totalStayDays > 0) {
-                                  activeUsers += 1;
-                                }
-                              }
-                            }
-                          });
-
-                          var total_days = userStayDetails.reduce(
-                            (sum, user) => sum + user.stayDays,
-                            0
-                          );
-                          var eb_units_per_day = total_eb_units / total_days;
-                          console.log(eb_units_per_day);
-
-                          var eb_amount = total_ebamount / total_days;
-
-                          userStayDetails.forEach((user) => {
-                            user.totalUnits = parseFloat(
-                              (user.stayDays * eb_units_per_day).toFixed(2)
-                            ); // Total EB Units
-                            user.ebShare = parseFloat(
-                              (user.stayDays * eb_amount).toFixed(2)
-                            );
-                            console.log(
-                              `User ${user.userId} EB Share: ₹${user.ebShare}`
-                            );
-                          });
-
-                          const per_user_amount = userStayDetails.find(
-                            (user) => user.userId == user_id
-                          );
-
-                                            if (per_user_amount) {
-                                                total_array.push({id:10,
-                                                    description: 'Eb Amount', total_amount: total_ebamount, amount: per_user_amount.ebShare, per_unit_amount: per_unit_amount, used_unit: per_user_amount.totalUnits,
-                                                });
-                                            }
-
-                          // Respond with the calculated EB data
-                          return res.status(200).json({
-                            statusCode: 200,
-                            message: "User Amount Details",
-                            total_array: total_array,
-                          });
-                        } else {
-                          total_array.push({
-                            description: "Eb Amount",
-                            total_amount: total_ebamount,
-                            amount: total_ebamount,
-                          });
-                          return res
-                            .status(200)
-                            .json({
-                              statusCode: 200,
-                              message: "User Amount Details",
-                              total_array: total_array,
-                              room_data: room_data,
-                            });
-                        }
-                      }
-                    });
-                  } else {
-                    return res
-                      .status(200)
-                      .json({
-                        statusCode: 200,
-                        message: "User Amount Details",
-                        total_array: total_array,
-                      });
-                  }
-                }
-              }
-            );
+      var sql2 = "SELECT amname.Amnities_Name,am.Amount,am.Amnities_Id FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id JOIN AmenitiesHistory AS amhis ON amhis.amenity_Id=am.Amnities_Id AND amhis.user_Id=? WHERE am.Hostel_Id=? AND am.setAsDefault=0 AND am.Status=1 AND am.createdBy=? GROUP BY amname.Amnities_Name"
+      connection.query(sql2, [uniq_user, hostel_id, created_by], function (err, am_data) {
+        if (err) {
+          return res.status(201).json({ message: "Unable to Get Amenity Details", statusCode: 201 })
+        } else {
+          var id = 1
+          if (am_data.length != 0) {
+            for (let i = 0; i < am_data.length; i++) {
+              total_array.push({ id: id++, description: am_data[i].Amnities_Name, total_amount: am_data[i].Amount, amount: am_data[i].Amount })
+            }
           }
+
+          var sql3 = "SELECT SUM(amount) AS amount,SUM(unit) AS units FROM customer_eb_amount WHERE user_id=? AND date BETWEEN ? AND ?;"
+          connection.query(sql3, [user_id, start_date, end_date], function (err, eb_data) {
+            if (err) {
+              return res.status(201).json({ message: "Unable to Eb Amount Details", statusCode: 201 })
+            } else if (eb_data.length != 0) {
+
+              if (eb_data[0].amount != null) {
+                total_array.push({ id: 10, description: 'Eb Amount', amount: eb_data[0].amount, per_unit_amount: per_unit_amount, used_unit: eb_data[0].units });
+              }
+              return res.status(200).json({ statusCode: 200, message: "User Amount Details", total_array: total_array });
+            } else {
+              return res.status(200).json({ statusCode: 200, message: "User Amount Details", total_array: total_array });
+            }
+          })
+          // var sql3 = "SELECT SUM(EbAmount) AS eb_amount,SUM(Eb_Unit) AS eb_unit FROM EbAmount WHERE date BETWEEN ? AND ?;";
+          // connection.query(sql3, [start_date, end_date], function (err, eb_data) {
+          //   if (err) {
+          //     return res.status(201).json({ message: "Unable to Get Eb Details", statusCode: 201 })
+          //   } else {
+          //     if (eb_data.length != 0) {
+
+          //       var total_ebamount = eb_data[0].eb_amount;
+          //       var total_eb_units = eb_data[0].eb_unit;
+
+          //       var sql4 =
+          //         "SELECT * FROM hostel WHERE Rooms='" +
+          //         room_id +
+          //         "' AND Hostel_Id='" +
+          //         hostel_id +
+          //         "' AND Floor='" +
+          //         floor +
+          //         "'";
+          //       connection.query(sql4, function (err, room_data) {
+          //         if (err) {
+          //           return res
+          //             .status(201)
+          //             .json({
+          //               message: "Unable to Get User all Details",
+          //               statusCode: 201,
+          //             });
+          //         } else {
+          //           if (room_data.length != 0) {
+          //             const start_date = new Date(req.body.start_date);
+          //             const end_date = new Date(req.body.end_date);
+
+          //             let activeUsers = 0;
+          //             let userStayDetails = [];
+
+          //             room_data.forEach((user) => {
+          //               if (user.isActive) {
+          //                 const stayStart = new Date(user.createdAt);
+          //                 const stayEnd = user.checkoutDate
+          //                   ? new Date(user.checkoutDate)
+          //                   : end_date;
+
+          //                 const effectiveStartDate = new Date(
+          //                   Math.max(stayStart, start_date)
+          //                 );
+
+          //                 const effectiveEndDate = new Date(
+          //                   Math.min(stayEnd, end_date)
+          //                 );
+
+          //                 if (effectiveStartDate <= effectiveEndDate) {
+          //                   const totalStayDays =
+          //                     Math.round(
+          //                       (effectiveEndDate - effectiveStartDate) /
+          //                       (1000 * 60 * 60 * 24)
+          //                     ) + 1;
+
+          //                   userStayDetails.push({
+          //                     userId: user.ID,
+          //                     stayDays: totalStayDays,
+          //                   });
+
+          //                   if (totalStayDays > 0) {
+          //                     activeUsers += 1;
+          //                   }
+          //                 }
+          //               }
+          //             });
+
+          //             var total_days = userStayDetails.reduce(
+          //               (sum, user) => sum + user.stayDays,
+          //               0
+          //             );
+          //             var eb_units_per_day = total_eb_units / total_days;
+          //             console.log(eb_units_per_day);
+
+          //             var eb_amount = total_ebamount / total_days;
+
+          //             userStayDetails.forEach((user) => {
+          //               user.totalUnits = parseFloat(
+          //                 (user.stayDays * eb_units_per_day).toFixed(2)
+          //               ); // Total EB Units
+          //               user.ebShare = parseFloat(
+          //                 (user.stayDays * eb_amount).toFixed(2)
+          //               );
+          //               console.log(
+          //                 `User ${user.userId} EB Share: ₹${user.ebShare}`
+          //               );
+          //             });
+
+          //             const per_user_amount = userStayDetails.find(
+          //               (user) => user.userId == user_id
+          //             );
+
+          //             if (per_user_amount) {
+          //               total_array.push({
+          //                 id: 10,
+          //                 description: 'Eb Amount', total_amount: total_ebamount, amount: per_user_amount.ebShare, per_unit_amount: per_unit_amount, used_unit: per_user_amount.totalUnits,
+          //               });
+          //             }
+
+          //             // Respond with the calculated EB data
+          //             return res.status(200).json({
+          //               statusCode: 200,
+          //               message: "User Amount Details",
+          //               total_array: total_array,
+          //             });
+          //           } else {
+          //             total_array.push({
+          //               description: "Eb Amount",
+          //               total_amount: total_ebamount,
+          //               amount: total_ebamount,
+          //             });
+          //             return res
+          //               .status(200)
+          //               .json({
+          //                 statusCode: 200,
+          //                 message: "User Amount Details",
+          //                 total_array: total_array,
+          //                 room_data: room_data,
+          //               });
+          //           }
+          //         }
+          //       });
+          //     } else {
+          //       return res
+          //         .status(200)
+          //         .json({
+          //           statusCode: 200,
+          //           message: "User Amount Details",
+          //           total_array: total_array,
+          //         });
+          //     }
+          //   }
+          // }
+          // );
         }
+      }
       );
     } else {
-      return res
-        .status(201)
-        .json({ message: "Invalid User Details", statusCode: 201 });
+      return res.status(201).json({ message: "Invalid User Details", statusCode: 201 });
     }
   });
 }
