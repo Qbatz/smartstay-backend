@@ -18,7 +18,7 @@ function getUsers(connection, response, request) {
   // var offset = (page - 1) * limit;
 
   // var sql1 = "SELECT COUNT(*) as totalItems FROM hostel WHERE created_by='" + userDetails.id + "' AND isActive=1;";
-  var query = "SELECT *,hsroom.Room_Id,DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true LEFT JOIN country_list AS cl ON hstl.country_code=cl.country_code Left Join hostelrooms hsroom ON hsroom.Hostel_Id = hstlDetails.id and hsroom.Floor_Id = hstl.Floor and hsroom.id = hstl.Rooms WHERE hstlDetails.created_By ='" + userDetails.id + "' ORDER BY hstl.ID DESC";
+  var query = "SELECT *,hsroom.Room_Id,DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,hstl.Hostel_Id AS user_hostel FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true LEFT JOIN country_list AS cl ON hstl.country_code=cl.country_code Left Join hostelrooms hsroom ON hsroom.Hostel_Id = hstlDetails.id and hsroom.Floor_Id = hstl.Floor and hsroom.id = hstl.Rooms WHERE hstlDetails.created_By ='" + userDetails.id + "' ORDER BY hstl.ID DESC";
   connection.query(query, function (error, hostelData) {
     if (error) {
       console.error(error);
@@ -1897,7 +1897,7 @@ function get_invoice_id(req, res) {
 }
 
 function get_user_amounts(req, res) {
-  
+
   var { user_id, start_date, end_date } = req.body;
   var created_by = req.user_details.id;
 
