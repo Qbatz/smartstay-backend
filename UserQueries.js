@@ -2163,6 +2163,68 @@ function get_bill_details(req, res) {
   });
 }
 
+function user_check_out(req, res) {
+
+  var created_by = req.user_details.id;
+
+  var { checkout_date, user_id, hostel_id, comments, action } = req.body;
+
+  if (!user_id || !checkout_date) {
+    return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+  }
+
+  if (!action) {
+    var action = 1 // Add Checkout
+  }
+  // var action = 2 // Edit Checkout
+
+  var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1 AND created_by=? AND Hostel_Id=?";
+  connection.query(sql1, [user_id, created_by, hostel_id], function (err, sel_res) {
+    if (err) {
+      return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
+    } else if (sel_res.length != 0) {
+
+      console.log(sel_res[0].CheckoutDate);
+
+      if (action == 1 && sel_res[0].CheckoutDate) {
+        return res.status(201).json({ statusCode: 201, message: "Already Added Checkout Date , Please Update Date" })
+      } else {
+        var sql2 = "UPDATE hostel SET checkout_comment=?,CheckOutDate=? WHERE ID=?";
+        connection.query(sql2, [comments, checkout_date, user_id], function (err, data) {
+          if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Update User Details" })
+          } else {
+            if (action == 1) { // Add Message
+              return res.status(200).json({ statusCode: 200, message: "Check-out Added Successfully!" })
+            } else {
+              return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully!" })
+            }
+          }
+        })
+      }
+    } else {
+      return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+    }
+  })
+}
+
+function checkout_list(req, res) {
+
+  var created_by = req.user_details.id;
+
+  const today = new Date();
+  const current_date = today.toISOString().slice(0, 10);
+
+  var sql1 = "SELECT ID,HostelName,Name,checkout_comment,DATE_FORMAT(CheckoutDate, '%Y-%m-%d') AS CheckoutDate,DATEDIFF(checkoutDate, '" + current_date + "') AS notice_period FROM hostel WHERE checkoutDate >= '" + current_date + "' AND isActive = 1 AND created_by = ?"
+  connection.query(sql1, [created_by], function (err, ch_list) {
+    if (err) {
+      return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
+    } else {
+      return res.status(200).json({ statusCode: 201, message: "Check-Out Details!", checkout_details: ch_list })
+    }
+  })
+}
+
 module.exports = {
   getUsers,
   createUser,
@@ -2179,4 +2241,6 @@ module.exports = {
   get_user_amounts,
   get_beduser_details,
   get_bill_details,
+  user_check_out,
+  checkout_list
 };

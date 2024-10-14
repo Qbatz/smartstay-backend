@@ -83,7 +83,11 @@ const queries = [
 
     "ALTER TABLE `hostel` ADD COLUMN `joining_Date` DATE NULL AFTER `created_by`;",
 
-    "ALTER TABLE `hosteldetails` ADD COLUMN `image1` VARCHAR(255) NULL AFTER `Bed`,ADD COLUMN `image2` VARCHAR(255) NULL AFTER `image1`,ADD COLUMN `image3` VARCHAR(255) NULL AFTER `image2`,ADD COLUMN `image4` VARCHAR(255) NULL AFTER `image3`;"
+    "ALTER TABLE `hosteldetails` ADD COLUMN `image1` VARCHAR(255) NULL AFTER `Bed`,ADD COLUMN `image2` VARCHAR(255) NULL AFTER `image1`,ADD COLUMN `image3` VARCHAR(255) NULL AFTER `image2`,ADD COLUMN `image4` VARCHAR(255) NULL AFTER `image3`;",
+
+    "ALTER TABLE `hostel` ADD COLUMN `checkout_comment` VARCHAR(255) NULL AFTER `joining_Date`;",
+
+    "ALTER TABLE `hosteldetails` CHANGE COLUMN `email_id` `email_id` VARCHAR(255) NULL ;"
 ];
 
 queries.forEach(executeQuery);
