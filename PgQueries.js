@@ -263,7 +263,7 @@ async function createPG(reqHostel, res, req) {
 
     var { hostel_name, hostel_phone, hostel_email, hostel_location, profile, image1, image2, image3, image4, id } = reqHostel
 
-    if (!hostel_name || !hostel_phone || !hostel_email || !hostel_location) {
+    if (!hostel_name || !hostel_phone || !hostel_location) {
         return res.status(201).json({ message: "Please Add All Required Fields", statusCode: 201 })
     }
 
@@ -276,32 +276,32 @@ async function createPG(reqHostel, res, req) {
     if (!profile) {
         profile_url = req.body.profile || 0
     } else {
-        profile_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + '.jpg', profile)
+        profile_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + `${profile.originalname}`, profile)
         console.log(profile_url);
     }
 
     if (!image1) {
         image1_url = req.body.image1 || 0
     } else {
-        image1_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + '.jpg', image1)
+        image1_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + `${image1.originalname}`, image1)
     }
 
     if (!image2) {
         image2_url = req.body.image2 || 0
     } else {
-        image2_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + '.jpg', image2)
+        image2_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + `${image2.originalname}`, image2)
     }
 
     if (!image3) {
         image3_url = req.body.image3 || 0
     } else {
-        image3_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + '.jpg', image3)
+        image3_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + `${image3.originalname}`, image3)
     }
 
     if (!image4) {
         image4_url = req.body.image4 || 0
     } else {
-        image4_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + '.jpg', image4)
+        image4_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + `${image4.originalname}`, image4)
     }
 
     if (id) {
