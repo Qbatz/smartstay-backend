@@ -44,6 +44,7 @@ app.use(function (req, res, next) {
     next();
 })
 const dbquery = require('./dbquery');
+const { profile } = require('console');
 
 app.use(middleware);
 
@@ -304,18 +305,38 @@ app.get('/hostel/list-details', (request, response) => {
 // {name: pgName, phoneNo: mobile,email_Id: email, location: location
 
 
-app.post('/add/new-hostel', upload.single('profile'), (request, response) => {
-    response.set('Access-Control-Allow-Origin', '*');
-    const reqHostel = {
-        profile: request.file,
-        hostel_Name: request.body.name,
-        hostel_Phone: request.body.phoneNo,
-        hostel_email_Id: request.body.email_Id,
-        hostel_location: request.body.location,
-        id: request.body.id
-    };
+// app.post('/add/new-hostel', upload.single('profile'), (request, response) => {
+//     response.set('Access-Control-Allow-Origin', '*');
+//     const reqHostel = {
+//         profile: request.file,
+//         hostel_Name: request.body.name,
+//         hostel_Phone: request.body.phoneNo,
+//         hostel_email_Id: request.body.email_Id,
+//         hostel_location: request.body.location,
+//         id: request.body.id
+//     };
 
-    pgQueries.createPG(connection, reqHostel, response, request)
+//     pgQueries.createPG(connection, reqHostel, response, request)
+// })
+
+app.post('/add/new-hostel', upload.fields([{ name: 'profile', maxCount: 1 }, { name: 'image1', maxCount: 1 }, { name: 'image2', maxCount: 1 }, { name: 'image3', maxCount: 1 }, { name: 'image4', maxCount: 1 }]), (req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    const reqHostel = {
+        // profile: request.file,
+        profile: req.files['profile'] ? req.files['profile'][0] : 0,
+        image1: req.files['image1'] ? req.files['image1'][0] : 0,
+        image2: req.files['image2'] ? req.files['image2'][0] : 0,
+        image3: req.files['image3'] ? req.files['image3'][0] : 0,
+        image4: req.files['image4'] ? req.files['image4'][0] : 0,
+        hostel_name: req.body.name,
+        hostel_phone: req.body.phoneNo,
+        hostel_email: req.body.email_Id,
+        hostel_location: req.body.location,
+        id: req.body.id
+    };
+    console.log(reqHostel.profile);
+    
+    pgQueries.createPG(reqHostel, res, req)
 })
 
 

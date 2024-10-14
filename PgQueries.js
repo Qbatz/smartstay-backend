@@ -2,6 +2,7 @@ const moment = require('moment')
 const AWS = require('aws-sdk');
 require('dotenv').config();
 const connection = require('./config/connection');
+const uploadImage = require('./components/upload_image');
 
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
@@ -13,48 +14,6 @@ AWS.config.update({
     region: AWS_REGION
 });
 const s3 = new AWS.S3();
-
-
-// function getHostelList(connection, response, request) {
-//     const userDetails = request.user_details;
-//     let hostelDetails = [];
-//     let errorMessage = '';
-//     connection.query(`select * from hosteldetails where created_By = '${userDetails.id}' and isActive = true ORDER BY create_At DESC`, function (err, data) {
-//         if (data && data.length > 0) {
-//             for (let i = 0; i < data.length; i++) {
-//                 // console.log("data", data);
-//                 let query = `select * from Hostel_Floor where hostel_id = ${data[i].id} and status = true order by id`;
-//                 connection.query(query, function (error, floorDetails) {
-//                     if (error) {
-//                         errorMessage = error
-//                         console.log("error", error);
-//                     }
-//                     else {
-//                         if (floorDetails && floorDetails.length > 0) {
-//                             hostelDetails.push({ ...data[i], floorDetails })
-//                         }
-//                         else {
-//                             hostelDetails.push({ ...data[i], floorDetails: [] })
-//                         }
-
-//                         var sql2 = "SELECT COALESCE(sum((select count(id) from Hostel_Floor where Hostel_Id='" + data[i].id + "' AND status=1)),0) as floorcount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id='" + data[i].id + "' AND isActive=1)),0) as roomCount,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=0 AND hr.Hostel_Id='" + data[i].id + "'),0) as Bed,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By='" + userDetails.id + "' AND hr.Hostel_Id='" + data[i].id + "'),0) as occupied_Bed from hosteldetails details join createaccount creaccount on creaccount.id = details.created_by where details.created_By='"+userDetails.id+"' AND details.id='"+data[i].id+"' GROUP BY creaccount.id"
-//                         console.log(sql2);
-//                         connection.query(sql2)
-//                     }
-//                     if (hostelDetails && hostelDetails.length == data.length) {
-//                         response.status(200).json({ data: hostelDetails })
-//                     }
-//                 })
-//             }
-
-
-//         }
-//         else {
-//             console.log("err", err);
-//             response.status(201).json({ message: 'No Data Found' })
-//         }
-//     })
-// }
 
 function getHostelList(connection, response, request) {
     const userDetails = request.user_details;
@@ -172,119 +131,209 @@ function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileDa
     });
 }
 
-function createPG(connection, reqHostel, response, request) {
-    const userDetails = request.user_details;
+// function createPG(connection, reqHostel, response, request) {
+//     const userDetails = request.user_details;
+//     const timestamp = Date.now();
+
+//     if (!reqHostel.hostel_Name || !reqHostel.hostel_Phone) {
+//         return response.status(201).json({ message: "Please Add All Required Fields", statusCode: 201 })
+//     }
+
+//     if (reqHostel.id) {
+//         if (reqHostel.profile) {
+//             uploadProfilePictureToS3Bucket('smartstaydevs', 'Hostel_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqHostel.profile, (err, hostel_Logo) => {
+//                 if (err) {
+//                     console.log(err);
+//                     response.status(201).json({ message: 'Error while store profile into the S3 bucket' })
+//                 }
+//                 else {
+//                     let updateQuery = `update hosteldetails set Name= \'${reqHostel.hostel_Name}\', email_id ='${reqHostel.hostel_email_Id}', Address =\'${reqHostel.hostel_location}\', hostel_PhoneNo ='${reqHostel.hostel_Phone}', number_Of_Floor=0,created_By=\'${userDetails.id}\', profile=\'${hostel_Logo}\' where id = ${reqHostel.id};`
+//                     connection.query(updateQuery, function (update_Err, update_Data) {
+//                         if (update_Err) {
+//                             response.status(201).json({ message: 'Error while update the data' })
+//                         } else {
+//                             response.status(200).json({ message: 'Hostel Details Updated Successfully', statusCode: 200 })
+//                         }
+//                     })
+//                 }
+//             })
+//         } else {
+//             let updateQuery = `update hosteldetails set Name= \'${reqHostel.hostel_Name}\', email_id ='${reqHostel.hostel_email_Id}', Address =\'${reqHostel.hostel_location}\', hostel_PhoneNo ='${reqHostel.hostel_Phone}', number_Of_Floor=0,created_By=\'${userDetails.id}\'
+//                 where id = ${reqHostel.id};`
+//             connection.query(updateQuery, function (update_Err, update_Data) {
+//                 if (update_Err) {
+//                     response.status(201).json({ message: 'Error while update the data' })
+//                 } else {
+//                     response.status(200).json({ message: 'Hostel Details Updated Successfully', statusCode: 200 })
+//                 }
+//             })
+//         }
+//     }
+//     else if ((reqHostel.id == undefined && reqHostel.profile) || (reqHostel.id == '' && reqHostel.profile)) {
+
+//         uploadProfilePictureToS3Bucket('smartstaydevs', 'Hostel_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqHostel.profile, (err, hostel_Logo) => {
+//             if (err) {
+//                 response.status(202).json({ message: 'Database error' });
+//             } else {
+//                 // const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqHostel.hostel_Phone}\'`
+//                 // connection.query(query2, function (error, datum) {
+//                 //     if (datum && datum.length > 0) {
+//                 //         response.status(201).json({ message: 'Phone already Saved', statusCode: 201 })
+//                 //     }
+//                 //     else {
+//                 //         if (error) {
+//                 //             response.status(201).json({ message: 'Error while fetching data', statusCode: 201 })
+//                 //         } else {
+
+//                 if ((reqHostel.image1 == undefined && reqHostel.image1 != 0)) {
+
+//                     uploadProfilePictureToS3Bucket('smartstaydevs', 'Hostel_Images/', 'Logo' + `${timestamp}` + '.jpg', reqHostel.profile)
+
+//                 }
+
+//                 const query = `INSERT INTO hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By, profile,isHostelBased) VALUES (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\', \'${hostel_Logo}\',0)`
+//                 connection.query(query, function (error, data) {
+//                     if (error) {
+//                         console.log("error", error);
+//                         response.status(201).json({ statusCode: 201, message: 'Cannot Insert Details' })
+//                     }
+//                     else {
+//                         response.status(200).json({ statusCode: 200, message: 'Succsessfully added  a new hostel' })
+//                     }
+//                 })
+//                 //     }
+//                 // }
+
+//                 // })
+//             }
+//         })
+//     } else {
+//         // var query2 = "SELECT * FROM hosteldetails WHERE Name = CONVERT(? USING utf8mb4);";
+//         // connection.query(query2, [reqHostel.hostel_Name], function (error, datum) {
+//         //     if (error) {
+//         //         console.log(error);
+//         //         response.status(201).json({ message: 'Unable to Get Hostel Details', statusCode: 201 })
+//         //     }
+//         //      else if (datum.length != 0) {
+//         //         response.status(201).json({ message: 'Hostel Name Already Exists', statusCode: 201 })
+//         //     } 
+//         //     else {
+//         const query = `INSERT INTO hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By,isHostelBased) VALUES (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\',0)`
+//         connection.query(query, function (error, data) {
+//             if (error) {
+//                 console.log("error", error);
+//                 response.status(201).json({ statusCode: 201, message: 'Cannot Insert Details' })
+//             } else {
+//                 response.status(200).json({ statusCode: 200, message: 'Succsessfully added  a new hostel' })
+//             }
+//         })
+
+
+//         //     }
+//         // })
+//         // connection.query(query, function (error, data) {
+//         //     if (error) {
+//         //         console.log("error", error);
+//         //         response.status(201).json({ message: 'Cannot Insert Details' })
+//         //     }
+//         //     else {
+//         //         const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqHostel.hostel_Phone}\'`
+//         //         connection.query(query2, function (error, datum) {
+//         //             if (datum.length > 0) {
+//         //                 response.status(200).json({ message: 'Data Saved Successfully', statusCode: 200 })
+//         //             }
+
+//         //             else {
+//         //                 response.status(201).json({ message: 'Phone number not Registered' })
+//         //             }
+
+//         //         })
+//         //     }
+//         // })
+//     }
+// }
+
+async function createPG(reqHostel, res, req) {
+
+    const created_by = req.user_details.id;
     const timestamp = Date.now();
 
-    if (!reqHostel.hostel_Name || !reqHostel.hostel_Phone) {
-        return response.status(201).json({ message: "Please Add All Required Fields", statusCode: 201 })
+    var bucket_name = "smartstaydevs";
+    var folderName = "Hostel-Images/";
+
+    var { hostel_name, hostel_phone, hostel_email, hostel_location, profile, image1, image2, image3, image4, id } = reqHostel
+
+    if (!hostel_name || !hostel_phone || !hostel_email || !hostel_location) {
+        return res.status(201).json({ message: "Please Add All Required Fields", statusCode: 201 })
     }
 
-    if (reqHostel.id) {
-        if (reqHostel.profile) {
-            uploadProfilePictureToS3Bucket('smartstaydevs', 'Hostel_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqHostel.profile, (err, hostel_Logo) => {
-                if (err) {
-                    console.log(err);
-                    response.status(201).json({ message: 'Error while store profile into the S3 bucket' })
-                }
-                else {
-                    let updateQuery = `update hosteldetails set Name= \'${reqHostel.hostel_Name}\', email_id ='${reqHostel.hostel_email_Id}', Address =\'${reqHostel.hostel_location}\', hostel_PhoneNo ='${reqHostel.hostel_Phone}', number_Of_Floor=0,created_By=\'${userDetails.id}\'
-         , profile=\'${hostel_Logo}\' where id = ${reqHostel.id};`
-                    connection.query(updateQuery, function (update_Err, update_Data) {
-                        if (update_Err) {
-                            response.status(201).json({ message: 'Error while update the data' })
-                        } else {
-                            response.status(200).json({ message: 'Hostel Details Updated Successfully', statusCode: 200 })
-                        }
-                    })
-                }
-            })
-        } else {
-            let updateQuery = `update hosteldetails set Name= \'${reqHostel.hostel_Name}\', email_id ='${reqHostel.hostel_email_Id}', Address =\'${reqHostel.hostel_location}\', hostel_PhoneNo ='${reqHostel.hostel_Phone}', number_Of_Floor=0,created_By=\'${userDetails.id}\'
-                where id = ${reqHostel.id};`
-            connection.query(updateQuery, function (update_Err, update_Data) {
-                if (update_Err) {
-                    response.status(201).json({ message: 'Error while update the data' })
-                } else {
-                    response.status(200).json({ message: 'Hostel Details Updated Successfully', statusCode: 200 })
-                }
-            })
-        }
-    }
-    else if ((reqHostel.id == undefined && reqHostel.profile) || (reqHostel.id == '' && reqHostel.profile)) {
+    let profile_url = 0;
+    let image1_url = 0;
+    let image2_url = 0;
+    let image3_url = 0;
+    let image4_url = 0;
 
-        uploadProfilePictureToS3Bucket('smartstaydevs', 'Hostel_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqHostel.profile, (err, hostel_Logo) => {
+    if (!profile) {
+        profile_url = req.body.profile || 0
+    } else {
+        profile_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + '.jpg', profile)
+        console.log(profile_url);
+    }
+
+    if (!image1) {
+        image1_url = req.body.image1 || 0
+    } else {
+        image1_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + '.jpg', image1)
+    }
+
+    if (!image2) {
+        image2_url = req.body.image2 || 0
+    } else {
+        image2_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + '.jpg', image2)
+    }
+
+    if (!image3) {
+        image3_url = req.body.image3 || 0
+    } else {
+        image3_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + '.jpg', image3)
+    }
+
+    if (!image4) {
+        image4_url = req.body.image4 || 0
+    } else {
+        image4_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + '.jpg', image4)
+    }
+
+    if (id) {
+        var sql1 = "SELECT * FROM hosteldetails WHERE id=? AND isActive=1";
+        connection.query(sql1, [id, created_by], function (err, hos_data) {
             if (err) {
-                response.status(202).json({ message: 'Database error' });
-            } else {
-                // const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqHostel.hostel_Phone}\'`
-                // connection.query(query2, function (error, datum) {
-                //     if (datum && datum.length > 0) {
-                //         response.status(201).json({ message: 'Phone already Saved', statusCode: 201 })
-                //     }
-                //     else {
-                //         if (error) {
-                //             response.status(201).json({ message: 'Error while fetching data', statusCode: 201 })
-                //         } else {
-                const query = `INSERT INTO hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By, profile,isHostelBased) VALUES (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\', \'${hostel_Logo}\',0)`
-                connection.query(query, function (error, data) {
-                    if (error) {
-                        console.log("error", error);
-                        response.status(201).json({ statusCode: 201, message: 'Cannot Insert Details' })
-                    }
-                    else {
-                        response.status(200).json({ statusCode: 200, message: 'Succsessfully added  a new hostel' })
+                return res.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 })
+            } else if (hos_data.length != 0) {
+
+                var sql2 = "UPDATE hosteldetails SET Name=?,email_id=?,Address=?,hostel_PhoneNo=?,profile=?,image1=?,image2=?,image3=?,image4=? WHERE id=?";
+                connection.query(sql2, [hostel_name, hostel_email, hostel_location, hostel_phone, profile_url, image1_url, image2_url, image3_url, image4_url, id], function (err, up_data) {
+                    if (err) {
+                        return res.status(201).json({ message: "Unable to Update Hostel Details", statusCode: 201 })
+                    } else {
+                        return res.status(200).json({ message: 'Changes Saved Successfully', statusCode: 200 })
                     }
                 })
-                //     }
-                // }
-
-                // })
+            } else {
+                return res.status(201).json({ message: "Invalid Hostel Details", statusCode: 201 })
             }
         })
     } else {
-        // var query2 = "SELECT * FROM hosteldetails WHERE Name = CONVERT(? USING utf8mb4);";
-        // connection.query(query2, [reqHostel.hostel_Name], function (error, datum) {
-        //     if (error) {
-        //         console.log(error);
-        //         response.status(201).json({ message: 'Unable to Get Hostel Details', statusCode: 201 })
-        //     }
-        //      else if (datum.length != 0) {
-        //         response.status(201).json({ message: 'Hostel Name Already Exists', statusCode: 201 })
-        //     } 
-        //     else {
-        const query = `INSERT INTO hosteldetails(Name,hostel_PhoneNo,number_Of_Floor,email_id,Address,created_By,isHostelBased) VALUES (\'${reqHostel.hostel_Name}\',\'${reqHostel.hostel_Phone}\',0,\'${reqHostel.hostel_email_Id}\',\'${reqHostel.hostel_location}\',\'${userDetails.id}\',0)`
-        connection.query(query, function (error, data) {
+
+        const sql1 = "INSERT INTO hosteldetails(Name,hostel_PhoneNo,email_id,Address,created_By,isHostelBased,profile,image1,image2,image3,image4) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+        connection.query(sql1, [hostel_name, hostel_phone, hostel_email, hostel_location, created_by, 0, profile_url, image1_url, image2_url, image3_url, image4_url], function (error, data) {
             if (error) {
                 console.log("error", error);
-                response.status(201).json({ statusCode: 201, message: 'Cannot Insert Details' })
+                return res.status(201).json({ statusCode: 201, message: 'Cannot Insert Details' })
             } else {
-                response.status(200).json({ statusCode: 200, message: 'Succsessfully added  a new hostel' })
+                return res.status(200).json({ statusCode: 200, message: 'PG Added Succsessfully' })
             }
         })
-
-
-        //     }
-        // })
-        // connection.query(query, function (error, data) {
-        //     if (error) {
-        //         console.log("error", error);
-        //         response.status(201).json({ message: 'Cannot Insert Details' })
-        //     }
-        //     else {
-        //         const query2 = ` select * from hosteldetails where hostel_PhoneNo=\'${reqHostel.hostel_Phone}\'`
-        //         connection.query(query2, function (error, datum) {
-        //             if (datum.length > 0) {
-        //                 response.status(200).json({ message: 'Data Saved Successfully', statusCode: 200 })
-        //             }
-
-        //             else {
-        //                 response.status(201).json({ message: 'Phone number not Registered' })
-        //             }
-
-        //         })
-        //     }
-        // })
     }
 }
 
@@ -1267,7 +1316,7 @@ function createBed(req, res) {
 
             var sql2 = "SELECT * FROM hostelrooms WHERE Hostel_Id=? AND Floor_Id=? AND id=? AND isActive= true AND Created_By='" + created_by + "'";
             connection.query(sql2, [hostel_id, floor_id, room_id], (err, hs_res) => {
-                
+
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Room Details" })
                 } else if (hs_res.length > 0) {
@@ -1303,7 +1352,7 @@ function createBed(req, res) {
                         }
                     })
                 } else {
-                    
+
                     return res.status(201).json({ statusCode: 201, message: "Invalid Hostel Details" })
                 }
             })
@@ -1331,7 +1380,7 @@ function bed_details(req, res) {
         } else if (hs_data.length != 0) {
 
             // var sql2="SELECT *,hs.id AS bed_details_id FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Hostel_Id=? AND hs.Floor_Id=? AND hs.Room_Id=? AND hs.isActive=1 AND hs.Created_By=?"
-            var sql2="SELECT hs.id as Room_Id,hs.Hostel_Id,hs.Floor_Id,hs.Room_Id as Room_Name,hs.Number_Of_Beds,hs.isActive as Room_Status,hs.Created_By,hf.id,hf.floor_id,hf.floor_name,hf.status as Floor_Status,hs.id AS bed_details_id FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Hostel_Id=? AND hs.Floor_Id=? AND hs.id=? AND hs.isActive=1 AND hs.Created_By=?"
+            var sql2 = "SELECT hs.id as Room_Id,hs.Hostel_Id,hs.Floor_Id,hs.Room_Id as Room_Name,hs.Number_Of_Beds,hs.isActive as Room_Status,hs.Created_By,hf.id,hf.floor_id,hf.floor_name,hf.status as Floor_Status,hs.id AS bed_details_id FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Hostel_Id=? AND hs.Floor_Id=? AND hs.id=? AND hs.isActive=1 AND hs.Created_By=?"
             connection.query(sql2, [hostel_id, floor_id, room_id, created_by], (err, hs_res) => {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Room Details" })

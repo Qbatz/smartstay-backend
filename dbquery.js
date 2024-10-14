@@ -81,7 +81,9 @@ const queries = [
 
     "ALTER TABLE `customer_eb_amount` ADD COLUMN `date` DATE NULL AFTER `amount`,CHANGE COLUMN `status` `status` INT(11) NULL DEFAULT 1 ;",
 
-    "ALTER TABLE `hostel` ADD COLUMN `joining_Date` DATE NULL AFTER `created_by`;"
+    "ALTER TABLE `hostel` ADD COLUMN `joining_Date` DATE NULL AFTER `created_by`;",
+
+    "ALTER TABLE `hosteldetails` ADD COLUMN `image1` VARCHAR(255) NULL AFTER `Bed`,ADD COLUMN `image2` VARCHAR(255) NULL AFTER `image1`,ADD COLUMN `image3` VARCHAR(255) NULL AFTER `image2`,ADD COLUMN `image4` VARCHAR(255) NULL AFTER `image3`;"
 ];
 
 queries.forEach(executeQuery);
