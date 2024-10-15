@@ -40,7 +40,7 @@ function AddExpense(request, response) {
   created_by = ${createdBy},
   createdate = '${createdate}',
   payment_mode = '${reqData.payment_mode}',
-  hostel_id = ${reqData.hostel_id}
+  hostel_id ='${reqData.hostel_id}'
    WHERE id = ${reqData.id};`
             connection.query(query, function (updateErr, updateData) {
                 if (updateErr) {
