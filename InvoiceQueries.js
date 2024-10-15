@@ -2083,13 +2083,14 @@ function EbAmount(connection, request, response) {
 
             // Check Date Validation
 
-            var sql3 = "SELECT * FROM EbAmount WHERE hostel_Id '" + atten.Hostel_Id + "' AND Floor= '" + atten.Floor + "'AND Room= '" + atten.Room + "' AND date='" + atten.date + "' OR initial_date='" + atten.date + "'";
+            var sql3 = "SELECT * FROM EbAmount WHERE hostel_Id= '" + atten.Hostel_Id + "' AND Floor= '" + atten.Floor + "' AND Room= '" + atten.Room + "' AND (date='" + atten.date + "' OR initial_date='" + atten.date + "')";
+            
             connection.query(sql3, function (err, date_res) {
                 if (err) {
                     return response.status(201).json({ message: 'Unable to Get Eb Amount Details', error: err });
                 } else if (date_res.length == 0) {
 
-                    var sql_1 = "SELECT * FROM EbAmount WHERE hostel_Id = '" + atten.Hostel_Id + "' AND Floor= '" + atten.Floor + "'AND Room= '" + atten.Room + "' ORDER BY id DESC";
+                    var sql_1 = "SELECT * FROM EbAmount WHERE hostel_Id = '" + atten.Hostel_Id + "' AND Floor= '" + atten.Floor + "' AND Room= '" + atten.Room + "' ORDER BY id DESC";
                     connection.query(sql_1, function (err, eb_data_list) {
                         if (err) {
                             return response.status(201).json({ message: 'Unable to Get Eb Amount Details', error: err });
@@ -2122,6 +2123,7 @@ function EbAmount(connection, request, response) {
                                 var total_reading = end_Meter_Reading - eb_data_list[0].start_Meter_Reading;
                                 var total_amount = particular_amount * total_reading;
 
+
                                 var sql_3 = "UPDATE EbAmount SET date=?,end_Meter_Reading=?,EbAmount=?,Eb_Unit=? WHERE id=?";
                                 connection.query(sql_3, [atten.date, end_Meter_Reading, total_amount, total_reading, id], function (err, data) {
                                     if (err) {
@@ -2129,7 +2131,12 @@ function EbAmount(connection, request, response) {
                                         return response.status(201).json({ message: 'Unable to Update Eb Amount', error: err });
                                     } else {
 
-                                        var last_cal_date = eb_data_list[0].initial_date;
+                                        var formattedDate = eb_data_list[0].initial_date;
+                                        var dateObject = new Date(formattedDate); // Create a Date object
+
+                                        // Format the date to YYYY-MM-DD
+                                        var last_cal_date = dateObject.toISOString().split('T')[0];
+                                        
                                         split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, function (result) {
                                             if (result.statusCode === 200) {
                                                 return response.status(200).json({ statusCode: 200, message: result.message });
