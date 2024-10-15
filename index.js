@@ -335,7 +335,7 @@ app.post('/add/new-hostel', upload.fields([{ name: 'profile', maxCount: 1 }, { n
         id: req.body.id
     };
     console.log(reqHostel.profile);
-    
+
     pgQueries.createPG(reqHostel, res, req)
 })
 
@@ -886,13 +886,14 @@ app.post('/delete_booking', (req, res) => {
 
 // Assign Booking
 // app.post('/assign_booking', (req, res) => {
-//     bookings.assign_booking(req, res)
+//     userQueries.assign_booking(req, res)
 // });
 
 // Customer Eb Reading
 app.get('/customer_readings', (req, res) => {
     invoiceQueries.customer_readings(req, res)
 });
+
 
 
 // add walk-in customer
@@ -903,4 +904,18 @@ app.post('/add/walkin-customer', (req, res) => {
 // get walk-in customer_list
 app.get('/get/walkin-customer', (req, res) => {
     userQueries.get_walk_in_customer_list(req, res)
+});
+
+// Checkout API
+app.post('/user_check_out', (req, res) => {
+    userQueries.user_check_out(req, res)
+});
+
+app.get('/checkout_list', (req, res) => {
+    userQueries.checkout_list(req, res)
+});
+
+// Delete Hostel Image
+app.post('/delete_hostel_image', (req, res) => {
+    pgQueries.delete_hostel_image(req, res)
 });

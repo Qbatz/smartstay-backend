@@ -18,7 +18,7 @@ function getUsers(connection, response, request) {
   // var offset = (page - 1) * limit;
 
   // var sql1 = "SELECT COUNT(*) as totalItems FROM hostel WHERE created_by='" + userDetails.id + "' AND isActive=1;";
-  var query = "SELECT hstl.*,hsroom.id AS room_id,hsroom.Room_Id AS room_name,hsroom.Room_Id,DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,hstl.Hostel_Id AS user_hostel FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true LEFT JOIN country_list AS cl ON hstl.country_code=cl.country_code Left Join hostelrooms hsroom ON hsroom.Hostel_Id = hstlDetails.id and hsroom.Floor_Id = hstl.Floor and hsroom.id = hstl.Rooms WHERE hstlDetails.created_By ='" + userDetails.id + "' ORDER BY hstl.ID DESC";
+  var query = "SELECT hstl.*,bd.bed_no AS Bed,hstl.Bed AS hstl_Bed,hsroom.Room_Id AS Rooms,hstl.Rooms AS hstl_Rooms,hsroom.id AS room_id,hsroom.Room_Id,DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,hstl.Hostel_Id AS user_hostel FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true LEFT JOIN country_list AS cl ON hstl.country_code=cl.country_code Left Join hostelrooms hsroom ON hsroom.Hostel_Id = hstlDetails.id and hsroom.Floor_Id = hstl.Floor and hsroom.id = hstl.Rooms LEFT JOIN bed_details AS bd ON bd.id=hstl.Bed  WHERE hstlDetails.created_By ='" + userDetails.id + "' ORDER BY hstl.ID DESC";
   connection.query(query, function (error, hostelData) {
     if (error) {
       console.error(error);
@@ -2163,29 +2163,6 @@ function get_bill_details(req, res) {
   });
 }
 
-// function add_walk_in_customer(req,res){
-//   const { customer_Name, email_Id, mobile_Number, booking_Date, joining_Date } = req.body;
-//   const created_By = req.user_details.id;
-
-// if (req.body) {
-//   const query = `INSERT INTO customer_walk_in_details (customer_Name, email_Id, mobile_Number, booking_Date, joining_Date, created_By)
-//   VALUES (?, ?, ?, ?, ?, ?)`;
-
-// connection.query(query, [customer_Name, email_Id, mobile_Number, booking_Date, joining_Date, created_By], (err, results) => {
-// if (err) {
-// return res.status(201).json({ error: 'Error inserting data' });
-// }
-// else{
-//   res.status(200).json({ message: 'Customer walk-in details added successfully', id: results.insertId });
-// }
-// });
-// } else {
-//   res.status(201).json({ message: 'Missing Parameter'});
-
-// }
-   
-// }
-
 
 function add_walk_in_customer(req, res) {
   const { id, customer_Name, email_Id, mobile_Number, booking_Date, joining_Date,comments } = req.body;
@@ -2287,6 +2264,70 @@ function get_walk_in_customer_list(req, res){
 
 
 
+
+function user_check_out(req, res) {
+
+  var created_by = req.user_details.id;
+
+  var { checkout_date, user_id, hostel_id, comments, action } = req.body;
+
+  if (!user_id || !checkout_date) {
+    return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+  }
+
+  if (!action) {
+    var action = 1 // Add Checkout
+  }
+  // var action = 2 // Edit Checkout
+
+  var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1 AND created_by=? AND Hostel_Id=?";
+  connection.query(sql1, [user_id, created_by, hostel_id], function (err, sel_res) {
+    if (err) {
+      return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
+    } else if (sel_res.length != 0) {
+
+      console.log(sel_res[0].CheckoutDate);
+
+      if (action == 1 && sel_res[0].CheckoutDate) {
+        return res.status(201).json({ statusCode: 201, message: "Already Added Checkout Date , Please Update Date" })
+      } else {
+        var sql2 = "UPDATE hostel SET checkout_comment=?,CheckOutDate=? WHERE ID=?";
+        connection.query(sql2, [comments, checkout_date, user_id], function (err, data) {
+          if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Update User Details" })
+          } else {
+            if (action == 1) { // Add Message
+              return res.status(200).json({ statusCode: 200, message: "Check-out Added Successfully!" })
+            } else {
+              return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully!" })
+            }
+          }
+        })
+      }
+    } else {
+      return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+    }
+  })
+}
+
+function checkout_list(req, res) {
+
+  var created_by = req.user_details.id;
+
+  const today = new Date();
+  const current_date = today.toISOString().slice(0, 10);
+
+  var sql1 = "SELECT ID,HostelName,Name,checkout_comment,DATE_FORMAT(CheckoutDate, '%Y-%m-%d') AS CheckoutDate,DATEDIFF(checkoutDate, '" + current_date + "') AS notice_period FROM hostel WHERE checkoutDate >= '" + current_date + "' AND isActive = 1 AND created_by = ?"
+  connection.query(sql1, [created_by], function (err, ch_list) {
+    if (err) {
+      return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
+    } else {
+      return res.status(200).json({ statusCode: 201, message: "Check-Out Details!", checkout_details: ch_list })
+    }
+  })
+}
+
+
 module.exports = {
   getUsers,
   createUser,
@@ -2304,5 +2345,7 @@ module.exports = {
   get_beduser_details,
   get_bill_details,
   add_walk_in_customer,
-  get_walk_in_customer_list
+  get_walk_in_customer_list,
+  user_check_out,
+  checkout_list
 };
