@@ -83,7 +83,16 @@ const queries = [
 
     "ALTER TABLE `hostel` ADD COLUMN `joining_Date` DATE NULL AFTER `created_by`;",
 
-    "ALTER TABLE `hosteldetails` ADD COLUMN `image1` VARCHAR(255) NULL AFTER `Bed`,ADD COLUMN `image2` VARCHAR(255) NULL AFTER `image1`,ADD COLUMN `image3` VARCHAR(255) NULL AFTER `image2`,ADD COLUMN `image4` VARCHAR(255) NULL AFTER `image3`;"
+    "ALTER TABLE `hosteldetails` ADD COLUMN `image1` VARCHAR(255) NULL AFTER `Bed`,ADD COLUMN `image2` VARCHAR(255) NULL AFTER `image1`,ADD COLUMN `image3` VARCHAR(255) NULL AFTER `image2`,ADD COLUMN `image4` VARCHAR(255) NULL AFTER `image3`;",
+
+    "CREATE TABLE `customer_walk_in_details` (`id` INT NOT NULL AUTO_INCREMENT,`customer_Name` VARCHAR(65) NULL,`email_Id` VARCHAR(85) NULL,`mobile_Number` BIGINT NULL,`booking_Date` DATE NULL,`joining_Date` DATE NULL,`created_At` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,`created_By` INT NULL,PRIMARY KEY (`id`));",
+
+    "ALTER TABLE `customer_walk_in_details` ADD COLUMN `comments` VARCHAR(255) NULL AFTER `created_By`",
+    
+    "ALTER TABLE `customer_walk_in_details` ADD COLUMN `isActive` TINYINT NULL DEFAULT 1 AFTER `comments`",
+    
+    "ALTER TABLE `Vendor` ADD COLUMN `Country` INT NULL AFTER `Business_Name`,ADD COLUMN `Pincode` INT NULL AFTER `Country`;"
+      
 ];
 
 queries.forEach(executeQuery);

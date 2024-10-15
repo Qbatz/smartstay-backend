@@ -2163,6 +2163,130 @@ function get_bill_details(req, res) {
   });
 }
 
+// function add_walk_in_customer(req,res){
+//   const { customer_Name, email_Id, mobile_Number, booking_Date, joining_Date } = req.body;
+//   const created_By = req.user_details.id;
+
+// if (req.body) {
+//   const query = `INSERT INTO customer_walk_in_details (customer_Name, email_Id, mobile_Number, booking_Date, joining_Date, created_By)
+//   VALUES (?, ?, ?, ?, ?, ?)`;
+
+// connection.query(query, [customer_Name, email_Id, mobile_Number, booking_Date, joining_Date, created_By], (err, results) => {
+// if (err) {
+// return res.status(201).json({ error: 'Error inserting data' });
+// }
+// else{
+//   res.status(200).json({ message: 'Customer walk-in details added successfully', id: results.insertId });
+// }
+// });
+// } else {
+//   res.status(201).json({ message: 'Missing Parameter'});
+
+// }
+   
+// }
+
+
+function add_walk_in_customer(req, res) {
+  const { id, customer_Name, email_Id, mobile_Number, booking_Date, joining_Date,comments } = req.body;
+  const created_By = req.user_details.id;
+
+  // Check if required fields are provided
+  if (!customer_Name || !email_Id || !mobile_Number) {
+      return res.status(201).json({ message: 'Missing parameters' });
+  }
+
+  // If an id is provided, first check if it exists
+  if (id) {
+      const checkIdQuery = `SELECT * FROM customer_walk_in_details WHERE id = ?`;
+      connection.query(checkIdQuery, [id], (err, idResults) => {
+          if (err) {
+              return res.status(201).json({ error: 'Error checking ID' });
+          }
+
+          // If ID does not exist, return an error message
+          if (idResults.length === 0) {
+              return res.status(203).json({ message: 'Customer ID not found' });
+          }
+
+          // If the ID exists, proceed to update the existing record
+          const updateQuery = `UPDATE customer_walk_in_details
+                               SET customer_Name = ?, email_Id = ?, mobile_Number = ?, booking_Date = ?, joining_Date = ?, comments = ?, created_By = ?
+                               WHERE id = ?`;
+
+          connection.query(updateQuery, [customer_Name, email_Id, mobile_Number, booking_Date, joining_Date,comments, created_By, id], (updateErr, updateResults) => {
+              if (updateErr) {
+                  return res.status(201).json({ error: 'Error updating data' });
+              }
+
+              res.status(200).json({ message: 'Customer walk-in details updated successfully' });
+          });
+      });
+  } else {
+      // Step 1: Check if email_Id already exists
+      const checkEmailQuery = `SELECT * FROM customer_walk_in_details WHERE email_Id = ?`;
+      connection.query(checkEmailQuery, [email_Id], (err, emailResults) => {
+          if (err) {
+              return res.status(201).json({ error: 'Error checking email' });
+          }
+
+          // If email exists, return an error message
+          if (emailResults.length > 0) {
+              return res.status(201).json({ message: 'Email ID already exists' });
+          }
+
+          // Step 2: Check if mobile_Number already exists
+          const checkMobileQuery = `SELECT * FROM customer_walk_in_details WHERE mobile_Number = ?`;
+          connection.query(checkMobileQuery, [mobile_Number], (err, mobileResults) => {
+              if (err) {
+                  return res.status(201).json({ error: 'Error checking mobile number' });
+              }
+
+              // If mobile number exists, return an error message
+              if (mobileResults.length > 0) {
+                  return res.status(201).json({ message: 'Mobile number already exists' });
+              }
+
+              // Step 3: If both email and mobile do not exist, proceed to insert the new record
+              const insertQuery = `INSERT INTO customer_walk_in_details (customer_Name, email_Id, mobile_Number, booking_Date, joining_Date, created_By)
+                                   VALUES (?, ?, ?, ?, ?, ?)`;
+
+              connection.query(insertQuery, [customer_Name, email_Id, mobile_Number, booking_Date, joining_Date, created_By], (insertErr, insertResults) => {
+                  if (insertErr) {
+                      return res.status(201).json({ error: 'Error inserting data' });
+                  }
+
+                  res.status(200).json({ message: 'Customer walk-in details added successfully', id: insertResults.insertId });
+              });
+          });
+      });
+  }
+}
+
+function get_walk_in_customer_list(req, res){
+  const created_By = req.user_details.id;
+  
+
+  // Query to fetch customer details by ID
+  const query = `SELECT * FROM customer_walk_in_details WHERE created_By = ? AND isActive = true`;
+
+  connection.query(query, [created_By], (err, results) => {
+      if (err) {
+          return res.status(201).json({ error: 'Error retrieving customer details' });
+      }
+
+      // Check if customer exists
+      if (results.length === 0) {
+          return res.status(201).json({ message: 'Customer not found' });
+      }
+
+      // Return customer details
+      res.status(200).json({ message: 'Customer details retrieved successfully', data: results });
+  });
+}
+
+
+
 module.exports = {
   getUsers,
   createUser,
@@ -2179,4 +2303,6 @@ module.exports = {
   get_user_amounts,
   get_beduser_details,
   get_bill_details,
+  add_walk_in_customer,
+  get_walk_in_customer_list
 };
