@@ -2225,10 +2225,10 @@ function add_walk_in_customer(req, res) {
               }
 
               // Step 3: If both email and mobile do not exist, proceed to insert the new record
-              const insertQuery = `INSERT INTO customer_walk_in_details (customer_Name, email_Id, mobile_Number, walk_In_Date, joining_Date, created_By)
+              const insertQuery = `INSERT INTO customer_walk_in_details (customer_Name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By)
                                    VALUES (?, ?, ?, ?, ?, ?)`;
 
-              connection.query(insertQuery, [customer_Name, email_Id, mobile_Number, walk_In_Date, joining_Date, created_By], (insertErr, insertResults) => {
+              connection.query(insertQuery, [customer_Name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By], (insertErr, insertResults) => {
                   if (insertErr) {
                       return res.status(201).json({ error: 'Error inserting data' });
                   }
