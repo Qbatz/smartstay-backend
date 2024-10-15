@@ -16,10 +16,11 @@ AWS.config.update({
 const s3 = new AWS.S3();
 
 function getHostelList(connection, response, request) {
-    const userDetails = request.user_details;
+
+    const created_by = request.user_details.id;
     let hostelDetails = [];
 
-    const queryHostelList = `SELECT * FROM hosteldetails WHERE created_By = '${userDetails.id}' AND isActive = true ORDER BY create_At DESC`;
+    const queryHostelList = `SELECT * FROM hosteldetails WHERE created_By = '${created_by}' AND isActive = true ORDER BY create_At DESC`;
 
     // Query to get the hostels
     connection.query(queryHostelList, function (err, hostels) {
@@ -55,10 +56,10 @@ function getHostelList(connection, response, request) {
                         COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr 
                             JOIN bed_details AS bd ON bd.hos_detail_id=hr.id 
                             JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id 
-                            WHERE hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By='${userDetails.id}' AND hr.Hostel_Id='${hostel.id}'), 0) AS occupied_Bed 
+                            WHERE hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By='${created_by}' AND hr.Hostel_Id='${hostel.id}'), 0) AS occupied_Bed 
                     FROM hosteldetails details 
                     JOIN createaccount creaccount ON creaccount.id = details.created_by 
-                    WHERE details.created_By='${userDetails.id}' AND details.id='${hostel.id}' 
+                    WHERE details.created_By='${created_by}' AND details.id='${hostel.id}' 
                     GROUP BY creaccount.id`;
 
                 connection.query(additionalDetailsQuery, function (additionalErr, additionalDetails) {
@@ -67,10 +68,16 @@ function getHostelList(connection, response, request) {
                         return response.status(201).json({ statusCode: 201, message: 'Error fetching additional details' });
                     }
 
+                    const image_list = [1, 2, 3, 4].map(i => ({
+                        name: `image${i}`,
+                        image: hostel[`image${i}`]
+                    }));
+
                     hostelDetails.push({
                         ...hostel,
                         floorDetails: floorDetails || [],
-                        ...additionalDetails[0]
+                        ...additionalDetails[0],
+                        image_list: image_list
                     });
 
                     processedHostels++;
