@@ -130,6 +130,8 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                                 Vendor_Email = '${reqInvoice.Vendor_Email}',
                                 Vendor_Address = '${reqInvoice.Vendor_Address}',
                                 Vendor_profile = '${vendor_profile}',
+                                Country = ${reqInvoice.Country},
+                                Pincode = ${reqInvoice.Pincode},
                                 UpdatedAt = NOW(), 
                              Business_Name = '${reqInvoice.Business_Name}'
                                 WHERE  id = '${reqInvoice.id}'`;
@@ -149,6 +151,8 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                         Vendor_Mobile = '${reqInvoice.Vendor_Mobile}',
                         Vendor_Email = '${reqInvoice.Vendor_Email}',
                         Vendor_Address = '${reqInvoice.Vendor_Address}',
+                        Country = ${reqInvoice.Country},
+                        Pincode = ${reqInvoice.Pincode},
                         UpdatedAt = NOW(), 
                         Business_Name = '${reqInvoice.Business_Name}'
                         WHERE  id = '${reqInvoice.id}'`;
@@ -190,8 +194,8 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                                 if (err) {
                                     response.status(201).json({ message: 'Database error' });
                                 } else {
-                                    const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, Vendor_profile, CreatedBy,  Business_Name) 
-                            VALUES ('${Vendor_Name}', '${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}', '${vendor_profile}','${created_by}' ,'${reqInvoice.Business_Name}')`;
+                                    const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, Vendor_profile, CreatedBy,  Business_Name, Country, Pincode) 
+                            VALUES ('${Vendor_Name}', '${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}', '${vendor_profile}','${created_by}' ,'${reqInvoice.Business_Name}', ${reqInvoice.Country},${reqInvoice.Pincode})`;
 
                                     connection.query(insertVendor, function (error, insertVendorData) {
                                         if (error) {
@@ -217,8 +221,8 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                                 }
                             });
                         } else {
-                            const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, CreatedBy,  Business_Name ) 
-                    VALUES ('${Vendor_Name}','${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}','${created_by}','${reqInvoice.Business_Name}')`;
+                            const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, CreatedBy,  Business_Name, Country, Pincode ) 
+                    VALUES ('${Vendor_Name}','${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}','${created_by}','${reqInvoice.Business_Name}', ${reqInvoice.Country}, ${reqInvoice.Pincode})`;
 
                             connection.query(insertVendor, function (error, insertVendorData) {
                                 if (error) {
