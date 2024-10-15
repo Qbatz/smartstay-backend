@@ -97,7 +97,9 @@ const queries = [
 
     "ALTER TABLE `hostel` ADD COLUMN `checkout_comment` VARCHAR(255) NULL AFTER `joining_Date`;",
 
-    "ALTER TABLE `hosteldetails` CHANGE COLUMN `email_id` `email_id` VARCHAR(255) NULL ;"
+    "ALTER TABLE `hosteldetails` CHANGE COLUMN `email_id` `email_id` VARCHAR(255) NULL ;",
+
+    "ALTER TABLE `customer_walk_in_details` CHANGE COLUMN `walk_in_Date` `walk_In_Date` DATE NULL DEFAULT NULL ;"
 
 ];
 
