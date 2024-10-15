@@ -16,10 +16,11 @@ AWS.config.update({
 const s3 = new AWS.S3();
 
 function getHostelList(connection, response, request) {
-    const userDetails = request.user_details;
+
+    const created_by = request.user_details.id;
     let hostelDetails = [];
 
-    const queryHostelList = `SELECT * FROM hosteldetails WHERE created_By = '${userDetails.id}' AND isActive = true ORDER BY create_At DESC`;
+    const queryHostelList = `SELECT hstl.*,eb.amount AS eb_amount FROM hosteldetails AS hstl LEFT JOIN eb_settings AS eb ON hstl.id=eb.hostel_id WHERE hstl.created_By = '${created_by}' AND hstl.isActive = true ORDER BY hstl.create_At DESC`;
 
     // Query to get the hostels
     connection.query(queryHostelList, function (err, hostels) {
@@ -55,10 +56,10 @@ function getHostelList(connection, response, request) {
                         COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr 
                             JOIN bed_details AS bd ON bd.hos_detail_id=hr.id 
                             JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id 
-                            WHERE hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By='${userDetails.id}' AND hr.Hostel_Id='${hostel.id}'), 0) AS occupied_Bed 
+                            WHERE hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By='${created_by}' AND hr.Hostel_Id='${hostel.id}'), 0) AS occupied_Bed 
                     FROM hosteldetails details 
                     JOIN createaccount creaccount ON creaccount.id = details.created_by 
-                    WHERE details.created_By='${userDetails.id}' AND details.id='${hostel.id}' 
+                    WHERE details.created_By='${created_by}' AND details.id='${hostel.id}' 
                     GROUP BY creaccount.id`;
 
                 connection.query(additionalDetailsQuery, function (additionalErr, additionalDetails) {
@@ -67,10 +68,16 @@ function getHostelList(connection, response, request) {
                         return response.status(201).json({ statusCode: 201, message: 'Error fetching additional details' });
                     }
 
+                    const image_list = [1, 2, 3, 4].map(i => ({
+                        name: `image${i}`,
+                        image: hostel[`image${i}`]
+                    }));
+
                     hostelDetails.push({
                         ...hostel,
                         floorDetails: floorDetails || [],
-                        ...additionalDetails[0]
+                        ...additionalDetails[0],
+                        image_list: image_list
                     });
 
                     processedHostels++;
@@ -1406,4 +1413,48 @@ function bed_details(req, res) {
     })
 }
 
-module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, update_floor, RoomFull, UpdateEB, listDashBoard, deleteHostel, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details }
+function getKeyFromUrl(url) {
+    const urlParts = url.split("/");
+    const key = urlParts.slice(3).join("/"); // Get everything after the bucket name
+    return key;
+}
+
+function delete_hostel_image(req, res) {
+
+    var { hostel_id, image_name } = req.body;
+
+    var created_by = req.user_details.id;
+
+    if (!hostel_id || !image_name) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Parameters." });
+    }
+    var sql1 = "SELECT " + image_name + " AS image FROM hosteldetails WHERE id=? AND isActive=1 AND created_By=?";
+    connection.query(sql1, [hostel_id, created_by], async function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get PG Details" });
+        } else if (data.length != 0) {
+
+            var Data = data[0].image
+            // console.log(Data);
+
+            if (Data != 0) {
+                const old_profile_key = await getKeyFromUrl(Data);
+                var deleteResponse = await uploadImage.deleteImageFromS3Bucket("smartstaydevs", old_profile_key);
+                console.log("Image deleted successfully");
+            }
+
+            var sql2 = "UPDATE hosteldetails SET " + image_name + "=0 WHERE id='" + hostel_id + "'"
+            connection.query(sql2, function (err, up_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Delete Image" });
+                } else {
+                    return res.status(200).json({ statusCode: 200, message: "Image Deleted Successfully!" });
+                }
+            })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid PG Details" });
+        }
+    })
+}
+
+module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, update_floor, RoomFull, UpdateEB, listDashBoard, deleteHostel, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details, delete_hostel_image }
