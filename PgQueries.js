@@ -1406,4 +1406,48 @@ function bed_details(req, res) {
     })
 }
 
-module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, update_floor, RoomFull, UpdateEB, listDashBoard, deleteHostel, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details }
+function getKeyFromUrl(url) {
+    const urlParts = url.split("/");
+    const key = urlParts.slice(3).join("/"); // Get everything after the bucket name
+    return key;
+}
+
+function delete_hostel_image(req, res) {
+
+    var { hostel_id, image_name } = req.body;
+
+    var created_by = req.user_details.id;
+
+    if (!hostel_id || !image_name) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Parameters." });
+    }
+    var sql1 = "SELECT " + image_name + " AS image FROM hosteldetails WHERE id=? AND isActive=1 AND created_By=?";
+    connection.query(sql1, [hostel_id, created_by], async function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get PG Details" });
+        } else if (data.length != 0) {
+
+            var Data = data[0].image
+            // console.log(Data);
+
+            if (Data != 0) {
+                const old_profile_key = await getKeyFromUrl(Data);
+                var deleteResponse = await uploadImage.deleteImageFromS3Bucket("smartstaydevs", old_profile_key);
+                console.log("Image deleted successfully");
+            }
+
+            var sql2 = "UPDATE hosteldetails SET " + image_name + "=0 WHERE id='" + hostel_id + "'"
+            connection.query(sql2, function (err, up_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Delete Image" });
+                } else {
+                    return res.status(200).json({ statusCode: 200, message: "Image Deleted Successfully!" });
+                }
+            })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid PG Details" });
+        }
+    })
+}
+
+module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, update_floor, RoomFull, UpdateEB, listDashBoard, deleteHostel, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details, delete_hostel_image }
