@@ -20,7 +20,7 @@ function getHostelList(connection, response, request) {
     const created_by = request.user_details.id;
     let hostelDetails = [];
 
-    const queryHostelList = `SELECT * FROM hosteldetails WHERE created_By = '${created_by}' AND isActive = true ORDER BY create_At DESC`;
+    const queryHostelList = `SELECT hstl.*,eb.amount AS eb_amount FROM hosteldetails AS hstl LEFT JOIN eb_settings AS eb ON hstl.id=eb.hostel_id WHERE hstl.created_By = '${created_by}' AND hstl.isActive = true ORDER BY hstl.create_At DESC`;
 
     // Query to get the hostels
     connection.query(queryHostelList, function (err, hostels) {
