@@ -2175,7 +2175,7 @@ function add_walk_in_customer(req, res) {
 
   // If an id is provided, first check if it exists
   if (id) {
-      const checkIdQuery = `SELECT * FROM customer_walk_in_details WHERE id = ?`;
+      const checkIdQuery = `SELECT * FROM customer_walk_in_details WHERE id = ? AND isActive = true`;
       connection.query(checkIdQuery, [id], (err, idResults) => {
           if (err) {
               return res.status(201).json({ error: 'Error checking ID' });
@@ -2201,7 +2201,7 @@ function add_walk_in_customer(req, res) {
       });
   } else {
       // Step 1: Check if email_Id already exists
-      const checkEmailQuery = `SELECT * FROM customer_walk_in_details WHERE email_Id = ?`;
+      const checkEmailQuery = `SELECT * FROM customer_walk_in_details WHERE email_Id = ? AND isActive = true`;
       connection.query(checkEmailQuery, [email_Id], (err, emailResults) => {
           if (err) {
               return res.status(201).json({ error: 'Error checking email' });
@@ -2213,7 +2213,7 @@ function add_walk_in_customer(req, res) {
           }
 
           // Step 2: Check if mobile_Number already exists
-          const checkMobileQuery = `SELECT * FROM customer_walk_in_details WHERE mobile_Number = ?`;
+          const checkMobileQuery = `SELECT * FROM customer_walk_in_details WHERE mobile_Number = ? AND isActive = true`;
           connection.query(checkMobileQuery, [mobile_Number], (err, mobileResults) => {
               if (err) {
                   return res.status(201).json({ error: 'Error checking mobile number' });
@@ -2232,8 +2232,8 @@ function add_walk_in_customer(req, res) {
                   if (insertErr) {
                       return res.status(201).json({ error: 'Error inserting data' });
                   }
-
-                  res.status(200).json({ message: 'Customer walk-in details added successfully', id: insertResults.insertId });
+// , id: insertResults.insertId 
+                  res.status(200).json({ message: 'Customer walk-in details added successfully', statusCode : 200});
               });
           });
       });
@@ -2262,6 +2262,30 @@ function get_walk_in_customer_list(req, res){
   });
 }
 
+
+function delete_walk_in_customer(req, res){
+if (req.body.id) {
+  let query1 = `select * from customer_walk_in_details where id = ${req.body.id} and isActive = true`;
+  connection.query(query1,function(sel_err,sel_data){
+    if (sel_err) {
+      res.status(201).json({ message: 'Error while fetching data'});
+    } else {
+      if (sel_data.length > 0) {
+        let query2 = `update customer_walk_in_details set isActive = false where id = ${req.body.id}`
+        connection.query(query2,function(update_error, update_data){
+          if (update_error) {
+            res.status(201).json({ message: 'Error while deleting data'});
+          } else {
+            res.status(200).json({ message: 'customer deleted successfully', statusCode:200});
+          }
+        })
+      } else {
+        res.status(201).json({ message: 'No Data Found'});
+      }
+    }
+  })
+}
+}
 
 
 
@@ -2346,6 +2370,7 @@ module.exports = {
   get_bill_details,
   add_walk_in_customer,
   get_walk_in_customer_list,
+  delete_walk_in_customer,
   user_check_out,
   checkout_list
 };
