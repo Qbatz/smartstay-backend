@@ -908,6 +908,11 @@ app.get('/get/walkin-customer', (req, res) => {
     userQueries.get_walk_in_customer_list(req, res)
 });
 
+// delete walk-in customer 
+app.post('/delete/walkin-customer', (req, res) => {
+    userQueries.delete_walk_in_customer(req, res)
+});
+
 // Checkout API
 app.post('/user_check_out', (req, res) => {
     userQueries.user_check_out(req, res)
