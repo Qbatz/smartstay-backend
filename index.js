@@ -611,7 +611,9 @@ app.post('/add/update_vendor', upload.single('profile'), (request, response) => 
         Vendor_Address: request.body.Vendor_Address,
         Vendor_Id: request.body.Vendor_Id,
         Business_Name: request.body.Business_Name,
-        id: request.body.id
+        id: request.body.id,
+        Country: request.body.Country,
+        Pincode : request.body.Pincode
     };
     console.log("reqInvoice", reqInvoice)
     vendorQueries.ToAddAndUpdateVendor(connection, reqInvoice, response, request)
