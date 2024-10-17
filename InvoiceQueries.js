@@ -2182,9 +2182,7 @@ function EbAmount(connection, request, response) {
                                     // Send error response if the query fails
                                     console.error('Error fetching user details:', err);
                                     return callback({ statusCode: 201, message: 'Unable to Get User Details', error: err });
-                                }
-
-                                if (user_data.length !== 0) {
+                                }else if (user_data.length !== 0) {
                                     let totalDays = user_data.reduce((acc, user) => acc + user.days_stayed, 0); // Total days stayed
                                     const amountPerDay = total_amount / totalDays; // Calculate amount per day
                                     console.log(amountPerDay);
@@ -2199,7 +2197,9 @@ function EbAmount(connection, request, response) {
                                         console.log("Stay Date", user.days_stayed);
 
                                         console.log(`User ID: ${user_id}, Per Unit: ₹${per_unit.toFixed(2)}, User Amount: ₹${userAmount.toFixed(2)}`);
-                                        if (userAmount != 0) {
+                                        console.log(userAmount);
+                                        
+                                        if (userAmount) {
                                             var sql2 = "INSERT INTO customer_eb_amount (user_id, start_meter, end_meter, unit, amount, created_by,date) VALUES (?, ?, ?, ?, ?, ?,?)";
                                             connection.query(sql2, [user_id, startMeterReading, end_Meter_Reading, per_unit, userAmount, created_by, atten.date], function (err) {
                                                 if (err) {
