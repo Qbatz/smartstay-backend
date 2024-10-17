@@ -1950,11 +1950,12 @@ function get_bill_details(req, res) {
 
 
 function add_walk_in_customer(req, res) {
+
   const { id, customer_Name, email_Id, mobile_Number, walk_In_Date, joining_Date, comments } = req.body;
   const created_By = req.user_details.id;
 
   // Check if required fields are provided
-  if (!customer_Name || !email_Id || !mobile_Number) {
+  if (!customer_Name || !mobile_Number) {
     return res.status(201).json({ message: 'Missing parameters' });
   }
 
@@ -1972,65 +1973,61 @@ function add_walk_in_customer(req, res) {
       }
 
       // If the ID exists, proceed to update the existing record
-      const updateQuery = `UPDATE customer_walk_in_details
-                               SET customer_Name = ?, email_Id = ?, mobile_Number = ?, walk_In_Date = ?, joining_Date = ?, comments = ?, created_By = ?
-                               WHERE id = ?`;
+      const updateQuery = `UPDATE customer_walk_in_details SET customer_Name = ?, email_Id = ?, mobile_Number = ?, walk_In_Date = ?, joining_Date = ?, comments = ?, created_By = ? WHERE id = ?`;
 
       connection.query(updateQuery, [customer_Name, email_Id, mobile_Number, walk_In_Date, joining_Date, comments, created_By, id], (updateErr, updateResults) => {
         if (updateErr) {
           return res.status(201).json({ error: 'Error updating data' });
         }
 
-        res.status(200).json({ message: 'Customer walk-in details updated successfully' });
+        res.status(200).json({ message: 'Changes Saved successfully' });
       });
     });
   } else {
     // Step 1: Check if email_Id already exists
-    const checkEmailQuery = `SELECT * FROM customer_walk_in_details WHERE email_Id = ? AND isActive = true`;
-    connection.query(checkEmailQuery, [email_Id], (err, emailResults) => {
+    // const checkEmailQuery = `SELECT * FROM customer_walk_in_details WHERE email_Id = ? AND isActive = true`;
+    // connection.query(checkEmailQuery, [email_Id], (err, emailResults) => {
+    //   if (err) {
+    //     return res.status(201).json({ error: 'Error checking email' });
+    //   }
+
+    // If email exists, return an error message
+    // if (emailResults.length > 0) {
+    //   return res.status(201).json({ message: 'Email ID already exists' });
+    // }
+
+    // Step 2: Check if mobile_Number already exists
+    const checkMobileQuery = `SELECT * FROM customer_walk_in_details WHERE mobile_Number = ? AND isActive = true`;
+    connection.query(checkMobileQuery, [mobile_Number], (err, mobileResults) => {
       if (err) {
-        return res.status(201).json({ error: 'Error checking email' });
+        return res.status(201).json({ error: 'Error checking mobile number' });
       }
 
-      // If email exists, return an error message
-      if (emailResults.length > 0) {
-        return res.status(201).json({ message: 'Email ID already exists' });
+      // If mobile number exists, return an error message
+      if (mobileResults.length > 0) {
+        return res.status(201).json({ message: 'Mobile number already exists' });
       }
 
-      // Step 2: Check if mobile_Number already exists
-      const checkMobileQuery = `SELECT * FROM customer_walk_in_details WHERE mobile_Number = ? AND isActive = true`;
-      connection.query(checkMobileQuery, [mobile_Number], (err, mobileResults) => {
-        if (err) {
-          return res.status(201).json({ error: 'Error checking mobile number' });
+      // Step 3: If both email and mobile do not exist, proceed to insert the new record
+      const insertQuery = `INSERT INTO customer_walk_in_details (customer_Name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+      connection.query(insertQuery, [customer_Name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By], (insertErr, insertResults) => {
+        if (insertErr) {
+          return res.status(201).json({ error: 'Error inserting data' });
         }
-
-        // If mobile number exists, return an error message
-        if (mobileResults.length > 0) {
-          return res.status(201).json({ message: 'Mobile number already exists' });
-        }
-
-        // Step 3: If both email and mobile do not exist, proceed to insert the new record
-        const insertQuery = `INSERT INTO customer_walk_in_details (customer_Name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By)
-                                   VALUES (?, ?, ?, ?, ?, ?, ?)`;
-
-        connection.query(insertQuery, [customer_Name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By], (insertErr, insertResults) => {
-          if (insertErr) {
-            return res.status(201).json({ error: 'Error inserting data' });
-          }
-          // , id: insertResults.insertId 
-          res.status(200).json({ message: 'Customer walk-in details added successfully', statusCode: 200 });
-        });
+        // , id: insertResults.insertId 
+        res.status(200).json({ message: 'Walk-in added successfully!', statusCode: 200 });
       });
     });
+    // });
   }
 }
 
 function get_walk_in_customer_list(req, res) {
+  
   const created_By = req.user_details.id;
 
-
   // Query to fetch customer details by ID
-  const query = `SELECT * FROM customer_walk_in_details WHERE created_By = ? AND isActive = true`;
+  const query = `SELECT * FROM customer_walk_in_details WHERE created_By = ? AND isActive = true ORDER BY id DESC`;
 
   connection.query(query, [created_By], (err, results) => {
     if (err) {

@@ -613,7 +613,7 @@ app.post('/add/update_vendor', upload.single('profile'), (request, response) => 
         Business_Name: request.body.Business_Name,
         id: request.body.id,
         Country: request.body.Country,
-        Pincode : request.body.Pincode
+        Pincode: request.body.Pincode
     };
     console.log("reqInvoice", reqInvoice)
     vendorQueries.ToAddAndUpdateVendor(connection, reqInvoice, response, request)
@@ -929,5 +929,5 @@ app.post('/delete_hostel_image', (req, res) => {
 
 // Recuring Bills
 // app.post('/add_recuring_bill', (req, res) => {
-//     pgQueries.add_recuring_bill(req, res)
+//     invoiceQueries.add_recuring_bill(req, res)
 // });
