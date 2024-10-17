@@ -926,3 +926,8 @@ app.get('/checkout_list', (req, res) => {
 app.post('/delete_hostel_image', (req, res) => {
     pgQueries.delete_hostel_image(req, res)
 });
+
+// Recuring Bills
+// app.post('/add_recuring_bill', (req, res) => {
+//     pgQueries.add_recuring_bill(req, res)
+// });

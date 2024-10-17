@@ -1274,29 +1274,24 @@ function transitionlist(request, response) {
 
 // Get Customer Details
 function customer_details(req, res) {
+
   var user_id = req.body.user_id;
 
   var created_by = req.user_details.id;
 
   if (!user_id || user_id == undefined) {
-    return res
-      .status(201)
-      .json({ message: "Missing User Details", statusCode: 201 });
+    return res.status(201).json({ message: "Missing User Details", statusCode: 201 });
   }
 
   // Check User Id valid or Invalid
 
   // var sql1 ="SELECT * FROM hostel AS hs LEFT JOIN country_list AS cl ON hs.country_code=cl.country_code WHERE hs.ID=? AND hs.isActive=1 ";
 
-  var sql1 =
-    'SELECT hs.*,cl.*,hosroom.id as Room_Id,hosroom.Room_Id as Room_Name FROM hostel AS hs LEFT JOIN hostelrooms hosroom ON hosroom.id = hs.Rooms LEFT JOIN country_list AS cl ON hs.country_code=cl.country_code WHERE hs.ID=? AND hs.isActive=1';
+  var sql1 = 'SELECT hs.*,cl.*,hosroom.id as Room_Id,hosroom.Room_Id as Room_Name FROM hostel AS hs LEFT JOIN hostelrooms hosroom ON hosroom.id = hs.Rooms LEFT JOIN country_list AS cl ON hs.country_code=cl.country_code WHERE hs.ID=? AND hs.isActive=1';
   connection.query(sql1, [user_id], (user_err, user_data) => {
     if (user_err) {
       console.log("user_err", user_err);
-
-      return res
-        .status(201)
-        .json({ message: "Unable to Get User Details", statusCode: 201 });
+      return res.status(201).json({ message: "Unable to Get User Details", statusCode: 201 });
     } else if (user_data.length != 0) {
       var temp = user_data[0];
 
@@ -1304,16 +1299,7 @@ function customer_details(req, res) {
 
       var amenn_user_id = user_data[0].User_Id;
       // All Amenties
-      var sql2 =
-        "SELECT amname.Amnities_Name AS Amnities_Name,amen.setAsDefault AS free_amenity FROM AmenitiesHistory AS amhis JOIN AmnitiesName AS amname ON amname.id = amhis.amenity_Id JOIN Amenities AS amen ON amen.id=amhis.amenity_Id WHERE amhis.status = 1 AND amhis.user_id = '" +
-        amenn_user_id +
-        "' AND amen.createdBy='" +
-        created_by +
-        "' UNION SELECT amname.Amnities_Name AS Amnities_Name,amen.setAsDefault AS free_amenity FROM Amenities AS amen JOIN AmnitiesName AS amname ON amname.id = amen.Amnities_Id WHERE amen.setAsDefault = 1 AND amen.createdBy='" +
-        created_by +
-        "' AND amen.Hostel_Id='" +
-        hostel_id +
-        "' GROUP BY Amnities_Name";
+      var sql2 = "SELECT amname.Amnities_Name AS Amnities_Name,amen.setAsDefault AS free_amenity FROM AmenitiesHistory AS amhis JOIN AmnitiesName AS amname ON amname.id = amhis.amenity_Id JOIN Amenities AS amen ON amen.id=amhis.amenity_Id WHERE amhis.status = 1 AND amhis.user_id = '" + amenn_user_id + "' AND amen.createdBy='" + created_by + "' UNION SELECT amname.Amnities_Name AS Amnities_Name,amen.setAsDefault AS free_amenity FROM Amenities AS amen JOIN AmnitiesName AS amname ON amname.id = amen.Amnities_Id WHERE amen.setAsDefault = 1 AND amen.createdBy='" + created_by + "' AND amen.Hostel_Id='" + hostel_id + "' GROUP BY Amnities_Name";
       connection.query(sql2, (am_err, am_data) => {
         if (am_err) {
           // console.log(am_err);
@@ -1323,75 +1309,43 @@ function customer_details(req, res) {
           user_data[0] = temp;
         }
         // Get Eb Details
-        var sql3 =
-          "SELECT inv.Name,inv.Hostel_Id,inv.Floor_Id,inv.Room_No,inv.EbAmount,eb.start_Meter_Reading,eb.end_Meter_Reading,eb.Eb_Unit,eb.EbAmount AS total_ebamount,inv.Date, CASE WHEN inv.Hostel_Based != 0 THEN inv.Hostel_Based ELSE inv.Room_Based END AS pay_eb_amount FROM invoicedetails AS inv INNER JOIN EbAmount AS eb ON inv.Hostel_Id = eb.Hostel_Id INNER JOIN (SELECT Hostel_Id,MAX(createAt) as latestCreateAt FROM EbAmount GROUP BY Hostel_Id ) as latestEb ON eb.Hostel_Id = latestEb.Hostel_Id AND eb.createAt = latestEb.latestCreateAt WHERE inv.User_Id=? AND inv.invoice_type=1 ORDER BY inv.id DESC";
-        connection.query(sql3, [amenn_user_id], (eb_err, eb_data) => {
+        var sql3 = "SELECT cb.start_meter,cb.end_meter,cb.unit,cb.amount,hos.Name,hos.profile,hos.HostelName,hf.floor_name,hr.Room_Id, DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id JOIN Hostel_Floor AS hf ON hf.floor_id=hos.Floor AND hf.hostel_id=hos.Hostel_Id JOIN hostelrooms AS hr ON hr.id=hos.Rooms WHERE cb.user_id=?";
+        connection.query(sql3, [user_id], (eb_err, eb_data) => {
           if (eb_err) {
-            return res
-              .status(201)
-              .json({ message: "Unable to Eb Details", statusCode: 201 });
+            return res.status(201).json({ message: "Unable to Eb Details", statusCode: 201 });
           } else {
             // Get Invoice Details
-            var sql4 =
-              "SELECT * FROM invoicedetails WHERE User_id=? ORDER BY id DESC";
+            var sql4 = "SELECT * FROM invoicedetails WHERE User_id=? ORDER BY id DESC";
             connection.query(sql4, [amenn_user_id], (inv_err, inv_res) => {
               if (inv_err) {
-                return res
-                  .status(201)
-                  .json({
-                    message: "Unable to  Get Invoice Details",
-                    statusCode: 201,
-                  });
+                return res.status(201).json({ message: "Unable to  Get Invoice Details", statusCode: 201 });
               } else {
                 // Get Transactions Details
-                var sql5 =
-                  "SELECT 'advance' AS type, id, user_id, advance_amount AS amount,payment_status AS status,payment_type,payment_date, createdAt AS created_at FROM advance_amount_transactions WHERE user_id =? UNION ALL SELECT 'rent' AS type, id, user_id, amount,status,payment_type,payment_date, createdAt AS created_at FROM transactions WHERE user_id =? ORDER BY created_at DESC";
-                connection.query(
-                  sql5,
-                  [user_id, user_id],
-                  (trans_err, trans_res) => {
-                    if (trans_err) {
-                      return res
-                        .status(201)
-                        .json({
-                          message: "Unable to Get Transactions Details",
-                          statusCode: 201,
-                        });
-                    } else {
-                      // Get Hostel Amenities
-                      var sql6 =
-                        "SELECT amname.Amnities_Name,am.Amount,am.Amnities_Id FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id LEFT JOIN AmenitiesHistory AS amhis ON amhis.amenity_Id=am.Amnities_Id AND amhis.user_Id='" +
-                        amenn_user_id +
-                        "' WHERE am.Hostel_Id='" +
-                        hostel_id +
-                        "' AND am.setAsDefault=0 AND am.Status=1 AND am.createdBy='" +
-                        created_by +
-                        "' GROUP BY amname.Amnities_Name;";
-                      connection.query(sql6, [hostel_id], (am_err, am_res) => {
-                        if (am_err) {
-                          console.log(am_err);
-                          return res
-                            .status(201)
-                            .json({
-                              message: "Unable to Get All Amenities",
-                              statusCode: 201,
-                            });
-                        } else {
-                          res
-                            .status(200)
-                            .json({
-                              statusCode: 200,
-                              message: "View Customer Details",
-                              data: user_data,
-                              eb_data: eb_data,
-                              invoice_details: inv_res,
-                              transactions: trans_res,
-                              all_amenities: am_res,
-                            });
-                        }
-                      });
-                    }
+                var sql5 = "SELECT 'advance' AS type, id, user_id, advance_amount AS amount,payment_status AS status,payment_type,payment_date, createdAt AS created_at FROM advance_amount_transactions WHERE user_id =? UNION ALL SELECT 'rent' AS type, id, user_id, amount,status,payment_type,payment_date, createdAt AS created_at FROM transactions WHERE user_id =? ORDER BY created_at DESC";
+                connection.query(sql5, [user_id, user_id], (trans_err, trans_res) => {
+                  if (trans_err) {
+                    return res.status(201).json({ message: "Unable to Get Transactions Details", statusCode: 201 });
+                  } else {
+                    // Get Hostel Amenities
+                    var sql6 = "SELECT amname.Amnities_Name,am.Amount,am.Amnities_Id FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id LEFT JOIN AmenitiesHistory AS amhis ON amhis.amenity_Id=am.Amnities_Id AND amhis.user_Id='" + amenn_user_id + "' WHERE am.Hostel_Id='" + hostel_id + "' AND am.setAsDefault=0 AND am.Status=1 AND am.createdBy='" + created_by + "' GROUP BY amname.Amnities_Name;";
+                    connection.query(sql6, [hostel_id], (am_err, am_res) => {
+                      if (am_err) {
+                        console.log(am_err);
+                        return res.status(201).json({ message: "Unable to Get All Amenities", statusCode: 201 });
+                      } else {
+
+                        // Complaints
+                        var sql7 = "SELECT cm.Requestid,cm.Assign,DATE_FORMAT(cm.date, '%Y-%m-%d') AS complaint_date,cm.Status,ct.complaint_name FROM compliance AS cm JOIN complaint_type AS ct ON cm.Complainttype=ct.id WHERE User_id=?";
+                        connection.query(sql7, [amenn_user_id], function (err, comp_data) {
+                          if (err) {
+                            return res.status(201).json({ message: "Unable to Get Eb Details", statusCode: 201 });
+                          }
+                          res.status(200).json({ statusCode: 200, message: "View Customer Details", data: user_data, eb_data: eb_data, invoice_details: inv_res, transactions: trans_res, all_amenities: am_res, comp_data: comp_data });
+                        })
+                      }
+                    });
                   }
+                }
                 );
               }
             });
@@ -1399,47 +1353,24 @@ function customer_details(req, res) {
         });
       });
     } else {
-      return res
-        .status(201)
-        .json({ message: "Invalid or Inactive User", statusCode: 201 });
+      return res.status(201).json({ message: "Invalid or Inactive User", statusCode: 201 });
     }
   });
 }
 
 function user_amenities_history(req, res) {
+
   var user_id = req.body.user_id;
   var amenities_id = req.body.amenities_id || [];
 
   var sql1 = "SELECT * FROM hostel WHERE ID=?";
   connection.query(sql1, [user_id], (sel_err, sel_res) => {
     if (sel_err) {
-      return res
-        .status(500)
-        .json({ message: "Database query error", error: sel_err });
+      return res.status(201).json({ message: "Database query error", error: sel_err });
     } else if (sel_res.length != 0) {
       var user_ids = sel_res[0].User_Id;
 
-      var sql = `
-                SELECT 
-                    amen.id, 
-                    amen.user_Id, 
-                    amen.amenity_Id, 
-                    hostel.Hostel_Id,
-                    amen.status, 
-                    amen.created_At, 
-                    amname.Amnities_Name, 
-                    am.Amount 
-                FROM 
-                    AmenitiesHistory AS amen 
-                JOIN 
-                    hostel ON hostel.User_Id = amen.user_Id  
-                JOIN 
-                    Amenities AS am ON am.Amnities_Id = amen.amenity_Id 
-                JOIN 
-                    AmnitiesName AS amname ON am.Amnities_Id = amname.id 
-                WHERE 
-                    amen.user_Id = '${user_ids}' AND am.Status=1
-            `;
+      var sql = `SELECT amen.id,amen.user_Id,amen.amenity_Id,hostel.Hostel_Id,amen.status,amen.created_At,amname.Amnities_Name,am.Amount FROM AmenitiesHistory AS amen JOIN hostel ON hostel.User_Id = amen.user_Id JOIN Amenities AS am ON am.Amnities_Id = amen.amenity_Id AND amen.Hostel_Id=am.Hostel_Id JOIN AmnitiesName AS amname ON am.Amnities_Id = amname.id WHERE amen.user_Id = '${user_ids}' AND am.Status=1`;
 
       if (amenities_id.length > 0) {
         sql += ` AND amen.amenity_Id IN (${amenities_id.join(",")})`;
@@ -1449,30 +1380,11 @@ function user_amenities_history(req, res) {
 
       connection.query(sql, (am_err, am_data) => {
         if (am_err) {
-          return res
-            .status(201)
-            .json({
-              message: "Unable to fetch amenity details",
-              error: am_err,
-            });
+          return res.status(201).json({ message: "Unable to fetch amenity details", error: am_err });
         } else {
           const result = [];
           const lastStatusMap = {};
-          const monthNames = [
-            null,
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December",
-          ];
+          const monthNames = [null, "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December",];
 
           // Get the current month and year dynamically
           const currentDate = new Date();
@@ -2165,126 +2077,126 @@ function get_bill_details(req, res) {
 
 
 function add_walk_in_customer(req, res) {
-  const { id, customer_Name, email_Id, mobile_Number, walk_In_Date, joining_Date,comments } = req.body;
+  const { id, customer_Name, email_Id, mobile_Number, walk_In_Date, joining_Date, comments } = req.body;
   const created_By = req.user_details.id;
 
   // Check if required fields are provided
   if (!customer_Name || !email_Id || !mobile_Number) {
-      return res.status(201).json({ message: 'Missing parameters' });
+    return res.status(201).json({ message: 'Missing parameters' });
   }
 
   // If an id is provided, first check if it exists
   if (id) {
-      const checkIdQuery = `SELECT * FROM customer_walk_in_details WHERE id = ? AND isActive = true`;
-      connection.query(checkIdQuery, [id], (err, idResults) => {
-          if (err) {
-              return res.status(201).json({ error: 'Error checking ID' });
-          }
+    const checkIdQuery = `SELECT * FROM customer_walk_in_details WHERE id = ? AND isActive = true`;
+    connection.query(checkIdQuery, [id], (err, idResults) => {
+      if (err) {
+        return res.status(201).json({ error: 'Error checking ID' });
+      }
 
-          // If ID does not exist, return an error message
-          if (idResults.length === 0) {
-              return res.status(203).json({ message: 'Customer ID not found' });
-          }
+      // If ID does not exist, return an error message
+      if (idResults.length === 0) {
+        return res.status(203).json({ message: 'Customer ID not found' });
+      }
 
-          // If the ID exists, proceed to update the existing record
-          const updateQuery = `UPDATE customer_walk_in_details
+      // If the ID exists, proceed to update the existing record
+      const updateQuery = `UPDATE customer_walk_in_details
                                SET customer_Name = ?, email_Id = ?, mobile_Number = ?, walk_In_Date = ?, joining_Date = ?, comments = ?, created_By = ?
                                WHERE id = ?`;
 
-          connection.query(updateQuery, [customer_Name, email_Id, mobile_Number, walk_In_Date, joining_Date,comments, created_By, id], (updateErr, updateResults) => {
-              if (updateErr) {
-                  return res.status(201).json({ error: 'Error updating data' });
-              }
+      connection.query(updateQuery, [customer_Name, email_Id, mobile_Number, walk_In_Date, joining_Date, comments, created_By, id], (updateErr, updateResults) => {
+        if (updateErr) {
+          return res.status(201).json({ error: 'Error updating data' });
+        }
 
-              res.status(200).json({ message: 'Customer walk-in details updated successfully' });
-          });
+        res.status(200).json({ message: 'Customer walk-in details updated successfully' });
       });
+    });
   } else {
-      // Step 1: Check if email_Id already exists
-      const checkEmailQuery = `SELECT * FROM customer_walk_in_details WHERE email_Id = ? AND isActive = true`;
-      connection.query(checkEmailQuery, [email_Id], (err, emailResults) => {
-          if (err) {
-              return res.status(201).json({ error: 'Error checking email' });
-          }
+    // Step 1: Check if email_Id already exists
+    const checkEmailQuery = `SELECT * FROM customer_walk_in_details WHERE email_Id = ? AND isActive = true`;
+    connection.query(checkEmailQuery, [email_Id], (err, emailResults) => {
+      if (err) {
+        return res.status(201).json({ error: 'Error checking email' });
+      }
 
-          // If email exists, return an error message
-          if (emailResults.length > 0) {
-              return res.status(201).json({ message: 'Email ID already exists' });
-          }
+      // If email exists, return an error message
+      if (emailResults.length > 0) {
+        return res.status(201).json({ message: 'Email ID already exists' });
+      }
 
-          // Step 2: Check if mobile_Number already exists
-          const checkMobileQuery = `SELECT * FROM customer_walk_in_details WHERE mobile_Number = ? AND isActive = true`;
-          connection.query(checkMobileQuery, [mobile_Number], (err, mobileResults) => {
-              if (err) {
-                  return res.status(201).json({ error: 'Error checking mobile number' });
-              }
+      // Step 2: Check if mobile_Number already exists
+      const checkMobileQuery = `SELECT * FROM customer_walk_in_details WHERE mobile_Number = ? AND isActive = true`;
+      connection.query(checkMobileQuery, [mobile_Number], (err, mobileResults) => {
+        if (err) {
+          return res.status(201).json({ error: 'Error checking mobile number' });
+        }
 
-              // If mobile number exists, return an error message
-              if (mobileResults.length > 0) {
-                  return res.status(201).json({ message: 'Mobile number already exists' });
-              }
+        // If mobile number exists, return an error message
+        if (mobileResults.length > 0) {
+          return res.status(201).json({ message: 'Mobile number already exists' });
+        }
 
-              // Step 3: If both email and mobile do not exist, proceed to insert the new record
-              const insertQuery = `INSERT INTO customer_walk_in_details (customer_Name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By)
+        // Step 3: If both email and mobile do not exist, proceed to insert the new record
+        const insertQuery = `INSERT INTO customer_walk_in_details (customer_Name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By)
                                    VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
-              connection.query(insertQuery, [customer_Name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By], (insertErr, insertResults) => {
-                  if (insertErr) {
-                      return res.status(201).json({ error: 'Error inserting data' });
-                  }
-// , id: insertResults.insertId 
-                  res.status(200).json({ message: 'Customer walk-in details added successfully', statusCode : 200});
-              });
-          });
+        connection.query(insertQuery, [customer_Name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By], (insertErr, insertResults) => {
+          if (insertErr) {
+            return res.status(201).json({ error: 'Error inserting data' });
+          }
+          // , id: insertResults.insertId 
+          res.status(200).json({ message: 'Customer walk-in details added successfully', statusCode: 200 });
+        });
       });
+    });
   }
 }
 
-function get_walk_in_customer_list(req, res){
+function get_walk_in_customer_list(req, res) {
   const created_By = req.user_details.id;
-  
+
 
   // Query to fetch customer details by ID
   const query = `SELECT * FROM customer_walk_in_details WHERE created_By = ? AND isActive = true`;
 
   connection.query(query, [created_By], (err, results) => {
-      if (err) {
-          return res.status(201).json({ error: 'Error retrieving customer details' });
-      }
+    if (err) {
+      return res.status(201).json({ error: 'Error retrieving customer details' });
+    }
 
-      // Check if customer exists
-      if (results.length === 0) {
-          return res.status(201).json({ message: 'Customer not found' });
-      }
+    // Check if customer exists
+    if (results.length === 0) {
+      return res.status(201).json({ message: 'Customer not found' });
+    }
 
-      // Return customer details
-      res.status(200).json({ message: 'Customer details retrieved successfully', data: results });
+    // Return customer details
+    res.status(200).json({ message: 'Customer details retrieved successfully', data: results });
   });
 }
 
 
-function delete_walk_in_customer(req, res){
-if (req.body.id) {
-  let query1 = `select * from customer_walk_in_details where id = ${req.body.id} and isActive = true`;
-  connection.query(query1,function(sel_err,sel_data){
-    if (sel_err) {
-      res.status(201).json({ message: 'Error while fetching data'});
-    } else {
-      if (sel_data.length > 0) {
-        let query2 = `update customer_walk_in_details set isActive = false where id = ${req.body.id}`
-        connection.query(query2,function(update_error, update_data){
-          if (update_error) {
-            res.status(201).json({ message: 'Error while deleting data'});
-          } else {
-            res.status(200).json({ message: 'customer deleted successfully', statusCode:200});
-          }
-        })
+function delete_walk_in_customer(req, res) {
+  if (req.body.id) {
+    let query1 = `select * from customer_walk_in_details where id = ${req.body.id} and isActive = true`;
+    connection.query(query1, function (sel_err, sel_data) {
+      if (sel_err) {
+        res.status(201).json({ message: 'Error while fetching data' });
       } else {
-        res.status(201).json({ message: 'No Data Found'});
+        if (sel_data.length > 0) {
+          let query2 = `update customer_walk_in_details set isActive = false where id = ${req.body.id}`
+          connection.query(query2, function (update_error, update_data) {
+            if (update_error) {
+              res.status(201).json({ message: 'Error while deleting data' });
+            } else {
+              res.status(200).json({ message: 'customer deleted successfully', statusCode: 200 });
+            }
+          })
+        } else {
+          res.status(201).json({ message: 'No Data Found' });
+        }
       }
-    }
-  })
-}
+    })
+  }
 }
 
 
