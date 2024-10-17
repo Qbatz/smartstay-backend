@@ -613,7 +613,7 @@ app.post('/add/update_vendor', upload.single('profile'), (request, response) => 
         Business_Name: request.body.Business_Name,
         id: request.body.id,
         Country: request.body.Country,
-        Pincode : request.body.Pincode
+        Pincode: request.body.Pincode
     };
     console.log("reqInvoice", reqInvoice)
     vendorQueries.ToAddAndUpdateVendor(connection, reqInvoice, response, request)
@@ -899,17 +899,17 @@ app.get('/customer_readings', (req, res) => {
 
 
 // add walk-in customer
-app.post('/add/walkin-customer', (req, res) => {
+app.post('/add_walkin-customer', (req, res) => {
     userQueries.add_walk_in_customer(req, res)
 });
 
 // get walk-in customer_list
-app.get('/get/walkin-customer', (req, res) => {
+app.get('/get_walkin-customer', (req, res) => {
     userQueries.get_walk_in_customer_list(req, res)
 });
 
 // delete walk-in customer 
-app.post('/delete/walkin-customer', (req, res) => {
+app.post('/delete_walkin-customer', (req, res) => {
     userQueries.delete_walk_in_customer(req, res)
 });
 
@@ -926,3 +926,8 @@ app.get('/checkout_list', (req, res) => {
 app.post('/delete_hostel_image', (req, res) => {
     pgQueries.delete_hostel_image(req, res)
 });
+
+// Recuring Bills
+// app.post('/add_recuring_bill', (req, res) => {
+//     invoiceQueries.add_recuring_bill(req, res)
+// });

@@ -2084,7 +2084,7 @@ function EbAmount(connection, request, response) {
             // Check Date Validation
 
             var sql3 = "SELECT * FROM EbAmount WHERE hostel_Id= '" + atten.Hostel_Id + "' AND Floor= '" + atten.Floor + "' AND Room= '" + atten.Room + "' AND (date='" + atten.date + "' OR initial_date='" + atten.date + "')";
-            
+
             connection.query(sql3, function (err, date_res) {
                 if (err) {
                     return response.status(201).json({ message: 'Unable to Get Eb Amount Details', error: err });
@@ -2136,7 +2136,7 @@ function EbAmount(connection, request, response) {
 
                                         // Format the date to YYYY-MM-DD
                                         var last_cal_date = dateObject.toISOString().split('T')[0];
-                                        
+
                                         split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, function (result) {
                                             if (result.statusCode === 200) {
                                                 return response.status(200).json({ statusCode: 200, message: result.message });
@@ -2801,5 +2801,11 @@ function customer_readings(req, res) {
     })
 }
 
+function add_recuring_bill(req, res) {
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice, customer_readings }
+    var { user_id, due_date, date, invoice_id, room_rent, eb_amount, total_amount, amenity } = req.body;
+
+}
+
+
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice, customer_readings, add_recuring_bill }
