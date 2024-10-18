@@ -922,6 +922,10 @@ app.get('/checkout_list', (req, res) => {
     userQueries.checkout_list(req, res)
 });
 
+app.post('/delete_check_out', (req, res) => {
+    userQueries.delete_check_out(req, res)
+});
+
 // Delete Hostel Image
 app.post('/delete_hostel_image', (req, res) => {
     pgQueries.delete_hostel_image(req, res)
