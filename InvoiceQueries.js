@@ -2803,7 +2803,93 @@ function customer_readings(req, res) {
 
 function add_recuring_bill(req, res) {
 
-    var { user_id, due_date, date, invoice_id, room_rent, eb_amount, total_amount, amenity } = req.body;
+    var { user_id, due_date, date, invoice_id, room_rent, eb_amount, total_amount, amenity, advance_amount } = req.body;
+
+    if (!user_id) {
+        return res.status(200).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
+    connection.query(sql1, [user_id], function (err, user_details) {
+        if (err) {
+            console.log(err);
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
+        } else if (user_details.length != 0) {
+
+            var user_data = user_details[0];
+
+            var total_am_amount = amenity && amenity.length > 0 ? amenity.reduce((sum, user) => sum + user.amount, 0) : 0;
+
+            console.log(total_am_amount);
+
+            if (total_am_amount) {
+                total_am_amount = total_am_amount;
+            } else {
+                total_am_amount = 0
+            }
+
+            let dateObj = new Date(date);  // Format: YYYY-MM-DD
+            let inv_day = dateObj.getDate();
+            console.log(inv_day);
+
+            let duedateObj = new Date(due_date);  // Format: YYYY-MM-DD
+            let due_day = duedateObj.getDate();
+            console.log(due_day);
+
+            var eb = 0;
+            if (eb_amount) {
+                eb = 1
+            }
+
+            var advance = 0;
+            if (advance_amount) {
+                advance = 1
+            }
+
+            var rent = 0;
+            if (room_rent) {
+                rent = 1
+            }
+
+            var amen = 0;
+            if (amenity && amenity.length > 0) {
+                amen = 1
+            }
+
+            var sql4 = "INSERT INTO recuring_inv_details "
+
+            var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,RoomRent,EbAmount,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, total_amount, due_date, date, invoice_id, 'pending', user_data.User_Id, room_rent, eb_amount, total_am_amount, user_data.Bed, total_amount, 'manual', 1, user_id], function (err, ins_data) {
+                if (err) {
+                    console.log(err);
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
+                } else {
+                    var inv_id = ins_data.insertId;
+                    if (amenity && amenity.length > 0) {
+
+                        var remaining = amenity.length;
+                        amenity.forEach(item => {
+                            var sql3 = "INSERT INTO manual_invoice_amenities (am_name, user_id, amount,invoice_id) VALUES (?, ?, ?,?)";
+                            connection.query(sql3, [item.am_name, user_id, item.amount, inv_id], function (err) {
+                                if (err) {
+                                    console.log("Error inserting amenity details:", err);
+                                }
+                                remaining -= 1;
+                                if (remaining === 0) {
+                                    return res.status(200).json({ statusCode: 200, message: "Invoice and Amenity Details Added Successfully" });
+                                }
+                            });
+                        });
+                    } else {
+                        return res.status(200).json({ statusCode: 200, message: "Invoice Added Successfully" });
+                    }
+                }
+            })
+
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+        }
+    })
 
 }
 

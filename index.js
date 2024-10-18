@@ -928,6 +928,6 @@ app.post('/delete_hostel_image', (req, res) => {
 });
 
 // Recuring Bills
-// app.post('/add_recuring_bill', (req, res) => {
-//     invoiceQueries.add_recuring_bill(req, res)
-// });
+app.post('/add_recuring_bill', (req, res) => {
+    invoiceQueries.add_recuring_bill(req, res)
+});
