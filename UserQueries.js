@@ -2023,7 +2023,7 @@ function add_walk_in_customer(req, res) {
 }
 
 function get_walk_in_customer_list(req, res) {
-  
+
   const created_By = req.user_details.id;
 
   // Query to fetch customer details by ID
@@ -2133,6 +2133,36 @@ function checkout_list(req, res) {
   })
 }
 
+function delete_check_out(req, res) {
+
+  var user_id = req.body.user_id;
+  if (!user_id) {
+    return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+  }
+
+  var created_by = req.user_details.id;
+
+  var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1 AND created_by=?";
+  connection.query(sql1, [user_id, created_by], function (err, sel_res) {
+    if (err) {
+      return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
+    } else if (sel_res.length != 0) {
+
+      var sql2 = "UPDATE hostel SET CheckoutDate=NULL,checkout_comment=NULL WHERE ID=?";
+      connection.query(sql2, [user_id], function (err, up_res) {
+        if (err) {
+          return res.status(201).json({ statusCode: 201, message: "Unable to Delete Checkout" })
+        } else {
+          return res.status(200).json({ statusCode: 200, message: "Check-out deleted successfully!" })
+        }
+      })
+    } else {
+      return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+    }
+  })
+
+}
+
 
 module.exports = {
   getUsers,
@@ -2154,5 +2184,6 @@ module.exports = {
   get_walk_in_customer_list,
   delete_walk_in_customer,
   user_check_out,
-  checkout_list
+  checkout_list,
+  delete_check_out
 };
