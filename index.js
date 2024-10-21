@@ -44,7 +44,6 @@ app.use(function (req, res, next) {
     next();
 })
 const dbquery = require('./dbquery');
-const { profile } = require('console');
 
 app.use(middleware);
 
@@ -935,3 +934,11 @@ app.post('/delete_hostel_image', (req, res) => {
 app.post('/add_recuring_bill', (req, res) => {
     invoiceQueries.add_recuring_bill(req, res)
 });
+
+app.get('/all_recuring_bills', (req, res) => {
+    invoiceQueries.all_recuring_bills(req, res)
+});
+
+app.post('/get_recuring_amounts', (req, res) => {
+    invoiceQueries.get_recuring_amount(req, res)
+})
