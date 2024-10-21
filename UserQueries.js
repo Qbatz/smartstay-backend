@@ -2123,7 +2123,8 @@ function checkout_list(req, res) {
   const today = new Date();
   const current_date = today.toISOString().slice(0, 10);
 
-  var sql1 = "SELECT Hostel_Id,  ID,HostelName,Name,checkout_comment,DATE_FORMAT(CheckoutDate, '%Y-%m-%d') AS CheckoutDate,DATEDIFF(checkoutDate, '" + current_date + "') AS notice_period FROM hostel WHERE checkoutDate >= '" + current_date + "' AND isActive = 1 AND created_by = ?"
+  // var sql1 = "SELECT Hostel_Id,  ID,HostelName,Name,checkout_comment,DATE_FORMAT(CheckoutDate, '%Y-%m-%d') AS CheckoutDate,DATEDIFF(checkoutDate, '" + current_date + "') AS notice_period FROM hostel WHERE checkoutDate >= '" + current_date + "' AND isActive = 1 AND created_by = ?";
+  var sql1 = "SELECT hs.Hostel_Id,hs.ID,hs.HostelName,hs.Name,hs.checkout_comment,DATE_FORMAT(hs.CheckoutDate, '%Y-%m-%d') AS CheckoutDate,hs.profile AS user_profile,DATEDIFF(checkoutDate, '" + current_date + "') AS notice_period,hos_de.profile FROM hostel AS hs JOIN hosteldetails AS hos_de ON hos_de.id=hs.Hostel_Id WHERE hs.checkoutDate >= '" + current_date + "' AND hs.isActive = 1 AND hs.created_by = ?"
   connection.query(sql1, [created_by], function (err, ch_list) {
     if (err) {
       return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
