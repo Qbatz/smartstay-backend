@@ -2095,7 +2095,7 @@ function user_check_out(req, res) {
       console.log(sel_res[0].CheckoutDate);
 
       if (action == 1 && sel_res[0].CheckoutDate) {
-        return res.status(201).json({ statusCode: 201, message: "Already Added Checkout Date , Please Update Date" })
+        return res.status(201).json({ statusCode: 201, message: "Already Added Checkout Date" })
       } else {
         var sql2 = "UPDATE hostel SET checkout_comment=?,CheckOutDate=? WHERE ID=?";
         connection.query(sql2, [comments, checkout_date, user_id], function (err, data) {
@@ -2111,7 +2111,7 @@ function user_check_out(req, res) {
         })
       }
     } else {
-      return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+      return res.status(201).json({ statusCode: 201, message: "Please select a valid hostel name. This customer does not exist for this hostel." })
     }
   })
 }
