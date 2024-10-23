@@ -98,5 +98,90 @@ function delete_booking(req, res) {
     })
 }
 
+function assign_booking(req, res){
+    let reqbody = req.body;
+    var created_by = req.user_details.id;
+    const Name = reqbody.firstname + " " + reqbody.lastname;
+    const FirstNameInitial = reqbody.firstname.charAt(0).toUpperCase();
+    if (reqbody.lastname) {
+      var LastNameInitial = reqbody.lastname.charAt(0).toUpperCase();
+      var Circle = FirstNameInitial + LastNameInitial;
+    } else {
+        reqbody.lastname = "";
+      var FirstNameInitial2 = reqbody.firstname.charAt(0).toUpperCase();
+      var LastNameInitial2 = reqbody.firstname.charAt(1).toUpperCase();
+      console.log(FirstNameInitial2);
+      var Circle = FirstNameInitial2 + LastNameInitial2;
+    }
+    if (reqbody.Email == undefined) {
+        reqbody.Email = "NA";
+      }
+if(reqbody){
+    // app.delete('/api/bookings/:id', (req, res) => {
+        // const bookingId = req.params.id;
+        const query1 = 'UPDATE bookings SET status = false WHERE status = true and id = ?';
+    
+        connection.query(query1, [reqbody.id], (error, results) => {
+            if (error) {
+                console.error(error);
+                return res.status(201).send('Server error');
+            }
+            else{
+                const hostelData = req.body;
+                // AadharNo, PancardNo, licence,
+                
+                    // hostelData.AadharNo,
+                    // hostelData.PancardNo,
+                    // hostelData.licence,
+                    
+                    // hostelData.isActive,
+                    // hostelData.CheckoutDate,
+                    // hostelData.profile,
+                    
+                    // hostelData.customer_Role,
+                    
+                    // hostelData.checkout_comment
+                const query2 = 'INSERT INTO hostel (Circle, Name, Phone, country_code, Email, Address, HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status, User_Id, paid_advance, pending_advance, created_by, joining_Date) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            
+                connection.query(query2, [
+                    Circle,
+                    Name,
+                    hostelData.Phone,
+                    hostelData.country_code,
+                    hostelData.Email,
+                    hostelData.Address,
+                    hostelData.HostelName,
+                    hostelData.Hostel_Id,
+                    hostelData.Floor_Id,
+                    hostelData.Room_Id,
+                    hostelData.Bed_Id,
+                    hostelData.AdvanceAmount,
+                    hostelData.RoomRent,
+                    hostelData.BalanceDue,
+                    hostelData.PaymentType,
+                    hostelData.Status,
+                    hostelData.User_Id,
+                    hostelData.paid_advance,
+                    hostelData.pending_advance,
+                    created_by,
+                    hostelData.joining_Date,
+                ], (error, results) => {
+                    if (error) {
+                        console.error(error);
+                        return res.status(400).send('Error inserting data');
+                    }
+                    res.status(200).send({ id: results.insertId, ...hostelData });
+                });
+            }
+            
+        });
+    
+}
+else{
+    res.status(201).send({ Message : "Missing Parameter" });
+}
+}
 
-module.exports = { add_booking, all_bookings, delete_booking }
+
+
+module.exports = { add_booking, all_bookings, delete_booking, assign_booking}
