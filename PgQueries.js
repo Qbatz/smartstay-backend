@@ -624,7 +624,7 @@ function CreateRoom(connection, request, response) {
     var created_by = request.user_details.id;
 
 
-console.log("reqsData",reqsData)
+    console.log("reqsData", reqsData)
 
     if (!reqsData) {
         return response.status(201).json({ message: 'Missing Parameter' });
@@ -640,52 +640,63 @@ console.log("reqsData",reqsData)
 
                 var old_room = data[0].Room_Id;
                 var floor_id = data[0].Floor_Id;
-                var hostel_id = data[0].Hostel_Id;
+                var hostel_id = reqsData.hostel_id;
                 var room_id = reqsData.roomId;
 
-                var sql2 = "UPDATE hostelrooms SET Room_Id=? WHERE id=?";
-                connection.query(sql2, [room_id, reqsData.id], function (err, ins_data) {
+                var sql3 = "SELECT * FROM hostelrooms WHERE Room_Id=? AND id !=? AND Hostel_Id=? AND isActive=1";
+                connection.query(sql3, [room_id, reqsData.id, hostel_id], function (err, sel_data) {
                     if (err) {
-                        return response.status(201).json({ statusCode: 201, message: "Unable to Update Room Details" })
+                        return response.status(201).json({ statusCode: 201, message: "Unable to Get Room Details" })
+                    } else if (sel_data.length == 0) {
+                        
+                        var sql2 = "UPDATE hostelrooms SET Room_Id=? WHERE id=?";
+                        connection.query(sql2, [room_id, reqsData.id], function (err, ins_data) {
+                            if (err) {
+                                return response.status(201).json({ statusCode: 201, message: "Unable to Update Room Details" })
+                            } else {
+
+                                return response.status(200).json({ statusCode: 200, message: "Successfully Room Updated" })
+
+                                // var sql3 = "UPDATE hostel SET Rooms=? WHERE Rooms=? AND Hostel_Id=? AND Floor=? AND isActive=1";
+                                // connection.query(sql3, [room_id, old_room, hostel_id, floor_id], function (err, up_hos) {
+                                //     if (err) {
+                                //         return res.status(201).json({ statusCode: 201, message: "Unable to Update Room Details" })
+                                //     } else {
+
+                                //         var sql4 = "UPDATE compliance SET Room=? WHERE Hostel_id=? AND Floor_Id=?";
+                                //         connection.query(sql4, [room_id, hostel_id, floor_id], function (err, up_hos) {
+                                //             if (err) {
+                                //                 return res.status(201).json({ statusCode: 201, message: "Unable to Update Room Details" })
+                                //             } else {
+
+                                //                 var sql5 = "UPDATE EbAmount SET Room=? WHERE hostel_Id=? AND Floor=?";
+                                //                 connection.query(sql5, [room_id, hostel_id, floor_id], function (err, up_hos) {
+                                //                     if (err) {
+                                //                         return res.status(201).json({ statusCode: 201, message: "Unable to Update Room Details" })
+                                //                     } else {
+
+                                //                         var sql6 = "UPDATE invoicedetails SET Room_No=? WHERE Hostel_Id=? AND Floor_Id=?";
+                                //                         connection.query(sql6, [room_id, hostel_id, floor_id], function (err, up_hos) {
+                                //                             if (err) {
+                                //                                 return res.status(201).json({ statusCode: 201, message: "Unable to Update Room Details" })
+                                //                             } else {
+                                //                                 return res.status(200).json({ statusCode: 200, message: "Successfully Room Updated" })
+                                //                             }
+                                //                         })
+                                //                     }
+                                //                 })
+                                //             }
+                                //         })
+                                //     }
+
+                                // })
+                            }
+                        })
                     } else {
-
-                        return response.status(200).json({ statusCode: 200, message: "Successfully Room Updated" })
-
-                        // var sql3 = "UPDATE hostel SET Rooms=? WHERE Rooms=? AND Hostel_Id=? AND Floor=? AND isActive=1";
-                        // connection.query(sql3, [room_id, old_room, hostel_id, floor_id], function (err, up_hos) {
-                        //     if (err) {
-                        //         return res.status(201).json({ statusCode: 201, message: "Unable to Update Room Details" })
-                        //     } else {
-
-                        //         var sql4 = "UPDATE compliance SET Room=? WHERE Hostel_id=? AND Floor_Id=?";
-                        //         connection.query(sql4, [room_id, hostel_id, floor_id], function (err, up_hos) {
-                        //             if (err) {
-                        //                 return res.status(201).json({ statusCode: 201, message: "Unable to Update Room Details" })
-                        //             } else {
-
-                        //                 var sql5 = "UPDATE EbAmount SET Room=? WHERE hostel_Id=? AND Floor=?";
-                        //                 connection.query(sql5, [room_id, hostel_id, floor_id], function (err, up_hos) {
-                        //                     if (err) {
-                        //                         return res.status(201).json({ statusCode: 201, message: "Unable to Update Room Details" })
-                        //                     } else {
-
-                        //                         var sql6 = "UPDATE invoicedetails SET Room_No=? WHERE Hostel_Id=? AND Floor_Id=?";
-                        //                         connection.query(sql6, [room_id, hostel_id, floor_id], function (err, up_hos) {
-                        //                             if (err) {
-                        //                                 return res.status(201).json({ statusCode: 201, message: "Unable to Update Room Details" })
-                        //                             } else {
-                        //                                 return res.status(200).json({ statusCode: 200, message: "Successfully Room Updated" })
-                        //                             }
-                        //                         })
-                        //                     }
-                        //                 })
-                        //             }
-                        //         })
-                        //     }
-
-                        // })
+                        return response.status(201).json({ statusCode: 201, message: "Room Name Already Exist!" })
                     }
                 })
+
             } else {
                 return response.status(201).json({ statusCode: 201, message: "Invalid Room Details" })
             }
