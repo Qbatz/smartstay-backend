@@ -99,7 +99,9 @@ const queries = [
 
     "ALTER TABLE `hosteldetails` CHANGE COLUMN `email_id` `email_id` VARCHAR(255) NULL ;",
 
-    "ALTER TABLE `customer_walk_in_details` CHANGE COLUMN `walk_in_Date` `walk_In_Date` DATE NULL DEFAULT NULL ;"
+    "ALTER TABLE `customer_walk_in_details` CHANGE COLUMN `walk_in_Date` `walk_In_Date` DATE NULL DEFAULT NULL ;",
+
+    "ALTER TABLE `bookings` ADD COLUMN `phone_number` VARCHAR(45) NULL AFTER `createdat`, ADD COLUMN `email_id` VARCHAR(100) NULL AFTER `phone_number`, ADD COLUMN `room_rent` BIGINT NULL AFTER `email_id`, ADD COLUMN `address` VARCHAR(200) NULL AFTER `room_rent`;"
 
 ];
 
