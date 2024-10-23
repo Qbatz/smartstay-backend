@@ -940,3 +940,7 @@ app.get('/all_recuring_bills', (req, res) => {
 app.post('/get_recuring_amounts', (req, res) => {
     invoiceQueries.get_recuring_amount(req, res)
 })
+
+app.post('/delete_recuring_bill', (req, res) => {
+    invoiceQueries.delete_recuring_bill(req, res)
+})
