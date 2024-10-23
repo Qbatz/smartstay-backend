@@ -44,7 +44,6 @@ app.use(function (req, res, next) {
     next();
 })
 const dbquery = require('./dbquery');
-const { profile } = require('console');
 
 app.use(middleware);
 
@@ -172,21 +171,21 @@ app.post('/otp-send/response', (request, response) => {
     accountManagement.sendResponseOtp(connection, response, requestData)
 })
 
-cron.schedule("0 0 1 * * ", function () {
-    console.log("This task runs every minute");
-    connection.query(`SELECT * FROM hostel where isActive=true`, async function (err, users) {
-        if (err) {
-            console.error("Error fetching users:", err);
-            return;
-        } else {
-            let isFirstTime = true;
-            for (const user of users) {
-                await invoiceQueries.calculateAndInsertInvoice(connection, user, users, isFirstTime);
-                isFirstTime = false;
-            }
-        }
-    });
-});
+// cron.schedule("0 0 1 * * ", function () {
+//     console.log("This task runs every minute");
+//     connection.query(`SELECT * FROM hostel where isActive=true`, async function (err, users) {
+//         if (err) {
+//             console.error("Error fetching users:", err);
+//             return;
+//         } else {
+//             let isFirstTime = true;
+//             for (const user of users) {
+//                 await invoiceQueries.calculateAndInsertInvoice(connection, user, users, isFirstTime);
+//                 isFirstTime = false;
+//             }
+//         }
+//     });
+// });
 
 
 app.get('/checkout/checkout-invoice', (request, response) => {
@@ -611,7 +610,9 @@ app.post('/add/update_vendor', upload.single('profile'), (request, response) => 
         Vendor_Address: request.body.Vendor_Address,
         Vendor_Id: request.body.Vendor_Id,
         Business_Name: request.body.Business_Name,
-        id: request.body.id
+        id: request.body.id,
+        Country: request.body.Country,
+        Pincode: request.body.Pincode
     };
     console.log("reqInvoice", reqInvoice)
     vendorQueries.ToAddAndUpdateVendor(connection, reqInvoice, response, request)
@@ -894,20 +895,18 @@ app.get('/customer_readings', (req, res) => {
     invoiceQueries.customer_readings(req, res)
 });
 
-
-
 // add walk-in customer
-app.post('/add/walkin-customer', (req, res) => {
+app.post('/add_walkin-customer', (req, res) => {
     userQueries.add_walk_in_customer(req, res)
 });
 
 // get walk-in customer_list
-app.get('/get/walkin-customer', (req, res) => {
+app.get('/get_walkin-customer', (req, res) => {
     userQueries.get_walk_in_customer_list(req, res)
 });
 
 // delete walk-in customer 
-app.post('/delete/walkin-customer', (req, res) => {
+app.post('/delete_walkin-customer', (req, res) => {
     userQueries.delete_walk_in_customer(req, res)
 });
 
@@ -920,7 +919,24 @@ app.get('/checkout_list', (req, res) => {
     userQueries.checkout_list(req, res)
 });
 
+app.post('/delete_check_out', (req, res) => {
+    userQueries.delete_check_out(req, res)
+});
+
 // Delete Hostel Image
 app.post('/delete_hostel_image', (req, res) => {
     pgQueries.delete_hostel_image(req, res)
 });
+
+// Recuring Bills
+app.post('/add_recuring_bill', (req, res) => {
+    invoiceQueries.add_recuring_bill(req, res)
+});
+
+app.get('/all_recuring_bills', (req, res) => {
+    invoiceQueries.all_recuring_bills(req, res)
+});
+
+app.post('/get_recuring_amounts', (req, res) => {
+    invoiceQueries.get_recuring_amount(req, res)
+})

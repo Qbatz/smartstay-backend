@@ -89,11 +89,11 @@ const queries = [
     "CREATE TABLE `customer_walk_in_details` (`id` INT NOT NULL AUTO_INCREMENT,`customer_Name` VARCHAR(65) NULL,`email_Id` VARCHAR(85) NULL,`mobile_Number` BIGINT NULL,`booking_Date` DATE NULL,`joining_Date` DATE NULL,`created_At` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,`created_By` INT NULL,PRIMARY KEY (`id`));",
 
     "ALTER TABLE `customer_walk_in_details` ADD COLUMN `comments` VARCHAR(255) NULL AFTER `created_By`",
-    
+
     "ALTER TABLE `customer_walk_in_details` ADD COLUMN `isActive` TINYINT NULL DEFAULT 1 AFTER `comments`",
-    
+
     "ALTER TABLE `Vendor` ADD COLUMN `Country` INT NULL AFTER `Business_Name`,ADD COLUMN `Pincode` INT NULL AFTER `Country`;",
-      
+
 
     "ALTER TABLE `hostel` ADD COLUMN `checkout_comment` VARCHAR(255) NULL AFTER `joining_Date`;",
 
@@ -101,7 +101,12 @@ const queries = [
 
     "ALTER TABLE `customer_walk_in_details` CHANGE COLUMN `walk_in_Date` `walk_In_Date` DATE NULL DEFAULT NULL ;",
 
-    "ALTER TABLE `bookings` ADD COLUMN `phone_number` VARCHAR(45) NULL AFTER `createdat`, ADD COLUMN `email_id` VARCHAR(100) NULL AFTER `phone_number`, ADD COLUMN `room_rent` BIGINT NULL AFTER `email_id`, ADD COLUMN `address` VARCHAR(200) NULL AFTER `room_rent`;"
+    "ALTER TABLE `bookings` ADD COLUMN `phone_number` VARCHAR(45) NULL AFTER `createdat`, ADD COLUMN `email_id` VARCHAR(100) NULL AFTER `phone_number`, ADD COLUMN `room_rent` BIGINT NULL AFTER `email_id`, ADD COLUMN `address` VARCHAR(200) NULL AFTER `room_rent`;",
+
+    "ALTER TABLE `Vendor` CHANGE COLUMN `Country` `Country` VARCHAR(100) NULL DEFAULT NULL ;",
+
+    "ALTER TABLE `invoicedetails` ADD COLUMN `advance_amount` BIGINT(20) NULL DEFAULT 0 AFTER `EbAmount`;"
+
 
 ];
 

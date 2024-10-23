@@ -2083,13 +2083,14 @@ function EbAmount(connection, request, response) {
 
             // Check Date Validation
 
-            var sql3 = "SELECT * FROM EbAmount WHERE hostel_Id '" + atten.Hostel_Id + "' AND Floor= '" + atten.Floor + "'AND Room= '" + atten.Room + "' AND date='" + atten.date + "' OR initial_date='" + atten.date + "'";
+            var sql3 = "SELECT * FROM EbAmount WHERE hostel_Id= '" + atten.Hostel_Id + "' AND Floor= '" + atten.Floor + "' AND Room= '" + atten.Room + "' AND (date='" + atten.date + "' OR initial_date='" + atten.date + "')";
+
             connection.query(sql3, function (err, date_res) {
                 if (err) {
                     return response.status(201).json({ message: 'Unable to Get Eb Amount Details', error: err });
                 } else if (date_res.length == 0) {
 
-                    var sql_1 = "SELECT * FROM EbAmount WHERE hostel_Id = '" + atten.Hostel_Id + "' AND Floor= '" + atten.Floor + "'AND Room= '" + atten.Room + "' ORDER BY id DESC";
+                    var sql_1 = "SELECT * FROM EbAmount WHERE hostel_Id = '" + atten.Hostel_Id + "' AND Floor= '" + atten.Floor + "' AND Room= '" + atten.Room + "' ORDER BY id DESC";
                     connection.query(sql_1, function (err, eb_data_list) {
                         if (err) {
                             return response.status(201).json({ message: 'Unable to Get Eb Amount Details', error: err });
@@ -2122,6 +2123,7 @@ function EbAmount(connection, request, response) {
                                 var total_reading = end_Meter_Reading - eb_data_list[0].start_Meter_Reading;
                                 var total_amount = particular_amount * total_reading;
 
+
                                 var sql_3 = "UPDATE EbAmount SET date=?,end_Meter_Reading=?,EbAmount=?,Eb_Unit=? WHERE id=?";
                                 connection.query(sql_3, [atten.date, end_Meter_Reading, total_amount, total_reading, id], function (err, data) {
                                     if (err) {
@@ -2129,7 +2131,12 @@ function EbAmount(connection, request, response) {
                                         return response.status(201).json({ message: 'Unable to Update Eb Amount', error: err });
                                     } else {
 
-                                        var last_cal_date = eb_data_list[0].initial_date;
+                                        var formattedDate = eb_data_list[0].initial_date;
+                                        var dateObject = new Date(formattedDate); // Create a Date object
+
+                                        // Format the date to YYYY-MM-DD
+                                        var last_cal_date = dateObject.toISOString().split('T')[0];
+
                                         split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, function (result) {
                                             if (result.statusCode === 200) {
                                                 return response.status(200).json({ statusCode: 200, message: result.message });
@@ -2724,7 +2731,7 @@ function AmenitiesPDF(hostelDetails, monthData, response) {
 
 function add_manual_invoice(req, res) {
 
-    var { user_id, due_date, date, invoice_id, room_rent, eb_amount, total_amount, amenity } = req.body;
+    var { user_id, due_date, date, invoice_id, room_rent, advance_amount, eb_amount, amenity } = req.body;
 
     var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
     connection.query(sql1, [user_id], function (err, user_details) {
@@ -2745,8 +2752,10 @@ function add_manual_invoice(req, res) {
                 total_am_amount = 0
             }
 
-            var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,RoomRent,EbAmount,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-            connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, total_amount, due_date, date, invoice_id, 'pending', user_data.User_Id, room_rent, eb_amount, total_am_amount, user_data.Bed, total_amount, 'manual', 1, user_id], function (err, ins_data) {
+            var total_amount = total_am_amount + room_rent + eb_amount + advance;
+
+            var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,RoomRent,EbAmount,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id,advance_amount) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, total_amount, due_date, date, invoice_id, 'pending', user_data.User_Id, room_rent, eb_amount, total_am_amount, user_data.Bed, total_amount, 'manual', 1, user_id, advance_amount], function (err, ins_data) {
                 if (err) {
                     console.log(err);
                     return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
@@ -2794,5 +2803,176 @@ function customer_readings(req, res) {
     })
 }
 
+function add_recuring_bill(req, res) {
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice, customer_readings }
+    var { user_id, due_date, date, invoice_id, room_rent, eb_amount, amenity, advance_amount } = req.body;
+
+    if (!user_id) {
+        return res.status(200).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    var created_by = req.user_details.id;
+
+    var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
+    connection.query(sql1, [user_id], function (err, user_details) {
+        if (err) {
+            console.log(err);
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
+        } else if (user_details.length != 0) {
+
+            var user_data = user_details[0];
+
+            var total_am_amount = amenity && amenity.length > 0 ? amenity.reduce((sum, user) => sum + user.amount, 0) : 0;
+
+            console.log(total_am_amount);
+
+            if (total_am_amount) {
+                total_am_amount = total_am_amount;
+            } else {
+                total_am_amount = 0
+            }
+
+            let dateObj = new Date(date);  // Format: YYYY-MM-DD
+            let inv_day = dateObj.getDate();
+            console.log(inv_day);
+
+            let duedateObj = new Date(due_date);  // Format: YYYY-MM-DD
+            let due_day = duedateObj.getDate();
+            console.log(due_day);
+
+            var eb = 0;
+            if (eb_amount) {
+                eb = 1
+            }
+
+            var advance = 0;
+            if (advance_amount) {
+                advance = 1
+            }
+
+            var rent = 0;
+            if (room_rent) {
+                rent = 1
+            }
+
+            var amen = 0;
+            if (amenity && amenity.length > 0) {
+                amen = 1
+            }
+            if (!eb_amount) {
+                eb_amount = 0
+            }
+            if (!advance_amount) {
+                advance_amount = 0
+            }
+
+            var total_amount_data = total_am_amount + eb_amount + advance_amount + room_rent;
+
+            var sql2 = "SELECT * FROM recuring_inv_details WHERE user_id=? AND status=1";
+            connection.query(sql2, [user_id], function (err, recure_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Get Invoice Details" })
+                } else if (recure_data.length == 0) {
+
+                    var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,RoomRent,EbAmount,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                    connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, total_amount_data, due_date, date, invoice_id, 'pending', user_data.User_Id, room_rent, eb_amount, total_am_amount, user_data.Bed, total_amount_data, 'recuring', 2, user_id], function (err, ins_data) {
+                        if (err) {
+                            console.log(err);
+                            return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
+                        } else {
+                            var sql4 = "INSERT INTO recuring_inv_details (user_id,invoice_date,due_date,advance,rent,aminity,eb,status,created_by) VALUES (?,?,?,?,?,?,?,?,?)"
+                            connection.query(sql4, [user_id, inv_day, due_day, advance, rent, amen, eb, 1, created_by], function (err, ins_data) {
+                                if (err) {
+                                    console.log(err);
+                                    return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
+                                } else {
+                                    return res.status(200).json({ statusCode: 200, message: "Recuring Bill Created Successfully!" });
+                                }
+                            })
+                        }
+                    })
+                } else {
+                    return res.status(201).json({ statusCode: 201, message: "Already Added in this User!" })
+                }
+            })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+        }
+    })
+}
+
+function get_recuring_amount(req, res) {
+
+    var { user_id } = req.body;
+
+    if (!user_id) {
+        return res.status(201).json({ message: "Missing Mandatory Fields", statusCode: 201 });
+    }
+
+    // Rent Amount
+    var sql1 = "SELECT *, CASE WHEN checkoutDate IS NULL THEN DATEDIFF(LAST_DAY(CURDATE()), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 ELSE DATEDIFF(LEAST(checkoutDate, LAST_DAY(CURDATE())), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 END AS days_stayed FROM hostel WHERE Rooms != 'undefined' AND Floor != 'undefined' AND joining_date <= LAST_DAY(CURDATE()) AND (checkoutDate >= DATE_FORMAT(CURDATE(), '%Y-%m-01') OR checkoutDate IS NULL) AND isActive = 1 AND ID = 1";
+    connection.query(sql1, [user_id], (err, data) => {
+        if (err) {
+            return res.status(201).json({ message: "Unable to Get User Details", statusCode: 201 });
+        } else if (data.length != 0) {
+
+            var total_days = data[0].days_stayed;
+
+            const currentDate = new Date(); // Current date
+            const currentYear = currentDate.getFullYear(); // Get current year
+            const currentMonth = currentDate.getMonth(); // Get current month (0-11)
+
+            // Calculate total days in the current month
+            const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+            const oneDayAmount = data[0].RoomRent / daysInCurrentMonth;
+
+            const totalRent = parseFloat((oneDayAmount * total_days).toFixed(2)); // Total rent rounded to 2 decimal places
+
+            var roundedRent = Math.round(totalRent);
+
+            var advance_amount = data[0].AdvanceAmount;
+
+            var array_data = [{
+                id: 1,
+                name: "Room Rent",
+                amount: roundedRent
+            }, {
+                id: 2,
+                name: "Advance Amount",
+                amount: advance_amount
+            }, {
+                id: 3,
+                name: "Eb Rent",
+                amount: 0
+            }, {
+                id: 4,
+                name: "Amenities",
+                amount: 0
+            }
+            ]
+
+            return res.status(200).json({ statusCode: 200, message: "Bill Amounts", data: array_data })
+
+        } else {
+            return res.status(201).json({ message: "Invalid User Details", statusCode: 201 });
+        }
+    });
+}
+
+function all_recuring_bills(req, res) {
+
+    var created_by = req.user_details.id;
+
+    // var sql1 = "SELECT inv.id,inv.Name AS user_name,inv.Invoices,inv.DueDate,inv.Date AS invoice_date,DATE_ADD(inv.Date, INTERVAL 1 MONTH) AS next_invoice_date,inv.Status,inv.BalanceDue,inv.PaidAmount,inv.hos_user_id AS user_id,inv.action,inv.invoice_type FROM recuring_inv_details AS rec JOIN hostel AS hs ON hs.id=rec.user_id JOIN invoicedetails AS inv ON inv.hos_user_id=rec.user_id AND inv.action='recuring' WHERE rec.created_by=?";
+    var sql1 = "SELECT inv.id,inv.Name AS user_name,inv.Invoices,inv.DueDate,inv.Date AS invoice_date,DATE_ADD(inv.Date, INTERVAL 1 MONTH) AS next_invoice_date,inv.Status,inv.BalanceDue,inv.PaidAmount, inv.hos_user_id AS user_id,inv.action,inv.invoice_type FROM recuring_inv_details AS rec JOIN hostel AS hs ON hs.id = rec.user_id JOIN invoicedetails AS inv ON inv.hos_user_id = rec.user_id JOIN (SELECT hos_user_id, MAX(Date) AS latest_invoice_date FROM invoicedetails WHERE action IN ('recuring', 'auto_recuring') GROUP BY hos_user_id) AS latest_inv ON latest_inv.hos_user_id = inv.hos_user_id AND latest_inv.latest_invoice_date = inv.Date WHERE inv.action IN ('recuring', 'auto_recuring') AND rec.created_by=? ORDER BY inv.id DESC;"
+    connection.query(sql1, [created_by], function (err, inv_data) {
+        if (err) {
+            return res.status(201).json({ message: "Unable to Get Bill Details", statusCode: 201 });
+        } else {
+            return res.status(200).json({ statusCode: 200, message: "Recuring Bill Details", data: inv_data })
+        }
+    })
+}
+
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice, customer_readings, add_recuring_bill, get_recuring_amount, all_recuring_bills }
