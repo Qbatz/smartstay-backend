@@ -171,21 +171,21 @@ app.post('/otp-send/response', (request, response) => {
     accountManagement.sendResponseOtp(connection, response, requestData)
 })
 
-cron.schedule("0 0 1 * * ", function () {
-    console.log("This task runs every minute");
-    connection.query(`SELECT * FROM hostel where isActive=true`, async function (err, users) {
-        if (err) {
-            console.error("Error fetching users:", err);
-            return;
-        } else {
-            let isFirstTime = true;
-            for (const user of users) {
-                await invoiceQueries.calculateAndInsertInvoice(connection, user, users, isFirstTime);
-                isFirstTime = false;
-            }
-        }
-    });
-});
+// cron.schedule("0 0 1 * * ", function () {
+//     console.log("This task runs every minute");
+//     connection.query(`SELECT * FROM hostel where isActive=true`, async function (err, users) {
+//         if (err) {
+//             console.error("Error fetching users:", err);
+//             return;
+//         } else {
+//             let isFirstTime = true;
+//             for (const user of users) {
+//                 await invoiceQueries.calculateAndInsertInvoice(connection, user, users, isFirstTime);
+//                 isFirstTime = false;
+//             }
+//         }
+//     });
+// });
 
 
 app.get('/checkout/checkout-invoice', (request, response) => {
@@ -894,8 +894,6 @@ app.post('/assign_booking', (req, res) => {
 app.get('/customer_readings', (req, res) => {
     invoiceQueries.customer_readings(req, res)
 });
-
-
 
 // add walk-in customer
 app.post('/add_walkin-customer', (req, res) => {
