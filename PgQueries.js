@@ -623,6 +623,9 @@ function CreateRoom(connection, request, response) {
     var reqsData = request.body;
     var created_by = request.user_details.id;
 
+
+console.log("reqsData",reqsData)
+
     if (!reqsData) {
         return response.status(201).json({ message: 'Missing Parameter' });
     }
@@ -632,7 +635,7 @@ function CreateRoom(connection, request, response) {
         var sql1 = "SELECT * FROM hostelrooms WHERE id='" + reqsData.id + "'";
         connection.query(sql1, function (err, data) {
             if (err) {
-                return res.status(201).json({ statusCode: 201, message: "Unable to Get Room Details" })
+                return response.status(201).json({ statusCode: 201, message: "Unable to Get Room Details" })
             } else if (data.length != 0) {
 
                 var old_room = data[0].Room_Id;
@@ -643,10 +646,10 @@ function CreateRoom(connection, request, response) {
                 var sql2 = "UPDATE hostelrooms SET Room_Id=? WHERE id=?";
                 connection.query(sql2, [room_id, reqsData.id], function (err, ins_data) {
                     if (err) {
-                        return res.status(201).json({ statusCode: 201, message: "Unable to Update Room Details" })
+                        return response.status(201).json({ statusCode: 201, message: "Unable to Update Room Details" })
                     } else {
 
-                        return res.status(200).json({ statusCode: 200, message: "Successfully Room Updated" })
+                        return response.status(200).json({ statusCode: 200, message: "Successfully Room Updated" })
 
                         // var sql3 = "UPDATE hostel SET Rooms=? WHERE Rooms=? AND Hostel_Id=? AND Floor=? AND isActive=1";
                         // connection.query(sql3, [room_id, old_room, hostel_id, floor_id], function (err, up_hos) {
@@ -684,7 +687,7 @@ function CreateRoom(connection, request, response) {
                     }
                 })
             } else {
-                return res.status(201).json({ statusCode: 201, message: "Invalid Room Details" })
+                return response.status(201).json({ statusCode: 201, message: "Invalid Room Details" })
             }
         })
     } else {
