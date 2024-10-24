@@ -2164,6 +2164,24 @@ function delete_check_out(req, res) {
 
 }
 
+function available_checkout_users(req, res) {
+
+  var hostel_id = req.body.hostel_id;
+  var created_by = req.user_details.id;
+
+  if (!hostel_id) {
+    return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Details" })
+  }
+  var sql1 = "SELECT * FROM hostel WHERE Hostel_Id=? AND isActive=1 AND Floor != 'undefined' AND Rooms != 'undefined' AND Bed != 'undefined' AND created_by=?";
+  connection.query(sql1, [hostel_id, created_by], function (err, data) {
+    if (err) {
+      return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
+    } else {
+      return res.status(200).json({ statusCode: 200, message: "All User Details", user_list: data })
+    }
+  })
+}
+
 
 module.exports = {
   getUsers,
@@ -2186,5 +2204,6 @@ module.exports = {
   delete_walk_in_customer,
   user_check_out,
   checkout_list,
-  delete_check_out
+  delete_check_out,
+  available_checkout_users
 };
