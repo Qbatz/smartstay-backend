@@ -98,7 +98,7 @@ function all_bookings(req, res) {
 
     var created_by = req.user_details.id;
 
-    var sql1 = "SELECT book.*,hst.Name AS hostel_name,hf.floor_name AS floor_name,hosroom.Room_Id AS room_name,bed.bed_no AS bed_name FROM bookings AS book JOIN hosteldetails AS hst ON hst.id=book.hostel_id JOIN Hostel_Floor AS hf ON hf.floor_id=book.floor_id AND hf.hostel_id=book.hostel_id JOIN hostelrooms AS hosroom ON hosroom.id=book.room_id JOIN bed_details AS bed ON bed.id=book.bed_id WHERE book.created_by=? AND book.status=1";
+    var sql1 = "SELECT book.*,hst.Name AS hostel_name,hf.floor_name AS floor_name,hosroom.Room_Id AS room_name,bed.bed_no AS bed_name FROM bookings AS book LEFT JOIN hosteldetails AS hst ON hst.id=book.hostel_id LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=book.floor_id AND hf.hostel_id=book.hostel_id LEFT JOIN hostelrooms AS hosroom ON hosroom.id=book.room_id LEFT JOIN bed_details AS bed ON bed.id=book.bed_id WHERE book.created_by=? AND book.status= true";
     connection.query(sql1, [created_by], function (err, data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Unable to Get Bookings" })
