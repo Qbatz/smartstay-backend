@@ -283,32 +283,54 @@ async function createPG(reqHostel, res, req) {
     if (!profile) {
         profile_url = req.body.profile || 0
     } else {
-        profile_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + `${profile.originalname}`, profile)
+
+        var originalNameWithoutExt = profile.originalname.split('.').slice(0, -1).join('.');
+
+        var fileName = `${originalNameWithoutExt}-${timestamp}.jpg`;
+
+        profile_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, fileName, profile)
         console.log(profile_url);
     }
 
     if (!image1) {
         image1_url = req.body.image1 || 0
     } else {
-        image1_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + `${image1.originalname}`, image1)
+
+        var originalNameWithoutExt = image1.originalname.split('.').slice(0, -1).join('.');
+
+        var fileName = `${originalNameWithoutExt}-${timestamp}.jpg`;
+
+        image1_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, fileName, image1)
     }
 
     if (!image2) {
         image2_url = req.body.image2 || 0
     } else {
-        image2_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + `${image2.originalname}`, image2)
+
+        var originalNameWithoutExt = image2.originalname.split('.').slice(0, -1).join('.');
+
+        var fileName = `${originalNameWithoutExt}-${timestamp}.jpg`;
+
+        image2_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, fileName, image2)
     }
 
     if (!image3) {
         image3_url = req.body.image3 || 0
     } else {
-        image3_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + `${image3.originalname}`, image3)
+        var originalNameWithoutExt = image3.originalname.split('.').slice(0, -1).join('.');
+
+        var fileName = `${originalNameWithoutExt}-${timestamp}.jpg`;
+
+        image3_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, fileName, image3)
     }
 
     if (!image4) {
         image4_url = req.body.image4 || 0
     } else {
-        image4_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + `${image4.originalname}`, image4)
+        var originalNameWithoutExt = image4.originalname.split('.').slice(0, -1).join('.');
+
+        var fileName = `${originalNameWithoutExt}-${timestamp}.jpg`;
+        image4_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, fileName, image4)
     }
 
     if (id) {
@@ -648,7 +670,7 @@ function CreateRoom(connection, request, response) {
                     if (err) {
                         return response.status(201).json({ statusCode: 201, message: "Unable to Get Room Details" })
                     } else if (sel_data.length == 0) {
-                        
+
                         var sql2 = "UPDATE hostelrooms SET Room_Id=? WHERE id=?";
                         connection.query(sql2, [room_id, reqsData.id], function (err, ins_data) {
                             if (err) {
