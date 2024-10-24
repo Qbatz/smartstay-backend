@@ -283,6 +283,7 @@ async function createPG(reqHostel, res, req) {
     if (!profile) {
         profile_url = req.body.profile || 0
     } else {
+        
         profile_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${hostel_name}` + `${timestamp}` + `${profile.originalname}`, profile)
         console.log(profile_url);
     }
