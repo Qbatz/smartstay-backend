@@ -2120,17 +2120,17 @@ function user_check_out(req, res) {
 function checkout_list(req, res) {
 
   var created_by = req.user_details.id;
-
   const today = new Date();
   const current_date = today.toISOString().slice(0, 10);
 
   // var sql1 = "SELECT Hostel_Id,  ID,HostelName,Name,checkout_comment,DATE_FORMAT(CheckoutDate, '%Y-%m-%d') AS CheckoutDate,DATEDIFF(checkoutDate, '" + current_date + "') AS notice_period FROM hostel WHERE checkoutDate >= '" + current_date + "' AND isActive = 1 AND created_by = ?";
-  var sql1 = "SELECT hs.Hostel_Id,hs.ID,hs.HostelName,hs.Name,hs.checkout_comment,DATE_FORMAT(hs.CheckoutDate, '%Y-%m-%d') AS CheckoutDate,hs.profile AS user_profile,DATEDIFF(checkoutDate, '" + current_date + "') AS notice_period,hos_de.profile FROM hostel AS hs JOIN hosteldetails AS hos_de ON hos_de.id=hs.Hostel_Id WHERE hs.checkoutDate >= '" + current_date + "' AND hs.isActive = 1 AND hs.created_by = ?"
+  var sql1 = "SELECT hs.Hostel_Id,hs.ID,hs.HostelName,hs.Name,hs.checkout_comment,DATE_FORMAT(hs.CheckoutDate, '%Y-%m-%d') AS CheckoutDate,hs.profile AS user_profile,DATEDIFF(checkoutDate, '" + current_date + "') AS notice_period,hos_de.profile FROM hostel AS hs JOIN hosteldetails AS hos_de ON hos_de.id=hs.Hostel_Id WHERE hs.checkoutDate >= '" + current_date + "' AND hs.isActive = 1 AND hs.created_by = ? ORDER BY hs.ID DESC"
+
   connection.query(sql1, [created_by], function (err, ch_list) {
     if (err) {
       return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
     } else {
-      return res.status(200).json({ statusCode: 201, message: "Check-Out Details!", checkout_details: ch_list })
+      return res.status(200).json({ statusCode: 200, message: "Check-Out Details!", checkout_details: ch_list })
     }
   })
 }
