@@ -8,6 +8,7 @@ const connection = require("./config/connection");
 const addNotification = require("./components/add_notification");
 const bedDetails = require("./components/bed_details");
 var uploadImage = require("./components/upload_image");
+const { bed_details } = require("./PgQueries");
 
 function getUsers(connection, response, request) {
   // Get values in middleware
@@ -2184,6 +2185,20 @@ function available_checkout_users(req, res) {
 
 function available_beds(req, res) {
 
+  var { hostel_id, floor_id, room_id, joining_date } = req.body;
+
+  if (!hostel_id || !floor_id || !room_id || !joining_date) {
+    return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Details" })
+  }
+
+  var sql1 = "SELECT bd.*,hos.CheckoutDate FROM hostelrooms AS hs JOIN bed_details AS bd ON hs.id = bd.hos_detail_id LEFT JOIN hostel AS hos ON hos.id = bd.user_id AND hos.CheckoutDate <= ? WHERE bd.status = 1 AND bd.isbooked = 0 AND hs.isActive = 1 AND hs.Hostel_Id=? AND hs.Floor_Id=? AND hs.id=?";
+  connection.query(sql1, [joining_date, hostel_id, floor_id, room_id], function (err, data) {
+    if (err) {
+      return res.status(201).json({ statusCode: 201, message: "Unable to get Bed Details" })
+    } else {
+      return res.status(200).json({ statusCode: 200, message: "Bed Details", bed_details: data })
+    }
+  })
 }
 
 
