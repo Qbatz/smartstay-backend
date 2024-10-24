@@ -185,7 +185,7 @@ function assign_booking(req, res) {
                         console.error(error);
                         return res.status(400).send('Error inserting data');
                     }
-                    res.status(200).send({ id: results.insertId });
+                    res.status(200).send({ statusCode :200 , message: "Assign booking successfully" });
                 });
             }
 
