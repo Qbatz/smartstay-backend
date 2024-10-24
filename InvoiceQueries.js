@@ -2182,9 +2182,7 @@ function EbAmount(connection, request, response) {
                                     // Send error response if the query fails
                                     console.error('Error fetching user details:', err);
                                     return callback({ statusCode: 201, message: 'Unable to Get User Details', error: err });
-                                }
-
-                                if (user_data.length !== 0) {
+                                }else if (user_data.length !== 0) {
                                     let totalDays = user_data.reduce((acc, user) => acc + user.days_stayed, 0); // Total days stayed
                                     const amountPerDay = total_amount / totalDays; // Calculate amount per day
                                     console.log(amountPerDay);
@@ -2199,7 +2197,9 @@ function EbAmount(connection, request, response) {
                                         console.log("Stay Date", user.days_stayed);
 
                                         console.log(`User ID: ${user_id}, Per Unit: ₹${per_unit.toFixed(2)}, User Amount: ₹${userAmount.toFixed(2)}`);
-                                        if (userAmount != 0) {
+                                        console.log(userAmount);
+                                        
+                                        if (userAmount) {
                                             var sql2 = "INSERT INTO customer_eb_amount (user_id, start_meter, end_meter, unit, amount, created_by,date) VALUES (?, ?, ?, ?, ?, ?,?)";
                                             connection.query(sql2, [user_id, startMeterReading, end_Meter_Reading, per_unit, userAmount, created_by, atten.date], function (err) {
                                                 if (err) {
@@ -2965,7 +2965,7 @@ function all_recuring_bills(req, res) {
     var created_by = req.user_details.id;
 
     // var sql1 = "SELECT inv.id,inv.Name AS user_name,inv.Invoices,inv.DueDate,inv.Date AS invoice_date,DATE_ADD(inv.Date, INTERVAL 1 MONTH) AS next_invoice_date,inv.Status,inv.BalanceDue,inv.PaidAmount,inv.hos_user_id AS user_id,inv.action,inv.invoice_type FROM recuring_inv_details AS rec JOIN hostel AS hs ON hs.id=rec.user_id JOIN invoicedetails AS inv ON inv.hos_user_id=rec.user_id AND inv.action='recuring' WHERE rec.created_by=?";
-    var sql1 = "SELECT rec.id AS recuire_id,inv.id,inv.Name AS user_name,inv.Invoices,inv.DueDate,inv.Date AS invoice_date,DATE_ADD(inv.Date, INTERVAL 1 MONTH) AS next_invoice_date,inv.Status,inv.BalanceDue,inv.PaidAmount, inv.Amount AS total_amount,inv.hos_user_id AS user_id,inv.action,inv.invoice_type FROM recuring_inv_details AS rec JOIN hostel AS hs ON hs.id = rec.user_id JOIN invoicedetails AS inv ON inv.hos_user_id = rec.user_id JOIN (SELECT hos_user_id, MAX(Date) AS latest_invoice_date FROM invoicedetails WHERE action IN ('recuring', 'auto_recuring') GROUP BY hos_user_id) AS latest_inv ON latest_inv.hos_user_id = inv.hos_user_id AND latest_inv.latest_invoice_date = inv.Date WHERE inv.action IN ('recuring', 'auto_recuring') AND rec.created_by=? AND rec.status=1 ORDER BY inv.id DESC;;"
+    var sql1 = "SELECT rec.id AS recuire_id,inv.id,inv.Name AS user_name,inv.Invoices,inv.DueDate,inv.Date AS invoice_date,DATE_ADD(inv.Date, INTERVAL 1 MONTH) AS next_invoice_date,inv.Status,inv.BalanceDue,inv.PaidAmount, inv.Amount AS total_amount,inv.hos_user_id AS user_id,inv.action,inv.invoice_type FROM recuring_inv_details AS rec JOIN hostel AS hs ON hs.id = rec.user_id JOIN invoicedetails AS inv ON inv.hos_user_id = rec.user_id JOIN (SELECT hos_user_id, MAX(Date) AS latest_invoice_date FROM invoicedetails WHERE action IN ('recuring', 'auto_recuring') GROUP BY hos_user_id) AS latest_inv ON latest_inv.hos_user_id = inv.hos_user_id AND latest_inv.latest_invoice_date = inv.Date WHERE inv.action IN ('recuring', 'auto_recuring') AND rec.created_by=? AND rec.status=1 ORDER BY inv.id DESC;"
     connection.query(sql1, [created_by], function (err, inv_data) {
         if (err) {
             return res.status(201).json({ message: "Unable to Get Bill Details", statusCode: 201 });
