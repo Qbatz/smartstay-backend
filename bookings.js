@@ -58,10 +58,11 @@ function add_booking(req, res) {
                 // If no records found, proceed to insert
                 var emailExists = sel_data.some(booking => booking.email_id === email_id || booking.Email === email_id);
                 var phoneExists = sel_data.some(booking => booking.phone_number === phone_number || booking.Phone === phone_number);
-console.log("phone_number",phone_number);
+
 
                 if (emailExists && email_id) {
                     return res.status(202).json({ statusCode: 201, message: "Email Already Exists!" });
+
                 }
                 if (phoneExists) {
                     return res.status(203).json({ statusCode: 201, message: "Phone Number Already Exists!" });
@@ -150,12 +151,10 @@ function assign_booking(req, res) {
         console.log(FirstNameInitial2);
         var Circle = FirstNameInitial2 + LastNameInitial2;
     }
-    if (reqbody.Email == undefined) {
+    if (reqbody.Email == undefined || reqbody.Email == "") {
         reqbody.Email = "NA";
     }
     if (reqbody) {
-        // app.delete('/api/bookings/:id', (req, res) => {
-        // const bookingId = req.params.id;
         const query1 = 'UPDATE bookings SET status = false WHERE status = true and id = ?';
 
         connection.query(query1, [reqbody.id], (error, results) => {
@@ -164,50 +163,29 @@ function assign_booking(req, res) {
                 return res.status(201).send('Server error');
             }
             else {
-                const hostelData = req.body;
-                // AadharNo, PancardNo, licence,
-
-                // hostelData.AadharNo,
-                // hostelData.PancardNo,
-                // hostelData.licence,
-
-                // hostelData.isActive,
-                // hostelData.CheckoutDate,
-                // hostelData.profile,
-
-                // hostelData.customer_Role,
-
-                // hostelData.checkout_comment
-                const query2 = 'INSERT INTO hostel (Circle, Name, Phone, country_code, Email, Address, HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status, User_Id, paid_advance, pending_advance, created_by, joining_Date) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                const query2 = 'INSERT INTO hostel (Circle, Name, Phone, Email, Address, HostelName, Hostel_Id, Floor, Rooms, Bed, RoomRent, created_by, joining_Date,country_code) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)';
 
                 connection.query(query2, [
                     Circle,
                     Name,
-                    hostelData.Phone,
-                    hostelData.country_code,
-                    hostelData.Email,
-                    hostelData.Address,
-                    hostelData.HostelName,
-                    hostelData.Hostel_Id,
-                    hostelData.Floor_Id,
-                    hostelData.Room_Id,
-                    hostelData.Bed_Id,
-                    hostelData.AdvanceAmount,
-                    hostelData.RoomRent,
-                    hostelData.BalanceDue,
-                    hostelData.PaymentType,
-                    hostelData.Status,
-                    hostelData.User_Id,
-                    hostelData.paid_advance,
-                    hostelData.pending_advance,
+                    reqbody.Phone,
+                    reqbody.Email,
+                    reqbody.Address,
+                    reqbody.HostelName,
+                    reqbody.Hostel_Id,
+                    reqbody.Floor_Id,
+                    reqbody.Room_Id,
+                    reqbody.Bed_Id,
+                    reqbody.RoomRent,
                     created_by,
-                    hostelData.joining_Date,
+                    reqbody.joining_Date,
+                    reqbody.country_code
                 ], (error, results) => {
                     if (error) {
                         console.error(error);
                         return res.status(400).send('Error inserting data');
                     }
-                    res.status(200).send({ id: results.insertId, ...hostelData });
+                    res.status(200).send({ id: results.insertId });
                 });
             }
 
