@@ -2994,7 +2994,7 @@ function delete_recuring_bill(req, res) {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Delete Recuring Bill Details" })
                 } else {
-                    return res.status(201).json({ statusCode: 201, message: "Recuring Bill Deleted Successfully!" })
+                    return res.status(200).json({ statusCode: 200, message: "Recuring Bill Deleted Successfully!" })
                 }
             })
 
