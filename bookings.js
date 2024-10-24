@@ -61,11 +61,11 @@ function add_booking(req, res) {
 
 
                 if (emailExists && email_id) {
-                    return res.status(202).json({ statusCode: 201, message: "Email Already Exists!" });
+                    return res.status(202).json({ statusCode: 202, message: "Email Already Exists!" });
 
                 }
                 if (phoneExists) {
-                    return res.status(203).json({ statusCode: 201, message: "Phone Number Already Exists!" });
+                    return res.status(203).json({ statusCode: 203, message: "Phone Number Already Exists!" });
                 }
 
                 // Proceed to insert new booking
