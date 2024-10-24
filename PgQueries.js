@@ -286,7 +286,7 @@ async function createPG(reqHostel, res, req) {
 
         var originalNameWithoutExt = profile.originalname.split('.').slice(0, -1).join('.');
 
-        var fileName = `${originalNameWithoutExt}-${timestamp}.jpg`;
+        var fileName = `${originalNameWithoutExt}-${timestamp}.jpeg`;
 
         profile_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, fileName, profile)
         console.log(profile_url);
@@ -298,7 +298,7 @@ async function createPG(reqHostel, res, req) {
 
         var originalNameWithoutExt = image1.originalname.split('.').slice(0, -1).join('.');
 
-        var fileName = `${originalNameWithoutExt}-${timestamp}.jpg`;
+        var fileName = `${originalNameWithoutExt}-${timestamp}.jpeg`;
 
         image1_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, fileName, image1)
     }
@@ -309,7 +309,7 @@ async function createPG(reqHostel, res, req) {
 
         var originalNameWithoutExt = image2.originalname.split('.').slice(0, -1).join('.');
 
-        var fileName = `${originalNameWithoutExt}-${timestamp}.jpg`;
+        var fileName = `${originalNameWithoutExt}-${timestamp}.jpeg`;
 
         image2_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, fileName, image2)
     }
@@ -319,7 +319,7 @@ async function createPG(reqHostel, res, req) {
     } else {
         var originalNameWithoutExt = image3.originalname.split('.').slice(0, -1).join('.');
 
-        var fileName = `${originalNameWithoutExt}-${timestamp}.jpg`;
+        var fileName = `${originalNameWithoutExt}-${timestamp}.jpeg`;
 
         image3_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, fileName, image3)
     }
@@ -329,7 +329,7 @@ async function createPG(reqHostel, res, req) {
     } else {
         var originalNameWithoutExt = image4.originalname.split('.').slice(0, -1).join('.');
 
-        var fileName = `${originalNameWithoutExt}-${timestamp}.jpg`;
+        var fileName = `${originalNameWithoutExt}-${timestamp}.jpeg`;
         image4_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, fileName, image4)
     }
 
