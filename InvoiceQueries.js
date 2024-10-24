@@ -2182,7 +2182,7 @@ function EbAmount(connection, request, response) {
                                     // Send error response if the query fails
                                     console.error('Error fetching user details:', err);
                                     return callback({ statusCode: 201, message: 'Unable to Get User Details', error: err });
-                                }else if (user_data.length !== 0) {
+                                } else if (user_data.length !== 0) {
                                     let totalDays = user_data.reduce((acc, user) => acc + user.days_stayed, 0); // Total days stayed
                                     const amountPerDay = total_amount / totalDays; // Calculate amount per day
                                     console.log(amountPerDay);
@@ -2198,7 +2198,7 @@ function EbAmount(connection, request, response) {
 
                                         console.log(`User ID: ${user_id}, Per Unit: ₹${per_unit.toFixed(2)}, User Amount: ₹${userAmount.toFixed(2)}`);
                                         console.log(userAmount);
-                                        
+
                                         if (userAmount) {
                                             var sql2 = "INSERT INTO customer_eb_amount (user_id, start_meter, end_meter, unit, amount, created_by,date) VALUES (?, ?, ?, ?, ?, ?,?)";
                                             connection.query(sql2, [user_id, startMeterReading, end_Meter_Reading, per_unit, userAmount, created_by, atten.date], function (err) {
@@ -2990,7 +2990,7 @@ function delete_recuring_bill(req, res) {
         } else if (data.length != 0) {
 
             var sql2 = "UPDATE recuring_inv_details SET status=0 WHERE id=?";
-            connection.query(sql2, function (err, data) {
+            connection.query(sql2, [id], function (err, data) {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Delete Recuring Bill Details" })
                 } else {
