@@ -2910,7 +2910,7 @@ function get_recuring_amount(req, res) {
     }
 
     // Rent Amount
-    var sql1 = "SELECT *, CASE WHEN checkoutDate IS NULL THEN DATEDIFF(LAST_DAY(CURDATE()), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 ELSE DATEDIFF(LEAST(checkoutDate, LAST_DAY(CURDATE())), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 END AS days_stayed FROM hostel WHERE Rooms != 'undefined' AND Floor != 'undefined' AND joining_date <= LAST_DAY(CURDATE()) AND (checkoutDate >= DATE_FORMAT(CURDATE(), '%Y-%m-01') OR checkoutDate IS NULL) AND isActive = 1 AND ID = 1";
+    var sql1 = "SELECT *, CASE WHEN checkoutDate IS NULL THEN DATEDIFF(LAST_DAY(CURDATE()), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 ELSE DATEDIFF(LEAST(checkoutDate, LAST_DAY(CURDATE())), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 END AS days_stayed FROM hostel WHERE Rooms != 'undefined' AND Floor != 'undefined' AND joining_date <= LAST_DAY(CURDATE()) AND (checkoutDate >= DATE_FORMAT(CURDATE(), '%Y-%m-01') OR checkoutDate IS NULL) AND isActive = 1 AND ID = ?";
     connection.query(sql1, [user_id], (err, data) => {
         if (err) {
             return res.status(201).json({ message: "Unable to Get User Details", statusCode: 201 });
