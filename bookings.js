@@ -58,12 +58,13 @@ function add_booking(req, res) {
                 // If no records found, proceed to insert
                 var emailExists = sel_data.some(booking => booking.email_id === email_id || booking.Email === email_id);
                 var phoneExists = sel_data.some(booking => booking.phone_number === phone_number || booking.Phone === phone_number);
+console.log("phone_number",phone_number);
 
                 if (emailExists && email_id) {
-                    return res.status(201).json({ statusCode: 201, message: "Email Already Exists!" });
+                    return res.status(202).json({ statusCode: 201, message: "Email Already Exists!" });
                 }
                 if (phoneExists) {
-                    return res.status(201).json({ statusCode: 201, message: "Phone Number Already Exists!" });
+                    return res.status(203).json({ statusCode: 201, message: "Phone Number Already Exists!" });
                 }
 
                 // Proceed to insert new booking
