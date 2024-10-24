@@ -37,12 +37,12 @@ function add_booking(req, res) {
         var sql1 = "SELECT * FROM bookings WHERE hostel_id=? AND floor_id=? AND room_id=? AND bed_id=? AND status=1";
         connection.query(sql1, [hostel_id, floor_id, room_id, bed_id], function (err, data) {
             if (err) {
-                return res.status(500).json({ statusCode: 500, message: "Unable to View Bookings" });
+                return res.status(201).json({ statusCode: 201, message: "Unable to View Bookings" });
             }
         
             // Check if bed is already booked
             if (data.length > 0) {
-                return res.status(400).json({ statusCode: 400, message: "Bed Already Booked!" });
+                return res.status(201).json({ statusCode: 201, message: "Bed Already Booked!" });
             }
         
             // Check if the email or phone number exists in the bookings table
@@ -52,25 +52,25 @@ function add_booking(req, res) {
             
             connection.query(sql3, function (sel_error, sel_data) {
                 if (sel_error) {
-                    return res.status(500).json({ statusCode: 500, message: "Error fetching bookings" });
+                    return res.status(201).json({ statusCode: 201, message: "Error fetching bookings" });
                 }
         
                 // If no records found, proceed to insert
                 var emailExists = sel_data.some(booking => booking.email_id === email_id || booking.Email === email_id);
                 var phoneExists = sel_data.some(booking => booking.phone_number === phone_number || booking.Phone === phone_number);
-        
-                if (emailExists) {
-                    return res.status(400).json({ statusCode: 400, message: "Email Already Exists!" });
+                
+                if (emailExists && email_id) {
+                    return res.status(201).json({ statusCode: 201, message: "Email Already Exists!" });
                 }
                 if (phoneExists) {
-                    return res.status(400).json({ statusCode: 400, message: "Phone Number Already Exists!" });
+                    return res.status(201).json({ statusCode: 201, message: "Phone Number Already Exists!" });
                 }
         
                 // Proceed to insert new booking
                 var sql2 = "INSERT INTO bookings (first_name, last_name, joining_date, amount, hostel_id, floor_id, room_id, bed_id, comments, phone_number, email_id, address, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 connection.query(sql2, [first_name, last_name, joining_date, amount, hostel_id, floor_id, room_id, bed_id, comments, phone_number, email_id, address, created_by], function (err, ins_data) {
                     if (err) {
-                        return res.status(500).json({ statusCode: 500, message: "Unable to Add New Booking" });
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Add New Booking" });
                     } else {
                         return res.status(200).json({ statusCode: 200, message: "Booking Added Successfully!" });
                     }
