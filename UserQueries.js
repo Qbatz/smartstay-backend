@@ -2182,6 +2182,10 @@ function available_checkout_users(req, res) {
   })
 }
 
+function available_beds(req, res) {
+
+}
+
 
 module.exports = {
   getUsers,
@@ -2205,5 +2209,6 @@ module.exports = {
   user_check_out,
   checkout_list,
   delete_check_out,
-  available_checkout_users
+  available_checkout_users,
+  available_beds
 };

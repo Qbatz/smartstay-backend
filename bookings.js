@@ -39,40 +39,50 @@ function add_booking(req, res) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to View Bookings" });
             }
-        
+
             // Check if bed is already booked
             if (data.length > 0) {
                 return res.status(201).json({ statusCode: 201, message: "Bed Already Booked!" });
             }
-        
+
             // Check if the email or phone number exists in the bookings table
             let sql3 = `SELECT * FROM bookings book 
                         LEFT JOIN hostel hos ON hos.Hostel_Id = book.hostel_id 
                         WHERE hos.isActive = true AND book.status = true`;
-            
+
             connection.query(sql3, function (sel_error, sel_data) {
                 if (sel_error) {
                     return res.status(201).json({ statusCode: 201, message: "Error fetching bookings" });
                 }
-        
+
                 // If no records found, proceed to insert
                 var emailExists = sel_data.some(booking => booking.email_id === email_id || booking.Email === email_id);
                 var phoneExists = sel_data.some(booking => booking.phone_number === phone_number || booking.Phone === phone_number);
-                
+
                 if (emailExists && email_id) {
                     return res.status(201).json({ statusCode: 201, message: "Email Already Exists!" });
                 }
                 if (phoneExists) {
                     return res.status(201).json({ statusCode: 201, message: "Phone Number Already Exists!" });
                 }
-        
+
                 // Proceed to insert new booking
                 var sql2 = "INSERT INTO bookings (first_name, last_name, joining_date, amount, hostel_id, floor_id, room_id, bed_id, comments, phone_number, email_id, address, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 connection.query(sql2, [first_name, last_name, joining_date, amount, hostel_id, floor_id, room_id, bed_id, comments, phone_number, email_id, address, created_by], function (err, ins_data) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Add New Booking" });
                     } else {
-                        return res.status(200).json({ statusCode: 200, message: "Booking Added Successfully!" });
+
+                        var booking_id = ins_data.insertId;
+
+                        var sql3 = "UPDATE bed_details SET booking_id=?, isbooked=1 WHERE id=?";
+                        connection.query(sql3, [booking_id, bed_id], function (err, up_data) {
+                            if (err) {
+                                return res.status(201).json({ statusCode: 201, message: "Unable to Update Booking" });
+                            } else {
+                                return res.status(200).json({ statusCode: 200, message: "Booking Added Successfully!" });
+                            }
+                        })
                     }
                 });
             });

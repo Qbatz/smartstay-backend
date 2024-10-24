@@ -948,3 +948,8 @@ app.post('/delete_recuring_bill', (req, res) => {
 app.post('/available_checkout_users', (req, res) => {
     userQueries.available_checkout_users(req, res)
 })
+
+// Bed Details
+app.post('/available_beds', (req, res) => {
+    userQueries.available_beds(req, res)
+})
