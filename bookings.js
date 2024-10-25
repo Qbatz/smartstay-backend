@@ -18,13 +18,17 @@ function add_booking(req, res) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Add New Booking" })
             } else if (sel_data.length != 0) {
 
+                var old_bed = sel_data[0].bed_id;
+
+                console.log(old_bed,"------------ Old Bed");
+                console.log(bed_id,"------------ New Bed");
+
                 var sql2 = "UPDATE bookings SET first_name=?,last_name=?,joining_date=?,amount=?,hostel_id=?,floor_id=?,room_id=?,bed_id=?,comments=?, phone_number = ?,email_id =?,address=? WHERE id=?";
                 connection.query(sql2, [first_name, last_name, joining_date, amount, hostel_id, floor_id, room_id, bed_id, comments, phone_number, email_id, address, id], function (err, ins_data) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Add New Booking" })
                     } else {
 
-                        var old_bed = sel_data[0].bed_id;
 
                         if (old_bed == bed_id) {
                             return res.status(200).json({ statusCode: 200, message: "Booking Updated Successfully!" })
@@ -32,13 +36,17 @@ function add_booking(req, res) {
 
                             // Change Old Bed Records
                             var sql4 = "UPDATE bed_details SET isbooked=0,booking_id=0 WHERE id='" + old_bed + "'";
+                            console.log(sql4);
+                            
                             connection.query(sql4, function (err, data) {
                                 if (err) {
                                     return res.status(201).json({ statusCode: 201, message: "Unable to Update New Booking" })
                                 } else {
 
                                     // Update New Bed
-                                    var sql5 = "UPDATE bed_details SET isbooked=1,booking_id='" + id + "' WHERE id='" + old_bed + "'";
+                                    var sql5 = "UPDATE bed_details SET isbooked=1,booking_id='" + id + "' WHERE id='" + bed_id + "'";
+                                    console.log(sql5);
+                                    
                                     connection.query(sql5, function (err, up_data) {
                                         if (err) {
                                             return res.status(201).json({ statusCode: 201, message: "Unable to Update New Booking" })
