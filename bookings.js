@@ -23,7 +23,32 @@ function add_booking(req, res) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Add New Booking" })
                     } else {
-                        return res.status(200).json({ statusCode: 200, message: "Booking Updated Successfully!" })
+
+                        var old_bed = sel_data[0].bed_id;
+
+                        if (old_bed == bed_id) {
+                            return res.status(200).json({ statusCode: 200, message: "Booking Updated Successfully!" })
+                        } else {
+
+                            // Change Old Bed Records
+                            var sql4 = "UPDATE bed_details SET isbooked=0,booking_id=0 WHERE id='" + old_bed + "'";
+                            connection.query(sql4, function (err, data) {
+                                if (err) {
+                                    return res.status(201).json({ statusCode: 201, message: "Unable to Update New Booking" })
+                                } else {
+
+                                    // Update New Bed
+                                    var sql5 = "UPDATE bed_details SET isbooked=1,booking_id='" + id + "' WHERE id='" + old_bed + "'";
+                                    connection.query(sql5, function (err, up_data) {
+                                        if (err) {
+                                            return res.status(201).json({ statusCode: 201, message: "Unable to Update New Booking" })
+                                        } else {
+                                            return res.status(200).json({ statusCode: 200, message: "Booking Updated Successfully!" })
+                                        }
+                                    })
+                                }
+                            })
+                        }
                     }
                 })
             } else {
@@ -185,7 +210,7 @@ function assign_booking(req, res) {
                         console.error(error);
                         return res.status(400).send('Error inserting data');
                     }
-                    res.status(200).send({ statusCode :200 , message: "Assign booking successfully" });
+                    res.status(200).send({ statusCode: 200, message: "Assign booking successfully" });
                 });
             }
 
