@@ -2752,7 +2752,11 @@ function add_manual_invoice(req, res) {
                 total_am_amount = 0
             }
 
-            var total_amount = total_am_amount + room_rent + eb_amount + advance;
+            if(!advance_amount){
+                advance_amount=0;
+            }
+
+            var total_amount = total_am_amount + room_rent + eb_amount + advance_amount;
 
             var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,RoomRent,EbAmount,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id,advance_amount) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, total_amount, due_date, date, invoice_id, 'pending', user_data.User_Id, room_rent, eb_amount, total_am_amount, user_data.Bed, total_amount, 'manual', 1, user_id, advance_amount], function (err, ins_data) {
@@ -2866,7 +2870,7 @@ function add_recuring_bill(req, res) {
                 advance_amount = 0
             }
 
-            var total_amount_data = total_am_amount + eb_amount + advance_amount + room_rent;
+            var total_amount_data = parseInt(total_am_amount) + parseInt(eb_amount) + advance_amount + room_rent;
 
             var sql2 = "SELECT * FROM recuring_inv_details WHERE user_id=? AND status=1";
             connection.query(sql2, [user_id], function (err, recure_data) {
@@ -2994,7 +2998,7 @@ function delete_recuring_bill(req, res) {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Delete Recuring Bill Details" })
                 } else {
-                    return res.status(201).json({ statusCode: 201, message: "Recuring Bill Deleted Successfully!" })
+                    return res.status(200).json({ statusCode: 200, message: "Recuring Bill Deleted Successfully!" })
                 }
             })
 
