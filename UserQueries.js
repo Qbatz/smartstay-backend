@@ -2191,7 +2191,8 @@ function available_beds(req, res) {
     return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Details" })
   }
 
-  var sql1 = "SELECT bd.*,hos.CheckoutDate FROM hostelrooms AS hs JOIN bed_details AS bd ON hs.id = bd.hos_detail_id LEFT JOIN hostel AS hos ON hos.id = bd.user_id AND hos.CheckoutDate <= ? WHERE bd.status = 1 AND bd.isbooked = 0 AND hs.isActive = 1 AND hs.Hostel_Id=? AND hs.Floor_Id=? AND hs.id=?";
+  // var sql1 = "SELECT bd.*,hos.CheckoutDate FROM hostelrooms AS hs JOIN bed_details AS bd ON hs.id = bd.hos_detail_id LEFT JOIN hostel AS hos ON hos.id = bd.user_id AND hos.CheckoutDate <= ? WHERE bd.status = 1 AND bd.isbooked = 0 AND hs.isActive = 1 AND hs.Hostel_Id=? AND hs.Floor_Id=? AND hs.id=?";
+  var sql1 = "SELECT bd.*FROM hostelrooms AS hs JOIN bed_details AS bd ON hs.id = bd.hos_detail_id LEFT JOIN hostel AS hos ON bd.isfilled = 1 AND hos.id = bd.user_id AND hos.CheckoutDate IS NOT NULL AND hos.CheckoutDate < ? WHERE bd.status = 1 AND bd.isbooked = 0 AND hs.isActive = 1 AND hs.Hostel_Id = ? AND hs.Floor_Id = ? AND hs.id = ? AND (bd.isfilled = 0 OR hos.CheckoutDate IS NOT NULL)"
   connection.query(sql1, [joining_date, hostel_id, floor_id, room_id], function (err, data) {
     if (err) {
       return res.status(201).json({ statusCode: 201, message: "Unable to get Bed Details" })
