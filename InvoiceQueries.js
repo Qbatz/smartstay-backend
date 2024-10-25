@@ -2914,7 +2914,7 @@ function get_recuring_amount(req, res) {
     }
 
     // Rent Amount
-    var sql1 = "SELECT *, CASE WHEN checkoutDate IS NULL THEN DATEDIFF(LAST_DAY(CURDATE()), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 ELSE DATEDIFF(LEAST(checkoutDate, LAST_DAY(CURDATE())), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 END AS days_stayed FROM hostel WHERE Rooms != 'undefined' AND Floor != 'undefined' AND joining_date <= LAST_DAY(CURDATE()) AND (checkoutDate >= DATE_FORMAT(CURDATE(), '%Y-%m-01') OR checkoutDate IS NULL) AND isActive = 1 AND ID = 1";
+    var sql1 = "SELECT *, CASE WHEN checkoutDate IS NULL THEN DATEDIFF(LAST_DAY(CURDATE()), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 ELSE DATEDIFF(LEAST(checkoutDate, LAST_DAY(CURDATE())), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 END AS days_stayed FROM hostel WHERE Rooms != 'undefined' AND Floor != 'undefined' AND joining_date <= LAST_DAY(CURDATE()) AND (checkoutDate >= DATE_FORMAT(CURDATE(), '%Y-%m-01') OR checkoutDate IS NULL) AND isActive = 1 AND ID = ?";
     connection.query(sql1, [user_id], (err, data) => {
         if (err) {
             return res.status(201).json({ message: "Unable to Get User Details", statusCode: 201 });
@@ -3008,4 +3008,54 @@ function delete_recuring_bill(req, res) {
     })
 }
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice, customer_readings, add_recuring_bill, get_recuring_amount, all_recuring_bills, delete_recuring_bill }
+function update_recuring_bill(req, res) {
+
+    var { advance, rent, aminity, eb_amount, invoice_date, due_date, id } = req.body;
+
+    if (!invoice_date || !due_date) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    if (!advance) {
+        advance = 0
+    }
+
+    if (!rent) {
+        rent = 0
+    }
+
+    if (!aminity) {
+        aminity = 0
+    }
+
+    if (!eb_amount) {
+        eb_amount = 0
+    }
+
+    let dateObj = new Date(invoice_date);  // Format: YYYY-MM-DD
+    let inv_day = dateObj.getDate();
+
+    let duedateObj = new Date(due_date);  // Format: YYYY-MM-DD
+    let due_day = duedateObj.getDate();
+
+    var sql2 = "SELECT * FROM recuring_inv_details WHERE id=?";
+    connection.query(sql2, [id], function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to get Invoice Details" })
+        } else if (data.length != 0) {
+
+            var sql1 = "UPDATE recuring_inv_details SET invoice_date=?,due_date=?,advance=?,rent=?,aminity=?,eb=? WHERE id=?";
+            connection.query(sql1, [inv_day, due_day, advance, rent, aminity, eb_amount], function (err, data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Update Invoice Details" })
+                } else {
+                    return res.status(201).json({ statusCode: 201, message: "Changes Saved Successfully" })
+                }
+            })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Invoice Details" })
+        }
+    })
+}
+
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice, customer_readings, add_recuring_bill, get_recuring_amount, all_recuring_bills, delete_recuring_bill, update_recuring_bill }

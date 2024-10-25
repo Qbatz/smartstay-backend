@@ -105,9 +105,9 @@ const queries = [
 
     "ALTER TABLE `Vendor` CHANGE COLUMN `Country` `Country` VARCHAR(100) NULL DEFAULT NULL ;",
 
-    "ALTER TABLE `invoicedetails` ADD COLUMN `advance_amount` BIGINT(20) NULL DEFAULT 0 AFTER `EbAmount`;"
+    "ALTER TABLE `invoicedetails` ADD COLUMN `advance_amount` BIGINT(20) NULL DEFAULT 0 AFTER `EbAmount`;",
 
-
+    "ALTER TABLE `bed_details` ADD COLUMN `booking_id` BIGINT(20) NULL DEFAULT '0' AFTER `isfilled`,ADD COLUMN `isbooked` INT(11) NULL DEFAULT '0' AFTER `booking_id`;"
 ];
 
 queries.forEach(executeQuery);

@@ -945,6 +945,16 @@ app.post('/delete_recuring_bill', (req, res) => {
     invoiceQueries.delete_recuring_bill(req, res)
 })
 
+// Need to validate cron
+app.post('/update_recuring_bill', (req, res) => {
+    invoiceQueries.update_recuring_bill(req, res)
+})
+
 app.post('/available_checkout_users', (req, res) => {
     userQueries.available_checkout_users(req, res)
+})
+
+// Bed Details
+app.post('/available_beds', (req, res) => {
+    userQueries.available_beds(req, res)
 })
