@@ -20,45 +20,60 @@ function add_booking(req, res) {
 
                 var old_bed = sel_data[0].bed_id;
 
-                console.log(old_bed,"------------ Old Bed");
-                console.log(bed_id,"------------ New Bed");
-
-                var sql2 = "UPDATE bookings SET first_name=?,last_name=?,joining_date=?,amount=?,hostel_id=?,floor_id=?,room_id=?,bed_id=?,comments=?, phone_number = ?,email_id =?,address=? WHERE id=?";
-                connection.query(sql2, [first_name, last_name, joining_date, amount, hostel_id, floor_id, room_id, bed_id, comments, phone_number, email_id, address, id], function (err, ins_data) {
+                // Phone number Check
+                var sql6 = "SELECT * FROM bookings WHERE phone_number=? AND status=1 AND id !=?";
+                connection.query(sql6, [phone_number, id], function (err, check_ph) {
                     if (err) {
-                        return res.status(201).json({ statusCode: 201, message: "Unable to Add New Booking" })
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Get Booking" })
+                    } else if (check_ph.length != 0) {
+                        return res.status(201).json({ statusCode: 201, message: "Mobile Number Already Exist!" })
                     } else {
 
+                        // Mail Validation
+                        // var sql7 = "SELECT * FROM bookings WHERE email_id=? AND status=1 AND (email_id !=null || email_id != 'undefined') AND id !=?";
+                        // connection.query(sql7, [email_id, id], function (err, em_data) {
+                        //     if (err) {
+                        //         return res.status(201).json({ statusCode: 201, message: "Unable to Get Booking" })
+                        //     } else if (em_data.length != 0) {
+                        //         return res.status(201).json({ statusCode: 201, message: "Email Id Already Exist!" })
+                        //     } else {
 
-                        if (old_bed == bed_id) {
-                            return res.status(200).json({ statusCode: 200, message: "Booking Updated Successfully!" })
-                        } else {
+                        var sql2 = "UPDATE bookings SET first_name=?,last_name=?,joining_date=?,amount=?,hostel_id=?,floor_id=?,room_id=?,bed_id=?,comments=?, phone_number = ?,email_id =?,address=? WHERE id=?";
+                        connection.query(sql2, [first_name, last_name, joining_date, amount, hostel_id, floor_id, room_id, bed_id, comments, phone_number, email_id, address, id], function (err, ins_data) {
+                            if (err) {
+                                return res.status(201).json({ statusCode: 201, message: "Unable to Add New Booking" })
+                            } else {
 
-                            // Change Old Bed Records
-                            var sql4 = "UPDATE bed_details SET isbooked=0,booking_id=0 WHERE id='" + old_bed + "'";
-                            console.log(sql4);
-                            
-                            connection.query(sql4, function (err, data) {
-                                if (err) {
-                                    return res.status(201).json({ statusCode: 201, message: "Unable to Update New Booking" })
+                                if (old_bed == bed_id) {
+                                    return res.status(200).json({ statusCode: 200, message: "Booking Updated Successfully!" })
                                 } else {
 
-                                    // Update New Bed
-                                    var sql5 = "UPDATE bed_details SET isbooked=1,booking_id='" + id + "' WHERE id='" + bed_id + "'";
-                                    console.log(sql5);
-                                    
-                                    connection.query(sql5, function (err, up_data) {
+                                    // Change Old Bed Records
+                                    var sql4 = "UPDATE bed_details SET isbooked=0,booking_id=0 WHERE id='" + old_bed + "'";
+                                    connection.query(sql4, function (err, data) {
                                         if (err) {
                                             return res.status(201).json({ statusCode: 201, message: "Unable to Update New Booking" })
                                         } else {
-                                            return res.status(200).json({ statusCode: 200, message: "Booking Updated Successfully!" })
+
+                                            // Update New Bed
+                                            var sql5 = "UPDATE bed_details SET isbooked=1,booking_id='" + id + "' WHERE id='" + bed_id + "'";
+                                            connection.query(sql5, function (err, up_data) {
+                                                if (err) {
+                                                    return res.status(201).json({ statusCode: 201, message: "Unable to Update New Booking" })
+                                                } else {
+                                                    return res.status(200).json({ statusCode: 200, message: "Booking Updated Successfully!" })
+                                                }
+                                            })
                                         }
                                     })
                                 }
-                            })
-                        }
+                            }
+                        })
+                        //     }
+                        // })
                     }
                 })
+
             } else {
                 return res.status(201).json({ statusCode: 201, message: "Invalid Booking Details" })
             }
