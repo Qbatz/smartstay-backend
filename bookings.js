@@ -26,7 +26,7 @@ function add_booking(req, res) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Get Booking" })
                     } else if (check_ph.length != 0) {
-                        return res.status(201).json({ statusCode: 201, message: "Mobile Number Already Exist!" })
+                        return res.status(203).json({ statusCode: 203, message: "Mobile Number Already Exist!" })
                     } else {
 
                         // Mail Validation
