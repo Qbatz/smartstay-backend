@@ -2752,7 +2752,11 @@ function add_manual_invoice(req, res) {
                 total_am_amount = 0
             }
 
-            var total_amount = total_am_amount + room_rent + eb_amount + advance;
+            if(!advance_amount){
+                advance_amount=0;
+            }
+
+            var total_amount = total_am_amount + room_rent + eb_amount + advance_amount;
 
             var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,RoomRent,EbAmount,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id,advance_amount) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, total_amount, due_date, date, invoice_id, 'pending', user_data.User_Id, room_rent, eb_amount, total_am_amount, user_data.Bed, total_amount, 'manual', 1, user_id, advance_amount], function (err, ins_data) {
@@ -2866,7 +2870,7 @@ function add_recuring_bill(req, res) {
                 advance_amount = 0
             }
 
-            var total_amount_data = total_am_amount + eb_amount + advance_amount + room_rent;
+            var total_amount_data = parseInt(total_am_amount) + parseInt(eb_amount) + advance_amount + room_rent;
 
             var sql2 = "SELECT * FROM recuring_inv_details WHERE user_id=? AND status=1";
             connection.query(sql2, [user_id], function (err, recure_data) {
@@ -3004,4 +3008,54 @@ function delete_recuring_bill(req, res) {
     })
 }
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice, customer_readings, add_recuring_bill, get_recuring_amount, all_recuring_bills, delete_recuring_bill }
+function update_recuring_bill(req, res) {
+
+    var { advance, rent, aminity, eb_amount, invoice_date, due_date, id } = req.body;
+
+    if (!invoice_date || !due_date) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    if (!advance) {
+        advance = 0
+    }
+
+    if (!rent) {
+        rent = 0
+    }
+
+    if (!aminity) {
+        aminity = 0
+    }
+
+    if (!eb_amount) {
+        eb_amount = 0
+    }
+
+    let dateObj = new Date(invoice_date);  // Format: YYYY-MM-DD
+    let inv_day = dateObj.getDate();
+
+    let duedateObj = new Date(due_date);  // Format: YYYY-MM-DD
+    let due_day = duedateObj.getDate();
+
+    var sql2 = "SELECT * FROM recuring_inv_details WHERE id=?";
+    connection.query(sql2, [id], function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to get Invoice Details" })
+        } else if (data.length != 0) {
+
+            var sql1 = "UPDATE recuring_inv_details SET invoice_date=?,due_date=?,advance=?,rent=?,aminity=?,eb=? WHERE id=?";
+            connection.query(sql1, [inv_day, due_day, advance, rent, aminity, eb_amount], function (err, data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Update Invoice Details" })
+                } else {
+                    return res.status(201).json({ statusCode: 201, message: "Changes Saved Successfully" })
+                }
+            })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Invoice Details" })
+        }
+    })
+}
+
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice, customer_readings, add_recuring_bill, get_recuring_amount, all_recuring_bills, delete_recuring_bill, update_recuring_bill }
