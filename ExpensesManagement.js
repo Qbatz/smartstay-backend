@@ -354,6 +354,9 @@ WHERE expen.status = true AND expen.created_by = ${createdBy}`;
 
         query += ` AND expen.purchase_date >= '${startDateRange}' AND expen.purchase_date <= '${endDateRange}'`;
     }
+
+    query += ` ORDER BY expen.id DESC`;
+
     console.log("query", query);
     connection.query(query, function (err, data) {
         if (err) {
