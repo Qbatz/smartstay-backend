@@ -107,7 +107,9 @@ const queries = [
 
     "ALTER TABLE `invoicedetails` ADD COLUMN `advance_amount` BIGINT(20) NULL DEFAULT 0 AFTER `EbAmount`;",
 
-    "ALTER TABLE `bed_details` ADD COLUMN `booking_id` BIGINT(20) NULL DEFAULT '0' AFTER `isfilled`,ADD COLUMN `isbooked` INT(11) NULL DEFAULT '0' AFTER `booking_id`;"
+    "ALTER TABLE `bed_details` ADD COLUMN `booking_id` BIGINT(20) NULL DEFAULT '0' AFTER `isfilled`,ADD COLUMN `isbooked` INT(11) NULL DEFAULT '0' AFTER `booking_id`;",
+
+    "CREATE TABLE `bankings` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`acc_name` VARCHAR(255) NULL,`acc_num` BIGINT(20) NULL DEFAULT 0,`bank_name` VARCHAR(255) NULL,`ifsc_code` VARCHAR(45) NULL,`description` VARCHAR(255) NULL,`setus_default` INT(11) NULL,`balance` BIGINT(20) NULL,`status` INT(11) NULL DEFAULT 1,`createdby` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));"
 ];
 
 queries.forEach(executeQuery);

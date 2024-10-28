@@ -958,3 +958,27 @@ app.post('/available_checkout_users', (req, res) => {
 app.post('/available_beds', (req, res) => {
     userQueries.available_beds(req, res)
 })
+
+// Add and Edit Bankings
+app.post('/add_bank', (req, res) => {
+    payments.add_bank(req, res)
+})
+
+// Get All Bankings
+app.get('/all_bankings', (req, res) => {
+    payments.all_bankings(req, res)
+})
+
+// Remove Bank
+app.post('/delete_bank', (req, res) => {
+    payments.delete_bank(req, res)
+})
+
+// Add Amount in Bank
+app.post('/add_bank_amount', (req, res) => {
+    payments.add_bank_amount(req, res)
+})
+
+app.post('/add_default_account', (req, res) => {
+    payments.add_default_account(req, res)
+})
