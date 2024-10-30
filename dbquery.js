@@ -109,7 +109,13 @@ const queries = [
 
     "ALTER TABLE `bed_details` ADD COLUMN `booking_id` BIGINT(20) NULL DEFAULT '0' AFTER `isfilled`,ADD COLUMN `isbooked` INT(11) NULL DEFAULT '0' AFTER `booking_id`;",
 
-    "CREATE TABLE `bankings` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`acc_name` VARCHAR(255) NULL,`acc_num` BIGINT(20) NULL DEFAULT 0,`bank_name` VARCHAR(255) NULL,`ifsc_code` VARCHAR(45) NULL,`description` VARCHAR(255) NULL,`setus_default` INT(11) NULL,`balance` BIGINT(20) NULL,`status` INT(11) NULL DEFAULT 1,`createdby` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));"
+    "CREATE TABLE `bankings` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`acc_name` VARCHAR(255) NULL,`acc_num` BIGINT(20) NULL DEFAULT 0,`bank_name` VARCHAR(255) NULL,`ifsc_code` VARCHAR(45) NULL,`description` VARCHAR(255) NULL,`setus_default` INT(11) NULL,`balance` BIGINT(20) NULL,`status` INT(11) NULL DEFAULT 1,`createdby` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+
+    "CREATE TABLE `bank_transactions` (`id` INT NOT NULL AUTO_INCREMENT,`bank_id` BIGINT(20) NULL,`date` DATE NULL,`amount` BIGINT(20) NULL DEFAULT 0,`desc` VARCHAR(255) NULL,`type` INT(11) NULL,`status` INT(11) NULL,`createdby` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+
+    "ALTER TABLE `bank_transactions` ADD COLUMN `edit_id` BIGINT(20) NULL DEFAULT 0 AFTER `bank_id`;",
+
+    "ALTER TABLE `transactions` ADD COLUMN `description` VARCHAR(255) NULL AFTER `action`,CHANGE COLUMN `action` `action` INT(11) NULL DEFAULT '1' AFTER `status`;"
 ];
 
 queries.forEach(executeQuery);
