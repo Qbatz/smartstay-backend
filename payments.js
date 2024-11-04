@@ -139,7 +139,14 @@ function all_bankings(req, res) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Unable to Add Bank Details" })
         } else {
-            return res.status(200).json({ statusCode: 200, message: "Bank Details", banks: data })
+            var sql2 = "SELECT trans.*,ban.acc_name,ban.bank_name FROM bank_transactions AS trans JOIN bankings AS ban ON ban.id=trans.bank_id WHERE trans.status=1 AND trans.createdby=?";
+            connection.query(sql2, [created_by], function (err, trans_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Get Bank Transactions" })
+                } else {
+                    return res.status(200).json({ statusCode: 200, message: "Bank Details", banks: data, bank_trans: trans_data })
+                }
+            })
         }
     })
 }
