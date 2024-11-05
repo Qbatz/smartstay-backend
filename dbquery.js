@@ -115,7 +115,9 @@ const queries = [
 
     "ALTER TABLE `bank_transactions` ADD COLUMN `edit_id` BIGINT(20) NULL DEFAULT 0 AFTER `bank_id`;",
 
-    "ALTER TABLE `transactions` ADD COLUMN `description` VARCHAR(255) NULL AFTER `action`,CHANGE COLUMN `action` `action` INT(11) NULL DEFAULT '1' AFTER `status`;"
+    "ALTER TABLE `transactions` ADD COLUMN `description` VARCHAR(255) NULL AFTER `action`,CHANGE COLUMN `action` `action` INT(11) NULL DEFAULT '1' AFTER `status`;",
+
+    "ALTER TABLE `bank_transactions` ADD COLUMN `description` VARCHAR(255) NULL AFTER `desc`;"
 ];
 
 queries.forEach(executeQuery);

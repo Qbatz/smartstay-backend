@@ -269,7 +269,7 @@ function edit_bank_trans(req, res) {
 
                     // var new_amount = parseInt(balance_amount) + parseInt(last_amount) - parseInt(purchase_amount);
 
-                    var sql2 = "UPDATE bank_transactions SET bank_id=?,date=?,amount=?,type=?,`desc`=? WHERE id=?";
+                    var sql2 = "UPDATE bank_transactions SET bank_id=?,date=?,amount=?,type=?,description=? WHERE id=?";
                     connection.query(sql2, [bank_id, date, amount, type, desc, id], function (err, up_data) {
                         if (err) {
                             return res.status(201).json({ statusCode: 201, message: "Unable to Update Transaction Details" })
@@ -277,28 +277,38 @@ function edit_bank_trans(req, res) {
 
                             if (bank_id == old_bank) {
 
-                                var total_amount = parseInt(balance_amount) + parseInt(last_amount) - parseInt(amount);
+                                if (last_amount == amount) {
 
-                                var sql4 = "UPDATE bankings SET balance=? WHERE id=?";
-                                connection.query(sql4, [total_amount, bank_id], function (err, up_res) {
-                                    if (err) {
-                                        return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
-                                    } else {
-                                        return res.status(200).json({ statusCode: 200, message: "Save Changes Successfully!" })
-                                    }
-                                })
+                                    return res.status(200).json({ statusCode: 200, message: "Save Changes Successfully!" })
+
+                                } else {
+
+                                    var total_amount = parseInt(balance_amount) + parseInt(last_amount) - parseInt(amount);
+
+                                    var sql4 = "UPDATE bankings SET balance=? WHERE id=?";
+                                    connection.query(sql4, [total_amount, bank_id], function (err, up_res) {
+                                        if (err) {
+                                            return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
+                                        } else {
+                                            return res.status(200).json({ statusCode: 200, message: "Save Changes Successfully!" })
+                                        }
+                                    })
+                                }
+
                             } else {
                                 var sql7 = "SELECT * FROM bankings WHERE id=?";
                                 connection.query(sql7, [old_bank], function (err, old_bank_data) {
                                     if (err) {
+                                        console.log(err);
                                         return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
                                     } else if (old_bank_data.length != 0) {
 
-                                        var total_amount = parseInt(old_bank_data[0].balance_amount) + parseInt(last_amount);
+                                        var total_amount = parseInt(old_bank_data[0].balance) + parseInt(last_amount);
 
                                         var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
                                         connection.query(sql5, [total_amount, old_bank], function (err, up_res) {
                                             if (err) {
+                                                console.log(err);
                                                 return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
                                             } else {
 
@@ -307,6 +317,7 @@ function edit_bank_trans(req, res) {
                                                 // Update New Bank amount
                                                 connection.query(sql5, [remain_amount, bank_id], function (err, ins_res) {
                                                     if (err) {
+                                                        console.log(err);
                                                         return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
                                                     } else {
                                                         return res.status(200).json({ statusCode: 200, message: "Save Changes Successfully!" })
