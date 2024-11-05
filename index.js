@@ -982,3 +982,11 @@ app.post('/add_bank_amount', (req, res) => {
 app.post('/add_default_account', (req, res) => {
     payments.add_default_account(req, res)
 })
+
+app.post('/edit_bank_trans', (req, res) => {
+    payments.edit_bank_trans(req, res)
+})
+
+app.post('/delete_bank_trans', (req, res) => {
+    payments.delete_bank_trans(req, res)
+})

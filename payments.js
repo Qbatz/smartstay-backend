@@ -243,4 +243,120 @@ function add_default_account(req, res) {
     })
 }
 
-module.exports = { add_payment_details, payment_details, add_bank, all_bankings, delete_bank, add_bank_amount, add_default_account }
+function edit_bank_trans(req, res) {
+
+    var { id, bank_id, date, amount, type, desc } = req.body;
+
+    if (!id || !bank_id || !date || !amount) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    var sql3 = "SELECT * FROM bankings WHERE id=?";
+    connection.query(sql3, [bank_id], function (err, bank_data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get Bank Details" })
+        } else if (bank_data.length != 0) {
+
+            var sql1 = "SELECT * FROM bank_transactions WHERE id=?";
+            connection.query(sql1, [id], function (err, data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Get Transaction Details" })
+                } else if (data.length != 0) {
+
+                    var old_bank = data[0].bank_id;
+                    var balance_amount = bank_data[0].balance;
+                    var last_amount = data[0].amount;
+
+                    // var new_amount = parseInt(balance_amount) + parseInt(last_amount) - parseInt(purchase_amount);
+
+                    var sql2 = "UPDATE bank_transactions SET bank_id=?,date=?,amount=?,type=?,`desc`=? WHERE id=?";
+                    connection.query(sql2, [bank_id, date, amount, type, desc, id], function (err, up_data) {
+                        if (err) {
+                            return res.status(201).json({ statusCode: 201, message: "Unable to Update Transaction Details" })
+                        } else {
+
+                            if (bank_id == old_bank) {
+
+                                var total_amount = parseInt(balance_amount) + parseInt(last_amount) - parseInt(amount);
+
+                                var sql4 = "UPDATE bankings SET balance=? WHERE id=?";
+                                connection.query(sql4, [total_amount, bank_id], function (err, up_res) {
+                                    if (err) {
+                                        return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
+                                    } else {
+                                        return res.status(200).json({ statusCode: 200, message: "Save Changes Successfully!" })
+                                    }
+                                })
+                            } else {
+                                var sql7 = "SELECT * FROM bankings WHERE id=?";
+                                connection.query(sql7, [old_bank], function (err, old_bank_data) {
+                                    if (err) {
+                                        return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
+                                    } else if (old_bank_data.length != 0) {
+
+                                        var total_amount = parseInt(old_bank_data[0].balance_amount) + parseInt(last_amount);
+
+                                        var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
+                                        connection.query(sql5, [total_amount, old_bank], function (err, up_res) {
+                                            if (err) {
+                                                return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
+                                            } else {
+
+                                                var remain_amount = parseInt(balance_amount) - parseInt(amount);
+
+                                                // Update New Bank amount
+                                                connection.query(sql5, [remain_amount, bank_id], function (err, ins_res) {
+                                                    if (err) {
+                                                        return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
+                                                    } else {
+                                                        return res.status(200).json({ statusCode: 200, message: "Save Changes Successfully!" })
+                                                    }
+                                                })
+                                            }
+                                        })
+                                    } else {
+                                        return res.status(201).json({ statusCode: 201, message: "Invalid Bank Details" })
+                                    }
+                                })
+                            }
+                        }
+                    })
+                } else {
+                    return res.status(201).json({ statusCode: 201, message: "Invalid Bank Details" })
+                }
+            })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Bank Details" })
+        }
+    })
+}
+
+function delete_bank_trans(req, res) {
+
+    var id = req.body.id;
+
+    if (!id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    var sql1 = "SELECT * FROM bank_transactions WHERE id=?";
+    connection.query(sql1, [id], function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get Bank Details" })
+        } else if (data != 0) {
+
+            var sql2 = "UPDATE bank_transactions SET status=0 WHERE id=?";
+            connection.query(sql2, [id], function (err, up_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Delete Bank Transactions" })
+                } else {
+                    return res.status(200).json({ statusCode: 200, message: "Transaction Deleted Successfully!" })
+                }
+            })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Bank Details" })
+        }
+    })
+}
+
+module.exports = { add_payment_details, payment_details, add_bank, all_bankings, delete_bank, add_bank_amount, add_default_account, edit_bank_trans, delete_bank_trans }
