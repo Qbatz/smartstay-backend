@@ -33,26 +33,77 @@ module.exports = (req, res, next) => {
             res.status(206).json({ message: "Access denied. No token provided", statusCode: 206 });
         } else {
             try {
+
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 req.user_details = decoded;
 
-                var created_by = decoded.id;
+                const created_by = decoded.id;
 
-                var sql1 = "SELECT * FROM createaccount WHERE id='" + created_by + "'";
-                connection.query(sql1, function (err, data) {
+                let show_ids = [];
+
+                // Query to get user details to determine createdby
+                const sqlGetUser = "SELECT * FROM createaccount WHERE id=?";
+                connection.query(sqlGetUser, [created_by], async function (err, data) {
                     if (err) {
-                        res.status(206).json({ message: "Unable to Get Admin Details", statusCode: 206 });
-                    } else if (data.length != 0) {
+                        return res.status(206).json({ message: "Unable to Get User Details", statusCode: 206 });
+                    }
 
+                    if (data.length === 0) {
+                        return res.status(206).json({ message: "Invalid User", statusCode: 206 });
+                    }
+
+                    const user = data[0];
+
+                    if (decoded.user_type === "admin") {
+                        console.log(decoded.id);
+
+                        show_ids.push(decoded.id);
+
+                        const sqlAdminDirectUsers = "SELECT id FROM createaccount WHERE createdby = ?";
+                        connection.query(sqlAdminDirectUsers, [decoded.id], function (err, directUsers) {
+                            if (err) {
+                                return res.status(206).json({ message: "Unable to Get Admin's Created Users", statusCode: 206 });
+                            }
+
+                            const directUserIds = directUsers.map(item => item.id);
+                            show_ids.push(...directUserIds);
+
+                            if (directUserIds.length > 0) {
+                                const sqlIndirectUsers = "SELECT id FROM createaccount WHERE createdby IN (?)";
+                                connection.query(sqlIndirectUsers, [directUserIds], function (err, indirectUsers) {
+                                    if (err) {
+                                        return res.status(206).json({ message: "Unable to Get Indirectly Created Users", statusCode: 206 });
+                                    }
+
+                                    show_ids.push(...indirectUsers.map(item => item.id));
+
+                                    sendResponseWithToken();
+                                });
+                            } else {
+                                sendResponseWithToken();
+                            }
+                        });
+
+                    } else {
+                        show_ids.push(decoded.id);
+                        sendResponseWithToken();
+                    }
+
+                    function sendResponseWithToken() {
                         const currentTime = Math.floor(Date.now() / 1000);
                         const timeToExpire = decoded.exp - currentTime;
 
                         let newToken = null;
 
-                        // Refresh the token
+                        req.show_ids = show_ids;
+
+                        // Refresh the token if about to expire
                         if (timeToExpire <= 600) {
+
                             newToken = jwt.sign(
-                                { id: decoded.id, sub: decoded.id, user_type: 1, username: decoded.username }, process.env.JWT_SECRET, { expiresIn: '30m' }
+                                { id: decoded.id, sub: decoded.id, user_type: decoded.user_type, username: decoded.username, role_id: decoded.role_id },
+                                process.env.JWT_SECRET,
+                                { expiresIn: '30m' }
                             );
                             res.locals.refresh_token = newToken;
                         }
@@ -67,10 +118,10 @@ module.exports = (req, res, next) => {
                         };
 
                         next();
-                    } else {
-                        res.status(206).json({ message: "Invalid User", statusCode: 206 });
                     }
-                })
+                });
+
+
             } catch (err) {
                 res.status(206).json({ message: "Access denied. Invalid Token or Token Expired", statusCode: 206 });
             }

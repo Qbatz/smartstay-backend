@@ -11,7 +11,7 @@ const importFunc = require('./components/import_func');
 const xlsx = require('xlsx');
 const fs = require('fs');
 const bookings = require('./bookings');
-
+const roles = require('./roles');
 
 const app = express()
 const userQueries = require('./UserQueries');
@@ -989,4 +989,34 @@ app.post('/edit_bank_trans', (req, res) => {
 
 app.post('/delete_bank_trans', (req, res) => {
     payments.delete_bank_trans(req, res)
+})
+
+// Create New Role
+app.post('/add_role', (req, res) => {
+    roles.add_role(req, res)
+})
+
+app.post('/edit_role', (req, res) => {
+    roles.edit_role(req, res)
+})
+
+app.post('/delete_role', (req, res) => {
+    roles.delete_role(req, res)
+})
+
+app.get('/all_roles', (req, res) => {
+    roles.all_roles(req, res)
+})
+
+app.post('/role_permissions', (req, res) => {
+    roles.role_permissions(req, res)
+})
+
+// Add User
+app.post('/add_staff_user', (req, res) => {
+    roles.add_staff_user(req, res)
+})
+
+app.get('/get_all_staffs', (req, res) => {
+    roles.get_all_staffs(req, res)
 })

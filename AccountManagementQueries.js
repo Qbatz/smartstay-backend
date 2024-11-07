@@ -485,7 +485,7 @@ function createnewAccount(request, response) {
 
 // Generate JWT Token
 const generateToken = (user) => {
-    return jwt.sign({ id: user.id, sub: user.id, user_type: 1, username: user.Name }, process.env.JWT_SECRET, { expiresIn: '30m' });
+    return jwt.sign({ id: user.id, sub: user.id, user_type: user.user_type, username: user.Name, role_id: user.role_id, }, process.env.JWT_SECRET, { expiresIn: '30m' });
 };
 
 // Login API
@@ -525,19 +525,42 @@ function loginAccount(connection, response, email_Id, password) {
 }
 
 // Get User Details Based on Token
+
 function get_user_details(connection, request, response) {
-    const userDetails = request.user_details;
-    var sql1 = "SELECT * FROM createaccount WHERE id=?;";
-    connection.query(sql1, [userDetails.id], function (sel_err, sel_res) {
+
+    const created_by = request.user_details.id;
+
+    console.log(request.show_ids);
+
+    var sql1 = "SELECT * FROM createaccount WHERE id = ?;";
+    connection.query(sql1, [created_by], function (sel_err, sel_res) {
         if (sel_err) {
-            response.status(201).json({ message: "Unable to Get User Details" });
-        } else if (sel_res.length == 0) {
-            response.status(201).json({ message: "Inavlid User Details" });
+            return response.status(201).json({ message: "Unable to Get User Details" });
+        } else if (sel_res.length > 0) {
+            var user_type = sel_res[0].user_type;
+            var role_id = sel_res[0].role_id;
+
+            if (user_type === 'admin') {
+                // Admin Details
+                response.status(200).json({ message: "User Details", user_details: sel_res[0], is_owner: 1, role_permissions: [] });
+            } else {
+
+                var sql2 = `SELECT rp.*, per.permission_name, ro.role_name FROM role_permissions AS rp JOIN permissions AS per ON rp.permission_id = per.id JOIN roles AS ro ON ro.id = rp.role_id WHERE rp.role_id = ?`;
+                connection.query(sql2, [role_id], function (err, data) {
+                    if (err) {
+                        console.log(err);
+                        return response.status(201).json({ message: "Unable to Get Role Permissions" });
+                    } else {
+                        response.status(200).json({ message: "User Details", user_details: sel_res[0], is_owner: 0, role_permissions: data });
+                    }
+                });
+            }
         } else {
-            response.status(200).json({ message: "User Details", user_details: sel_res[0] });
+            response.status(201).json({ message: "Invalid User Details" });
         }
-    })
+    });
 }
+
 
 function forgetPassword(connection, response, reqData) {
 
@@ -955,21 +978,21 @@ where trans.status = true and trans.created_by = ${createdBy}
                         .replace('{{email}}', data[0].hostel_email)
                         .replace('{{city}}', data[0].hostel_address)
                         .replace('{{invoice_rows}}', invoiceRows)
-                        // .replace('{{total_amount}}', total_amount)
+                    // .replace('{{total_amount}}', total_amount)
                     const outputPath = path.join(__dirname, 'transactionHistory.pdf');
-        
+
                     // Generate the PDF
                     pdf.create(htmlContent, { phantomPath: phantomjs.path }).toFile(outputPath, async (err, res) => {
                         if (err) {
                             console.error('Error generating PDF:', err);
                             return;
                         }
-        
+
                         // console.log('PDF generated:', res.filename);
                         if (res.filename) {
                             console.log("res", res);
                             //upload to s3 bucket
-        
+
                             let uploadedPDFs = 0;
                             let pdfInfo = [];
                             const fileContent = fs.readFileSync(res.filename);
@@ -981,7 +1004,7 @@ where trans.status = true and trans.created_by = ${createdBy}
                                 Body: fileContent,
                                 ContentType: 'application/pdf'
                             };
-        
+
                             s3.upload(params, function (err, uploadData) {
                                 if (err) {
                                     console.error("Error uploading PDF", err);
@@ -989,28 +1012,28 @@ where trans.status = true and trans.created_by = ${createdBy}
                                 } else {
                                     // console.log("PDF uploaded successfully", uploadData.Location);
                                     uploadedPDFs++;
-        
+
                                     const pdfInfoItem = {
                                         // user: user,
                                         url: uploadData.Location
                                     };
                                     pdfInfo.push(pdfInfoItem);
-        
+
                                     if (pdfInfo.length > 0) {
-        
+
                                         var pdf_url = []
                                         pdfInfo.forEach(pdf => {
                                             console.log(pdf.url);
                                             pdf_url.push(pdf.url)
                                         });
-        
+
                                         if (pdf_url.length > 0) {
                                             response.status(200).json({ message: 'Insert PDF successfully', pdf_url: pdf_url[0] });
                                             deletePDfs(res.filename);
                                         } else {
                                             response.status(201).json({ message: 'Cannot Insert PDF to Database' });
                                         }
-        
+
                                     }
                                 }
                             });

@@ -17,6 +17,7 @@ AWS.config.update({
 const s3 = new AWS.S3();
 
 function AddExpense(request, response) {
+
     let reqData = request.body;
     var createdBy = request.user_details.id;
     let purchase_date = reqData.purchase_date ? moment(new Date(reqData.purchase_date)).format('YYYY-MM-DD') : ''
@@ -35,7 +36,17 @@ function AddExpense(request, response) {
                     response.status(201).json({ message: "Unable to Get Expenses Data" });
                 } else if (ex_data.length != 0) {
 
-                    let query = `UPDATE expenses SET vendor_id = '${reqData.vendor_id}',asset_id = '${reqData.asset_id}',category_id = ${reqData.category_id},purchase_date = '${purchase_date}',unit_count = ${reqData.unit_count},unit_amount = ${reqData.unit_amount},purchase_amount = ${purchase_amount},description = '${reqData.description}',created_by = ${createdBy},createdate = '${createdate}',payment_mode = '${reqData.payment_mode}',hostel_id ='${reqData.hostel_id}'WHERE id = ${reqData.id};`
+                    var old_bank = ex_data[0].bank_id;
+                    var last_amount = ex_data[0].purchase_amount;
+
+                    if (!reqData.bank_id) {
+                        var new_bank_id = 0
+                    } else {
+                        var new_bank_id = reqData.bank_id;
+                    }
+
+
+                    let query = `UPDATE expenses SET vendor_id = '${reqData.vendor_id}',asset_id = '${reqData.asset_id}',category_id = ${reqData.category_id},purchase_date = '${purchase_date}',unit_count = ${reqData.unit_count},unit_amount = ${reqData.unit_amount},purchase_amount = ${purchase_amount},description = '${reqData.description}',created_by = ${createdBy},createdate = '${createdate}',payment_mode = '${reqData.payment_mode}',hostel_id ='${reqData.hostel_id}',bank_id='${new_bank_id}' WHERE id = ${reqData.id};`
                     connection.query(query, function (updateErr, updateData) {
                         if (updateErr) {
                             console.log(updateErr);
@@ -58,8 +69,11 @@ function AddExpense(request, response) {
 
                                                 var edit_id = reqData.id;
 
+                                                console.log(reqData.bank_id);
+
                                                 var sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
                                                 connection.query(sql5, [reqData.bank_id], function (err, sel_res) {
+                                                    console.log(sel_res);
                                                     if (err) {
                                                         console.log(err);
                                                     } else if (sel_res.length != 0) {
@@ -86,8 +100,6 @@ function AddExpense(request, response) {
                                                                                 console.log(err, "Insert Transactions Error");
                                                                             } else {
 
-                                                                                var last_amount = show_data[0].amount;
-
                                                                                 var new_amount = parseInt(balance_amount) + parseInt(last_amount) - parseInt(purchase_amount);
 
                                                                                 var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
@@ -96,6 +108,50 @@ function AddExpense(request, response) {
                                                                                         console.log(err, "Update Amount Error");
                                                                                     }
                                                                                 })
+
+                                                                                if (old_bank == reqData.bank_id) {
+
+                                                                                    console.log("Updated All Process 1");
+
+                                                                                } else {
+
+                                                                                    var sql7 = "SELECT * FROM bankings WHERE id=?";
+                                                                                    connection.query(sql7, [old_bank], function (err, old_bank_data) {
+                                                                                        if (err) {
+                                                                                            console.log(err);
+                                                                                        } else if (old_bank_data.length != 0) {
+
+                                                                                            var total_amount = parseInt(old_bank_data[0].balance) + parseInt(last_amount);
+
+                                                                                            var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
+                                                                                            connection.query(sql5, [total_amount, old_bank], function (err, up_res) {
+                                                                                                if (err) {
+                                                                                                    console.log(err);
+                                                                                                    // return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
+                                                                                                } else {
+
+                                                                                                    var remain_amount = parseInt(balance_amount) - parseInt(purchase_amount);
+
+                                                                                                    // Update New Bank amount
+                                                                                                    connection.query(sql5, [remain_amount, reqData.bank_id], function (err, ins_res) {
+                                                                                                        if (err) {
+                                                                                                            console.log(err);
+                                                                                                            // return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
+                                                                                                        } else {
+                                                                                                            console.log("Updated All Process");
+
+                                                                                                            // return res.status(200).json({ statusCode: 200, message: "Save Changes Successfully!" })
+                                                                                                        }
+                                                                                                    })
+                                                                                                }
+                                                                                            })
+                                                                                        } else {
+                                                                                            console.log("Invalid Bank");
+                                                                                            // return res.status(201).json({ statusCode: 201, message: "Invalid Bank Details" })
+                                                                                        }
+                                                                                    })
+
+                                                                                }
                                                                             }
                                                                         })
 
@@ -127,9 +183,16 @@ function AddExpense(request, response) {
         else {
             let createdate = moment(new Date()).format('yyyy-MM-DD HH:mm:ss')
             // console.log("createdate", createdate);
-            let query = `INSERT INTO expenses ( vendor_id, asset_id, category_id, purchase_date, unit_count, unit_amount, purchase_amount, description, created_by,createdate,payment_mode,hostel_id)
+
+            if (!reqData.bank_id) {
+                var new_bank_id = 0
+            } else {
+                var new_bank_id = reqData.bank_id;
+            }
+
+            let query = `INSERT INTO expenses ( vendor_id, asset_id, category_id, purchase_date, unit_count, unit_amount, purchase_amount, description, created_by,createdate,payment_mode,hostel_id,bank_id)
 VALUES
-  ('${reqData.vendor_id}', '${reqData.asset_id}', '${reqData.category_id}', '${purchase_date}', '${reqData.unit_count}', '${reqData.unit_amount}','${purchase_amount}', '${reqData.description}', ${createdBy}, '${createdate}','${reqData.payment_mode}','${reqData.hostel_id}');
+  ('${reqData.vendor_id}', '${reqData.asset_id}', '${reqData.category_id}', '${purchase_date}', '${reqData.unit_count}', '${reqData.unit_amount}','${purchase_amount}', '${reqData.description}', ${createdBy}, '${createdate}','${reqData.payment_mode}','${reqData.hostel_id}','${new_bank_id}');
 `
             // console.log("query", query);
             connection.query(query, function (insertErr, insertData) {
@@ -419,13 +482,14 @@ function GetHostelExpenses(request, response) {
     // join assets ast on ast.id = expen.asset_id
     //     where expen.status = true and expen.created_by = ${createdBy}`
 
-    let query = `SELECT expen.hostel_id,hos.Name as hostel_name,hos.email_id as hostel_email,hos.Address as hostel_address,hos.hostel_PhoneNo as hostel_phoneNo, expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode, category.category_Name, ven.Vendor_Name, asname.asset_name 
+    let query = `SELECT expen.hostel_id,hos.Name as hostel_name,hos.email_id as hostel_email,hos.Address as hostel_address,hos.hostel_PhoneNo as hostel_phoneNo, expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode, category.category_Name, ven.Vendor_Name, asname.asset_name,ban.acc_name,ban.acc_num 
 FROM expenses expen
 LEFT JOIN Expense_Category_Name category ON category.id = expen.category_id
 LEFT JOIN Vendor ven ON ven.id = expen.vendor_id
 LEFT JOIN assets ast ON ast.id = expen.asset_id
 LEFT JOIN asset_names asname ON asname.id=expen.asset_id
 LEFT JOIN hosteldetails hos ON hos.id = expen.hostel_id
+LEFT JOIN bankings ban ON ban.id=expen.bank_id
 WHERE expen.status = true AND expen.created_by = ${createdBy}`;
 
     if (asset_id) {
