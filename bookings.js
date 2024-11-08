@@ -193,11 +193,21 @@ function delete_booking(req, res) {
     })
 }
 
+function generateUserId(firstName, user_id) {
+    const userIdPrefix = firstName.substring(0, 4).toUpperCase();
+    const user_ids = user_id.toString().padStart(3, "0");
+    const userId = userIdPrefix + user_ids;
+    return userId;
+}
+
 function assign_booking(req, res) {
+
     let reqbody = req.body;
+
     var created_by = req.user_details.id;
     const Name = reqbody.firstname + " " + reqbody.lastname;
     const FirstNameInitial = reqbody.firstname.charAt(0).toUpperCase();
+
     if (reqbody.lastname) {
         var LastNameInitial = reqbody.lastname.charAt(0).toUpperCase();
         var Circle = FirstNameInitial + LastNameInitial;
@@ -220,7 +230,7 @@ function assign_booking(req, res) {
                 return res.status(201).send('Server error');
             }
             else {
-                const query2 = 'INSERT INTO hostel (Circle, Name, Phone, Email, Address, HostelName, Hostel_Id, Floor, Rooms, Bed, RoomRent, created_by, joining_Date,country_code) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)';
+                const query2 = 'INSERT INTO hostel (Circle, Name, Phone, Email, Address, HostelName, Hostel_Id, Floor, Rooms, Bed, created_by,country_code) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)';
 
                 connection.query(query2, [
                     Circle,
@@ -230,19 +240,30 @@ function assign_booking(req, res) {
                     reqbody.Address,
                     reqbody.HostelName,
                     reqbody.Hostel_Id,
-                    reqbody.Floor_Id,
-                    reqbody.Room_Id,
-                    reqbody.Bed_Id,
-                    reqbody.RoomRent,
+                    0,
+                    0,
+                    0,
                     created_by,
-                    reqbody.joining_Date,
                     reqbody.country_code
                 ], (error, results) => {
                     if (error) {
                         console.error(error);
                         return res.status(400).send('Error inserting data');
+                    } else {
+
+                        var user_ids = insertData.insertId;
+
+                        const gen_user_id = generateUserId(reqbody.firstname, user_ids);
+
+                        var update_user_id = "UPDATE hostel SET User_Id=? WHERE ID=?";
+                        connection.query(update_user_id, [gen_user_id, user_ids], async function (up_id_err, up_id_res) {
+                            if (up_id_err) {
+                                response.status(201).json({ message: "Unable to add User Id", statusCode: 201, });
+                            } else {
+                                res.status(200).send({ statusCode: 200, message: "Assign booking successfully" });
+                            }
+                        })
                     }
-                    res.status(200).send({ statusCode: 200, message: "Assign booking successfully" });
                 });
             }
 
