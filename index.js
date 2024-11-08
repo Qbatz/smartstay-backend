@@ -498,6 +498,7 @@ app.post('/delete/delete-bed', (req, res) => {
     pgQueries.deleteBed(req, res)
 })
 
+// Add Invoice Record Payment API
 app.post('/transaction/list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     userQueries.transitionlist(request, response)

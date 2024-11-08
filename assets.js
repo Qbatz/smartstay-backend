@@ -9,9 +9,9 @@ function all_assets(req, res) {
     // var sql1 = "SELECT assets.*,ven.Vendor_Name,aa.asset_id,aa.hostel_id,aa.room_id,aa.assigned_date FROM assets JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id WHERE assets.created_by=? AND assets.status=1 ORDER BY assets.id DESC";
     // var sql1 = "SELECT assets.*,aname.asset_name,ven.Vendor_Name,aa.asset_id AS Asset_id,aa.hostel_id,aa.room_id,aa.assigned_date FROM assets JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id JOIN asset_names AS aname ON assets.asset_id=aname.id WHERE assets.created_by=? AND assets.status=1 ORDER BY assets.id DESC"
     var sql1 = `SELECT distinct assets.*,hos.Name as hostel_Name,hosfloor.floor_name,hr.Room_id AS room_name,aa.room_id,aname.asset_name as asset,ven.Vendor_Name,aa.asset_id AS Asset_id,aa.hostel_id,
-                aa.room_id,aa.assigned_date,aa.floor_id FROM assets LEFT JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id 
+                aa.room_id,aa.assigned_date,aa.floor_id,ban.acc_name,ban.acc_num FROM assets LEFT JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id 
                 LEFT JOIN asset_names AS aname ON aa.asset_id=aname.id LEFT JOIN hosteldetails hos ON hos.id = aa.hostel_id LEFT JOIN Hostel_Floor hosfloor ON
-                hosfloor.floor_id = aa.floor_id AND hosfloor.hostel_id = aa.hostel_id LEFT JOIN hostelrooms AS hr ON hr.id=aa.room_id WHERE assets.created_by=? AND assets.status=true ORDER BY assets.id DESC`
+                hosfloor.floor_id = aa.floor_id AND hosfloor.hostel_id = aa.hostel_id LEFT JOIN hostelrooms AS hr ON hr.id=aa.room_id LEFT JOIN bankings AS ban ON ban.id=assets.bank_id WHERE assets.created_by=? AND assets.status=true ORDER BY assets.id DESC`
 
     connection.query(sql1, [user_id], (err, data) => {
         if (err) {
@@ -44,6 +44,12 @@ function add_asset(req, res) {
     }
 
     if (validationResult.statusCode == 200) {
+
+        if (!data.bank_id) {
+            var new_bank_id = 0;
+        } else {
+            var new_bank_id = data.bank_id;
+        }
 
         if (data.id) {
             // Update Process
@@ -168,8 +174,8 @@ function add_asset(req, res) {
                             return res.status(201).json({ message: "Unable to Get Asset Name Details", statusCode: 201 })
                         } else if (asss_data.length == 0) {
 
-                            var sql2 = "INSERT INTO assets (asset_name,vendor_id,product_name,brand_name,serial_number,product_count,purchase_date,price,total_price,status,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
-                            connection.query(sql2, [data.asset_name, data.vendor_id, data.product_name, data.brand_name, data.serial_number, 1, data.purchase_date, data.price, data.price, 1, user_id], (ins_err, ins_res) => {
+                            var sql2 = "INSERT INTO assets (asset_name,vendor_id,product_name,brand_name,serial_number,product_count,purchase_date,price,total_price,status,created_by,payment_mode,bank_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                            connection.query(sql2, [data.asset_name, data.vendor_id, data.product_name, data.brand_name, data.serial_number, 1, data.purchase_date, data.price, data.price, 1, user_id, data.payment_type, new_bank_id], (ins_err, ins_res) => {
                                 if (ins_err) {
                                     console.log(ins_err);
                                     return res.status(201).json({ message: "Unable to Add Asset Details", statusCode: 201 })
@@ -184,7 +190,7 @@ function add_asset(req, res) {
                                         } else {
 
                                             console.log(data.payment_type);
-                                            
+
                                             if (data.payment_type == "Net Banking" && data.bank_id) {
 
                                                 var sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
