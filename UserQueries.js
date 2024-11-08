@@ -1006,7 +1006,7 @@ function transitionlist(request, response) {
                                   var new_amount = parseInt(balance_amount) + parseInt(amount);
 
                                   var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
-                                  connection.query(sql5, [new_amount, data.bank_id], function (err, up_date) {
+                                  connection.query(sql5, [new_amount, bank_id], function (err, up_date) {
                                     if (err) {
                                       console.log(err, "Update Amount Error");
                                     }
