@@ -1021,3 +1021,13 @@ app.post('/add_staff_user', (req, res) => {
 app.get('/get_all_staffs', (req, res) => {
     roles.get_all_staffs(req, res)
 })
+
+// Edit Room Reading
+app.post('/edit_eb_readings', (req, res) => {
+    invoiceQueries.edit_eb_readings(req, res)
+})
+
+// Delete Room Reading
+app.post('/delete_eb_readings', (req, res) => {
+    invoiceQueries.delete_eb_readings(req, res)
+})

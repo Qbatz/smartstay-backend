@@ -143,7 +143,11 @@ const queries = [
 
     "ALTER TABLE `createaccount` ADD COLUMN `createdby` BIGINT(20) NULL DEFAULT 0 AFTER `role_id`;",
 
-    "ALTER TABLE `assets` ADD COLUMN `payment_mode` VARCHAR(255) NULL AFTER `purchase_date`,ADD COLUMN `bank_id` BIGINT(20) NULL DEFAULT 0 AFTER `payment_mode`;"
+    "ALTER TABLE `assets` ADD COLUMN `payment_mode` VARCHAR(255) NULL AFTER `purchase_date`,ADD COLUMN `bank_id` BIGINT(20) NULL DEFAULT 0 AFTER `payment_mode`;",
+
+    "ALTER TABLE `customer_eb_amount` ADD COLUMN `eb_id` BIGINT(20) NULL DEFAULT 0 AFTER `user_id`;",
+
+    "ALTER TABLE `EbAmount` ADD COLUMN`status` INT(11) NULL DEFAULT '1' AFTER`Eb_Unit`;"
 ];
 
 queries.forEach(executeQuery);
