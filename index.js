@@ -1028,6 +1028,6 @@ app.post('/edit_eb_readings', (req, res) => {
 })
 
 // Delete Room Reading
-app.post('/delete_eb_readings', (req, res) => {
-    invoiceQueries.delete_eb_readings(req, res)
-})
+// app.post('/delete_eb_readings', (req, res) => {
+//     invoiceQueries.delete_eb_readings(req, res)
+// })
