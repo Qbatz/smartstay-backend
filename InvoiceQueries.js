@@ -3074,6 +3074,8 @@ function edit_eb_readings(req, res) {
 
     var atten = req.body;
 
+    console.log(req.body);
+    
     var created_by = req.user_details.id;
 
     if (!id || !current_reading || !date || !hostel_id || !floor_id || !room_id) {
@@ -3092,8 +3094,21 @@ function edit_eb_readings(req, res) {
             var last_cal_date = eb_data[0].initial_date;
             var startMeterReading = eb_data[0].start_Meter_Reading;
 
-            if (end_Meter_Reading) {
+            console.log("==========================",end_Meter_Reading);
+            
 
+            if (end_Meter_Reading == 0) {
+
+                var sql2 = "UPDATE EbAmount SET start_Meter_Reading=? WHERE id=?";
+                connection.query(sql2, [current_reading, id], function (err, up_res) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Update Eb Details" })
+                    } else {
+                        return res.status(200).json({ statusCode: 200, message: 'Changes Saved Successfully1' });
+                    }
+                })
+
+            } else {
                 var sql2 = "UPDATE EbAmount SET end_Meter_Reading=?,EbAmount=?,Eb_Unit=?,date=?,hostel_Id=?,Floor=?,Room=? WHERE id=?";
                 connection.query(sql2, [current_reading, total_amount, total_reading, date, hostel_id, floor_id, room_id, id], function (err, up_res) {
                     if (err) {
@@ -3113,12 +3128,11 @@ function edit_eb_readings(req, res) {
                                     } else {
 
                                         split_eb_amounts(atten, startMeterReading, current_reading, last_cal_date, total_amount, total_reading, id, function (result) {
-                                            if (result.statusCode === 200) {
-                                                return res.status(200).json({ statusCode: 200, message: result.message });
+                                            if (result.statusCode == 201) {
+                                                return res.status(201).json({ statusCode: 201, message: result.message });
                                             } else {
 
                                                 console.log("First Step is ok");
-
 
                                                 const nextEntrySql = "SELECT * FROM EbAmount WHERE id > ? ORDER BY id ASC LIMIT 1";
                                                 connection.query(nextEntrySql, [id], function (err, nextEntryData) {
@@ -3157,9 +3171,8 @@ function edit_eb_readings(req, res) {
                                                         return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully" });
                                                     }
                                                 });
-
                                                 // return response.status(201).json({ statusCode: 201, message: result.message, error: result.error });
-                                                return res.status(201).json({ statusCode: 201, message: result.message, error: result.error });
+                                                // return res.status(201).json({ statusCode: 201, message: result.message, error: result.error });
                                             }
                                         });
                                     }
@@ -3168,15 +3181,6 @@ function edit_eb_readings(req, res) {
                                 return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully" })
                             }
                         })
-                    }
-                })
-            } else {
-                var sql2 = "UPDATE EbAmount SET start_Meter_Reading=? WHERE id=?";
-                connection.query(sql2, [current_reading, id], function (err, up_res) {
-                    if (err) {
-                        return res.status(201).json({ statusCode: 201, message: "Unable to Update Eb Details" })
-                    } else {
-                        return res.status(200).json({ statusCode: 200, message: 'Changes Saved Successfully' });
                     }
                 })
             }
