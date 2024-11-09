@@ -29,9 +29,9 @@ function add_role(req, res) {
                     var role_id = ins_res.insertId;
 
                     let insertCount = 0;
-                    let totalPermissions = permissions.length;
+                    let totalPermissions = permissions?.length;
 
-                    for (let i = 0; i < permissions.length; i++) {
+                    for (let i = 0; i < permissions?.length; i++) {
                         var { permission_id, per_view, per_create, per_edit, per_delete } = permissions[i];
 
                         var sql2 = "INSERT INTO role_permissions (role_id, permission_id, per_view, per_create, per_edit, per_delete) VALUES (?, ?, ?, ?, ?, ?)";

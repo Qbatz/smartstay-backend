@@ -2090,9 +2090,11 @@ function EbAmount(connection, request, response) {
                     return response.status(201).json({ message: 'Unable to Get Eb Amount Details', error: err });
                 } else if (date_res.length == 0) {
 
-                    var sql_1 = "SELECT * FROM EbAmount WHERE hostel_Id = '" + atten.Hostel_Id + "' AND Floor= '" + atten.Floor + "' AND Room= '" + atten.Room + "' AND status=1 ORDER BY id DESC";
+                    var sql_1 = "SELECT *,DATE_FORMAT(date, '%Y-%m-%d') AS get_date FROM EbAmount WHERE hostel_Id = '" + atten.Hostel_Id + "' AND Floor= '" + atten.Floor + "' AND Room= '" + atten.Room + "' AND status=1 ORDER BY id DESC";
                     connection.query(sql_1, function (err, eb_data_list) {
                         if (err) {
+                            console.log(err);
+                            
                             return response.status(201).json({ message: 'Unable to Get Eb Amount Details', error: err });
                         } else if (eb_data_list.length == 0) {
 
@@ -2107,7 +2109,7 @@ function EbAmount(connection, request, response) {
                             })
                         } else {
 
-                            var initial_date = eb_data_list[0].date;
+                            var initial_date = eb_data_list[0].get_date;
                             let previous_reading = eb_data_list[0].end_Meter_Reading; //old meter Reading
                             var startMeterReading = previous_reading; // Set as Start Meter Reading
                             var end_Meter_Reading = atten.end_Meter_Reading;
@@ -2150,6 +2152,7 @@ function EbAmount(connection, request, response) {
                                     }
                                 })
                             } else {
+                                console.log(initial_date,"===================");
 
                                 const insertQuery = `INSERT INTO EbAmount (hostel_Id, Floor, Room, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit,date,initial_date) VALUES (${atten.Hostel_Id}, ${atten.Floor}, ${atten.Room}, ${startMeterReading}, '${end_Meter_Reading}', '${total_amount}',${total_reading},'${atten.date}','${initial_date}')`;
                                 connection.query(insertQuery, function (error, data) {
@@ -3127,9 +3130,9 @@ function edit_eb_readings(req, res) {
 
                                         split_eb_amounts(atten, startMeterReading, current_reading, last_cal_date, total_amount, total_reading, id, function (result) {
                                             if (result.statusCode === 200) {
-                                                return response.status(200).json({ statusCode: 200, message: result.message });
+                                                return res.status(200).json({ statusCode: 200, message: result.message });
                                             } else {
-                                                return response.status(201).json({ statusCode: 201, message: result.message, error: result.error });
+                                                return res.status(201).json({ statusCode: 201, message: result.message, error: result.error });
                                             }
                                         });
                                     }
