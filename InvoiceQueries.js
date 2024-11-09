@@ -2090,9 +2090,11 @@ function EbAmount(connection, request, response) {
                     return response.status(201).json({ message: 'Unable to Get Eb Amount Details', error: err });
                 } else if (date_res.length == 0) {
 
-                    var sql_1 = "SELECT * FROM EbAmount WHERE hostel_Id = '" + atten.Hostel_Id + "' AND Floor= '" + atten.Floor + "' AND Room= '" + atten.Room + "' AND status=1 ORDER BY id DESC";
+                    var sql_1 = "SELECT *,DATE_FORMAT(date, '%Y-%m-%d') AS get_date FROM EbAmount WHERE hostel_Id = '" + atten.Hostel_Id + "' AND Floor= '" + atten.Floor + "' AND Room= '" + atten.Room + "' AND status=1 ORDER BY id DESC";
                     connection.query(sql_1, function (err, eb_data_list) {
                         if (err) {
+                            console.log(err);
+                            
                             return response.status(201).json({ message: 'Unable to Get Eb Amount Details', error: err });
                         } else if (eb_data_list.length == 0) {
 
@@ -2107,7 +2109,7 @@ function EbAmount(connection, request, response) {
                             })
                         } else {
 
-                            var initial_date = eb_data_list[0].date;
+                            var initial_date = eb_data_list[0].get_date;
                             let previous_reading = eb_data_list[0].end_Meter_Reading; //old meter Reading
                             var startMeterReading = previous_reading; // Set as Start Meter Reading
                             var end_Meter_Reading = atten.end_Meter_Reading;
@@ -2150,6 +2152,7 @@ function EbAmount(connection, request, response) {
                                     }
                                 })
                             } else {
+                                console.log(initial_date,"===================");
 
                                 const insertQuery = `INSERT INTO EbAmount (hostel_Id, Floor, Room, start_Meter_Reading, end_Meter_Reading, EbAmount,Eb_Unit,date,initial_date) VALUES (${atten.Hostel_Id}, ${atten.Floor}, ${atten.Room}, ${startMeterReading}, '${end_Meter_Reading}', '${total_amount}',${total_reading},'${atten.date}','${initial_date}')`;
                                 connection.query(insertQuery, function (error, data) {
@@ -3107,49 +3110,29 @@ function edit_eb_readings(req, res) {
                                         return res.status(201).json({ statusCode: 201, message: "Unable to Update Customer Details" })
                                     } else {
 
-                                        split_eb_amounts(atten, startMeterReading, current_reading, last_cal_date, total_amount, total_reading, id, function (result) {
-                                            if (result.statusCode === 200) {
-                                                return response.status(200).json({ statusCode: 200, message: result.message });
-                                            } else {
+                                        var nextEntrySql = "SELECT id FROM EbAmount WHERE id > ? ORDER BY id ASC LIMIT 1";
+                                        connection.query(nextEntrySql, [id], function (err, nextEntryData) {
 
-                                                const nextEntrySql = "SELECT * FROM EbAmount WHERE id > ? ORDER BY id ASC LIMIT 1";
-                                                connection.query(nextEntrySql, [id], function (err, nextEntryData) {
-                                                    if (nextEntryData.length != 0) {
-                                                        const nextId = nextEntryData[0].id;
-                                                        const nextEndMeter = nextEntryData[0].end_Meter_Reading;
-                                                        const total_reading1 = nextEndMeter - current_reading;
-                                                        const total_amount1 = eb_data[0].amount * total_reading1;
-                                                        const nextStartMeterReading = current_reading;
-
-                                                        const updateNextEntrySql = "UPDATE EbAmount SET start_Meter_Reading = ?, EbAmount = ?, Eb_Unit = ? WHERE id = ?";
-                                                        connection.query(updateNextEntrySql, [nextStartMeterReading, total_amount1, total_reading1, nextId], function (err) {
-                                                            if (err) {
-                                                                return res.status(201).json({ statusCode: 201, message: "Unable to Update Next Entry Start Meter Reading" });
-                                                            } else {
-
-                                                                var del_query = "DELETE FROM customer_eb_amount WHERE eb_id=?";
-                                                                connection.query(del_query, [nextId], function (err, del_data) {
-                                                                    if (err) {
-                                                                        return res.status(201).json({ statusCode: 201, message: "Unable to Update Customer Details" })
-                                                                    } else {
-                                                                        // Second call to split_eb_amounts with next data
-                                                                        split_eb_amounts(atten, nextStartMeterReading, nextEndMeter, nextEntryData[0].initial_date, total_amount1, total_reading1, nextId, function (nextResult) {
-                                                                            if (nextResult.statusCode === 200) {
-                                                                                return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully" });
-                                                                            } else {
-                                                                                return res.status(201).json({ statusCode: 201, message: nextResult.message, error: nextResult.error });
-                                                                            }
-                                                                        });
-                                                                    }
-                                                                })
-                                                            }
-                                                        });
+                                            if (nextEntryData.length != 0) {
+                                                var nextId = nextEntryData[0].id;
+                                                var updateNextEntrySql = "UPDATE EbAmount SET start_Meter_Reading = ? WHERE id = ?";
+                                                connection.query(updateNextEntrySql, [current_reading, nextId], function (err) {
+                                                    if (err) {
+                                                        console.log("err", err);
+                                                        // return res.status(201).json({ statusCode: 201, message: "Unable to Update Next Entry Start Meter Reading" });
                                                     } else {
-                                                        return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully" });
+                                                        console.log("Updated");
+                                                        // return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully" });
                                                     }
                                                 });
+                                            }
+                                        });
 
-                                                // return response.status(201).json({ statusCode: 201, message: result.message, error: result.error });
+                                        split_eb_amounts(atten, startMeterReading, current_reading, last_cal_date, total_amount, total_reading, id, function (result) {
+                                            if (result.statusCode === 200) {
+                                                return res.status(200).json({ statusCode: 200, message: result.message });
+                                            } else {
+                                                return res.status(201).json({ statusCode: 201, message: result.message, error: result.error });
                                             }
                                         });
                                     }
