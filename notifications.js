@@ -254,47 +254,291 @@ function add_room_reading(req, res) {
 }
 
 // Update Eb Reading
+// function edit_room_reading(req, res) {
+
+//     var created_by = req.user_details.id;
+
+//     var atten = req.body;
+
+//     var { hostel_id, floor_id, room_id, date, reading, id } = req.body;
+
+//     if (!hostel_id || !floor_id || !room_id || !date || !reading || !id) {
+//         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+//     }
+
+//     var sql1 = "SELECT * FROM room_readings AS rr JOIN eb_settings AS eb ON eb.hostel_Id=rr.hostel_id WHERE eb.id=?";
+//     connection.query(sql1, [id], function (err, check_data) {
+//         if (err) {
+//             return res.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Amount Details', error: err });
+//         } else if (check_data.length != 0) {
+
+//             var per_unit_amount = check_data[0].amount;
+
+//             // Check Date
+//             var sql2 = "SELECT * FROM room_readings WHERE hostel_id=? AND floor_id=? AND room_id=? AND date=? AND status=1 AND id!=?";
+//             connection.query(sql2, [hostel_id, floor_id, room_id, date, id], function (err, date_res) {
+//                 if (err) {
+//                     return res.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Amount Details2', error: err });
+//                 } else if (date_res.length == 0) {
+
+//                     // Check Previous Record
+//                     var sqlGetPrevious = "SELECT * FROM room_readings WHERE id < ? AND status = 1 ORDER BY id DESC LIMIT 1";
+//                     connection.query(sqlGetPrevious, [id], function (err, prev_data) {
+//                         if (err) {
+//                             return res.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Amount Details3', error: err });
+//                         } else if (data.length == 0) {
+
+//                             console.log("Dont Need to Check Older Data");
+
+//                             var up_query = "UPDATE room_readings SET hostel_id=?,floor_id=?,room_id=?,date=?,reading=? WHERE id=?";
+//                             connection.query(up_query, [hostel_id, floor_id, room_id, date, reading, id], function (err, up_res) {
+//                                 if (err) {
+//                                     return res.status(201).json({ statusCode: 201, message: 'Unable to Update Eb Amount Details3', error: err });
+//                                 } else {
+
+//                                     check_next_entry(id, reading, per_unit_amount, function (nextResult) {
+
+//                                         if (nextResult.statusCode == 200) {
+//                                             if (nextResult.next_id != 0) {
+
+//                                             } else {
+//                                                 return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully" });
+//                                             }
+//                                         } else {
+//                                             return res.status(201).json({ statusCode: 201, message: nextResult.message, error: nextResult.error });
+//                                         }
+//                                     });
+//                                 }
+//                             })
+//                         } else {
+
+//                             // Check Next Entry and Previous Entry
+
+//                             var up_query = "UPDATE room_readings SET hostel_id=?,floor_id=?,room_id=?,date=?,reading=? WHERE id=?";
+//                             connection.query(up_query, [hostel_id, floor_id, room_id, date, reading, id], function (err, up_res) {
+//                                 if (err) {
+//                                     return res.status(201).json({ statusCode: 201, message: 'Unable to Update Eb Amount Details3', error: err });
+//                                 } else {
+
+//                                     check_next_entry(id, reading, per_unit_amount, function (nextResult) {
+
+//                                         if (nextResult.statusCode == 200) {
+//                                             if (nextResult.next_id != 0) {
+
+//                                             } else {
+//                                                 return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully" });
+//                                             }
+//                                         } else {
+//                                             return res.status(201).json({ statusCode: 201, message: nextResult.message, error: nextResult.error });
+//                                         }
+//                                     });
+//                                 }
+//                             })
+//                         }
+//                     })
+//                 } else {
+//                     return res.status(201).json({ statusCode: 201, message: 'Date already has an added in this Room. Please select a different date.' });
+//                 }
+//             })
+
+//         } else {
+//             return res.status(201).json({ statusCode: 201, message: 'Invalid Reading Details', error: err });
+//         }
+//     })
+// }
+
+// function check_next_entry(id, reading, per_unit_amount, callback) {
+
+//     var sqlGetNext = "SELECT * FROM room_readings WHERE id > ? AND status = 1 ORDER BY id ASC LIMIT 1";
+//     connection.query(sqlGetNext, [id], function (err, next_data) {
+//         if (err) {
+//             return callback({ statusCode: 201, message: 'Unable to Show Next Reading Details', error: err });
+//         } else if (next_data.length != 0) {
+
+//             var next_reading = next_data[0].reading;
+//             var total_reading = next_reading - reading;
+//             var total_amount = per_unit_amount * total_reading;
+//             var next_id = next_data[0].id;
+
+//             var sql1 = "UPDATE room_readings SET total_amount=?,total_reading=? WHERE id=?";
+//             connection.query(sql1, [total_reading, total_amount, next_id], function (err, next_up) {
+//                 if (err) {
+//                     return callback({ statusCode: 201, message: 'Unable to Update Next Reading Details', error: err });
+//                 } else {
+//                     return callback({ statusCode: 200, message: 'Update Next Reading Details', next_id: next_id, next_reading: next_data[0].reading });
+//                 }
+//             })
+//         } else {
+//             return callback({ statusCode: 200, message: 'Dont Need to Update Next Reading Details' });
+//         }
+//     })
+// }
+
+// function check_previous_entry(id, reading, per_unit_amount, callback) {
+
+//     var sqlGetNext = "SELECT * FROM room_readings WHERE id > ? AND status = 1 ORDER BY id ASC LIMIT 1";
+//     connection.query(sqlGetNext, [id], function (err, next_data) {
+//         if (err) {
+//             return callback({ statusCode: 201, message: 'Unable to Show Next Reading Details', error: err });
+//         } else if (next_data.length != 0) {
+
+//             var next_reading = next_data[0].reading;
+//             var total_reading = next_reading - reading;
+//             var total_amount = per_unit_amount * total_reading;
+//             var next_id = next_data[0].id;
+
+//             var sql1 = "UPDATE room_readings SET total_amount=?,total_reading=? WHERE id=?";
+//             connection.query(sql1, [total_reading, total_amount, next_id], function (err, next_up) {
+//                 if (err) {
+//                     return callback({ statusCode: 201, message: 'Unable to Update Next Reading Details', error: err });
+//                 } else {
+//                     return callback({ statusCode: 200, message: 'Update Next Reading Details', next_id: next_id });
+//                 }
+//             })
+//         } else {
+//             return callback({ statusCode: 200, message: 'Dont Need to Update Previous Reading Details' });
+//         }
+//     })
+// }
+
+
 function edit_room_reading(req, res) {
 
-    var created_by = req.user_details.id;
+    const created_by = req.user_details.id;
 
     var atten = req.body;
 
-    var { hostel_id, floor_id, room_id, date, reading, id } = req.body;
+    const { hostel_id, floor_id, room_id, date, reading, id } = req.body;
 
     if (!hostel_id || !floor_id || !room_id || !date || !reading || !id) {
-        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
     }
 
-    var sql1 = "SELECT * FROM room_readings WHERE id=?";
+    // Fetch current EB amount details and validate input
+    const sql1 = "SELECT * FROM room_readings AS rr JOIN eb_settings AS eb ON eb.hostel_Id=rr.hostel_id WHERE eb.id=?";
     connection.query(sql1, [id], function (err, check_data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Amount Details', error: err });
         } else if (check_data.length != 0) {
+            const per_unit_amount = check_data[0].amount;
 
-            // Check Date
-            var sql2 = "SELECT * FROM room_readings WHERE hostel_id=? AND floor_id=? AND room_id=? AND date=? AND status=1 AND id!=?";
+            // Check for duplicate date entries
+            const sql2 = "SELECT * FROM room_readings WHERE hostel_id=? AND floor_id=? AND room_id=? AND date=? AND status=1 AND id!=?";
             connection.query(sql2, [hostel_id, floor_id, room_id, date, id], function (err, date_res) {
                 if (err) {
-                    return res.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Amount Details', error: err });
+                    return res.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Amount Details2', error: err });
                 } else if (date_res.length == 0) {
+                    // Update the current reading record
+                    const up_query = "UPDATE room_readings SET hostel_id=?, floor_id=?, room_id=?, date=?, reading=? WHERE id=?";
+                    connection.query(up_query, [hostel_id, floor_id, room_id, date, reading, id], function (err, up_res) {
+                        if (err) {
+                            return res.status(201).json({ statusCode: 201, message: 'Unable to Update Eb Amount Details3', error: err });
+                        } else {
+                            // Check and update previous and next entries
+                            check_previous_entry(id, reading, per_unit_amount, function (prevResult) {
+                                check_next_entry(id, reading, per_unit_amount, function (nextResult) {
+                                    if (prevResult.statusCode == 200 && nextResult.statusCode == 200) {
 
-                    // Check Previous Record
-                    
+                                        const deleteQuery = "DELETE FROM customer_eb_amount WHERE eb_id IN (?, ?, ?)";
+                                        connection.query(deleteQuery, [id, prevResult.prev_id, nextResult.next_id], function (err, deleteRes) {
+                                            if (err) {
+                                                return res.status(201).json({ statusCode: 201, message: 'Unable to Delete from Customer Eb Amount', error: err });
+                                            } else {
 
+                                                if (prevResult.prev_id !== 0) {
+
+                                                    var startmeter = prevResult.prev_reading;
+                                                    var last_cal_date = prevResult.prev_date;
+                                                    var total_amount = prevResult.total_amount;
+                                                    var total_reading = prevResult.total_reading;
+                                                    var eb_id = prevResult.prev_id;
+
+                                                    split_eb_amounts(atten, startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, function (response) {
+                                                        console.log("Final Response", response);
+                                                    });
+                                                }
+                                                if (nextResult.next_id !== 0) {
+
+                                                    var startmeter = nextResult.prev_reading;
+                                                    var last_cal_date = nextResult.prev_date;
+                                                    var total_amount = nextResult.total_amount;
+                                                    var total_reading = nextResult.total_reading;
+                                                    var eb_id = nextResult.next_id;
+
+                                                    split_eb_amounts(atten, startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, function (response) {
+                                                        console.log("Final Response", response);
+                                                    });
+                                                }
+                                                return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully" });
+                                            }
+                                        });
+                                    } else {
+                                        return res.status(201).json({ statusCode: 201, message: 'Failed to Update Previous/Next Details', error: err });
+                                    }
+                                });
+                            });
+                        }
+                    });
                 } else {
                     return res.status(201).json({ statusCode: 201, message: 'Date already has an added in this Room. Please select a different date.' });
                 }
-            })
-
+            });
         } else {
             return res.status(201).json({ statusCode: 201, message: 'Invalid Reading Details', error: err });
         }
-    })
-
-
-
+    });
 }
+
+function check_previous_entry(id, reading, per_unit_amount, callback) {
+    const sqlGetPrevious = "SELECT * FROM room_readings WHERE id < ? AND status = 1 ORDER BY id DESC LIMIT 1";
+    connection.query(sqlGetPrevious, [id], function (err, prev_data) {
+        if (err) {
+            return callback({ statusCode: 201, message: 'Unable to Show Previous Reading Details', error: err });
+        } else if (prev_data.length != 0) {
+            const prev_id = prev_data[0].id;
+            const prev_reading = prev_data[0].reading;
+            const total_reading = reading - prev_reading;
+            const total_amount = per_unit_amount * total_reading;
+
+            const sqlUpdate = "UPDATE room_readings SET total_amount=?, total_reading=? WHERE id=?";
+            connection.query(sqlUpdate, [total_amount, total_reading, id], function (err, updateRes) {
+                if (err) {
+                    return callback({ statusCode: 201, message: 'Unable to Update Previous Reading Details', error: err });
+                } else {
+                    return callback({ statusCode: 200, message: 'Previous Reading Updated', prev_id: prev_id, prev_date: prev_data[0].date, prev_reading: prev_reading, total_amount: total_amount, total_reading: total_reading });
+                }
+            });
+        } else {
+            return callback({ statusCode: 200, message: 'No Previous Reading to Update', prev_id: 0 });
+        }
+    });
+}
+
+function check_next_entry(id, reading, per_unit_amount, callback) {
+    const sqlGetNext = "SELECT * FROM room_readings WHERE id > ? AND status = 1 ORDER BY id ASC LIMIT 1";
+    connection.query(sqlGetNext, [id], function (err, next_data) {
+        if (err) {
+            return callback({ statusCode: 201, message: 'Unable to Show Next Reading Details', error: err });
+        } else if (next_data.length != 0) {
+            const next_id = next_data[0].id;
+            const next_reading = next_data[0].reading;
+            const total_reading = next_reading - reading;
+            const total_amount = per_unit_amount * total_reading;
+
+            const sqlUpdate = "UPDATE room_readings SET total_amount=?, total_reading=? WHERE id=?";
+            connection.query(sqlUpdate, [total_amount, total_reading, next_id], function (err, updateRes) {
+                if (err) {
+                    return callback({ statusCode: 201, message: 'Unable to Update Next Reading Details', error: err });
+                } else {
+                    return callback({ statusCode: 200, message: 'Next Reading Updated', next_id: next_id, next_date: next_data[0].date, next_reading: next_reading, total_amount: total_amount, total_reading: total_reading });
+                }
+            });
+        } else {
+            return callback({ statusCode: 200, message: 'No Next Reading to Update', next_id: 0 });
+        }
+    });
+}
+
 
 function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, eb_id, created_by, callback) {
 
