@@ -2299,15 +2299,12 @@ ORDER BY
 function getEbStart(connection, response, request) {
 
     var created_by = request.user_details.id;
-    console.log("created_by", created_by);
-    let query = `SELECT hos.Name as hoatel_Name,eb.id as eb_Id,hos.id as hostel_Id,hos.profile,eb.hostel_Id,eb.Floor,eb.Room,eb.EbAmount,eb.createAt,eb.start_Meter_Reading,eb.end_Meter_Reading,eb.Eb_Unit,hf.floor_name,hr.Room_Id,eb.date,eb.initial_date
-                    FROM EbAmount eb LEFT OUTER JOIN hosteldetails hos ON hos.id = eb.hostel_Id LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=eb.Floor AND hf.hostel_id=eb.hostel_Id JOIN hostelrooms AS hr ON hr.id=eb.Room where hos.created_By = ${created_by} `
-    connection.query(query, function (error, data) {
-        // connection.query('select * from EbAmount', function (error, data) {
+
+    let query = "SELECT hos.Name as hoatel_Name,eb.id as eb_Id,hos.id as hostel_Id,hos.profile,eb.hostel_id,eb.floor_id,eb.room_id,eb.total_amount,eb.total_reading,hf.floor_name,hr.Room_Id,eb.date,eb.reading FROM room_readings eb JOIN hosteldetails hos ON hos.id = eb.hostel_id LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=eb.floor_id AND hf.hostel_id=eb.hostel_id JOIN hostelrooms AS hr ON hr.id=eb.room_id where hos.created_By =? AND eb.status=1;"
+    connection.query(query, [created_by], function (error, data) {
         if (error) {
             response.status(203).json({ message: 'not connected' })
-        }
-        else {
+        } else {
             response.status(200).json({ data: data })
         }
     })
@@ -2766,7 +2763,7 @@ function add_manual_invoice(req, res) {
                 advance_amount = 0;
             }
 
-            var total_amount = total_am_amount + room_rent + eb_amount + advance_amount;
+            var total_amount = parseInt(total_am_amount) + parseInt(room_rent) + parseInt(eb_amount) + parseInt(advance_amount);
 
             var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,RoomRent,EbAmount,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id,advance_amount) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, total_amount, due_date, date, invoice_id, 'pending', user_data.User_Id, room_rent, eb_amount, total_am_amount, user_data.Bed, total_amount, 'manual', 1, user_id, advance_amount], function (err, ins_data) {
@@ -3075,7 +3072,7 @@ function edit_eb_readings(req, res) {
     var atten = req.body;
 
     console.log(req.body);
-    
+
     var created_by = req.user_details.id;
 
     if (!id || !current_reading || !date || !hostel_id || !floor_id || !room_id) {
@@ -3094,8 +3091,8 @@ function edit_eb_readings(req, res) {
             var last_cal_date = eb_data[0].initial_date;
             var startMeterReading = eb_data[0].start_Meter_Reading;
 
-            console.log("==========================",end_Meter_Reading);
-            
+            console.log("==========================", end_Meter_Reading);
+
 
             if (end_Meter_Reading == 0) {
 

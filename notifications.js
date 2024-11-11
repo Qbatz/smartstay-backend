@@ -167,7 +167,7 @@ function add_room_reading(req, res) {
 
     var created_by = req.user_details.id;
 
-    var atten=req.body;
+    var atten = req.body;
 
     var { hostel_id, floor_id, room_id, date, reading } = req.body;
 
@@ -253,6 +253,49 @@ function add_room_reading(req, res) {
 
 }
 
+// Update Eb Reading
+function edit_room_reading(req, res) {
+
+    var created_by = req.user_details.id;
+
+    var atten = req.body;
+
+    var { hostel_id, floor_id, room_id, date, reading, id } = req.body;
+
+    if (!hostel_id || !floor_id || !room_id || !date || !reading || !id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    var sql1 = "SELECT * FROM room_readings WHERE id=?";
+    connection.query(sql1, [id], function (err, check_data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Amount Details', error: err });
+        } else if (check_data.length != 0) {
+
+            // Check Date
+            var sql2 = "SELECT * FROM room_readings WHERE hostel_id=? AND floor_id=? AND room_id=? AND date=? AND status=1 AND id!=?";
+            connection.query(sql2, [hostel_id, floor_id, room_id, date, id], function (err, date_res) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Amount Details', error: err });
+                } else if (date_res.length == 0) {
+
+                    // Check Previous Record
+                    
+
+                } else {
+                    return res.status(201).json({ statusCode: 201, message: 'Date already has an added in this Room. Please select a different date.' });
+                }
+            })
+
+        } else {
+            return res.status(201).json({ statusCode: 201, message: 'Invalid Reading Details', error: err });
+        }
+    })
+
+
+
+}
+
 function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, eb_id, created_by, callback) {
 
     const sql1 = `SELECT *, 
@@ -314,4 +357,4 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
 }
 
 
-module.exports = { all_notifications, add_notification, update_notification_status, add_room_reading }
+module.exports = { all_notifications, add_notification, update_notification_status, add_room_reading, edit_room_reading }
