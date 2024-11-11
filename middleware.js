@@ -55,7 +55,7 @@ module.exports = (req, res, next) => {
                     const user = data[0];
 
                     if (decoded.user_type === "admin") {
-                        console.log(decoded.id);
+                        // console.log(decoded.id);
 
                         show_ids.push(decoded.id);
 

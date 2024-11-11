@@ -530,7 +530,7 @@ function get_user_details(connection, request, response) {
 
     const created_by = request.user_details.id;
 
-    console.log(request.show_ids);
+    // console.log(request.show_ids);
 
     var sql1 = "SELECT * FROM createaccount WHERE id = ?;";
     connection.query(sql1, [created_by], function (sel_err, sel_res) {
