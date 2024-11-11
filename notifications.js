@@ -544,77 +544,6 @@ function check_next_entry(id, reading, per_unit_amount, callback) {
     });
 }
 
-// function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, eb_id, created_by, callback) {
-
-//     const sql1 = `SELECT *, 
-//                   CASE WHEN checkoutDate IS NULL 
-//                   THEN DATEDIFF(LEAST(CURDATE(), ?), GREATEST(joining_date, ?)) + 1 
-//                   ELSE DATEDIFF(LEAST(checkoutDate, ?), GREATEST(joining_date, ?)) + 1 
-//                   END AS days_stayed 
-//                   FROM hostel 
-//                   WHERE Hostel_Id = ? AND Floor = ? AND Rooms = ? 
-//                   AND joining_date <= ? 
-//                   AND (checkoutDate >= ? OR checkoutDate IS NULL)`;
-
-//     connection.query(sql1, [atten.date, last_cal_date, atten.date, last_cal_date, atten.hostel_id, atten.floor_id, atten.room_id, atten.date, last_cal_date],
-//         function (err, user_data) {
-//             if (err) {
-//                 console.error('Error fetching user details:', err);
-//                 return callback({ statusCode: 201, message: 'Unable to Get User Details', error: err });
-//             }
-
-//             if (user_data.length === 0) {
-//                 return callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
-//             }
-
-//             let totalDays = user_data.reduce((acc, user) => acc + user.days_stayed, 0);
-//             const amountPerDay = total_amount / totalDays;
-//             const unitPerDay = total_reading / totalDays;
-//             let cumulativeAmount = 0;
-//             let cumulativeUnits = 0;
-//             let insertCounter = 0;
-
-//             user_data.forEach((user, index) => {
-//                 const user_id = user.ID;
-//                 const userDays = user.days_stayed;
-//                 let userAmount = Math.round(userDays * amountPerDay);
-//                 let userUnits = Math.round(userDays * unitPerDay);
-
-//                 cumulativeAmount += userAmount;
-//                 cumulativeUnits += userUnits;
-
-//                 // If this is the last user, adjust for any rounding differences
-//                 if (index === user_data.length - 1) {
-//                     userAmount += total_amount - cumulativeAmount;
-//                     userUnits += total_reading - cumulativeUnits;
-//                 }
-
-//                 if (userAmount && userAmount != 0) {
-//                     const sql2 = "INSERT INTO customer_eb_amount (user_id, start_meter, end_meter, unit, amount, created_by, date, eb_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-//                     connection.query(sql2, [user_id, startMeterReading, end_Meter_Reading, userUnits, userAmount, created_by, atten.date, eb_id],
-//                         function (err) {
-//                             if (err) {
-//                                 console.error('Error inserting customer EB amount:', err);
-//                                 return callback({ statusCode: 201, message: 'Unable to Add EB Amount for User', error: err });
-//                             }
-
-//                             insertCounter++;
-//                             if (insertCounter === user_data.length) {
-//                                 // All inserts are done
-//                                 callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
-//                             }
-//                         });
-//                 } else {
-//                     insertCounter++;
-//                     if (insertCounter === user_data.length) {
-//                         // If there was no insert needed (userAmount is 0), increment the counter
-//                         callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
-//                     }
-//                 }
-//             });
-//         });
-// }
-
 function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, eb_id, created_by, callback) {
 
     const sql1 = `SELECT *, 
@@ -640,18 +569,29 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
 
             let totalDays = user_data.reduce((acc, user) => acc + user.days_stayed, 0);
             const amountPerDay = total_amount / totalDays;
+            const unitPerDay = total_reading / totalDays;
+            let cumulativeAmount = 0;
+            let cumulativeUnits = 0;
             let insertCounter = 0;
 
-            // Insert EB amounts for each user
-            user_data.forEach(user => {
+            user_data.forEach((user, index) => {
                 const user_id = user.ID;
                 const userDays = user.days_stayed;
-                const userAmount = Math.round(userDays * amountPerDay);
-                const per_unit = Math.round((userAmount / total_amount) * total_reading);
+                let userAmount = Math.round(userDays * amountPerDay);
+                let userUnits = Math.round(userDays * unitPerDay);
+
+                cumulativeAmount += userAmount;
+                cumulativeUnits += userUnits;
+
+                // If this is the last user, adjust for any rounding differences
+                if (index === user_data.length - 1) {
+                    userAmount += total_amount - cumulativeAmount;
+                    userUnits += total_reading - cumulativeUnits;
+                }
 
                 if (userAmount && userAmount != 0) {
                     const sql2 = "INSERT INTO customer_eb_amount (user_id, start_meter, end_meter, unit, amount, created_by, date, eb_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-                    connection.query(sql2, [user_id, startMeterReading, end_Meter_Reading, per_unit, userAmount, created_by, atten.date, eb_id],
+                    connection.query(sql2, [user_id, startMeterReading, end_Meter_Reading, userUnits, userAmount, created_by, atten.date, eb_id],
                         function (err) {
                             if (err) {
                                 console.error('Error inserting customer EB amount:', err);
@@ -674,6 +614,66 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
             });
         });
 }
+
+// function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, eb_id, created_by, callback) {
+
+//     const sql1 = `SELECT *, 
+//                   CASE WHEN checkoutDate IS NULL 
+//                   THEN DATEDIFF(LEAST(CURDATE(), ?), GREATEST(joining_date, ?)) + 1 
+//                   ELSE DATEDIFF(LEAST(checkoutDate, ?), GREATEST(joining_date, ?)) + 1 
+//                   END AS days_stayed 
+//                   FROM hostel 
+//                   WHERE Hostel_Id = ? AND Floor = ? AND Rooms = ? 
+//                   AND joining_date <= ? 
+//                   AND (checkoutDate >= ? OR checkoutDate IS NULL)`;
+
+//     connection.query(sql1, [atten.date, last_cal_date, atten.date, last_cal_date, atten.hostel_id, atten.floor_id, atten.room_id, atten.date, last_cal_date],
+//         function (err, user_data) {
+//             if (err) {
+//                 console.error('Error fetching user details:', err);
+//                 return callback({ statusCode: 201, message: 'Unable to Get User Details', error: err });
+//             }
+
+//             if (user_data.length === 0) {
+//                 return callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
+//             }
+
+//             let totalDays = user_data.reduce((acc, user) => acc + user.days_stayed, 0);
+//             const amountPerDay = total_amount / totalDays;
+//             let insertCounter = 0;
+
+//             // Insert EB amounts for each user
+//             user_data.forEach(user => {
+//                 const user_id = user.ID;
+//                 const userDays = user.days_stayed;
+//                 const userAmount = Math.round(userDays * amountPerDay);
+//                 const per_unit = Math.round((userAmount / total_amount) * total_reading);
+
+//                 if (userAmount && userAmount != 0) {
+//                     const sql2 = "INSERT INTO customer_eb_amount (user_id, start_meter, end_meter, unit, amount, created_by, date, eb_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+//                     connection.query(sql2, [user_id, startMeterReading, end_Meter_Reading, per_unit, userAmount, created_by, atten.date, eb_id],
+//                         function (err) {
+//                             if (err) {
+//                                 console.error('Error inserting customer EB amount:', err);
+//                                 return callback({ statusCode: 201, message: 'Unable to Add EB Amount for User', error: err });
+//                             }
+
+//                             insertCounter++;
+//                             if (insertCounter === user_data.length) {
+//                                 // All inserts are done
+//                                 callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
+//                             }
+//                         });
+//                 } else {
+//                     insertCounter++;
+//                     if (insertCounter === user_data.length) {
+//                         // If there was no insert needed (userAmount is 0), increment the counter
+//                         callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
+//                     }
+//                 }
+//             });
+//         });
+// }
 
 
 module.exports = { all_notifications, add_notification, update_notification_status, add_room_reading, edit_room_reading }
