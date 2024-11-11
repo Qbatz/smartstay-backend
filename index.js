@@ -1031,3 +1031,7 @@ app.post('/edit_eb_readings', (req, res) => {
 // app.post('/delete_eb_readings', (req, res) => {
 //     invoiceQueries.delete_eb_readings(req, res)
 // })
+
+app.post('/add_room_reading', (req, res) => {
+    notifications.add_room_reading(req, res)
+})
