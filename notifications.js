@@ -415,7 +415,7 @@ function edit_room_reading(req, res) {
     }
 
     // Fetch current EB amount details and validate input
-    const sql1 = "SELECT * FROM room_readings AS rr JOIN eb_settings AS eb ON eb.hostel_Id=rr.hostel_id WHERE eb.id=?";
+    const sql1 = "SELECT * FROM room_readings AS rr JOIN eb_settings AS eb ON eb.hostel_Id=rr.hostel_id WHERE rr.id=?";
     connection.query(sql1, [id], function (err, check_data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Amount Details', error: err });
@@ -428,6 +428,7 @@ function edit_room_reading(req, res) {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Amount Details2', error: err });
                 } else if (date_res.length == 0) {
+
                     // Update the current reading record
                     const up_query = "UPDATE room_readings SET hostel_id=?, floor_id=?, room_id=?, date=?, reading=? WHERE id=?";
                     connection.query(up_query, [hostel_id, floor_id, room_id, date, reading, id], function (err, up_res) {
@@ -437,6 +438,7 @@ function edit_room_reading(req, res) {
                             // Check and update previous and next entries
                             check_previous_entry(id, reading, per_unit_amount, function (prevResult) {
                                 check_next_entry(id, reading, per_unit_amount, function (nextResult) {
+
                                     if (prevResult.statusCode == 200 && nextResult.statusCode == 200) {
 
                                         const deleteQuery = "DELETE FROM customer_eb_amount WHERE eb_id IN (?, ?, ?)";
@@ -459,16 +461,17 @@ function edit_room_reading(req, res) {
                                                 }
                                                 if (nextResult.next_id !== 0) {
 
-                                                    var startmeter = nextResult.prev_reading;
-                                                    var last_cal_date = nextResult.prev_date;
+                                                    var startmeter = nextResult.next_reading;
+                                                    var last_cal_date = nextResult.next_date;
                                                     var total_amount = nextResult.total_amount;
                                                     var total_reading = nextResult.total_reading;
                                                     var eb_id = nextResult.next_id;
 
-                                                    split_eb_amounts(atten, startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, function (response) {
+                                                    split_eb_amounts(atten, reading, startmeter, last_cal_date, total_amount, total_reading, eb_id, created_by, function (response) {
                                                         console.log("Final Response", response);
                                                     });
                                                 }
+
                                                 return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully" });
                                             }
                                         });
@@ -490,6 +493,7 @@ function edit_room_reading(req, res) {
 }
 
 function check_previous_entry(id, reading, per_unit_amount, callback) {
+
     const sqlGetPrevious = "SELECT * FROM room_readings WHERE id < ? AND status = 1 ORDER BY id DESC LIMIT 1";
     connection.query(sqlGetPrevious, [id], function (err, prev_data) {
         if (err) {
@@ -515,6 +519,7 @@ function check_previous_entry(id, reading, per_unit_amount, callback) {
 }
 
 function check_next_entry(id, reading, per_unit_amount, callback) {
+
     const sqlGetNext = "SELECT * FROM room_readings WHERE id > ? AND status = 1 ORDER BY id ASC LIMIT 1";
     connection.query(sqlGetNext, [id], function (err, next_data) {
         if (err) {
@@ -539,6 +544,76 @@ function check_next_entry(id, reading, per_unit_amount, callback) {
     });
 }
 
+// function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, eb_id, created_by, callback) {
+
+//     const sql1 = `SELECT *, 
+//                   CASE WHEN checkoutDate IS NULL 
+//                   THEN DATEDIFF(LEAST(CURDATE(), ?), GREATEST(joining_date, ?)) + 1 
+//                   ELSE DATEDIFF(LEAST(checkoutDate, ?), GREATEST(joining_date, ?)) + 1 
+//                   END AS days_stayed 
+//                   FROM hostel 
+//                   WHERE Hostel_Id = ? AND Floor = ? AND Rooms = ? 
+//                   AND joining_date <= ? 
+//                   AND (checkoutDate >= ? OR checkoutDate IS NULL)`;
+
+//     connection.query(sql1, [atten.date, last_cal_date, atten.date, last_cal_date, atten.hostel_id, atten.floor_id, atten.room_id, atten.date, last_cal_date],
+//         function (err, user_data) {
+//             if (err) {
+//                 console.error('Error fetching user details:', err);
+//                 return callback({ statusCode: 201, message: 'Unable to Get User Details', error: err });
+//             }
+
+//             if (user_data.length === 0) {
+//                 return callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
+//             }
+
+//             let totalDays = user_data.reduce((acc, user) => acc + user.days_stayed, 0);
+//             const amountPerDay = total_amount / totalDays;
+//             const unitPerDay = total_reading / totalDays;
+//             let cumulativeAmount = 0;
+//             let cumulativeUnits = 0;
+//             let insertCounter = 0;
+
+//             user_data.forEach((user, index) => {
+//                 const user_id = user.ID;
+//                 const userDays = user.days_stayed;
+//                 let userAmount = Math.round(userDays * amountPerDay);
+//                 let userUnits = Math.round(userDays * unitPerDay);
+
+//                 cumulativeAmount += userAmount;
+//                 cumulativeUnits += userUnits;
+
+//                 // If this is the last user, adjust for any rounding differences
+//                 if (index === user_data.length - 1) {
+//                     userAmount += total_amount - cumulativeAmount;
+//                     userUnits += total_reading - cumulativeUnits;
+//                 }
+
+//                 if (userAmount && userAmount != 0) {
+//                     const sql2 = "INSERT INTO customer_eb_amount (user_id, start_meter, end_meter, unit, amount, created_by, date, eb_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+//                     connection.query(sql2, [user_id, startMeterReading, end_Meter_Reading, userUnits, userAmount, created_by, atten.date, eb_id],
+//                         function (err) {
+//                             if (err) {
+//                                 console.error('Error inserting customer EB amount:', err);
+//                                 return callback({ statusCode: 201, message: 'Unable to Add EB Amount for User', error: err });
+//                             }
+
+//                             insertCounter++;
+//                             if (insertCounter === user_data.length) {
+//                                 // All inserts are done
+//                                 callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
+//                             }
+//                         });
+//                 } else {
+//                     insertCounter++;
+//                     if (insertCounter === user_data.length) {
+//                         // If there was no insert needed (userAmount is 0), increment the counter
+//                         callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
+//                     }
+//                 }
+//             });
+//         });
+// }
 
 function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, eb_id, created_by, callback) {
 
