@@ -1039,3 +1039,8 @@ app.post('/add_room_reading', (req, res) => {
 app.post('/edit_room_reading', (req, res) => {
     notifications.edit_room_reading(req, res)
 })
+
+// Delete room Reading
+app.post('/delete_room_reading', (req, res) => {
+    notifications.delete_room_reading(req, res)
+})
