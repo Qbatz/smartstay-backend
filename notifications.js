@@ -748,21 +748,79 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
 
 function delete_room_reading(req, res) {
 
-    var id = req.body;
+    var id = req.body.id;
+
+    var created_by = req.user_details.id;
 
     if (!id) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
     }
 
-    var sql1 = "SELECT * FROM room_readings WHERE id=? AND status=1";
-    connection.query(sql1, [id], function (err, read_data) {
+    var sql1 = "SELECT * FROM room_readings AS rr JOIN eb_settings AS eb ON eb.hostel_Id=rr.hostel_id WHERE rr.id=? AND rr.status=1";
+    connection.query(sql1, [id], async function (err, read_data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Unable to Get Readings" });
         } else if (read_data.length != 0) {
 
-            // 
-            var sql2 = ""
+            var old_hostel = read_data[0].hostel_id;
+            var old_floor = read_data[0].floor_id;
+            var old_room = read_data[0].room_id;
 
+            var per_unit_amount = read_data[0].amount;
+
+            var sql2 = "UPDATE room_readings SET status=0 WHERE id=?";
+            connection.query(sql2, [id], async function (err, up_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Delete Readings" });
+                } else {
+                    await check_old_next_entry(id, old_hostel, old_floor, old_room, per_unit_amount, async function (old_result) {
+
+                        console.log(old_result, "=================  old_result  ================");
+
+                        if (old_result.statusCode == 200) {
+
+                            const deleteQuery = "DELETE FROM customer_eb_amount WHERE eb_id IN (?, ?)";
+                            connection.query(deleteQuery, [old_result.next_id, id], async function (err, deleteRes) {
+                                if (err) {
+                                    return res.status(201).json({ statusCode: 201, message: 'Unable to Delete from Customer Eb Amount', error: err });
+                                } else {
+
+                                    if (old_result.next_id != 0) {
+
+                                        var startmeter = old_result.next_reading;
+                                        var new_date = old_result.start_date;
+
+                                        var total_amount = old_result.total_amount;
+
+                                        var total_reading = old_result.total_reading;
+
+                                        var new_read = startmeter - total_reading;
+
+                                        var eb_id = old_result.next_id;
+
+                                        var last_cal_date = old_result.last_cal_date
+
+                                        var attens = {
+                                            hostel_id: old_hostel,
+                                            floor_id: old_floor,
+                                            room_id: old_room
+                                        }
+
+                                        await edit_split_eb_amounts(attens, new_read, startmeter, new_date, total_amount, total_reading, eb_id, created_by, last_cal_date, function (response) {
+                                            console.log("Old Response Final Response1", response);
+                                        });
+                                    }
+
+                                    return res.status(200).json({ statusCode: 200, message: "Reading Deleted Successfully" });
+                                }
+                            })
+
+                        } else {
+                            return res.status(201).json({ statusCode: 201, message: 'Failed to Update Previous/Next Details', error: err });
+                        }
+                    })
+                }
+            })
         } else {
             return res.status(201).json({ statusCode: 201, message: "Invalid Reading Details" });
         }
