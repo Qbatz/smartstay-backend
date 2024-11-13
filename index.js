@@ -821,7 +821,10 @@ app.post('/get_user_amounts', (req, res) => {
 
 // Export Expenses
 app.post('/export_expenses', (req, res) => {
-    var sql1 = "SELECT ex.*,ca.category_Name FROM expenses AS ex JOIN Expense_Category_Name AS ca ON ex.category_id=ca.id WHERE ex.created_by=5;";
+
+    var sql1 = "SELECT ex.*,ca.category_Name FROM expenses AS ex JOIN Expense_Category_Name AS ca ON ex.category_id=ca.id WHERE ex.created_by=5 AND ex.status=1;";
+    // Get Month Based
+    // var sql1 = "SELECT ex.*, ca.category_Name FROM expenses AS ex JOIN Expense_Category_Name AS ca ON ex.category_id = ca.id WHERE ex.created_by = 5 AND YEAR(ex.purchase_date) = ? AND MONTH(ex.purchase_date) = ?"
     connection.query(sql1, function (err, data) {
         if (err) {
             return res.status(201).json({ message: "Unable to Get Expense Details" })
@@ -834,7 +837,7 @@ app.post('/export_expenses', (req, res) => {
             xlsx.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
 
             // Export the workbook to an Excel file
-            const filePath = 'expenses_prod.xlsx';
+            const filePath = 'prod_expenses.xlsx';
             xlsx.writeFile(workbook, filePath);
             console.log(`Excel file saved as ${filePath}`);
 
@@ -844,7 +847,8 @@ app.post('/export_expenses', (req, res) => {
 
 // Export Expenses
 app.post('/export_invoices', (req, res) => {
-    var sql1 = "SELECT ass.*,ven.Vendor_Name FROM assets AS ass JOIN Vendor AS ven ON ass.vendor_id=ven.id WHERE ass.created_by=5 AND ass.createdat BETWEEN '2024-09-17' AND '2024-09-28'";
+
+    var sql1 = "SELECT ass.*,ven.Vendor_Name FROM assets AS ass JOIN Vendor AS ven ON ass.vendor_id=ven.id WHERE ass.created_by=5 AND ass.status=1;";
     connection.query(sql1, function (err, data) {
         if (err) {
             return res.status(201).json({ message: "Unable to Get Invoice Details" })

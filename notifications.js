@@ -71,7 +71,6 @@ function add_notification(req, res) {
     }
 }
 
-
 function update_notification_status(req, res) {
 
     var id = req.body.id;
@@ -159,8 +158,6 @@ function update_notification_status(req, res) {
         })
     }
 }
-
-
 // Add Eb Reading
 
 function add_room_reading(req, res) {
@@ -253,7 +250,6 @@ function add_room_reading(req, res) {
 
 }
 
-
 // Edit API
 function edit_room_reading(req, res) {
 
@@ -262,9 +258,6 @@ function edit_room_reading(req, res) {
     var atten = req.body;
 
     const { hostel_id, floor_id, room_id, date, reading, id } = req.body;
-
-    console.log(req.body);
-
 
     if (!hostel_id || !floor_id || !room_id || !date || !reading || !id) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
@@ -276,6 +269,7 @@ function edit_room_reading(req, res) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Amount Details', error: err });
         } else if (check_data.length != 0) {
+
             const per_unit_amount = check_data[0].amount;
 
             // Check for duplicate date entries
@@ -287,58 +281,162 @@ function edit_room_reading(req, res) {
 
                     // Update the current reading record
                     const up_query = "UPDATE room_readings SET hostel_id=?, floor_id=?, room_id=?, date=?, reading=? WHERE id=?";
-                    connection.query(up_query, [hostel_id, floor_id, room_id, date, reading, id], function (err, up_res) {
+                    connection.query(up_query, [hostel_id, floor_id, room_id, date, reading, id], async function (err, up_res) {
                         if (err) {
                             return res.status(201).json({ statusCode: 201, message: 'Unable to Update Eb Amount Details3', error: err });
                         } else {
-                            // Check and update previous and next entries
-                            check_previous_entry(id, reading, per_unit_amount, atten, function (prevResult) {
-                                check_next_entry(id, reading, per_unit_amount, atten, function (nextResult) {
 
-                                    console.log(prevResult);
-                                    console.log(nextResult);
+                            var old_hostel = check_data[0].hostel_id;
+                            var old_floor = check_data[0].floor_id;
+                            var old_room = check_data[0].room_id;
 
-                                    if (prevResult.statusCode == 200 && nextResult.statusCode == 200) {
+                            if (old_hostel == hostel_id && old_floor == floor_id && old_room == room_id) {
+
+                                // Check and update previous and next entries
+                                check_previous_entry(id, reading, per_unit_amount, atten, function (prevResult) {
+                                    check_next_entry(id, reading, per_unit_amount, atten, function (nextResult) {
+
+                                        if (prevResult.statusCode == 200 && nextResult.statusCode == 200) {
+
+                                            const deleteQuery = "DELETE FROM customer_eb_amount WHERE eb_id IN (?, ?)";
+                                            connection.query(deleteQuery, [id, nextResult.next_id], function (err, deleteRes) {
+                                                if (err) {
+                                                    return res.status(201).json({ statusCode: 201, message: 'Unable to Delete from Customer Eb Amount', error: err });
+                                                } else {
+
+                                                    if (prevResult.prev_id !== 0) {
+
+                                                        var startmeter = prevResult.prev_reading;
+                                                        var last_cal_date = prevResult.prev_date;
+                                                        var total_amount = prevResult.total_amount;
+                                                        var total_reading = prevResult.total_reading;
+                                                        var eb_id = id;
+
+                                                        edit_split_eb_amounts(atten, startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, date, function (response) {
+                                                            console.log("Final Response", response);
+                                                        });
+                                                    }
+                                                    if (nextResult.next_id !== 0) {
+
+                                                        var startmeter = nextResult.next_reading;
+                                                        var last_cal_date = nextResult.next_date;
+                                                        var total_amount = nextResult.total_amount;
+                                                        var total_reading = nextResult.total_reading;
+                                                        var eb_id = nextResult.next_id;
+
+                                                        edit_split_eb_amounts(atten, reading, startmeter, date, total_amount, total_reading, eb_id, created_by, last_cal_date, function (response) {
+                                                            console.log("Final Response1", response);
+                                                        });
+                                                    }
+                                                    return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully" });
+                                                }
+                                            });
+                                        } else {
+                                            return res.status(201).json({ statusCode: 201, message: 'Failed to Update Previous/Next Details', error: err });
+                                        }
+                                    });
+                                });
+                            } else {
+
+                                await check_old_next_entry(id, old_hostel, old_floor, old_room, per_unit_amount, async function (old_result) {
+
+                                    console.log(old_result, "===================== old_result ================");
+
+                                    if (old_result.statusCode == 200) {
 
                                         const deleteQuery = "DELETE FROM customer_eb_amount WHERE eb_id IN (?, ?)";
-                                        connection.query(deleteQuery, [id, nextResult.next_id], function (err, deleteRes) {
+                                        connection.query(deleteQuery, [old_result.prev_id, old_result.next_id], async function (err, deleteRes) {
                                             if (err) {
                                                 return res.status(201).json({ statusCode: 201, message: 'Unable to Delete from Customer Eb Amount', error: err });
                                             } else {
+                                                await check_previous_entry(id, reading, per_unit_amount, atten, async function (prevResult) {
+                                                    await check_next_entry(id, reading, per_unit_amount, atten, async function (nextResult) {
 
-                                                if (prevResult.prev_id !== 0) {
+                                                        console.log(nextResult, "==================== nextResult =================");
+                                                        console.log(prevResult, "=============== prevResult ====================");
 
-                                                    var startmeter = prevResult.prev_reading;
-                                                    var last_cal_date = prevResult.prev_date;
-                                                    var total_amount = prevResult.total_amount;
-                                                    var total_reading = prevResult.total_reading;
-                                                    var eb_id = id;
+                                                        if (prevResult.statusCode == 200 && nextResult.statusCode == 200) {
 
-                                                    edit_split_eb_amounts(atten, startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, date, function (response) {
-                                                        console.log("Final Response", response);
+                                                            const deleteQuery = "DELETE FROM customer_eb_amount WHERE eb_id IN (?,?)";
+                                                            connection.query(deleteQuery, [id, nextResult.next_id], async function (err, deleteRes) {
+                                                                if (err) {
+                                                                    return res.status(201).json({ statusCode: 201, message: 'Unable to Delete from Customer Eb Amount', error: err });
+                                                                } else {
+
+                                                                    if (prevResult.prev_id !== 0) {
+
+                                                                        var startmeter = prevResult.prev_reading;
+                                                                        var last_cal_date = prevResult.prev_date;
+                                                                        var total_amount = prevResult.total_amount;
+                                                                        var total_reading = prevResult.total_reading;
+                                                                        var eb_id = id;
+
+                                                                        var reading = req.body.reading;
+
+                                                                        await edit_split_eb_amounts(atten, startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, date, function (response) {
+                                                                            console.log("Final Response", response);
+                                                                        });
+                                                                    }
+
+                                                                    console.log("///////////////////", nextResult.next_id);
+
+                                                                    if (nextResult.next_id != 0) {
+
+                                                                        var startmeter = nextResult.next_reading;
+                                                                        var last_cal_date = nextResult.next_date;
+                                                                        var total_amount = nextResult.total_amount;
+                                                                        var total_reading = nextResult.total_reading;
+                                                                        var eb_id = nextResult.next_id;
+
+                                                                        var reading = req.body.reading;
+
+                                                                        await edit_split_eb_amounts(atten, reading, startmeter, date, total_amount, total_reading, eb_id, created_by, last_cal_date, function (response) {
+                                                                            console.log("Final Response1", response);
+                                                                        });
+                                                                    }
+
+                                                                    if (old_result.next_id != 0) {
+
+                                                                        var startmeter = old_result.next_reading;
+                                                                        var new_date = old_result.start_date;
+
+                                                                        var total_amount = old_result.total_amount;
+
+                                                                        var total_reading = old_result.total_reading;
+
+                                                                        var new_read = startmeter - total_reading;
+
+                                                                        var eb_id = old_result.next_id;
+
+                                                                        var last_cal_date = old_result.last_cal_date
+
+                                                                        var attens = {
+                                                                            hostel_id: old_hostel,
+                                                                            floor_id: old_floor,
+                                                                            room_id: old_room
+                                                                        }
+
+                                                                        await edit_split_eb_amounts(attens, new_read, startmeter, new_date, total_amount, total_reading, eb_id, created_by, last_cal_date, function (response) {
+                                                                            console.log("Old Response Final Response1", response);
+                                                                        });
+                                                                    }
+
+                                                                    return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully" });
+                                                                }
+                                                            });
+                                                        } else {
+                                                            return res.status(201).json({ statusCode: 201, message: 'Failed to Update Previous/Next Details', error: err });
+                                                        }
                                                     });
-                                                }
-                                                if (nextResult.next_id !== 0) {
-
-                                                    var startmeter = nextResult.next_reading;
-                                                    var last_cal_date = nextResult.next_date;
-                                                    var total_amount = nextResult.total_amount;
-                                                    var total_reading = nextResult.total_reading;
-                                                    var eb_id = nextResult.next_id;
-
-                                                    edit_split_eb_amounts(atten, reading, startmeter, date, total_amount, total_reading, eb_id, created_by, last_cal_date, function (response) {
-                                                        console.log("Final Response1", response);
-                                                    });
-                                                }
-
-                                                return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully" });
+                                                });
                                             }
-                                        });
+                                        })
+
                                     } else {
                                         return res.status(201).json({ statusCode: 201, message: 'Failed to Update Previous/Next Details', error: err });
                                     }
-                                });
-                            });
+                                })
+                            }
                         }
                     });
                 } else {
@@ -353,7 +451,7 @@ function edit_room_reading(req, res) {
 
 function check_previous_entry(id, reading, per_unit_amount, atten, callback) {
 
-    const sqlGetPrevious = "SELECT * FROM room_readings WHERE id < ? AND status = 1 AND hostel_id=? AND room_id=? AND floor_id=? ORDER BY id DESC LIMIT 1";
+    const sqlGetPrevious = "SELECT *,DATE_FORMAT(date, '%Y-%m-%d') AS get_date FROM room_readings WHERE id < ? AND status = 1 AND hostel_id=? AND room_id=? AND floor_id=? ORDER BY id DESC LIMIT 1";
     connection.query(sqlGetPrevious, [id, atten.hostel_id, atten.room_id, atten.floor_id], function (err, prev_data) {
         if (err) {
             return callback({ statusCode: 201, message: 'Unable to Show Previous Reading Details', error: err });
@@ -368,7 +466,7 @@ function check_previous_entry(id, reading, per_unit_amount, atten, callback) {
                 if (err) {
                     return callback({ statusCode: 201, message: 'Unable to Update Previous Reading Details', error: err });
                 } else {
-                    return callback({ statusCode: 200, message: 'Previous Reading Updated', prev_id: prev_id, prev_date: prev_data[0].date, prev_reading: prev_reading, total_amount: total_amount, total_reading: total_reading });
+                    return callback({ statusCode: 200, message: 'Previous Reading Updated', prev_id: prev_id, prev_date: prev_data[0].get_date, prev_reading: prev_reading, total_amount: total_amount, total_reading: total_reading });
                 }
             });
         } else {
@@ -378,8 +476,8 @@ function check_previous_entry(id, reading, per_unit_amount, atten, callback) {
                 if (err) {
                     return callback({ statusCode: 201, message: 'Unable to Update Previous Reading Details', error: err });
                 } else {
-                    // return callback({ statusCode: 200, message: 'Previous Reading Updated', prev_id: prev_id, prev_date: prev_data[0].date, prev_reading: prev_reading, total_amount: total_amount, total_reading: total_reading });
                     return callback({ statusCode: 200, message: 'No Previous Reading to Update', prev_id: 0 });
+                    // return callback({ statusCode: 200, message: 'Previous Reading Updated', prev_id: prev_id, prev_date: prev_data[0].date, prev_reading: prev_reading, total_amount: total_amount, total_reading: total_reading });
                 }
             });
 
@@ -387,9 +485,88 @@ function check_previous_entry(id, reading, per_unit_amount, atten, callback) {
     });
 }
 
+function check_old_next_entry(old_id, old_hostel, old_floor, old_room, per_unit_amount, callback) {
+
+    const sqlGetNext = "SELECT *,DATE_FORMAT(date, '%Y-%m-%d') AS get_date FROM room_readings WHERE id > ? AND status = 1 AND hostel_id=? AND room_id=? AND floor_id=? ORDER BY id ASC LIMIT 1";
+    connection.query(sqlGetNext, [old_id, old_hostel, old_room, old_floor], function (err, next_data) {
+        if (err) {
+            return callback({ statusCode: 201, message: 'Unable to Show Next Reading Details', error: err });
+        } else if (next_data.length != 0) {
+
+            const next_id = next_data[0].id;
+            const next_reading = next_data[0].reading;
+
+            check_old_previous_entry(old_id, old_hostel, old_floor, old_room, function (result) {
+
+                if (result.statusCode == 200) {
+
+                    if (result.prev_id != 0) {
+
+                        const total_reading = next_reading - result.prev_reading;
+                        const total_amount = per_unit_amount * total_reading;
+                        var last_cal_date = next_data[0].get_date;
+
+                        const sqlUpdate = "UPDATE room_readings SET total_amount=?, total_reading=? WHERE id=?";
+                        connection.query(sqlUpdate, [total_amount, total_reading, next_id], function (err, updateRes) {
+                            if (err) {
+                                return callback({ statusCode: 201, message: 'Unable to Update Next Reading Details', error: err });
+                            } else {
+                                return callback({ statusCode: 200, message: 'Next Reading Updated', next_id: next_id, prev_id: result.prev_id, next_date: next_data[0].date, next_reading: next_reading, total_amount: total_amount, total_reading: total_reading, last_cal_date: last_cal_date, prev_reading: result.prev_reading, start_date: result.start_date });
+                            }
+                        });
+                    } else {
+
+                        const sqlUpdate = "UPDATE room_readings SET total_amount=0, total_reading=0 WHERE id=?";
+                        connection.query(sqlUpdate, [next_id], function (err, updateRes) {
+                            if (err) {
+                                return callback({ statusCode: 201, message: 'Failed to Update Previous Details', error: err });
+                            } else {
+                                return callback({ statusCode: 200, message: 'Update Old Next Reading', prev_id: 0, next_id: next_id, next_reading: next_reading });
+                            }
+                        });
+                    }
+                } else {
+                    return callback({ statusCode: 201, message: result.message, next_id: 0, prev_id: 0 });
+                }
+            })
+        } else {
+            return callback({ statusCode: 200, message: 'No Next Reading to Update', next_id: 0 });
+        }
+    });
+}
+
+function check_old_previous_entry(old_id, old_hostel, old_floor, old_room, callback) {
+
+    // Check Previous
+    var sql3 = "SELECT *,DATE_FORMAT(date, '%Y-%m-%d') AS get_date FROM room_readings WHERE id < ? AND status = 1 AND hostel_id=? AND room_id=? AND floor_id=? ORDER BY id DESC LIMIT 1";
+    connection.query(sql3, [old_id, old_hostel, old_room, old_floor], function (err, data) {
+        if (err) {
+            console.log(err);
+            return callback({ statusCode: 201, message: 'Unable to Show Previous Reading Details', error: err });
+        } else if (data.length != 0) {
+
+            var prev_id = data[0].id;
+            var prev_reading = data[0].reading;
+            var prev_date = data[0].get_date;
+
+            return callback({ statusCode: 200, message: 'Get Old Previous Reading', prev_id: prev_id, prev_reading: prev_reading, start_date: prev_date });
+
+        } else {
+            const sqlUpdate = "UPDATE room_readings SET total_amount=0, total_reading=0 WHERE id=?";
+            connection.query(sqlUpdate, [old_id], function (err, updateRes) {
+                if (err) {
+                    return callback({ statusCode: 201, message: 'Failed to Update Previous Details', error: err });
+                } else {
+                    return callback({ statusCode: 200, message: 'Update Old Previous Reading', prev_id: 0 });
+                }
+            });
+        }
+    })
+}
+
 function check_next_entry(id, reading, per_unit_amount, atten, callback) {
 
-    const sqlGetNext = "SELECT * FROM room_readings WHERE id > ? AND status = 1 AND hostel_id=? AND room_id=? AND floor_id=? ORDER BY id ASC LIMIT 1";
+    const sqlGetNext = "SELECT *,DATE_FORMAT(date, '%Y-%m-%d') AS get_date FROM room_readings WHERE id > ? AND status = 1 AND hostel_id=? AND room_id=? AND floor_id=? ORDER BY id ASC LIMIT 1";
     connection.query(sqlGetNext, [id, atten.hostel_id, atten.room_id, atten.floor_id], function (err, next_data) {
         if (err) {
             return callback({ statusCode: 201, message: 'Unable to Show Next Reading Details', error: err });
@@ -405,7 +582,7 @@ function check_next_entry(id, reading, per_unit_amount, atten, callback) {
                 if (err) {
                     return callback({ statusCode: 201, message: 'Unable to Update Next Reading Details', error: err });
                 } else {
-                    return callback({ statusCode: 200, message: 'Next Reading Updated', next_id: next_id, next_date: next_data[0].date, next_reading: next_reading, total_amount: total_amount, total_reading: total_reading });
+                    return callback({ statusCode: 200, message: 'Next Reading Updated', next_id: next_id, next_date: next_data[0].get_date, next_reading: next_reading, total_amount: total_amount, total_reading: total_reading });
                 }
             });
         } else {
@@ -415,6 +592,8 @@ function check_next_entry(id, reading, per_unit_amount, atten, callback) {
 }
 
 function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, eb_id, created_by, new_date, callback) {
+
+    console.log("bbbbbbbbbbbbbbbbbbbbbbbb", startMeterReading, end_Meter_Reading);
 
     const sql1 = `SELECT *, 
                   CASE WHEN checkoutDate IS NULL 
@@ -426,9 +605,6 @@ function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last
                   AND joining_date <= ? 
                   AND (checkoutDate >= ? OR checkoutDate IS NULL)`;
 
-    console.log(last_cal_date, "=========== last_cal_date =============");
-    console.log(new_date, "=========== new_date =============");
-
     connection.query(sql1, [new_date, last_cal_date, new_date, last_cal_date, atten.hostel_id, atten.floor_id, atten.room_id, new_date, last_cal_date],
         function (err, user_data) {
             if (err) {
@@ -436,10 +612,10 @@ function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last
                 return callback({ statusCode: 201, message: 'Unable to Get User Details', error: err });
             }
 
-            console.log(user_data);
-
             if (user_data.length === 0) {
-                return callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
+                console.log(user_data, "================");
+
+                return callback({ statusCode: 200, message: 'Successfully Added EB Amount1' });
             }
 
             let totalDays = user_data.reduce((acc, user) => acc + user.days_stayed, 0);
