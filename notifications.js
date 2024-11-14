@@ -235,7 +235,7 @@ function add_room_reading(req, res) {
                                 })
 
                             } else {
-                                return res.status(201).json({ message: 'UNew reading must be greater than the old reading' });
+                                return res.status(201).json({ message: 'New reading must be greater than the old reading' });
                             }
                         }
                     })
