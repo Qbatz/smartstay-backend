@@ -1024,130 +1024,135 @@ function InvoicePDf(connection, reqBodyData, response) {
     var invocice_type = reqBodyData.invoice_type;
     var action_type = reqBodyData.action_type;
 
-    const generatemanualPDF = async (data) => {
-        try {
-            var inv_data = data[0];
-            const htmlFilePath = path.join(__dirname, 'mail_templates', 'manual_invoice.html');
-            let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
+    var role_permissions = request.role_permissions;
+    var is_admin = request.is_admin;
 
-            const amountInWords = converter.toWords(inv_data.PaidAmount);
-            const currentTimeFormatted = moment().format('hh:mm A');
-            const defaultLogoPath = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg';
-            var logoPathimage = inv_data.hostel_profile ? inv_data.hostel_profile : defaultLogoPath;
-            // console.log(logoPathimage);
-            const invdate = moment(inv_data.Date).format('DD/MM/YYYY');
+    if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_view === 1)) {
 
-            const tableData = [
-                { description: 'Room Rent', amount: inv_data.RoomRent },
-                { description: 'Eb Amount', amount: inv_data.EbAmount }
-            ];
+        const generatemanualPDF = async (data) => {
+            try {
+                var inv_data = data[0];
+                const htmlFilePath = path.join(__dirname, 'mail_templates', 'manual_invoice.html');
+                let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
 
-            data.forEach((row) => {
-                if (row.am_name && row.amount) {
-                    tableData.push({ description: row.am_name, amount: row.amount });
-                }
-            });
+                const amountInWords = converter.toWords(inv_data.PaidAmount);
+                const currentTimeFormatted = moment().format('hh:mm A');
+                const defaultLogoPath = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg';
+                var logoPathimage = inv_data.hostel_profile ? inv_data.hostel_profile : defaultLogoPath;
+                // console.log(logoPathimage);
+                const invdate = moment(inv_data.Date).format('DD/MM/YYYY');
 
-            let tableRows = '';
-            tableData.forEach((item, index) => {
-                tableRows += `
+                const tableData = [
+                    { description: 'Room Rent', amount: inv_data.RoomRent },
+                    { description: 'Eb Amount', amount: inv_data.EbAmount }
+                ];
+
+                data.forEach((row) => {
+                    if (row.am_name && row.amount) {
+                        tableData.push({ description: row.am_name, amount: row.amount });
+                    }
+                });
+
+                let tableRows = '';
+                tableData.forEach((item, index) => {
+                    tableRows += `
         <tr>
             <td>${index + 1}</td>
             <td>${item.description}</td>
             <td>${item.amount}</td>
         </tr>
     `;
-            });
+                });
 
-            htmlContent = htmlContent
-                .replace('{{hostal_name}}', inv_data.Hostel_Name)
-                .replace('{{city}}', inv_data.hostel_address)
-                .replace('{{user_name}}', inv_data.Name)
-                .replace('{{user_address}}', inv_data.user_address)
-                .replace('{{invoice_number}}', inv_data.Invoices)
-                .replace('{{invoice_date}}', invdate)
-                .replace('{{amount_in_words}}', amountInWords)
-                .replace('{{current_time}}', currentTimeFormatted)
-                .replace('{{logo}}', logoPathimage)
-                .replace('{{paid_amount}}', inv_data.PaidAmount)
-                .replace('{{total_amount}}', inv_data.Amount)
-                .replace('{{balance_amount}}', inv_data.BalanceDue)
-                .replace('{{tableRows}}', tableRows);
+                htmlContent = htmlContent
+                    .replace('{{hostal_name}}', inv_data.Hostel_Name)
+                    .replace('{{city}}', inv_data.hostel_address)
+                    .replace('{{user_name}}', inv_data.Name)
+                    .replace('{{user_address}}', inv_data.user_address)
+                    .replace('{{invoice_number}}', inv_data.Invoices)
+                    .replace('{{invoice_date}}', invdate)
+                    .replace('{{amount_in_words}}', amountInWords)
+                    .replace('{{current_time}}', currentTimeFormatted)
+                    .replace('{{logo}}', logoPathimage)
+                    .replace('{{paid_amount}}', inv_data.PaidAmount)
+                    .replace('{{total_amount}}', inv_data.Amount)
+                    .replace('{{balance_amount}}', inv_data.BalanceDue)
+                    .replace('{{tableRows}}', tableRows);
 
-            // Determine payment status based on amounts
-            let paymentStatusClass = '';
-            let paymentStatusText = '';
+                // Determine payment status based on amounts
+                let paymentStatusClass = '';
+                let paymentStatusText = '';
 
-            if (inv_data.Amount === inv_data.BalanceDue) {
-                paymentStatusClass = 'pending';
-                paymentStatusText = 'Pending';
-            } else if (inv_data.BalanceDue === 0) {
-                paymentStatusClass = 'success';
-                paymentStatusText = 'Success';
-            } else {
-                paymentStatusClass = 'partial';
-                paymentStatusText = 'Partial Paid';
+                if (inv_data.Amount === inv_data.BalanceDue) {
+                    paymentStatusClass = 'pending';
+                    paymentStatusText = 'Pending';
+                } else if (inv_data.BalanceDue === 0) {
+                    paymentStatusClass = 'success';
+                    paymentStatusText = 'Success';
+                } else {
+                    paymentStatusClass = 'partial';
+                    paymentStatusText = 'Partial Paid';
+                }
+
+                // const amountName = (inv_data.invoice_type === 1) ? 'Rent Amount' : 'Advance Amount';
+
+                // Replace all placeholders in the HTML content
+                htmlContent = htmlContent
+                    .replace('{{payment_status_class}}', paymentStatusClass)
+                    .replace('{{payment_status_text}}', paymentStatusText)
+                // .replace('{{Amount_name}}', amountName);
+
+                const currentDate = moment().format('YYYY-MM-DD');
+                const currentMonth = moment(currentDate).month() + 1;
+                const currentYear = moment(currentDate).year();
+                const currentTime = moment().format('HHmmss');
+
+                const filename = `INV${currentMonth}${currentYear}${currentTime}${inv_data.User_Id}.pdf`;
+                const outputPath = path.join(__dirname, filename);
+
+                const browser = await puppeteer.launch();
+                const page = await browser.newPage();
+
+                await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
+
+                // Generate PDF
+                await page.pdf({ path: outputPath, format: 'A4' });
+
+                await browser.close();
+                console.log('PDF created successfully!');
+                var inv_id = inv_data.id;
+                await uploadToS3(outputPath, filename, inv_id);
+                fs.unlinkSync(outputPath);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        };
+
+        if (action_type == 'manual') {
+
+            var sql1 = "SELECT inv.*,man.*,hs.Address AS user_address,hsv.Address AS hostel_address,hsv.profile AS hostel_profile FROM invoicedetails AS inv JOIN hostel AS hs ON hs.ID=inv.hos_user_id LEFT JOIN manual_invoice_amenities AS man ON man.invoice_id=inv.id JOIN hosteldetails AS hsv ON hsv.id=inv.Hostel_Id WHERE inv.id=?;";
+            connection.query(sql1, [reqBodyData.id], function (err, inv_data) {
+                if (err) {
+                    return response.status(201).json({ message: "Unable to Get Invoice Details", statusCode: 201 })
+                } else if (inv_data.length != 0) {
+
+                    generatemanualPDF(inv_data);
+
+                } else {
+                    return response.status(201).json({ message: "Invalid Invoice Details", statusCode: 201 })
+                }
+            })
+
+
+        } else {
+            if (!invocice_type || invocice_type == undefined) {
+                var invocice_type = 1
             }
 
-            // const amountName = (inv_data.invoice_type === 1) ? 'Rent Amount' : 'Advance Amount';
+            // Assuming required libraries are imported at the beginning of the script
 
-            // Replace all placeholders in the HTML content
-            htmlContent = htmlContent
-                .replace('{{payment_status_class}}', paymentStatusClass)
-                .replace('{{payment_status_text}}', paymentStatusText)
-            // .replace('{{Amount_name}}', amountName);
-
-            const currentDate = moment().format('YYYY-MM-DD');
-            const currentMonth = moment(currentDate).month() + 1;
-            const currentYear = moment(currentDate).year();
-            const currentTime = moment().format('HHmmss');
-
-            const filename = `INV${currentMonth}${currentYear}${currentTime}${inv_data.User_Id}.pdf`;
-            const outputPath = path.join(__dirname, filename);
-
-            const browser = await puppeteer.launch();
-            const page = await browser.newPage();
-
-            await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
-
-            // Generate PDF
-            await page.pdf({ path: outputPath, format: 'A4' });
-
-            await browser.close();
-            console.log('PDF created successfully!');
-            var inv_id = inv_data.id;
-            await uploadToS3(outputPath, filename, inv_id);
-            fs.unlinkSync(outputPath);
-        } catch (error) {
-            console.error('Error:', error);
-        }
-    };
-
-    if (action_type == 'manual') {
-
-        var sql1 = "SELECT inv.*,man.*,hs.Address AS user_address,hsv.Address AS hostel_address,hsv.profile AS hostel_profile FROM invoicedetails AS inv JOIN hostel AS hs ON hs.ID=inv.hos_user_id LEFT JOIN manual_invoice_amenities AS man ON man.invoice_id=inv.id JOIN hosteldetails AS hsv ON hsv.id=inv.Hostel_Id WHERE inv.id=?;";
-        connection.query(sql1, [reqBodyData.id], function (err, inv_data) {
-            if (err) {
-                return response.status(201).json({ message: "Unable to Get Invoice Details", statusCode: 201 })
-            } else if (inv_data.length != 0) {
-
-                generatemanualPDF(inv_data);
-
-            } else {
-                return response.status(201).json({ message: "Invalid Invoice Details", statusCode: 201 })
-            }
-        })
-
-
-    } else {
-        if (!invocice_type || invocice_type == undefined) {
-            var invocice_type = 1
-        }
-
-        // Assuming required libraries are imported at the beginning of the script
-
-        if (invocice_type == 2) {
-            const sql1 = `
+            if (invocice_type == 2) {
+                const sql1 = `
             SELECT hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No, invoice.Hostel_Id as Inv_Hostel_Id,invoice.PaidAmount,invoice.BalanceDue,invoice.Amount AS inv_amount,
             hostel.id as Hostel_Id, invoice.RoomRent, invoice.EbAmount, invoice.id, invoice.Name as UserName, 
             invoice.User_Id, invoice.UserAddress, invoice.Invoices, invoice.DueDate, invoice.Date,invoice.PaidAmount,
@@ -1156,363 +1161,367 @@ function InvoicePDf(connection, reqBodyData, response) {
             FROM invoicedetails invoice 
             INNER JOIN hosteldetails hostel ON hostel.id = invoice.Hostel_Id 
             WHERE invoice.User_Id = ? AND invoice.id = ?`;
-            // console.log(sql1);
+                // console.log(sql1);
 
-            connection.query(sql1, [reqBodyData.User_Id, reqBodyData.id], async (err, data) => {
-                console.log("datadata", data)
-                if (err) {
-                    console.error('SQL query error:', err);
-                    return;
-                }
+                connection.query(sql1, [reqBodyData.User_Id, reqBodyData.id], async (err, data) => {
+                    console.log("datadata", data)
+                    if (err) {
+                        console.error('SQL query error:', err);
+                        return;
+                    }
 
-                if (data.length === 0) {
-                    console.log('No data found');
-                    return;
-                }
+                    if (data.length === 0) {
+                        console.log('No data found');
+                        return;
+                    }
 
-                generatePDF(data[0]);
-                // response.status(200).json({ message: 'Insert PDF successfully' });
-            });
-        }
-        else {
-            connection.query(`SELECT hos.User_Id,hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,invoice.PaidAmount,invoice.BalanceDue,hostel.id as Hostel_Id,invoice.RoomRent AS inv_amount,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.invoice_type,invoice.AmnitiesAmount,invoice.User_Id,invoice.UserAddress,invoice.PaidAmount, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount,hstlroom.Hostel_Id AS roomHostel_Id ,hstlroom.Floor_Id AS roomFloor_Id,hstlroom.Room_Id AS roomRoom_Id,hos.Hostel_Id AS hoshostel_id,hos.Floor AS hosfloor,hos.Rooms AS hosrooms,hos.createdAt,hos.User_Id FROM invoicedetails invoice INNER JOIN hosteldetails hostel INNER JOIN hostelrooms hstlroom INNER JOIN hostel hos on hostel.id = invoice.Hostel_Id WHERE hos.User_Id =? AND DATE(invoice.Date) = ? AND invoice.id = ? AND hos.isActive = 1 group by hos.id`,
+                    generatePDF(data[0]);
+                    // response.status(200).json({ message: 'Insert PDF successfully' });
+                });
+            }
+            else {
+                connection.query(`SELECT hos.User_Id,hostel.isHostelBased, invoice.Floor_Id, invoice.Room_No ,invoice.Hostel_Id as Inv_Hostel_Id ,invoice.PaidAmount,invoice.BalanceDue,hostel.id as Hostel_Id,invoice.RoomRent AS inv_amount,invoice.EbAmount, invoice.id, invoice.Name as UserName,invoice.invoice_type,invoice.AmnitiesAmount,invoice.User_Id,invoice.UserAddress,invoice.PaidAmount, invoice.Invoices,invoice.DueDate, invoice.Date, hostel.hostel_PhoneNo,hostel.Address as HostelAddress,hostel.Name as Hostel_Name,hostel.email_id as HostelEmail_Id , hostel.profile as Hostel_Logo ,invoice.Amount,hstlroom.Hostel_Id AS roomHostel_Id ,hstlroom.Floor_Id AS roomFloor_Id,hstlroom.Room_Id AS roomRoom_Id,hos.Hostel_Id AS hoshostel_id,hos.Floor AS hosfloor,hos.Rooms AS hosrooms,hos.createdAt,hos.User_Id FROM invoicedetails invoice INNER JOIN hosteldetails hostel INNER JOIN hostelrooms hstlroom INNER JOIN hostel hos on hostel.id = invoice.Hostel_Id WHERE hos.User_Id =? AND DATE(invoice.Date) = ? AND invoice.id = ? AND hos.isActive = 1 group by hos.id`,
 
-                [reqBodyData.User_Id, reqBodyData.Date, reqBodyData.id], function (error, data) {
-                    console.log("data", data)
-                    if (error) {
-                        console.log(error);
-                        response.status(500).json({ message: 'Internal server error' });
-                    } else if (data.length > 0) {
-                        console.log("data[0].AmnitiesAmount", data[0].invoice_type)
-                        // return
+                    [reqBodyData.User_Id, reqBodyData.Date, reqBodyData.id], function (error, data) {
+                        console.log("data", data)
+                        if (error) {
+                            console.log(error);
+                            response.status(500).json({ message: 'Internal server error' });
+                        } else if (data.length > 0) {
+                            console.log("data[0].AmnitiesAmount", data[0].invoice_type)
+                            // return
 
-                        if (data[0].EbAmount == 0 && data[0].invoice_type == 1 && data[0].AmnitiesAmount == 0) {
-                            generatePDF(data[0]);
-                            // response.status(200).json({ message: 'Insert PDF successfully' });
+                            if (data[0].EbAmount == 0 && data[0].invoice_type == 1 && data[0].AmnitiesAmount == 0) {
+                                generatePDF(data[0]);
+                                // response.status(200).json({ message: 'Insert PDF successfully' });
 
-                            console.log("vghghjhjh")
-                        }
-
-
-                        else {
-                            data.forEach((hostel, index) => {
-                                console.log("hostel", hostel)
-                                let breakUpTable = []
-                                const currentDate = moment().format('YYYY-MM-DD');
-                                const joinDate = moment(hostel.createdAt).format('YYYY-MM-DD');
-                                const currentMonth = moment(currentDate).month() + 1;
-                                const currentYear = moment(currentDate).year();
-                                const createdAtMonth = moment(joinDate).month() + 1;
-                                const createdAtYear = moment(joinDate).year();
-                                let dueDate, invoiceDate;
-
-                                if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
-                                    dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
-                                    invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-                                } else {
-                                    dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
-                                    invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
-                                }
+                                console.log("vghghjhjh")
+                            }
 
 
-                                const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-                                const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-                                const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
-                                console.log("numberOfDays,,,,,,ere", numberOfDays)
+                            else {
+                                data.forEach((hostel, index) => {
+                                    console.log("hostel", hostel)
+                                    let breakUpTable = []
+                                    const currentDate = moment().format('YYYY-MM-DD');
+                                    const joinDate = moment(hostel.createdAt).format('YYYY-MM-DD');
+                                    const currentMonth = moment(currentDate).month() + 1;
+                                    const currentYear = moment(currentDate).year();
+                                    const createdAtMonth = moment(joinDate).month() + 1;
+                                    const createdAtYear = moment(joinDate).year();
+                                    let dueDate, invoiceDate;
 
-                                const JoiningWiseRoomRent = (hostel.RoomRent / moment(dueDate).daysInMonth()) * numberOfDays
-                                console.log("JoiningWiseRoomRent", hostel.RoomRent)
-
-                                let RoomRent = {
-                                    Rent: Math.round(JoiningWiseRoomRent),
-
-                                }
-                                console.log("RoomRent....?112", RoomRent)
-                                breakUpTable.push(RoomRent)
-                                connection.query(`select * from Amenities AmeList INNER JOIN AmnitiesName AmeName ON AmeList.Amnities_Id = AmeName.id  where AmeList.Hostel_Id = \'${hostel.Hostel_Id} \'`, async function (error, Amenitiesdata) {
+                                    if (currentMonth === createdAtMonth && currentYear === createdAtYear) {
+                                        dueDate = moment(joinDate).endOf('month').format('YYYY-MM-DD');
+                                        invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+                                    } else {
+                                        dueDate = moment(currentDate).endOf('month').format('YYYY-MM-DD');
+                                        invoiceDate = moment(currentDate).startOf('month').format('YYYY-MM-DD');
+                                    }
 
 
-                                    if (Amenitiesdata.length > 0) {
-                                        for (let i = 0; i < Amenitiesdata.length; i++) {
-                                            const tempObj = {};
-                                            if (Amenitiesdata[i].setAsDefault == 0 && Amenitiesdata[i].Status == 1) {
-                                                tempObj[Amenitiesdata[i].Amnities_Name] = Amenitiesdata[i].Amount
-                                            } else if (Amenitiesdata[i].setAsDefault == 1 && Amenitiesdata[i].Status == 1) {
-                                                tempObj[Amenitiesdata[i].Amnities_Name] = Amenitiesdata[i].Amount;
-                                                RoomRent.Rent -= Amenitiesdata[i].Amount;
-                                                console.log("Amenitiesdata[i].Amount", Amenitiesdata[i].Amount)
+                                    const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+                                    const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+                                    const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+                                    console.log("numberOfDays,,,,,,ere", numberOfDays)
+
+                                    const JoiningWiseRoomRent = (hostel.RoomRent / moment(dueDate).daysInMonth()) * numberOfDays
+                                    console.log("JoiningWiseRoomRent", hostel.RoomRent)
+
+                                    let RoomRent = {
+                                        Rent: Math.round(JoiningWiseRoomRent),
+
+                                    }
+                                    console.log("RoomRent....?112", RoomRent)
+                                    breakUpTable.push(RoomRent)
+                                    connection.query(`select * from Amenities AmeList INNER JOIN AmnitiesName AmeName ON AmeList.Amnities_Id = AmeName.id  where AmeList.Hostel_Id = \'${hostel.Hostel_Id} \'`, async function (error, Amenitiesdata) {
+
+
+                                        if (Amenitiesdata.length > 0) {
+                                            for (let i = 0; i < Amenitiesdata.length; i++) {
+                                                const tempObj = {};
+                                                if (Amenitiesdata[i].setAsDefault == 0 && Amenitiesdata[i].Status == 1) {
+                                                    tempObj[Amenitiesdata[i].Amnities_Name] = Amenitiesdata[i].Amount
+                                                } else if (Amenitiesdata[i].setAsDefault == 1 && Amenitiesdata[i].Status == 1) {
+                                                    tempObj[Amenitiesdata[i].Amnities_Name] = Amenitiesdata[i].Amount;
+                                                    RoomRent.Rent -= Amenitiesdata[i].Amount;
+                                                    console.log("Amenitiesdata[i].Amount", Amenitiesdata[i].Amount)
+                                                }
+                                                breakUpTable.push(tempObj);
+
                                             }
-                                            breakUpTable.push(tempObj);
-
                                         }
-                                    }
-                                    else {
-                                    }
-                                    connection.query(`select * from hostel where  isActive =1`, async function (error, hosdata) {
-                                        console.log("hosdata", hosdata.length)
+                                        else {
+                                        }
+                                        connection.query(`select * from hostel where  isActive =1`, async function (error, hosdata) {
+                                            console.log("hosdata", hosdata.length)
 
-                                        let hostelbasedEb = 0;
-                                        let roombasedEb = 0;
-                                        let eb_amount_total;
-                                        let eb_Hostel = 0
-                                        let AdvanceAmount = 0;
-                                        const previousMonthDate = moment().subtract(1, 'months');
-                                        const previousMonth = previousMonthDate.month() + 1; // month() is zero-based
-                                        const previousYear = previousMonthDate.year();
-
-                                        if (data[0].isHostelBased === 1) {
-                                            // Get the previous month's date
+                                            let hostelbasedEb = 0;
+                                            let roombasedEb = 0;
+                                            let eb_amount_total;
+                                            let eb_Hostel = 0
+                                            let AdvanceAmount = 0;
                                             const previousMonthDate = moment().subtract(1, 'months');
                                             const previousMonth = previousMonthDate.month() + 1; // month() is zero-based
                                             const previousYear = previousMonthDate.year();
 
-                                            console.log("Previous Month:", previousMonth, "Previous Year:", previousYear);
+                                            if (data[0].isHostelBased === 1) {
+                                                // Get the previous month's date
+                                                const previousMonthDate = moment().subtract(1, 'months');
+                                                const previousMonth = previousMonthDate.month() + 1; // month() is zero-based
+                                                const previousYear = previousMonthDate.year();
 
-                                            // Filter users based on the Hostel_Id and createdAt month/year being the previous month/year
-                                            let filteredArray = hosdata.filter(item => {
-                                                const createdAtDate = moment(item.createdAt);
-                                                if (!createdAtDate.isValid()) {
-                                                    console.error("Invalid date:", item.createdAt);
-                                                    return false;
+                                                console.log("Previous Month:", previousMonth, "Previous Year:", previousYear);
+
+                                                // Filter users based on the Hostel_Id and createdAt month/year being the previous month/year
+                                                let filteredArray = hosdata.filter(item => {
+                                                    const createdAtDate = moment(item.createdAt);
+                                                    if (!createdAtDate.isValid()) {
+                                                        console.error("Invalid date:", item.createdAt);
+                                                        return false;
+                                                    }
+
+                                                    const createdAtMonth = createdAtDate.month() + 1; // moment.js months are 0-based
+                                                    const createdAtYear = createdAtDate.year();
+
+                                                    return item.Hostel_Id == data[0].Hostel_Id && createdAtMonth === previousMonth && createdAtYear === previousYear;
+                                                });
+
+                                                console.log("filteredArray.length", filteredArray.length);
+
+                                                if (filteredArray.length > 0) {
+                                                    let totalNumberOfDays = 0;
+
+                                                    // Map through filtered users to calculate the number of days and amounts
+                                                    let userDayAmounts = filteredArray.map(user => {
+                                                        const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
+                                                        const dueDate = previousMonthDate.endOf('month').format('YYYY-MM-DD');
+                                                        const invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+                                                        const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+                                                        const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+                                                        const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+
+                                                        totalNumberOfDays += numberOfDays;
+
+                                                        return { numberOfDays: numberOfDays, hostel_id: user.Hostel_Id, user_id: user.User_Id };
+                                                    });
+
+                                                    // Calculate the room base cost per day
+                                                    const roombase = data[0].EbAmount / totalNumberOfDays;
+
+                                                    console.log(userDayAmounts, "<<<<<<<<<<<<<<<<<<.............>>>>>>>>>>>>>>>>>>>>>");
+
+                                                    // Calculate the amount each user owes
+                                                    let userAmounts = userDayAmounts.map(user => ({
+                                                        user_id: user.user_id,
+                                                        hostel_id: user.hostel_id,
+                                                        amount: roombase * user.numberOfDays
+                                                    }));
+
+                                                    console.log("User Amounts:", userAmounts);
+                                                    console.log(reqBodyData.User_Id, "tytyy");
+
+                                                    let userAmount = userAmounts.find(x => x.user_id === reqBodyData.User_Id);
+
+                                                    console.log(userAmount, ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;");
+
+                                                    eb_Hostel = userAmount ? userAmount.amount.toFixed() : 0;
+
+                                                    console.log("EB Hostel:", eb_Hostel);
+
+                                                    breakUpTable.push({ EbAmount: eb_Hostel });
+                                                } else {
+                                                    eb_Hostel = 0;
+                                                    breakUpTable.push({ EbAmount: eb_Hostel });
                                                 }
 
-                                                const createdAtMonth = createdAtDate.month() + 1; // moment.js months are 0-based
-                                                const createdAtYear = createdAtDate.year();
-
-                                                return item.Hostel_Id == data[0].Hostel_Id && createdAtMonth === previousMonth && createdAtYear === previousYear;
-                                            });
-
-                                            console.log("filteredArray.length", filteredArray.length);
-
-                                            if (filteredArray.length > 0) {
-                                                let totalNumberOfDays = 0;
-
-                                                // Map through filtered users to calculate the number of days and amounts
-                                                let userDayAmounts = filteredArray.map(user => {
-                                                    const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-                                                    const dueDate = previousMonthDate.endOf('month').format('YYYY-MM-DD');
-                                                    const invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-                                                    const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-                                                    const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-                                                    const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
-
-                                                    totalNumberOfDays += numberOfDays;
-
-                                                    return { numberOfDays: numberOfDays, hostel_id: user.Hostel_Id, user_id: user.User_Id };
-                                                });
-
-                                                // Calculate the room base cost per day
-                                                const roombase = data[0].EbAmount / totalNumberOfDays;
-
-                                                console.log(userDayAmounts, "<<<<<<<<<<<<<<<<<<.............>>>>>>>>>>>>>>>>>>>>>");
-
-                                                // Calculate the amount each user owes
-                                                let userAmounts = userDayAmounts.map(user => ({
-                                                    user_id: user.user_id,
-                                                    hostel_id: user.hostel_id,
-                                                    amount: roombase * user.numberOfDays
-                                                }));
-
-                                                console.log("User Amounts:", userAmounts);
-                                                console.log(reqBodyData.User_Id, "tytyy");
-
-                                                let userAmount = userAmounts.find(x => x.user_id === reqBodyData.User_Id);
-
-                                                console.log(userAmount, ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;");
-
-                                                eb_Hostel = userAmount ? userAmount.amount.toFixed() : 0;
-
-                                                console.log("EB Hostel:", eb_Hostel);
-
-                                                breakUpTable.push({ EbAmount: eb_Hostel });
+                                                generatePDFFor(breakUpTable, hosdata, hostel, data, response, connection);
                                             } else {
+                                                let tempArray = hosdata.filter(item => {
+                                                    const createdAtDate = moment(item.createdAt);
+                                                    const createdAtMonth = createdAtDate.month() + 1; // month() is zero-based
+                                                    const createdAtYear = createdAtDate.year();
+                                                    return item.Hostel_Id == data[0].Hostel_Id && item.Floor == data[0].Floor_Id && item.Rooms == data[0].Room_No && createdAtMonth === previousMonth && createdAtYear === previousYear;
+                                                });
+                                                console.log("tempArray", tempArray);
+
+                                                if (tempArray.length > 0) {
+                                                    let totalNumberOfDays = 0;
+
+                                                    let userDayAmounts = tempArray.map(user => {
+                                                        const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
+                                                        const dueDate = previousMonthDate.endOf('month').format('YYYY-MM-DD');
+                                                        const invoiceDate = moment(joinDate).format('YYYY-MM-DD');
+                                                        const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
+                                                        const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
+                                                        const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
+
+                                                        totalNumberOfDays += numberOfDays;
+
+                                                        return { numberOfDays: numberOfDays, hostel_id: user.Hostel_Id, user_id: user.User_Id };
+                                                    });
+
+                                                    const roombase = data[0].EbAmount / totalNumberOfDays;
+
+                                                    let userAmounts = userDayAmounts.map(user => ({
+                                                        user_id: user.user_id,
+                                                        amount: roombase * user.numberOfDays
+                                                    }));
+
+                                                    console.log("User Amounts:", userAmounts);
+                                                    console.log(reqBodyData.User_Id, "[][][][][][][]");
+                                                    let userAmount = userAmounts.find(x => x.user_id === reqBodyData.User_Id);
+
+                                                    eb_amount_total = userAmount ? userAmount.amount.toFixed() : 0;
+                                                    console.log("eb_amount_total123", eb_amount_total);
+
+                                                    breakUpTable.push({ EbAmount: eb_amount_total });
+                                                } else {
+                                                    eb_amount_total = 0;
+                                                    breakUpTable.push({ EbAmount: eb_amount_total });
+                                                }
+
                                                 eb_Hostel = 0;
-                                                breakUpTable.push({ EbAmount: eb_Hostel });
+                                                generatePDFFor(breakUpTable, hosdata, hostel, data, response, connection);
                                             }
 
-                                            generatePDFFor(breakUpTable, hosdata, hostel, data, response, connection);
-                                        } else {
-                                            let tempArray = hosdata.filter(item => {
-                                                const createdAtDate = moment(item.createdAt);
-                                                const createdAtMonth = createdAtDate.month() + 1; // month() is zero-based
-                                                const createdAtYear = createdAtDate.year();
-                                                return item.Hostel_Id == data[0].Hostel_Id && item.Floor == data[0].Floor_Id && item.Rooms == data[0].Room_No && createdAtMonth === previousMonth && createdAtYear === previousYear;
-                                            });
-                                            console.log("tempArray", tempArray);
 
-                                            if (tempArray.length > 0) {
-                                                let totalNumberOfDays = 0;
-
-                                                let userDayAmounts = tempArray.map(user => {
-                                                    const joinDate = moment(user.createdAt).format('YYYY-MM-DD');
-                                                    const dueDate = previousMonthDate.endOf('month').format('YYYY-MM-DD');
-                                                    const invoiceDate = moment(joinDate).format('YYYY-MM-DD');
-                                                    const formattedJoinDate = moment(invoiceDate).format('YYYY-MM-DD');
-                                                    const formattedDueDate = moment(dueDate).format('YYYY-MM-DD');
-                                                    const numberOfDays = moment(formattedDueDate).diff(moment(formattedJoinDate), 'days') + 1;
-
-                                                    totalNumberOfDays += numberOfDays;
-
-                                                    return { numberOfDays: numberOfDays, hostel_id: user.Hostel_Id, user_id: user.User_Id };
-                                                });
-
-                                                const roombase = data[0].EbAmount / totalNumberOfDays;
-
-                                                let userAmounts = userDayAmounts.map(user => ({
-                                                    user_id: user.user_id,
-                                                    amount: roombase * user.numberOfDays
-                                                }));
-
-                                                console.log("User Amounts:", userAmounts);
-                                                console.log(reqBodyData.User_Id, "[][][][][][][]");
-                                                let userAmount = userAmounts.find(x => x.user_id === reqBodyData.User_Id);
-
-                                                eb_amount_total = userAmount ? userAmount.amount.toFixed() : 0;
-                                                console.log("eb_amount_total123", eb_amount_total);
-
-                                                breakUpTable.push({ EbAmount: eb_amount_total });
-                                            } else {
-                                                eb_amount_total = 0;
-                                                breakUpTable.push({ EbAmount: eb_amount_total });
-                                            }
-
-                                            eb_Hostel = 0;
-                                            generatePDFFor(breakUpTable, hosdata, hostel, data, response, connection);
-                                        }
-
-
-                                        console.log(eb_Hostel, "Ending Eb AMount.....?");
+                                            console.log(eb_Hostel, "Ending Eb AMount.....?");
+                                        })
                                     })
+
+
                                 })
+                            }
 
 
-                            })
+
+                        } else {
+                            response.status(404).json({ message: 'No data found' });
                         }
 
+                    });
+            }
+        }
 
+        const generatePDF = async (inv_data) => {
+            try {
+                const htmlFilePath = path.join(__dirname, 'mail_templates', 'invoicepdf.html');
+                let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
 
-                    } else {
-                        response.status(404).json({ message: 'No data found' });
+                const amountInWords = converter.toWords(inv_data.PaidAmount);
+                // console.log("amountInWords", amountInWords)
+                const currentTimeFormatted = moment().format('hh:mm A');
+                // console.log("currentTimeFormatted", currentTimeFormatted)
+                const defaultLogoPath = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg';
+                var logoPathimage = inv_data.Hostel_Logo ? inv_data.Hostel_Logo : defaultLogoPath;
+                // console.log(logoPathimage);
+                const invdate = moment(inv_data.Date).format('DD/MM/YYYY');
+                htmlContent = htmlContent
+                    .replace('{{hostal_name}}', inv_data.Hostel_Name)
+                    .replace('{{city}}', inv_data.HostelAddress)
+                    .replace('{{Phone}}', inv_data.hostel_PhoneNo)
+                    .replace('{{email}}', inv_data.HostelEmail_Id)
+                    .replace('{{user_name}}', inv_data.UserName)
+                    .replace('{{user_address}}', inv_data.UserAddress)
+                    .replace('{{invoice_number}}', inv_data.Invoices)
+                    .replace('{{invoice_date}}', invdate)
+                    .replace('{{amount_in_words}}', amountInWords)
+                    .replace('{{current_time}}', currentTimeFormatted)
+                    .replace('{{logo}}', logoPathimage)
+                    .replace('{{paid_amount}}', inv_data.PaidAmount)
+                    .replace('{{balance_amount}}', inv_data.BalanceDue)
+                    .replace('{{first_amount}}', inv_data.inv_amount)
+
+                // Determine payment status based on amounts
+                let paymentStatusClass = '';
+                let paymentStatusText = '';
+
+                if (inv_data.inv_amount === inv_data.BalanceDue) {
+                    paymentStatusClass = 'pending';
+                    paymentStatusText = 'Pending';
+                } else if (inv_data.BalanceDue === 0) {
+                    paymentStatusClass = 'success';
+                    paymentStatusText = 'Success';
+                } else {
+                    paymentStatusClass = 'partial';
+                    paymentStatusText = 'Partial Paid';
+                }
+
+                // Determine amount name based on invoice type
+                const amountName = (inv_data.invoice_type === 1) ? 'Rent Amount' : 'Advance Amount';
+
+                // Replace all placeholders in the HTML content
+                htmlContent = htmlContent
+                    .replace('{{payment_status_class}}', paymentStatusClass)
+                    .replace('{{payment_status_text}}', paymentStatusText)
+                    .replace('{{Amount_name}}', amountName);
+
+                const currentDate = moment().format('YYYY-MM-DD');
+                const currentMonth = moment(currentDate).month() + 1;
+                const currentYear = moment(currentDate).year();
+                const currentTime = moment().format('HHmmss');
+
+                const filename = `INV${currentMonth}${currentYear}${currentTime}${inv_data.User_Id}.pdf`;
+                const outputPath = path.join(__dirname, filename);
+
+                const browser = await puppeteer.launch();
+                const page = await browser.newPage();
+
+                await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
+
+                // Generate PDF
+                await page.pdf({ path: outputPath, format: 'A4' });
+
+                await browser.close();
+                console.log('PDF created successfully!');
+                var inv_id = inv_data.id;
+                await uploadToS3(outputPath, filename, inv_id);
+                fs.unlinkSync(outputPath);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        };
+
+        const uploadToS3 = async (filePath, filename, inv_id) => {
+            try {
+                const fileContent = fs.readFileSync(filePath);
+
+                const key = `Invoice/${filename}`;
+                const bucketName = 'smartstaydevs';
+
+                const params = {
+                    Bucket: bucketName,
+                    Key: key,
+                    Body: fileContent,
+                    ContentType: 'application/pdf',
+                };
+
+                const data = await s3.upload(params).promise();
+                console.log('PDF uploaded successfully:', data.Location);
+
+                var sql_query = "UPDATE invoicedetails SET invoicePDF='" + data.Location + "' WHERE id='" + inv_id + "';";
+                connection.query(sql_query, function (err, data) {
+                    if (err) {
+                        console.log(err);
+                        return
+                    }
+                    else {
+                        response.status(200).json({ message: 'Insert PDF successfully' });
+
                     }
 
-                });
-        }
-    }
+                })
 
-    const generatePDF = async (inv_data) => {
-        try {
-            const htmlFilePath = path.join(__dirname, 'mail_templates', 'invoicepdf.html');
-            let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
-
-            const amountInWords = converter.toWords(inv_data.PaidAmount);
-            // console.log("amountInWords", amountInWords)
-            const currentTimeFormatted = moment().format('hh:mm A');
-            // console.log("currentTimeFormatted", currentTimeFormatted)
-            const defaultLogoPath = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg';
-            var logoPathimage = inv_data.Hostel_Logo ? inv_data.Hostel_Logo : defaultLogoPath;
-            // console.log(logoPathimage);
-            const invdate = moment(inv_data.Date).format('DD/MM/YYYY');
-            htmlContent = htmlContent
-                .replace('{{hostal_name}}', inv_data.Hostel_Name)
-                .replace('{{city}}', inv_data.HostelAddress)
-                .replace('{{Phone}}', inv_data.hostel_PhoneNo)
-                .replace('{{email}}', inv_data.HostelEmail_Id)
-                .replace('{{user_name}}', inv_data.UserName)
-                .replace('{{user_address}}', inv_data.UserAddress)
-                .replace('{{invoice_number}}', inv_data.Invoices)
-                .replace('{{invoice_date}}', invdate)
-                .replace('{{amount_in_words}}', amountInWords)
-                .replace('{{current_time}}', currentTimeFormatted)
-                .replace('{{logo}}', logoPathimage)
-                .replace('{{paid_amount}}', inv_data.PaidAmount)
-                .replace('{{balance_amount}}', inv_data.BalanceDue)
-                .replace('{{first_amount}}', inv_data.inv_amount)
-
-            // Determine payment status based on amounts
-            let paymentStatusClass = '';
-            let paymentStatusText = '';
-
-            if (inv_data.inv_amount === inv_data.BalanceDue) {
-                paymentStatusClass = 'pending';
-                paymentStatusText = 'Pending';
-            } else if (inv_data.BalanceDue === 0) {
-                paymentStatusClass = 'success';
-                paymentStatusText = 'Success';
-            } else {
-                paymentStatusClass = 'partial';
-                paymentStatusText = 'Partial Paid';
+                return data.Location;
+            } catch (err) {
+                console.error('Error uploading PDF:', err);
             }
+        };
 
-            // Determine amount name based on invoice type
-            const amountName = (inv_data.invoice_type === 1) ? 'Rent Amount' : 'Advance Amount';
-
-            // Replace all placeholders in the HTML content
-            htmlContent = htmlContent
-                .replace('{{payment_status_class}}', paymentStatusClass)
-                .replace('{{payment_status_text}}', paymentStatusText)
-                .replace('{{Amount_name}}', amountName);
-
-            const currentDate = moment().format('YYYY-MM-DD');
-            const currentMonth = moment(currentDate).month() + 1;
-            const currentYear = moment(currentDate).year();
-            const currentTime = moment().format('HHmmss');
-
-            const filename = `INV${currentMonth}${currentYear}${currentTime}${inv_data.User_Id}.pdf`;
-            const outputPath = path.join(__dirname, filename);
-
-            const browser = await puppeteer.launch();
-            const page = await browser.newPage();
-
-            await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
-
-            // Generate PDF
-            await page.pdf({ path: outputPath, format: 'A4' });
-
-            await browser.close();
-            console.log('PDF created successfully!');
-            var inv_id = inv_data.id;
-            await uploadToS3(outputPath, filename, inv_id);
-            fs.unlinkSync(outputPath);
-        } catch (error) {
-            console.error('Error:', error);
-        }
-    };
-
-    const uploadToS3 = async (filePath, filename, inv_id) => {
-        try {
-            const fileContent = fs.readFileSync(filePath);
-
-            const key = `Invoice/${filename}`;
-            const bucketName = 'smartstaydevs';
-
-            const params = {
-                Bucket: bucketName,
-                Key: key,
-                Body: fileContent,
-                ContentType: 'application/pdf',
-            };
-
-            const data = await s3.upload(params).promise();
-            console.log('PDF uploaded successfully:', data.Location);
-
-            var sql_query = "UPDATE invoicedetails SET invoicePDF='" + data.Location + "' WHERE id='" + inv_id + "';";
-            connection.query(sql_query, function (err, data) {
-                if (err) {
-                    console.log(err);
-                    return
-                }
-                else {
-                    response.status(200).json({ message: 'Insert PDF successfully' });
-
-                }
-
-            })
-
-            return data.Location;
-        } catch (err) {
-            console.error('Error uploading PDF:', err);
-        }
-    };
+    } else {
+        response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
 }
 
 function generatePDFFor(breakUpTable, hosdata, hostel, data, response, connection) {
@@ -2299,15 +2308,23 @@ ORDER BY
 function getEbStart(connection, response, request) {
 
     var created_by = request.user_details.id;
+    var show_ids = request.show_ids;
+    var role_permissions = request.role_permissions;
+    var is_admin = request.is_admin;
 
-    let query = "SELECT hos.Name as hoatel_Name,eb.id as eb_Id,hos.id as hostel_Id,hos.profile,eb.hostel_id,eb.floor_id,eb.room_id,eb.total_amount,eb.total_reading,hf.floor_name,hr.Room_Id,eb.date,eb.reading FROM room_readings eb JOIN hosteldetails hos ON hos.id = eb.hostel_id LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=eb.floor_id AND hf.hostel_id=eb.hostel_id JOIN hostelrooms AS hr ON hr.id=eb.room_id where hos.created_By =? AND eb.status=1;"
-    connection.query(query, [created_by], function (error, data) {
-        if (error) {
-            response.status(203).json({ message: 'not connected' })
-        } else {
-            response.status(200).json({ data: data })
-        }
-    })
+    if (is_admin == 1 || (role_permissions[12] && role_permissions[12].per_view == 1)) {
+
+        let query = "SELECT hos.Name as hoatel_Name,eb.id as eb_Id,hos.id as hostel_Id,hos.profile,eb.hostel_id,eb.floor_id,eb.room_id,eb.total_amount,eb.total_reading,hf.floor_name,hr.Room_Id,eb.date,eb.reading FROM room_readings eb JOIN hosteldetails hos ON hos.id = eb.hostel_id LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=eb.floor_id AND hf.hostel_id=eb.hostel_id JOIN hostelrooms AS hr ON hr.id=eb.room_id where hos.created_By IN (" + show_ids + ") AND eb.status=1;"
+        connection.query(query, function (error, data) {
+            if (error) {
+                response.status(203).json({ message: 'not connected' })
+            } else {
+                response.status(200).json({ data: data })
+            }
+        })
+    } else {
+        response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
 }
 
 function UpdateInvoice(connection, response, atten) {
@@ -2330,60 +2347,68 @@ function UpdateInvoice(connection, response, atten) {
 
 function UpdateAmenitiesHistory(connection, response, request) {
     const reqData = request.body;
-    if (reqData) {
-        let created_By = request.user_details.id
-        connection.query(`select * from AmenitiesHistory where user_Id ='${reqData.userID}' and amenity_Id = ${reqData.amenityID} ORDER BY id DESC`, function (err, data) {
-            if (data && data.length > 0) {
-                if (data[0].status === 1) {
-                    // connection.query(`UPDATE AmenitiesHistory SET status = ${reqData.status} where user_Id ='${reqData.userID}' and amenity_Id = ${reqData.amenityID}`, function (updateError, updateData) {
-                    connection.query(`insert into AmenitiesHistory(user_Id,amenity_Id,hostel_Id,created_By,status) values('${reqData.userID}',${reqData.amenityID},${reqData.hostelID},${created_By},${reqData.Status})`, function (updateError, updateData) {
-                        if (updateError) {
-                            console.log("updateError", updateError)
-                            response.status(201).json({ message: "Does not Update" });
-                        }
-                        else {
-                            response.status(200).json({ message: "Update Successfully" });
-                        }
-                    })
+    var role_permissions = request.role_permissions;
+    var is_admin = request.is_admin;
+
+    if (is_admin == 1 || (role_permissions[18] && role_permissions[18].per_create == 1)) {
+
+        if (reqData) {
+            let created_By = request.user_details.id
+            connection.query(`select * from AmenitiesHistory where user_Id ='${reqData.userID}' and amenity_Id = ${reqData.amenityID} ORDER BY id DESC`, function (err, data) {
+                if (data && data.length > 0) {
+                    if (data[0].status === 1) {
+                        // connection.query(`UPDATE AmenitiesHistory SET status = ${reqData.status} where user_Id ='${reqData.userID}' and amenity_Id = ${reqData.amenityID}`, function (updateError, updateData) {
+                        connection.query(`insert into AmenitiesHistory(user_Id,amenity_Id,hostel_Id,created_By,status) values('${reqData.userID}',${reqData.amenityID},${reqData.hostelID},${created_By},${reqData.Status})`, function (updateError, updateData) {
+                            if (updateError) {
+                                console.log("updateError", updateError)
+                                response.status(201).json({ message: "Does not Update" });
+                            }
+                            else {
+                                response.status(200).json({ message: "Update Successfully" });
+                            }
+                        })
+                    }
+                    else {
+                        connection.query(`insert into AmenitiesHistory(user_Id,amenity_Id,hostel_Id,created_By) values('${reqData.userID}',${reqData.amenityID},${reqData.hostelID},${created_By})`, function (error, insertData) {
+                            if (error) {
+                                response.status(201).json({ message: "Does not Insert" });
+                            }
+                            else {
+                                response.status(200).json({ message: "Insert successful" });
+                            }
+
+                        })
+                    }
                 }
                 else {
-                    connection.query(`insert into AmenitiesHistory(user_Id,amenity_Id,hostel_Id,created_By) values('${reqData.userID}',${reqData.amenityID},${reqData.hostelID},${created_By})`, function (error, insertData) {
-                        if (error) {
-                            response.status(201).json({ message: "Does not Insert" });
-                        }
-                        else {
-                            response.status(200).json({ message: "Insert successful" });
-                        }
+                    if (err) {
+                        response.status(201).json({ message: "Does not Insert" });
+                    }
+                    else {
+                        connection.query(`insert into AmenitiesHistory(user_Id,amenity_Id,hostel_Id,created_By) values('${reqData.userID}',${reqData.amenityID},${reqData.hostelID},${created_By})`, function (error, insertData) {
+                            if (error) {
+                                console.log("error", error);
+                                response.status(201).json({ message: "Does not Insert" });
+                            }
+                            else {
+                                response.status(200).json({ message: "Insert successful" });
+                            }
 
-                    })
+                        })
+                    }
                 }
-            }
-            else {
-                if (err) {
-                    response.status(201).json({ message: "Does not Insert" });
-                }
-                else {
-                    connection.query(`insert into AmenitiesHistory(user_Id,amenity_Id,hostel_Id,created_By) values('${reqData.userID}',${reqData.amenityID},${reqData.hostelID},${created_By})`, function (error, insertData) {
-                        if (error) {
-                            console.log("error", error);
-                            response.status(201).json({ message: "Does not Insert" });
-                        }
-                        else {
-                            response.status(200).json({ message: "Insert successful" });
-                        }
+            })
 
-                    })
-                }
-            }
-        })
-
-    }
-    else {
-        response.status(201).json({ message: 'Missing Parameter' })
+        } else {
+            response.status(201).json({ message: 'Missing Parameter' })
+        }
+    } else {
+        response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
 }
 // startdate to enddate
 function GetAmenitiesHistory(connection, res, req) {
+
     // console.log("req", moment(req.endingDate).format('DD/MM/YYYY'));
     let endMonth = req.endingDate ? new Date(req.endingDate).getMonth() + 1 : new Date(req.startingDate).getMonth() + 1;
     console.log("endMonth", endMonth);
@@ -2472,9 +2497,6 @@ function GetAmenitiesHistory(connection, res, req) {
 
 
         let monthData = [];
-
-
-
 
         for (let month = startMonth; month <= endMonth; month++) {
             let ebAmount = 0;
@@ -2738,281 +2760,330 @@ function AmenitiesPDF(hostelDetails, monthData, response) {
 
 function add_manual_invoice(req, res) {
 
-    var { user_id, due_date, date, invoice_id, room_rent, advance_amount, eb_amount, amenity } = req.body;
+    var role_permissions = req.role_permissions;
+    var is_admin = req.is_admin;
 
-    var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
-    connection.query(sql1, [user_id], function (err, user_details) {
-        if (err) {
-            console.log(err);
-            return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
-        } else if (user_details.length != 0) {
+    if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_create == 1)) {
 
-            var user_data = user_details[0];
+        var { user_id, due_date, date, invoice_id, room_rent, advance_amount, eb_amount, amenity } = req.body;
 
-            var total_am_amount = amenity && amenity.length > 0 ? amenity.reduce((sum, user) => sum + user.amount, 0) : 0;
+        var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
+        connection.query(sql1, [user_id], function (err, user_details) {
+            if (err) {
+                console.log(err);
+                return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
+            } else if (user_details.length != 0) {
 
-            console.log(total_am_amount);
+                var user_data = user_details[0];
 
-            if (total_am_amount) {
-                total_am_amount = total_am_amount;
-            } else {
-                total_am_amount = 0
-            }
+                var total_am_amount = amenity && amenity.length > 0 ? amenity.reduce((sum, user) => sum + user.amount, 0) : 0;
 
-            if (!advance_amount) {
-                advance_amount = 0;
-            }
+                console.log(total_am_amount);
 
-            var total_amount = parseInt(total_am_amount) + parseInt(room_rent) + parseInt(eb_amount) + parseInt(advance_amount);
-
-            var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,RoomRent,EbAmount,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id,advance_amount) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-            connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, total_amount, due_date, date, invoice_id, 'pending', user_data.User_Id, room_rent, eb_amount, total_am_amount, user_data.Bed, total_amount, 'manual', 1, user_id, advance_amount], function (err, ins_data) {
-                if (err) {
-                    console.log(err);
-                    return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
+                if (total_am_amount) {
+                    total_am_amount = total_am_amount;
                 } else {
-                    var inv_id = ins_data.insertId;
-                    if (amenity && amenity.length > 0) {
-                        var remaining = amenity.length;
-                        amenity.forEach(item => {
-                            var sql3 = "INSERT INTO manual_invoice_amenities (am_name, user_id, amount,invoice_id) VALUES (?, ?, ?,?)";
-                            connection.query(sql3, [item.am_name, user_id, item.amount, inv_id], function (err) {
-                                if (err) {
-                                    console.log("Error inserting amenity details:", err);
-                                }
-                                remaining -= 1;
-                                if (remaining === 0) {
-                                    return res.status(200).json({ statusCode: 200, message: "Invoice and Amenity Details Added Successfully" });
-                                }
-                            });
-                        });
-                    } else {
-                        return res.status(200).json({ statusCode: 200, message: "Invoice Added Successfully" });
-                    }
+                    total_am_amount = 0
                 }
-            })
 
-        } else {
-            return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
-        }
-    })
+                if (!advance_amount) {
+                    advance_amount = 0;
+                }
+
+                var total_amount = parseInt(total_am_amount) + parseInt(room_rent) + parseInt(eb_amount) + parseInt(advance_amount);
+
+                var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,RoomRent,EbAmount,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id,advance_amount) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, total_amount, due_date, date, invoice_id, 'pending', user_data.User_Id, room_rent, eb_amount, total_am_amount, user_data.Bed, total_amount, 'manual', 1, user_id, advance_amount], function (err, ins_data) {
+                    if (err) {
+                        console.log(err);
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
+                    } else {
+                        var inv_id = ins_data.insertId;
+                        if (amenity && amenity.length > 0) {
+                            var remaining = amenity.length;
+                            amenity.forEach(item => {
+                                var sql3 = "INSERT INTO manual_invoice_amenities (am_name, user_id, amount,invoice_id) VALUES (?, ?, ?,?)";
+                                connection.query(sql3, [item.am_name, user_id, item.amount, inv_id], function (err) {
+                                    if (err) {
+                                        console.log("Error inserting amenity details:", err);
+                                    }
+                                    remaining -= 1;
+                                    if (remaining === 0) {
+                                        return res.status(200).json({ statusCode: 200, message: "Invoice and Amenity Details Added Successfully" });
+                                    }
+                                });
+                            });
+                        } else {
+                            return res.status(200).json({ statusCode: 200, message: "Invoice Added Successfully" });
+                        }
+                    }
+                })
+
+            } else {
+                return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+            }
+        })
+    } else {
+        res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
 
 }
 
 function customer_readings(req, res) {
 
     var created_by = req.user_details.id;
+    var role_permissions = req.role_permissions;
+    var is_admin = req.is_admin;
 
-    var sql1 = "SELECT cb.*,hos.Name,hos.profile,hos.HostelName,hf.floor_name,hr.Room_Id, DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id JOIN Hostel_Floor AS hf ON hf.floor_id=hos.Floor AND hf.hostel_id=hos.Hostel_Id JOIN hostelrooms AS hr ON hr.id=hos.Rooms WHERE cb.created_by=?";
-    connection.query(sql1, [created_by], function (err, data) {
-        if (err) {
-            console.log(err);
-            return res.status(201).json({ statusCode: 201, message: "Unable to Get Eb Details" })
-        } else {
-            return res.status(200).json({ statusCode: 200, message: "Customer Eb Details", eb_details: data })
-        }
-    })
+    var show_ids = req.show_ids;
+
+    if (is_admin == 1 || (role_permissions[12] && role_permissions[12].per_view == 1)) {
+
+        var sql1 = "SELECT cb.*,hos.Name,hos.profile,hos.HostelName,hf.floor_name,hr.Room_Id, DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id JOIN Hostel_Floor AS hf ON hf.floor_id=hos.Floor AND hf.hostel_id=hos.Hostel_Id JOIN hostelrooms AS hr ON hr.id=hos.Rooms WHERE cb.created_by IN (" + show_ids + ")";
+        connection.query(sql1, [created_by], function (err, data) {
+            if (err) {
+                console.log(err);
+                return res.status(201).json({ statusCode: 201, message: "Unable to Get Eb Details" })
+            } else {
+                return res.status(200).json({ statusCode: 200, message: "Customer Eb Details", eb_details: data })
+            }
+        })
+    } else {
+        res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
 }
 
 function add_recuring_bill(req, res) {
 
     var { user_id, due_date, date, invoice_id, room_rent, eb_amount, amenity, advance_amount } = req.body;
 
-    if (!user_id) {
-        return res.status(200).json({ statusCode: 201, message: "Missing Mandatory Fields" })
-    }
+    var role_permissions = req.role_permissions;
+    var is_admin = req.is_admin;
 
-    var created_by = req.user_details.id;
+    if (is_admin == 1 || (role_permissions[11] && role_permissions[11].per_create == 1)) {
 
-    var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
-    connection.query(sql1, [user_id], function (err, user_details) {
-        if (err) {
-            console.log(err);
-            return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
-        } else if (user_details.length != 0) {
-
-            var user_data = user_details[0];
-
-            var total_am_amount = amenity && amenity.length > 0 ? amenity.reduce((sum, user) => sum + user.amount, 0) : 0;
-
-            console.log(total_am_amount);
-
-            if (total_am_amount) {
-                total_am_amount = total_am_amount;
-            } else {
-                total_am_amount = 0
-            }
-
-            let dateObj = new Date(date);  // Format: YYYY-MM-DD
-            let inv_day = dateObj.getDate();
-            console.log(inv_day);
-
-            let duedateObj = new Date(due_date);  // Format: YYYY-MM-DD
-            let due_day = duedateObj.getDate();
-            console.log(due_day);
-
-            var eb = 0;
-            if (eb_amount) {
-                eb = 1
-            }
-
-            var advance = 0;
-            if (advance_amount) {
-                advance = 1
-            }
-
-            var rent = 0;
-            if (room_rent) {
-                rent = 1
-            }
-
-            var amen = 0;
-            if (amenity && amenity.length > 0) {
-                amen = 1
-            }
-            if (!eb_amount) {
-                eb_amount = 0
-            }
-            if (!advance_amount) {
-                advance_amount = 0
-            }
-
-            var total_amount_data = parseInt(total_am_amount) + parseInt(eb_amount) + advance_amount + room_rent;
-
-            var sql2 = "SELECT * FROM recuring_inv_details WHERE user_id=? AND status=1";
-            connection.query(sql2, [user_id], function (err, recure_data) {
-                if (err) {
-                    return res.status(201).json({ statusCode: 201, message: "Unable to Get Invoice Details" })
-                } else if (recure_data.length == 0) {
-
-                    var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,RoomRent,EbAmount,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-                    connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, total_amount_data, due_date, date, invoice_id, 'pending', user_data.User_Id, room_rent, eb_amount, total_am_amount, user_data.Bed, total_amount_data, 'recuring', 2, user_id], function (err, ins_data) {
-                        if (err) {
-                            console.log(err);
-                            return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
-                        } else {
-                            var sql4 = "INSERT INTO recuring_inv_details (user_id,invoice_date,due_date,advance,rent,aminity,eb,status,created_by) VALUES (?,?,?,?,?,?,?,?,?)"
-                            connection.query(sql4, [user_id, inv_day, due_day, advance, rent, amen, eb, 1, created_by], function (err, ins_data) {
-                                if (err) {
-                                    console.log(err);
-                                    return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
-                                } else {
-                                    return res.status(200).json({ statusCode: 200, message: "Recuring Bill Created Successfully!" });
-                                }
-                            })
-                        }
-                    })
-                } else {
-                    return res.status(201).json({ statusCode: 201, message: "Already Added in this User!" })
-                }
-            })
-        } else {
-            return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+        if (!user_id) {
+            return res.status(200).json({ statusCode: 201, message: "Missing Mandatory Fields" })
         }
-    })
+
+        var created_by = req.user_details.id;
+
+        var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
+        connection.query(sql1, [user_id], function (err, user_details) {
+            if (err) {
+                console.log(err);
+                return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
+            } else if (user_details.length != 0) {
+
+                var user_data = user_details[0];
+
+                var total_am_amount = amenity && amenity.length > 0 ? amenity.reduce((sum, user) => sum + user.amount, 0) : 0;
+
+                console.log(total_am_amount);
+
+                if (total_am_amount) {
+                    total_am_amount = total_am_amount;
+                } else {
+                    total_am_amount = 0
+                }
+
+                let dateObj = new Date(date);  // Format: YYYY-MM-DD
+                let inv_day = dateObj.getDate();
+                console.log(inv_day);
+
+                let duedateObj = new Date(due_date);  // Format: YYYY-MM-DD
+                let due_day = duedateObj.getDate();
+                console.log(due_day);
+
+                var eb = 0;
+                if (eb_amount) {
+                    eb = 1
+                }
+
+                var advance = 0;
+                if (advance_amount) {
+                    advance = 1
+                }
+
+                var rent = 0;
+                if (room_rent) {
+                    rent = 1
+                }
+
+                var amen = 0;
+                if (amenity && amenity.length > 0) {
+                    amen = 1
+                }
+                if (!eb_amount) {
+                    eb_amount = 0
+                }
+                if (!advance_amount) {
+                    advance_amount = 0
+                }
+
+                var total_amount_data = parseInt(total_am_amount) + parseInt(eb_amount) + advance_amount + room_rent;
+
+                var sql2 = "SELECT * FROM recuring_inv_details WHERE user_id=? AND status=1";
+                connection.query(sql2, [user_id], function (err, recure_data) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Get Invoice Details" })
+                    } else if (recure_data.length == 0) {
+
+                        var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,RoomRent,EbAmount,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                        connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, total_amount_data, due_date, date, invoice_id, 'pending', user_data.User_Id, room_rent, eb_amount, total_am_amount, user_data.Bed, total_amount_data, 'recuring', 2, user_id], function (err, ins_data) {
+                            if (err) {
+                                console.log(err);
+                                return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
+                            } else {
+                                var sql4 = "INSERT INTO recuring_inv_details (user_id,invoice_date,due_date,advance,rent,aminity,eb,status,created_by) VALUES (?,?,?,?,?,?,?,?,?)"
+                                connection.query(sql4, [user_id, inv_day, due_day, advance, rent, amen, eb, 1, created_by], function (err, ins_data) {
+                                    if (err) {
+                                        console.log(err);
+                                        return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
+                                    } else {
+                                        return res.status(200).json({ statusCode: 200, message: "Recuring Bill Created Successfully!" });
+                                    }
+                                })
+                            }
+                        })
+                    } else {
+                        return res.status(201).json({ statusCode: 201, message: "Already Added in this User!" })
+                    }
+                })
+            } else {
+                return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+            }
+        })
+    } else {
+        res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
 }
 
 function get_recuring_amount(req, res) {
 
     var { user_id } = req.body;
+    var role_permissions = req.role_permissions;
+    var is_admin = req.is_admin;
 
-    if (!user_id) {
-        return res.status(201).json({ message: "Missing Mandatory Fields", statusCode: 201 });
-    }
+    if (is_admin == 1 || (role_permissions[11] && role_permissions[11].per_view == 1)) {
 
-    // Rent Amount
-    var sql1 = "SELECT *, CASE WHEN checkoutDate IS NULL THEN DATEDIFF(LAST_DAY(CURDATE()), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 ELSE DATEDIFF(LEAST(checkoutDate, LAST_DAY(CURDATE())), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 END AS days_stayed FROM hostel WHERE Rooms != 'undefined' AND Floor != 'undefined' AND joining_date <= LAST_DAY(CURDATE()) AND (checkoutDate >= DATE_FORMAT(CURDATE(), '%Y-%m-01') OR checkoutDate IS NULL) AND isActive = 1 AND ID = ?";
-    connection.query(sql1, [user_id], (err, data) => {
-        if (err) {
-            return res.status(201).json({ message: "Unable to Get User Details", statusCode: 201 });
-        } else if (data.length != 0) {
-
-            var total_days = data[0].days_stayed;
-
-            const currentDate = new Date(); // Current date
-            const currentYear = currentDate.getFullYear(); // Get current year
-            const currentMonth = currentDate.getMonth(); // Get current month (0-11)
-
-            // Calculate total days in the current month
-            const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-            const oneDayAmount = data[0].RoomRent / daysInCurrentMonth;
-
-            const totalRent = parseFloat((oneDayAmount * total_days).toFixed(2)); // Total rent rounded to 2 decimal places
-
-            var roundedRent = Math.round(totalRent);
-
-            var advance_amount = data[0].AdvanceAmount;
-
-            var array_data = [{
-                id: 1,
-                name: "Room Rent",
-                amount: roundedRent
-            }, {
-                id: 2,
-                name: "Advance Amount",
-                amount: advance_amount
-            }, {
-                id: 3,
-                name: "Eb Rent",
-                amount: 0
-            }, {
-                id: 4,
-                name: "Amenities",
-                amount: 0
-            }
-            ]
-
-            return res.status(200).json({ statusCode: 200, message: "Bill Amounts", data: array_data })
-
-        } else {
-            return res.status(201).json({ message: "Invalid User Details", statusCode: 201 });
+        if (!user_id) {
+            return res.status(201).json({ message: "Missing Mandatory Fields", statusCode: 201 });
         }
-    });
+
+        // Rent Amount
+        var sql1 = "SELECT *, CASE WHEN checkoutDate IS NULL THEN DATEDIFF(LAST_DAY(CURDATE()), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 ELSE DATEDIFF(LEAST(checkoutDate, LAST_DAY(CURDATE())), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 END AS days_stayed FROM hostel WHERE Rooms != 'undefined' AND Floor != 'undefined' AND joining_date <= LAST_DAY(CURDATE()) AND (checkoutDate >= DATE_FORMAT(CURDATE(), '%Y-%m-01') OR checkoutDate IS NULL) AND isActive = 1 AND ID = ?";
+        connection.query(sql1, [user_id], (err, data) => {
+            if (err) {
+                return res.status(201).json({ message: "Unable to Get User Details", statusCode: 201 });
+            } else if (data.length != 0) {
+
+                var total_days = data[0].days_stayed;
+
+                const currentDate = new Date(); // Current date
+                const currentYear = currentDate.getFullYear(); // Get current year
+                const currentMonth = currentDate.getMonth(); // Get current month (0-11)
+
+                // Calculate total days in the current month
+                const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+                const oneDayAmount = data[0].RoomRent / daysInCurrentMonth;
+
+                const totalRent = parseFloat((oneDayAmount * total_days).toFixed(2)); // Total rent rounded to 2 decimal places
+
+                var roundedRent = Math.round(totalRent);
+
+                var advance_amount = data[0].AdvanceAmount;
+
+                var array_data = [{
+                    id: 1,
+                    name: "Room Rent",
+                    amount: roundedRent
+                }, {
+                    id: 2,
+                    name: "Advance Amount",
+                    amount: advance_amount
+                }, {
+                    id: 3,
+                    name: "Eb Rent",
+                    amount: 0
+                }, {
+                    id: 4,
+                    name: "Amenities",
+                    amount: 0
+                }
+                ]
+
+                return res.status(200).json({ statusCode: 200, message: "Bill Amounts", data: array_data })
+
+            } else {
+                return res.status(201).json({ message: "Invalid User Details", statusCode: 201 });
+            }
+        });
+    } else {
+        res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
 }
 
 function all_recuring_bills(req, res) {
 
     var created_by = req.user_details.id;
 
-    // var sql1 = "SELECT inv.id,inv.Name AS user_name,inv.Invoices,inv.DueDate,inv.Date AS invoice_date,DATE_ADD(inv.Date, INTERVAL 1 MONTH) AS next_invoice_date,inv.Status,inv.BalanceDue,inv.PaidAmount,inv.hos_user_id AS user_id,inv.action,inv.invoice_type FROM recuring_inv_details AS rec JOIN hostel AS hs ON hs.id=rec.user_id JOIN invoicedetails AS inv ON inv.hos_user_id=rec.user_id AND inv.action='recuring' WHERE rec.created_by=?";
-    var sql1 = "SELECT rec.id AS recuire_id,inv.id,inv.Name AS user_name,inv.Invoices,inv.DueDate,inv.Date AS invoice_date,DATE_ADD(inv.Date, INTERVAL 1 MONTH) AS next_invoice_date,inv.Status,inv.BalanceDue,inv.PaidAmount, inv.Amount AS total_amount,inv.hos_user_id AS user_id,inv.action,inv.invoice_type FROM recuring_inv_details AS rec JOIN hostel AS hs ON hs.id = rec.user_id JOIN invoicedetails AS inv ON inv.hos_user_id = rec.user_id JOIN (SELECT hos_user_id, MAX(Date) AS latest_invoice_date FROM invoicedetails WHERE action IN ('recuring', 'auto_recuring') GROUP BY hos_user_id) AS latest_inv ON latest_inv.hos_user_id = inv.hos_user_id AND latest_inv.latest_invoice_date = inv.Date WHERE inv.action IN ('recuring', 'auto_recuring') AND rec.created_by=? AND rec.status=1 ORDER BY inv.id DESC;"
-    connection.query(sql1, [created_by], function (err, inv_data) {
-        if (err) {
-            return res.status(201).json({ message: "Unable to Get Bill Details", statusCode: 201 });
-        } else {
-            return res.status(200).json({ statusCode: 200, message: "Recuring Bill Details", data: inv_data })
-        }
-    })
+    var show_ids = req.show_ids;
+    var role_permissions = req.role_permissions;
+    var is_admin = req.is_admin;
+
+    if (is_admin == 1 || (role_permissions[11] && role_permissions[11].per_view == 1)) {
+
+        // var sql1 = "SELECT inv.id,inv.Name AS user_name,inv.Invoices,inv.DueDate,inv.Date AS invoice_date,DATE_ADD(inv.Date, INTERVAL 1 MONTH) AS next_invoice_date,inv.Status,inv.BalanceDue,inv.PaidAmount,inv.hos_user_id AS user_id,inv.action,inv.invoice_type FROM recuring_inv_details AS rec JOIN hostel AS hs ON hs.id=rec.user_id JOIN invoicedetails AS inv ON inv.hos_user_id=rec.user_id AND inv.action='recuring' WHERE rec.created_by=?";
+        var sql1 = "SELECT rec.id AS recuire_id,inv.id,inv.Name AS user_name,inv.Invoices,inv.DueDate,inv.Date AS invoice_date,DATE_ADD(inv.Date, INTERVAL 1 MONTH) AS next_invoice_date,inv.Status,inv.BalanceDue,inv.PaidAmount, inv.Amount AS total_amount,inv.hos_user_id AS user_id,inv.action,inv.invoice_type FROM recuring_inv_details AS rec JOIN hostel AS hs ON hs.id = rec.user_id JOIN invoicedetails AS inv ON inv.hos_user_id = rec.user_id JOIN (SELECT hos_user_id, MAX(Date) AS latest_invoice_date FROM invoicedetails WHERE action IN ('recuring', 'auto_recuring') GROUP BY hos_user_id) AS latest_inv ON latest_inv.hos_user_id = inv.hos_user_id AND latest_inv.latest_invoice_date = inv.Date WHERE inv.action IN ('recuring', 'auto_recuring') AND rec.created_by IN (?) AND rec.status=1 ORDER BY inv.id DESC;"
+        connection.query(sql1, [show_ids], function (err, inv_data) {
+            if (err) {
+                return res.status(201).json({ message: "Unable to Get Bill Details", statusCode: 201 });
+            } else {
+                return res.status(200).json({ statusCode: 200, message: "Recuring Bill Details", data: inv_data })
+            }
+        })
+    } else {
+        res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
 }
 
 function delete_recuring_bill(req, res) {
 
     var { id, user_id } = req.body;
 
-    if (!id || !user_id) {
-        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
-    }
+    var role_permissions = req.role_permissions;
+    var is_admin = req.is_admin;
 
-    var sql1 = "SELECT * FROM recuring_inv_details WHERE id=? AND user_id=?";
-    connection.query(sql1, [id, user_id], function (err, data) {
-        if (err) {
-            return res.status(201).json({ statusCode: 201, message: "Unable to Get Recuring Bill Details" })
-        } else if (data.length != 0) {
+    if (is_admin == 1 || (role_permissions[11] && role_permissions[11].per_delete == 1)) {
 
-            var sql2 = "UPDATE recuring_inv_details SET status=0 WHERE id=?";
-            connection.query(sql2, [id], function (err, data) {
-                if (err) {
-                    return res.status(201).json({ statusCode: 201, message: "Unable to Delete Recuring Bill Details" })
-                } else {
-                    return res.status(200).json({ statusCode: 200, message: "Recuring Bill Deleted Successfully!" })
-                }
-            })
-
-        } else {
-            return res.status(201).json({ statusCode: 201, message: "Invalid Bill Details" })
+        if (!id || !user_id) {
+            return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
         }
-    })
+
+        var sql1 = "SELECT * FROM recuring_inv_details WHERE id=? AND user_id=?";
+        connection.query(sql1, [id, user_id], function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Unable to Get Recuring Bill Details" })
+            } else if (data.length != 0) {
+
+                var sql2 = "UPDATE recuring_inv_details SET status=0 WHERE id=?";
+                connection.query(sql2, [id], function (err, data) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Delete Recuring Bill Details" })
+                    } else {
+                        return res.status(200).json({ statusCode: 200, message: "Recuring Bill Deleted Successfully!" })
+                    }
+                })
+
+            } else {
+                return res.status(201).json({ statusCode: 201, message: "Invalid Bill Details" })
+            }
+        })
+    } else {
+        res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
 }
 
 function update_recuring_bill(req, res) {

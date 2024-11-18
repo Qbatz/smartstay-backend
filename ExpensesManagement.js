@@ -26,253 +26,270 @@ function AddExpense(request, response) {
     purchase_amount = isNaN(purchase_amount) ? reqData.unit_amount : purchase_amount;
     // console.log("purchase_amount", purchase_amount);
     let createdate = moment(new Date()).format('yyyy-MM-DD HH:mm:ss')
+
+    var role_permissions = request.role_permissions;
+    var is_admin = request.is_admin;
+
     // console.log("createdate", createdate);
     if (reqData) {
+
         if (reqData.id != null && reqData.id != undefined && reqData.id != '') {
 
-            var sql1 = "SELECT * FROM expenses WHERE id=?";
-            connection.query(sql1, [reqData.id], function (err, ex_data) {
-                if (err) {
-                    response.status(201).json({ message: "Unable to Get Expenses Data" });
-                } else if (ex_data.length != 0) {
+            if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_edit == 1)) {
 
-                    var old_bank = ex_data[0].bank_id;
-                    var last_amount = ex_data[0].purchase_amount;
+                var sql1 = "SELECT * FROM expenses WHERE id=?";
+                connection.query(sql1, [reqData.id], function (err, ex_data) {
+                    if (err) {
+                        response.status(201).json({ message: "Unable to Get Expenses Data" });
+                    } else if (ex_data.length != 0) {
 
-                    if (!reqData.bank_id) {
-                        var new_bank_id = 0
-                    } else {
-                        var new_bank_id = reqData.bank_id;
-                    }
+                        var old_bank = ex_data[0].bank_id;
+                        var last_amount = ex_data[0].purchase_amount;
 
-
-                    let query = `UPDATE expenses SET vendor_id = '${reqData.vendor_id}',asset_id = '${reqData.asset_id}',category_id = ${reqData.category_id},purchase_date = '${purchase_date}',unit_count = ${reqData.unit_count},unit_amount = ${reqData.unit_amount},purchase_amount = ${purchase_amount},description = '${reqData.description}',created_by = ${createdBy},createdate = '${createdate}',payment_mode = '${reqData.payment_mode}',hostel_id ='${reqData.hostel_id}',bank_id='${new_bank_id}' WHERE id = ${reqData.id};`
-                    connection.query(query, function (updateErr, updateData) {
-                        if (updateErr) {
-                            console.log(updateErr);
-                            response.status(201).json({ message: "Internal Server Error" });
+                        if (!reqData.bank_id) {
+                            var new_bank_id = 0
                         } else {
+                            var new_bank_id = reqData.bank_id;
+                        }
 
-                            var sql1 = "SELECT * FROM transactions WHERE invoice_id=? AND description='Expenses'";
-                            connection.query(sql1, [reqData.id], function (err, trans_data) {
-                                if (err) {
-                                    console.log(err, "Update Trans Err");
-                                } else if (trans_data.length != 0) {
 
-                                    var sql2 = "UPDATE transactions SET amount=?,payment_type=?,payment_date=? WHERE invoice_id=?";
-                                    connection.query(sql2, [purchase_amount, reqData.payment_mode, purchase_date, reqData.id], function (err, up_trans) {
-                                        if (err) {
-                                            console.log(err, "Up_trans Err");
-                                        } else {
+                        let query = `UPDATE expenses SET vendor_id = '${reqData.vendor_id}',asset_id = '${reqData.asset_id}',category_id = ${reqData.category_id},purchase_date = '${purchase_date}',unit_count = ${reqData.unit_count},unit_amount = ${reqData.unit_amount},purchase_amount = ${purchase_amount},description = '${reqData.description}',created_by = ${createdBy},createdate = '${createdate}',payment_mode = '${reqData.payment_mode}',hostel_id ='${reqData.hostel_id}',bank_id='${new_bank_id}' WHERE id = ${reqData.id};`
+                        connection.query(query, function (updateErr, updateData) {
+                            if (updateErr) {
+                                console.log(updateErr);
+                                response.status(201).json({ message: "Internal Server Error" });
+                            } else {
 
-                                            if (reqData.payment_mode == "Net Banking" && reqData.bank_id) {
+                                var sql1 = "SELECT * FROM transactions WHERE invoice_id=? AND description='Expenses'";
+                                connection.query(sql1, [reqData.id], function (err, trans_data) {
+                                    if (err) {
+                                        console.log(err, "Update Trans Err");
+                                    } else if (trans_data.length != 0) {
 
-                                                var edit_id = reqData.id;
+                                        var sql2 = "UPDATE transactions SET amount=?,payment_type=?,payment_date=? WHERE invoice_id=?";
+                                        connection.query(sql2, [purchase_amount, reqData.payment_mode, purchase_date, reqData.id], function (err, up_trans) {
+                                            if (err) {
+                                                console.log(err, "Up_trans Err");
+                                            } else {
 
-                                                console.log(reqData.bank_id);
+                                                if (reqData.payment_mode == "Net Banking" && reqData.bank_id) {
 
-                                                var sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
-                                                connection.query(sql5, [reqData.bank_id], function (err, sel_res) {
-                                                    console.log(sel_res);
-                                                    if (err) {
-                                                        console.log(err);
-                                                    } else if (sel_res.length != 0) {
+                                                    var edit_id = reqData.id;
 
-                                                        const balance_amount = parseInt(sel_res[0].balance);
+                                                    console.log(reqData.bank_id);
 
-                                                        if (balance_amount && balance_amount != 0) {
+                                                    var sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
+                                                    connection.query(sql5, [reqData.bank_id], function (err, sel_res) {
+                                                        console.log(sel_res);
+                                                        if (err) {
+                                                            console.log(err);
+                                                        } else if (sel_res.length != 0) {
 
-                                                            if (purchase_amount > balance_amount) {
-                                                                console.log("Purchase Amont is Greater than Balance Amount");
+                                                            const balance_amount = parseInt(sel_res[0].balance);
 
-                                                            } else {
+                                                            if (balance_amount && balance_amount != 0) {
 
-                                                                var sql6 = "SELECT * FROM bank_transactions WHERE edit_id=? AND `desc`='Expenses' AND status=1";
-                                                                connection.query(sql6, [edit_id], function (err, show_data) {
-                                                                    if (err) {
-                                                                        console.log(err, "Unable to check edit id");
-                                                                    } else if (show_data.length != 0) {
+                                                                if (purchase_amount > balance_amount) {
+                                                                    console.log("Purchase Amont is Greater than Balance Amount");
 
-                                                                        // var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,desc,type,status,createdby,edit_id) VALUES (?,?,?,?,?,?,?,?)";
-                                                                        var sql4 = "UPDATE bank_transactions SET bank_id=?,date=?,amount=? WHERE edit_id=?";
-                                                                        connection.query(sql4, [reqData.bank_id, purchase_date, purchase_amount, edit_id], function (err, ins_data) {
-                                                                            if (err) {
-                                                                                console.log(err, "Insert Transactions Error");
-                                                                            } else {
+                                                                } else {
 
-                                                                                var new_amount = parseInt(balance_amount) + parseInt(last_amount) - parseInt(purchase_amount);
+                                                                    var sql6 = "SELECT * FROM bank_transactions WHERE edit_id=? AND `desc`='Expenses' AND status=1";
+                                                                    connection.query(sql6, [edit_id], function (err, show_data) {
+                                                                        if (err) {
+                                                                            console.log(err, "Unable to check edit id");
+                                                                        } else if (show_data.length != 0) {
 
-                                                                                var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
-                                                                                connection.query(sql5, [new_amount, reqData.bank_id], function (err, up_date) {
-                                                                                    if (err) {
-                                                                                        console.log(err, "Update Amount Error");
-                                                                                    }
-                                                                                })
-
-                                                                                if (old_bank == reqData.bank_id) {
-
-                                                                                    console.log("Updated All Process 1");
-
+                                                                            // var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,desc,type,status,createdby,edit_id) VALUES (?,?,?,?,?,?,?,?)";
+                                                                            var sql4 = "UPDATE bank_transactions SET bank_id=?,date=?,amount=? WHERE edit_id=?";
+                                                                            connection.query(sql4, [reqData.bank_id, purchase_date, purchase_amount, edit_id], function (err, ins_data) {
+                                                                                if (err) {
+                                                                                    console.log(err, "Insert Transactions Error");
                                                                                 } else {
 
-                                                                                    var sql7 = "SELECT * FROM bankings WHERE id=?";
-                                                                                    connection.query(sql7, [old_bank], function (err, old_bank_data) {
+                                                                                    var new_amount = parseInt(balance_amount) + parseInt(last_amount) - parseInt(purchase_amount);
+
+                                                                                    var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
+                                                                                    connection.query(sql5, [new_amount, reqData.bank_id], function (err, up_date) {
                                                                                         if (err) {
-                                                                                            console.log(err);
-                                                                                        } else if (old_bank_data.length != 0) {
-
-                                                                                            var total_amount = parseInt(old_bank_data[0].balance) + parseInt(last_amount);
-
-                                                                                            var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
-                                                                                            connection.query(sql5, [total_amount, old_bank], function (err, up_res) {
-                                                                                                if (err) {
-                                                                                                    console.log(err);
-                                                                                                    // return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
-                                                                                                } else {
-
-                                                                                                    var remain_amount = parseInt(balance_amount) - parseInt(purchase_amount);
-
-                                                                                                    // Update New Bank amount
-                                                                                                    connection.query(sql5, [remain_amount, reqData.bank_id], function (err, ins_res) {
-                                                                                                        if (err) {
-                                                                                                            console.log(err);
-                                                                                                            // return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
-                                                                                                        } else {
-                                                                                                            console.log("Updated All Process");
-
-                                                                                                            // return res.status(200).json({ statusCode: 200, message: "Save Changes Successfully!" })
-                                                                                                        }
-                                                                                                    })
-                                                                                                }
-                                                                                            })
-                                                                                        } else {
-                                                                                            console.log("Invalid Bank");
-                                                                                            // return res.status(201).json({ statusCode: 201, message: "Invalid Bank Details" })
+                                                                                            console.log(err, "Update Amount Error");
                                                                                         }
                                                                                     })
 
+                                                                                    if (old_bank == reqData.bank_id) {
+
+                                                                                        console.log("Updated All Process 1");
+
+                                                                                    } else {
+
+                                                                                        var sql7 = "SELECT * FROM bankings WHERE id=?";
+                                                                                        connection.query(sql7, [old_bank], function (err, old_bank_data) {
+                                                                                            if (err) {
+                                                                                                console.log(err);
+                                                                                            } else if (old_bank_data.length != 0) {
+
+                                                                                                var total_amount = parseInt(old_bank_data[0].balance) + parseInt(last_amount);
+
+                                                                                                var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
+                                                                                                connection.query(sql5, [total_amount, old_bank], function (err, up_res) {
+                                                                                                    if (err) {
+                                                                                                        console.log(err);
+                                                                                                        // return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
+                                                                                                    } else {
+
+                                                                                                        var remain_amount = parseInt(balance_amount) - parseInt(purchase_amount);
+
+                                                                                                        // Update New Bank amount
+                                                                                                        connection.query(sql5, [remain_amount, reqData.bank_id], function (err, ins_res) {
+                                                                                                            if (err) {
+                                                                                                                console.log(err);
+                                                                                                                // return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
+                                                                                                            } else {
+                                                                                                                console.log("Updated All Process");
+
+                                                                                                                // return res.status(200).json({ statusCode: 200, message: "Save Changes Successfully!" })
+                                                                                                            }
+                                                                                                        })
+                                                                                                    }
+                                                                                                })
+                                                                                            } else {
+                                                                                                console.log("Invalid Bank");
+                                                                                                // return res.status(201).json({ statusCode: 201, message: "Invalid Bank Details" })
+                                                                                            }
+                                                                                        })
+
+                                                                                    }
                                                                                 }
-                                                                            }
-                                                                        })
+                                                                            })
 
-                                                                    } else {
-                                                                        console.log("Invalid Transactions ID");
-                                                                    }
-                                                                })
+                                                                        } else {
+                                                                            console.log("Invalid Transactions ID");
+                                                                        }
+                                                                    })
+                                                                }
                                                             }
+                                                        } else {
+                                                            console.log("Invalid Bank Id");
                                                         }
-                                                    } else {
-                                                        console.log("Invalid Bank Id");
-                                                    }
-                                                })
+                                                    })
+                                                }
                                             }
-                                        }
-                                    })
-                                } else {
-                                    console.log("Invalid Id Or Not Added in the ID");
-                                }
-                            })
-                            response.status(200).json({ message: "Data Updated successfully" });
-                        }
-                    })
-                } else {
-                    response.status(201).json({ message: "Invalid Expense Details" });
-                }
-            })
-        }
-        else {
-            let createdate = moment(new Date()).format('yyyy-MM-DD HH:mm:ss')
-            // console.log("createdate", createdate);
+                                        })
+                                    } else {
+                                        console.log("Invalid Id Or Not Added in the ID");
+                                    }
+                                })
+                                response.status(200).json({ message: "Data Updated successfully" });
+                            }
+                        })
+                    } else {
+                        response.status(201).json({ message: "Invalid Expense Details" });
+                    }
+                })
 
-            if (!reqData.bank_id) {
-                var new_bank_id = 0
             } else {
-                var new_bank_id = reqData.bank_id;
+                response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
             }
 
-            let query = `INSERT INTO expenses ( vendor_id, asset_id, category_id, purchase_date, unit_count, unit_amount, purchase_amount, description, created_by,createdate,payment_mode,hostel_id,bank_id)
+        }
+        else {
+
+            if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_create == 1)) {
+
+                let createdate = moment(new Date()).format('yyyy-MM-DD HH:mm:ss')
+                // console.log("createdate", createdate);
+
+                if (!reqData.bank_id) {
+                    var new_bank_id = 0
+                } else {
+                    var new_bank_id = reqData.bank_id;
+                }
+
+                let query = `INSERT INTO expenses ( vendor_id, asset_id, category_id, purchase_date, unit_count, unit_amount, purchase_amount, description, created_by,createdate,payment_mode,hostel_id,bank_id)
 VALUES
   ('${reqData.vendor_id}', '${reqData.asset_id}', '${reqData.category_id}', '${purchase_date}', '${reqData.unit_count}', '${reqData.unit_amount}','${purchase_amount}', '${reqData.description}', ${createdBy}, '${createdate}','${reqData.payment_mode}','${reqData.hostel_id}','${new_bank_id}');
 `
-            // console.log("query", query);
-            connection.query(query, function (insertErr, insertData) {
-                if (insertErr) {
-                    console.log("insertErr", insertErr);
-                    response.status(201).json({ message: "Internal Server Error" });
-                }
-                else {
-                    let query1 = `SELECT * FROM expenses order by id desc`;
-                    connection.query(query1, function (select_Err, select_Data) {
+                // console.log("query", query);
+                connection.query(query, function (insertErr, insertData) {
+                    if (insertErr) {
+                        console.log("insertErr", insertErr);
+                        response.status(201).json({ message: "Internal Server Error" });
+                    }
+                    else {
+                        let query1 = `SELECT * FROM expenses order by id desc`;
+                        connection.query(query1, function (select_Err, select_Data) {
 
-                        if (select_Data && select_Data.length > 0) {
-                            var sql3 = `INSERT INTO transactions (user_id,invoice_id,amount,created_by,payment_type,payment_date,action,status,description) VALUES (0,${select_Data[0].id},${purchase_amount},${createdBy},'${reqData.payment_mode}','${purchase_date}',2,1,'Expenses')`;
-                            // [0, reqData.asset_id, purchase_amount, createdBy, reqData.payment_mode, purchase_date,2]
-                            connection.query(sql3, function (ins_err, ins_res) {
-                                if (ins_err) {
-                                    console.log("ADD transaction error", ins_err);
-                                    response.status(201).json({ message: 'Unable to Add Transactions Details' });
-                                } else {
+                            if (select_Data && select_Data.length > 0) {
+                                var sql3 = `INSERT INTO transactions (user_id,invoice_id,amount,created_by,payment_type,payment_date,action,status,description) VALUES (0,${select_Data[0].id},${purchase_amount},${createdBy},'${reqData.payment_mode}','${purchase_date}',2,1,'Expenses')`;
+                                // [0, reqData.asset_id, purchase_amount, createdBy, reqData.payment_mode, purchase_date,2]
+                                connection.query(sql3, function (ins_err, ins_res) {
+                                    if (ins_err) {
+                                        console.log("ADD transaction error", ins_err);
+                                        response.status(201).json({ message: 'Unable to Add Transactions Details' });
+                                    } else {
 
-                                    // Add Banking Transactions
-                                    if (reqData.payment_mode == "Net Banking" && reqData.bank_id) {
+                                        // Add Banking Transactions
+                                        if (reqData.payment_mode == "Net Banking" && reqData.bank_id) {
 
-                                        var edit_id = insertData.insertId;
+                                            var edit_id = insertData.insertId;
 
-                                        var sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
-                                        connection.query(sql5, [reqData.bank_id], function (err, sel_res) {
-                                            if (err) {
-                                                console.log(err);
-                                            } else if (sel_res.length != 0) {
+                                            var sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
+                                            connection.query(sql5, [reqData.bank_id], function (err, sel_res) {
+                                                if (err) {
+                                                    console.log(err);
+                                                } else if (sel_res.length != 0) {
 
-                                                const balance_amount = parseInt(sel_res[0].balance);
+                                                    const balance_amount = parseInt(sel_res[0].balance);
 
-                                                if (balance_amount && balance_amount != 0) {
+                                                    if (balance_amount && balance_amount != 0) {
 
-                                                    if (purchase_amount > balance_amount) {
-                                                        console.log("Purchase Amont is Greater than Balance Amount");
+                                                        if (purchase_amount > balance_amount) {
+                                                            console.log("Purchase Amont is Greater than Balance Amount");
 
-                                                    } else {
-                                                        var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,`desc`,type,status,createdby,edit_id) VALUES (?,?,?,?,?,?,?,?)";
-                                                        connection.query(sql4, [reqData.bank_id, purchase_date, purchase_amount, 'Expenses', 2, 1, createdBy, edit_id], function (err, ins_data) {
-                                                            if (err) {
-                                                                console.log(err, "Insert Transactions Error");
-                                                            } else {
-                                                                var new_amount = parseInt(balance_amount) - parseInt(purchase_amount);
+                                                        } else {
+                                                            var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,`desc`,type,status,createdby,edit_id) VALUES (?,?,?,?,?,?,?,?)";
+                                                            connection.query(sql4, [reqData.bank_id, purchase_date, purchase_amount, 'Expenses', 2, 1, createdBy, edit_id], function (err, ins_data) {
+                                                                if (err) {
+                                                                    console.log(err, "Insert Transactions Error");
+                                                                } else {
+                                                                    var new_amount = parseInt(balance_amount) - parseInt(purchase_amount);
 
-                                                                var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
-                                                                connection.query(sql5, [new_amount, reqData.bank_id], function (err, up_date) {
-                                                                    if (err) {
-                                                                        console.log(err, "Update Amount Error");
-                                                                    }
-                                                                })
-                                                            }
-                                                        })
+                                                                    var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
+                                                                    connection.query(sql5, [new_amount, reqData.bank_id], function (err, up_date) {
+                                                                        if (err) {
+                                                                            console.log(err, "Update Amount Error");
+                                                                        }
+                                                                    })
+                                                                }
+                                                            })
+                                                        }
                                                     }
+                                                } else {
+                                                    console.log("Invalid Bank Id");
                                                 }
-                                            } else {
-                                                console.log("Invalid Bank Id");
-                                            }
-                                        })
+                                            })
+                                        }
+                                        response.status(200).json({ message: "Added Successfully" });
                                     }
-                                    response.status(200).json({ message: "Added Successfully" });
-                                }
-                            })
+                                })
 
-                        }
-                        else {
-                            if (select_Err) {
-                                response.status(201).json({ message: "Error while fetching Data", statusCode: 201 });
                             }
-                        }
-                    })
+                            else {
+                                if (select_Err) {
+                                    response.status(201).json({ message: "Error while fetching Data", statusCode: 201 });
+                                }
+                            }
+                        })
 
 
 
-                    // response.status(200).json({ message: "Data Saved successfully" });
-                }
-            })
+                        // response.status(200).json({ message: "Data Saved successfully" });
+                    }
+                })
+            } else {
+                response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+            }
         }
-
     }
     else {
         response.status(201).json({ message: "Missing Parameter" });
@@ -284,76 +301,91 @@ function AddExpenseCategory(request, response) {
     let reqData = request.body;
     var created_by = request.user_details.id;
 
-    if (!reqData.category_Name) {
-        return response.status(201).json({ statusCode: 201, message: "Missing Category Name" })
-    }
-    if (reqData.category_Name) {
-        var category_Name = reqData.category_Name.replace(/\s+/g, '').toLowerCase();
-        var sql1 = "SELECT * FROM Expense_Category_Name WHERE REPLACE(LOWER(category_Name), ' ', '') = '" + category_Name + "' AND status=1 AND created_by ='" + created_by + "'";
-        connection.query(sql1, function (error, data) {
-            if (error) {
-                console.log("error", error);
-                response.status(201).json({ statusCode: 201, message: "Error Fetching Data" });
-            }
-            else if (data && data.length > 0) {
+    var role_permissions = request.role_permissions;
+    var is_admin = request.is_admin;
 
-                if (!reqData.id) {
-                    return response.status(201).json({ statusCode: 201, message: "Category Name Already Exist" });
+    if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_create == 1)) {
+
+        if (!reqData.category_Name) {
+            return response.status(201).json({ statusCode: 201, message: "Missing Category Name" })
+        }
+        if (reqData.category_Name) {
+            var category_Name = reqData.category_Name.replace(/\s+/g, '').toLowerCase();
+            var sql1 = "SELECT * FROM Expense_Category_Name WHERE REPLACE(LOWER(category_Name), ' ', '') = '" + category_Name + "' AND status=1 AND created_by ='" + created_by + "'";
+            connection.query(sql1, function (error, data) {
+                if (error) {
+                    console.log("error", error);
+                    response.status(201).json({ statusCode: 201, message: "Error Fetching Data" });
                 }
-                if (reqData.sub_Category) {
-                    var subcategory = reqData.sub_Category.replace(/\s+/g, '').toLowerCase();
-                    var sql3 = "SELECT * FROM Expense_Subcategory_Name WHERE REPLACE(LOWER(subcategory), ' ', '') = '" + subcategory + "' AND status=1 AND created_by ='" + created_by + "'";
-                    connection.query(sql3, function (err, sql3_res) {
-                        if (err) {
-                            return response.status(201).json({ statusCode: 201, message: "Unble to Get Subcategory Details" });
-                        } else if (sql3_res.length > 0) {
-                            return response.status(201).json({ statusCode: 201, message: "Sub Category Name Already Exist" });
+                else if (data && data.length > 0) {
+
+                    if (!reqData.id) {
+                        return response.status(201).json({ statusCode: 201, message: "Category Name Already Exist" });
+                    }
+                    if (reqData.sub_Category) {
+                        var subcategory = reqData.sub_Category.replace(/\s+/g, '').toLowerCase();
+                        var sql3 = "SELECT * FROM Expense_Subcategory_Name WHERE REPLACE(LOWER(subcategory), ' ', '') = '" + subcategory + "' AND status=1 AND created_by ='" + created_by + "'";
+                        connection.query(sql3, function (err, sql3_res) {
+                            if (err) {
+                                return response.status(201).json({ statusCode: 201, message: "Unble to Get Subcategory Details" });
+                            } else if (sql3_res.length > 0) {
+                                return response.status(201).json({ statusCode: 201, message: "Sub Category Name Already Exist" });
+                            } else {
+                                // Add Subcategory
+                                var sql4 = "INSERT INTO Expense_Subcategory_Name (category_id,subcategory,status,created_by) VALUES ('" + reqData.id + "','" + reqData.sub_Category + "',1,'" + created_by + "')";
+                                connection.query(sql4, function (ins_err, ins_res) {
+                                    if (ins_err) {
+                                        console.log(ins_err);
+                                        return response.status(201).json({ statusCode: 201, message: "Unble to Add Subcategory Details" });
+                                    } else {
+                                        response.status(200).json({ statusCode: 200, message: "Successfully Added Sub Category" });
+                                    }
+                                })
+                            }
+                        })
+
+                    } else {
+                        return response.status(201).json({ statusCode: 201, message: "Missing Subcategory Name" });
+                    }
+                } else {
+                    var sql2 = `INSERT INTO Expense_Category_Name(category_Name,created_by) VALUES('${reqData.category_Name}','${created_by}');`;
+                    connection.query(sql2, function (insertErr, insertData) {
+                        if (insertErr) {
+                            response.status(201).json({ statusCode: 201, message: "Does not Save" });
                         } else {
-                            // Add Subcategory
-                            var sql4 = "INSERT INTO Expense_Subcategory_Name (category_id,subcategory,status,created_by) VALUES ('" + reqData.id + "','" + reqData.sub_Category + "',1,'" + created_by + "')";
-                            connection.query(sql4, function (ins_err, ins_res) {
-                                if (ins_err) {
-                                    console.log(ins_err);
-                                    return response.status(201).json({ statusCode: 201, message: "Unble to Add Subcategory Details" });
-                                } else {
-                                    response.status(200).json({ statusCode: 200, message: "Successfully Added Sub Category" });
-                                }
-                            })
+                            response.status(200).json({ statusCode: 200, message: "New Category Added successfully" });
                         }
                     })
-
-                } else {
-                    return response.status(201).json({ statusCode: 201, message: "Missing Subcategory Name" });
                 }
-            } else {
-                var sql2 = `INSERT INTO Expense_Category_Name(category_Name,created_by) VALUES('${reqData.category_Name}','${created_by}');`;
-                connection.query(sql2, function (insertErr, insertData) {
-                    if (insertErr) {
-                        response.status(201).json({ statusCode: 201, message: "Does not Save" });
-                    } else {
-                        response.status(200).json({ statusCode: 200, message: "New Category Added successfully" });
-                    }
-                })
-            }
-        })
-    }
-    else {
-        response.status(201).json({ message: "Missing Parameter" });
+            })
+        }
+        else {
+            response.status(201).json({ message: "Missing Parameter" });
+        }
+    } else {
+        response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
 }
 
 function GetExpensesCategory(request, response) {
 
-    var created_by = request.user_details.id;
+    var role_permissions = request.role_permissions;
+    var is_admin = request.is_admin;
+    var show_ids = request.show_ids;
 
-    var sql1 = "SELECT category.category_Name,category.id as category_Id,category.status,subcategory.id as subcategory_Id,subcategory.subcategory FROM Expense_Category_Name category LEFT JOIN Expense_Subcategory_Name subcategory on subcategory.category_id = category.id and subcategory.status = true WHERE category.status = true AND category.created_by='" + created_by + "'"
-    connection.query(sql1, function (error, data) {
-        if (error) {
-            response.status(201).json({ message: "Error fetching Data" });
-        } else {
-            response.status(200).json({ message: "Expense Categories", statusCode: 200, data: data });
-        }
-    })
+    if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_view === 1)) {
+
+        var sql1 = "SELECT category.category_Name,category.id as category_Id,category.status,subcategory.id as subcategory_Id,subcategory.subcategory FROM Expense_Category_Name category LEFT JOIN Expense_Subcategory_Name subcategory on subcategory.category_id = category.id and subcategory.status = true WHERE category.status = true AND category.created_by IN (" + show_ids + ")"
+        connection.query(sql1, function (error, data) {
+            if (error) {
+                response.status(201).json({ message: "Error fetching Data" });
+            } else {
+                response.status(200).json({ message: "Expense Categories", statusCode: 200, data: data });
+            }
+        })
+    } else {
+        response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
 }
 
 function CalculateExpenses(request, response) {
@@ -466,6 +498,11 @@ left join hosteldetails hos on hos.id = expen.hostel_id
 }
 
 function GetHostelExpenses(request, response) {
+
+    var show_ids = request.show_ids;
+    var role_permissions = request.role_permissions;
+    var is_admin = request.is_admin;
+
     var createdBy = request.user_details.id;
     var category = request.body?.category ? request.body.category : null;
     var max_amount = request.body?.max_amount ? Number(request.body.max_amount) : null;
@@ -482,7 +519,9 @@ function GetHostelExpenses(request, response) {
     // join assets ast on ast.id = expen.asset_id
     //     where expen.status = true and expen.created_by = ${createdBy}`
 
-    let query = `SELECT expen.hostel_id,hos.Name as hostel_name,hos.email_id as hostel_email,hos.Address as hostel_address,hos.hostel_PhoneNo as hostel_phoneNo, expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode,expen.bank_id, category.category_Name, ven.Vendor_Name, asname.asset_name,ban.acc_name,ban.acc_num 
+    if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_view === 1)) {
+
+        let query = `SELECT expen.hostel_id,hos.Name as hostel_name,hos.email_id as hostel_email,hos.Address as hostel_address,hos.hostel_PhoneNo as hostel_phoneNo, expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode,expen.bank_id, category.category_Name, ven.Vendor_Name, asname.asset_name,ban.acc_name,ban.acc_num 
 FROM expenses expen
 LEFT JOIN Expense_Category_Name category ON category.id = expen.category_id
 LEFT JOIN Vendor ven ON ven.id = expen.vendor_id
@@ -490,148 +529,168 @@ LEFT JOIN assets ast ON ast.id = expen.asset_id
 LEFT JOIN asset_names asname ON asname.id=expen.asset_id
 LEFT JOIN hosteldetails hos ON hos.id = expen.hostel_id
 LEFT JOIN bankings ban ON ban.id=expen.bank_id
-WHERE expen.status = true AND expen.created_by = ${createdBy}`;
+WHERE expen.status = true AND expen.created_by IN (${show_ids})`;
 
-    if (asset_id) {
-        query += ` AND expen.asset_id = ${asset_id}`;
-    }
-
-    if (category) {
-        query += ` AND expen.category_id = ${category}`;
-    }
-
-    if (payment_mode) {
-        query += ` AND expen.payment_mode = '${payment_mode}'`;
-    }
-    if (vendor_id) {
-        query += ` AND expen.vendor_id = ${vendor_id}`
-    }
-    if (min_amount && !max_amount) {
-        query += ` AND expen.purchase_amount >= ${min_amount}`
-    }
-    if (min_amount == 0 && max_amount || min_amount == undefined && max_amount) {
-        query += ` AND expen.purchase_amount <= ${max_amount}`
-    }
-    // if (min_amount && max_amount) {
-    //     query += `AND expen.purchase_amount BETWEEN ${min_amount} AND ${max_amount}`
-    //     // query += `AND expen.purchase_amount >= ${min_amount} AND expen.purchase_amount <= ${max_amount}`
-    // }
-    if (min_amount !== undefined && max_amount !== undefined && min_amount !== null && max_amount !== null) {
-        query += ` AND expen.purchase_amount >= ${min_amount} AND expen.purchase_amount <= ${max_amount}`;
-    }
-    if (start_date && !end_date) {
-        const startDateRange = `${start_date} 00:00:00`;
-        const endDateRange = `${start_date} 23:59:59`;
-        // query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
-        query += ` AND expen.purchase_date = '${startDateRange}' AND expen.purchase_date <= '${endDateRange}'`;
-    }
-    if (start_date && end_date) {
-        const startDateRange = `${start_date} 00:00:00`;
-        const endDateRange = `${end_date} 23:59:59`;
-        // query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
-
-        query += ` AND expen.purchase_date >= '${startDateRange}' AND expen.purchase_date <= '${endDateRange}'`;
-    }
-
-    query += ` ORDER BY expen.id DESC`;
-
-    console.log("query", query);
-    connection.query(query, function (err, data) {
-        if (err) {
-            console.log("err", err);
-            response.status(201).json({ message: 'Error Fetching Data' });
+        if (asset_id) {
+            query += ` AND expen.asset_id = ${asset_id}`;
         }
-        else {
-            let total_amount = 0;
-            if (data && data.length > 0) {
-                // console.log("data", data);
-                data.map((v) => {
-                    return total_amount += v.purchase_amount
-                })
-                // console.log("total_amount", total_amount);
-                basicDetails = getAllfilter(createdBy, response, data, total_amount)
+
+        if (category) {
+            query += ` AND expen.category_id = ${category}`;
+        }
+
+        if (payment_mode) {
+            query += ` AND expen.payment_mode = '${payment_mode}'`;
+        }
+        if (vendor_id) {
+            query += ` AND expen.vendor_id = ${vendor_id}`
+        }
+        if (min_amount && !max_amount) {
+            query += ` AND expen.purchase_amount >= ${min_amount}`
+        }
+        if (min_amount == 0 && max_amount || min_amount == undefined && max_amount) {
+            query += ` AND expen.purchase_amount <= ${max_amount}`
+        }
+        // if (min_amount && max_amount) {
+        //     query += `AND expen.purchase_amount BETWEEN ${min_amount} AND ${max_amount}`
+        //     // query += `AND expen.purchase_amount >= ${min_amount} AND expen.purchase_amount <= ${max_amount}`
+        // }
+        if (min_amount !== undefined && max_amount !== undefined && min_amount !== null && max_amount !== null) {
+            query += ` AND expen.purchase_amount >= ${min_amount} AND expen.purchase_amount <= ${max_amount}`;
+        }
+        if (start_date && !end_date) {
+            const startDateRange = `${start_date} 00:00:00`;
+            const endDateRange = `${start_date} 23:59:59`;
+            // query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
+            query += ` AND expen.purchase_date = '${startDateRange}' AND expen.purchase_date <= '${endDateRange}'`;
+        }
+        if (start_date && end_date) {
+            const startDateRange = `${start_date} 00:00:00`;
+            const endDateRange = `${end_date} 23:59:59`;
+            // query += ` AND expen.createdate >= '${startDateRange}' AND expen.createdate <= '${endDateRange}'`;
+
+            query += ` AND expen.purchase_date >= '${startDateRange}' AND expen.purchase_date <= '${endDateRange}'`;
+        }
+
+        query += ` ORDER BY expen.id DESC`;
+
+        console.log("query", query);
+        connection.query(query, function (err, data) {
+            if (err) {
+                console.log("err", err);
+                response.status(201).json({ message: 'Error Fetching Data' });
             }
             else {
-                let message = 'No Data Found';
-                basicDetails = getAllfilter(createdBy, response, message, total_amount)
+                let total_amount = 0;
+                if (data && data.length > 0) {
+                    // console.log("data", data);
+                    data.map((v) => {
+                        return total_amount += v.purchase_amount
+                    })
+                    // console.log("total_amount", total_amount);
+                    basicDetails = getAllfilter(createdBy, response, data, total_amount)
+                }
+                else {
+                    let message = 'No Data Found';
+                    basicDetails = getAllfilter(createdBy, response, message, total_amount)
+                }
             }
-        }
-    })
+        })
 
+    } else {
+        response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
 }
 
 function DeleteExpenses(request, response) {
     let req = request.body
-    if (req) {
-        let query = `UPDATE expenses SET status = false WHERE id=${req.id}`
-        connection.query(query, function (err, data) {
-            if (err) {
-                response.status(201).json({ message: 'Error while delete the Expenses' });
-            }
-            else {
-                response.status(200).json({ message: 'Expense deleted successfully' });
-            }
-        })
-    }
-    else {
-        response.status(201).json({ message: 'Missing Parameter' });
+    var role_permissions = request.role_permissions;
+    var is_admin = request.is_admin;
+
+    if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_delete == 1)) {
+
+        if (req) {
+            let query = `UPDATE expenses SET status = false WHERE id=${req.id}`
+            connection.query(query, function (err, data) {
+                if (err) {
+                    response.status(201).json({ message: 'Error while delete the Expenses' });
+                }
+                else {
+                    response.status(200).json({ message: 'Expense deleted successfully' });
+                }
+            })
+        }
+        else {
+            response.status(201).json({ message: 'Missing Parameter' });
+        }
+    } else {
+        response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
 }
 
 function DeleteExpensesCategory(request, response) {
     let reqBodyData = request.body
-    if (reqBodyData.id && reqBodyData.sub_Category_Id == undefined) {
-        connection.query(`select * from Expense_Subcategory_Name where category_id=${reqBodyData.id} and status = true`, function (selectErr, selectData) {
-            if (selectErr) {
-                response.status(201).json({ message: 'Error while fetching Data' });
-            }
-            else {
-                let query = `Update Expense_Category_Name SET status = false WHERE id=${reqBodyData.id}`
-                if (selectData && selectData.length > 0) {
-                    connection.query(query, function (err, data) {
-                        if (err) {
-                            response.status(201).json({ message: 'Error Deleting category' });
-                        }
-                        else {
-                            connection.query(`Update Expense_Subcategory_Name SET status = false where category_id = ${reqBodyData.id}`, function (updateErr, updateData) {
-                                if (updateErr) {
-                                    response.status(201).json({ message: 'Error Deleting Sub category' });
-                                }
-                                else {
-                                    response.status(200).json({ message: 'Category Deleted Successfully' });
-                                }
-                            })
-                            // response.status(200).json({ message: 'Category Deleted Successfully' });
-                        }
-                    })
+
+    var role_permissions = request.role_permissions;
+    var is_admin = request.is_admin;
+
+    if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_delete === 1)) {
+
+        if (reqBodyData.id && reqBodyData.sub_Category_Id == undefined) {
+            connection.query(`select * from Expense_Subcategory_Name where category_id=${reqBodyData.id} and status = true`, function (selectErr, selectData) {
+                if (selectErr) {
+                    response.status(201).json({ message: 'Error while fetching Data' });
                 }
                 else {
-                    connection.query(query, function (deleteErr, deleteData) {
-                        if (deleteErr) {
-                            response.status(201).json({ message: 'Error While Deleting Category' });
-                        }
-                        else {
-                            response.status(200).json({ message: 'Category Deleted Successfully' });
-                        }
-                    })
+                    let query = `Update Expense_Category_Name SET status = false WHERE id=${reqBodyData.id}`
+                    if (selectData && selectData.length > 0) {
+                        connection.query(query, function (err, data) {
+                            if (err) {
+                                response.status(201).json({ message: 'Error Deleting category' });
+                            }
+                            else {
+                                connection.query(`Update Expense_Subcategory_Name SET status = false where category_id = ${reqBodyData.id}`, function (updateErr, updateData) {
+                                    if (updateErr) {
+                                        response.status(201).json({ message: 'Error Deleting Sub category' });
+                                    }
+                                    else {
+                                        response.status(200).json({ message: 'Category Deleted Successfully' });
+                                    }
+                                })
+                                // response.status(200).json({ message: 'Category Deleted Successfully' });
+                            }
+                        })
+                    }
+                    else {
+                        connection.query(query, function (deleteErr, deleteData) {
+                            if (deleteErr) {
+                                response.status(201).json({ message: 'Error While Deleting Category' });
+                            }
+                            else {
+                                response.status(200).json({ message: 'Category Deleted Successfully' });
+                            }
+                        })
 
+                    }
                 }
-            }
-        })
+            })
 
-    }
-    else if (reqBodyData && reqBodyData.sub_Category_Id) {
-        connection.query(`Update Expense_Subcategory_Name SET status = false where id = ${reqBodyData.sub_Category_Id} and category_id =${reqBodyData.id}`, function (updateErr, updateData) {
-            if (updateErr) {
-                response.status(201).json({ message: 'Error Deleting Sub category' });
-            }
-            else {
-                response.status(200).json({ message: 'Sub Category Deleted Successfully' });
-            }
-        })
-    }
-    else {
-        response.status(201).json({ message: 'Missing Parameter' });
+        }
+        else if (reqBodyData && reqBodyData.sub_Category_Id) {
+            connection.query(`Update Expense_Subcategory_Name SET status = false where id = ${reqBodyData.sub_Category_Id} and category_id =${reqBodyData.id}`, function (updateErr, updateData) {
+                if (updateErr) {
+                    response.status(201).json({ message: 'Error Deleting Sub category' });
+                }
+                else {
+                    response.status(200).json({ message: 'Sub Category Deleted Successfully' });
+                }
+            })
+        }
+        else {
+            response.status(201).json({ message: 'Missing Parameter' });
+        }
+    } else {
+        response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
 }
 

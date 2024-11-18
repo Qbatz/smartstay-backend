@@ -109,6 +109,7 @@ app.post('/add/adduser-list', upload.single('profile'), (request, response) => {
     userQueries.createUser(connection, request, response)
 })
 
+// Not Use
 app.get('/user-list/bill-payment', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     userQueries.getPaymentDetails(connection, response)
@@ -188,6 +189,7 @@ app.post('/otp-send/response', (request, response) => {
 // });
 
 
+// Not Use
 app.get('/checkout/checkout-invoice', (request, response) => {
     connection.query(`SELECT * FROM hostel`, function (err, users) {
         // console.log("users",users)
@@ -202,7 +204,7 @@ app.get('/checkout/checkout-invoice', (request, response) => {
     });
 })
 
-
+// Not Use
 app.post('/manual/manual-invoice', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     const reqData = request.body;
@@ -223,6 +225,7 @@ app.post('/manual/manual-invoice', (request, response) => {
     });
 })
 
+// Not Use
 app.get('/list/invoice-for-all-user-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     invoiceQueries.getInvoiceListForAll(connection, response)
@@ -234,7 +237,7 @@ app.post('/list/invoice-list', (request, response) => {
     invoiceQueries.getInvoiceList(connection, response, request)
 })
 
-
+// Not Use
 app.get('/list/eb_list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     invoiceQueries.getEBList(connection, request, response)
@@ -256,7 +259,7 @@ app.post('/create/isEnable', (request, response) => {
 
 })
 
-
+// Not use
 app.get('/get/userAccount', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     profileQueries.getAccount(connection, response)
@@ -282,12 +285,12 @@ app.post('/list/hostel-list', (request, response) => {
     pgQueries.getHostelList(connection, response, request)
 })
 
-
 app.get('/room-id/check-room-id', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-    pgQueries.checkRoom(connection, response)
+    pgQueries.checkRoom(connection, request, response)
 })
 
+// Not Use
 app.get('/hostel/list-details', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     pgQueries.hostelListDetails(connection, response)
@@ -341,32 +344,27 @@ app.post('/add/new-hostel', upload.fields([{ name: 'profile', maxCount: 1 }, { n
 
 app.post('/list/floor-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const requestData = request.body
-    pgQueries.FloorList(connection, requestData, response)
+    pgQueries.FloorList(connection, request, response)
 })
 
 app.post('/list/rooms-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const reqData = request.body;
-    pgQueries.RoomList(connection, reqData, response)
+    pgQueries.RoomList(connection, request, response)
 })
 
 app.post('/list/bed-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const requestBodyData = request.body;
-    pgQueries.BedList(connection, requestBodyData, response)
+    pgQueries.BedList(connection, request, response)
 })
 
 app.post('/list/numberOf-Rooms', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const reqFloorID = request.body;
-    pgQueries.RoomCount(connection, reqFloorID, response)
+    pgQueries.RoomCount(connection, request, response)
 })
 
 app.post('/floor_list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-    const reqData = request.body;
-    pgQueries.ListForFloor(connection, reqData, response)
+    pgQueries.ListForFloor(connection, request, response)
 })
 
 
@@ -387,20 +385,14 @@ app.post('/update_floor', (request, response) => {
 
 app.post('/check/room-full', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const reqFloorID = request.body
-    pgQueries.RoomFull(connection, reqFloorID, response)
+    pgQueries.RoomFull(connection, request, response)
 })
 
 app.post('/invoice/settings', upload.single('profile'), (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    const reqInvoice = {
-        profile: request.file,
-        hostel_Id: request.body.hostel_Id,
-        prefix: request.body.prefix,
-        suffix: request.body.suffix
-    };
+
     // console.log("reqInvoice **", reqInvoice)
-    profileQueries.InvoiceSettings(connection, reqInvoice, response)
+    profileQueries.InvoiceSettings(connection, request, response)
 })
 
 
@@ -409,6 +401,7 @@ app.get('/list/amenities-list', (req, res) => {
     profileQueries.getAmenitiesList(req, res)
 })
 
+// Not Use
 app.post('/EB/Hostel_Room_based', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     var atten = request.body;
@@ -422,6 +415,7 @@ app.post('/amenities/setting', (request, response) => {
     profileQueries.AmenitiesSetting(connection, request, response)
 })
 
+// Not Use
 app.post('/ebamount/setting', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     invoiceQueries.EbAmount(connection, request, response)
@@ -433,6 +427,7 @@ app.post('/ebamount/setting', (request, response) => {
 //     invoiceQueries.AmenitiesName(connection, atten, response)
 // })
 
+// Check API Use or Not
 app.get('/list/EbReading', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     profileQueries.getEbReading(connection, response)
@@ -444,16 +439,15 @@ app.get('/list/Ebstartmeter', (request, response) => {
 })
 app.post('/amenities/amnityUpdate', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    var atten = request.body;
-    profileQueries.UpdateAmnity(connection, atten, response)
+    profileQueries.UpdateAmnity(connection, request, response)
 
 })
 app.get('/list/AmnitiesName', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-    userQueries.getAmnitiesName(connection, response)
+    userQueries.getAmnitiesName(connection, request, response)
 })
 
-
+// Not use
 app.post('/checkout/checkout-user', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const attenData = request.body;
@@ -470,6 +464,7 @@ app.post('/get_user_details', (request, response) => {
     accountManagement.get_user_details(connection, request, response);
 })
 
+// Not Use
 app.post('/invoice/invoiceUpdate', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     const atten = request.body;
@@ -486,13 +481,11 @@ app.post('/delete/delete-hostel', (request, response) => {
 
 app.post('/delete/delete-floor', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    let reqData = request.body
-    pgQueries.deleteFloor(connection, response, reqData)
+    pgQueries.deleteFloor(connection, response, request)
 })
 app.post('/delete/delete-room', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    let reqData = request.body
-    pgQueries.deleteRoom(connection, response, reqData)
+    pgQueries.deleteRoom(connection, response, request)
 })
 app.post('/delete/delete-bed', (req, res) => {
     pgQueries.deleteBed(req, res)
@@ -512,17 +505,20 @@ app.post('/forgot_otp_response', (request, response) => {
 })
 
 // Payment History
+// Not Use
 app.post('/payment_history', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     accountManagement.payment_history(connection, response, request)
 })
 
 // transactionHistory
+// Not Use
 app.post('/hostel/transaction-history', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     accountManagement.transactionHistory(connection, response, request)
 })
 
+// Not Use
 app.post('/hostel/transaction-pdf', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     accountManagement.transactionHistoryPDF(connection, response, request)
@@ -534,6 +530,7 @@ app.post('/add/amenity-history', (request, response) => {
 })
 
 
+// Not use
 app.post('/amenity/list-amenity-history', (req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
     const reqdata = req.body;
@@ -548,6 +545,7 @@ app.post('/get_room_details', (request, response) => {
 })
 
 // Update Particular Room Details
+// Not use
 app.post('/update_room_details', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     pgQueries.update_room_details(connection, request, response)
@@ -722,6 +720,8 @@ app.post("/all_reports", (req, res) => {
     assets.all_reports(req, res)
 })
 
+//================= Zoho Billing API =======================//
+
 app.get('/invoice_details', (req, res) => {
     billings.invoice_details(req, res)
 })
@@ -748,6 +748,8 @@ app.post('/add_payment_details', (req, res) => {
 app.get('/payment_details', (req, res) => {
     payments.payment_details(req, res)
 })
+
+//================= Zoho Billing API =======================//
 
 app.get('/conutry_list', (req, res) => {
     userQueries.conutry_list(req, res)
@@ -877,6 +879,8 @@ app.get('/get_bill_details', (req, res) => {
     userQueries.get_bill_details(req, res)
 });
 
+// Completed
+
 // Bookings
 app.post('/add_booking', (req, res) => {
     bookings.add_booking(req, res)
@@ -951,6 +955,7 @@ app.post('/delete_recuring_bill', (req, res) => {
 })
 
 // Need to validate cron
+// Not Use
 app.post('/update_recuring_bill', (req, res) => {
     invoiceQueries.update_recuring_bill(req, res)
 })
@@ -1027,6 +1032,7 @@ app.get('/get_all_staffs', (req, res) => {
 })
 
 // Edit Room Reading
+// Not Use
 app.post('/edit_eb_readings', (req, res) => {
     invoiceQueries.edit_eb_readings(req, res)
 })

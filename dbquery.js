@@ -129,7 +129,7 @@ const queries = [
 
     "CREATE TABLE `permissions` (`id` BIGINT(11) NOT NULL AUTO_INCREMENT,`permission_name` VARCHAR(255) NULL,PRIMARY KEY (`id`));",
 
-    "INSERT INTO `permissions` (`id`, `permission_name`) VALUES ('1', 'Dashboard'),('2', 'Announcement'),('3', 'Updates'),('4', 'Paying Guest'),('5', 'Customers'),('6', 'Bookings'),('7', 'Check out'),('8', 'Walk In'),('9', 'Assets'),('10', 'Vendor'),('11', 'Bills'),('12', 'Recuring Bills'),('13', 'Electricity'),('14', 'Complaints'),('15', 'Expenses'),('16', 'Reports'),('17', 'Bankings'),('18', 'Profile');",
+    "INSERT INTO `permissions` (`id`, `permission_name`) VALUES ('1', 'Dashboard'),('2', 'Announcement'),('3', 'Updates'),('4', 'Paying Guest'),('5', 'Customers'),('6', 'Bookings'),('7', 'Check out'),('8', 'Walk In'),('9', 'Assets'),('10', 'Vendor'),('11', 'Bills'),('12', 'Recuring Bills'),('13', 'Electricity'),('14', 'Complaints'),('15', 'Expenses'),('16', 'Reports'),('17', 'Bankings'),('18', 'Profile'),('19', 'Amenities');",
 
     "ALTER TABLE `roles` CHANGE COLUMN `id` `id` BIGINT(20) NOT NULL AUTO_INCREMENT ;",
 

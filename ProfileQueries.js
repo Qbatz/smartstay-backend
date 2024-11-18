@@ -81,74 +81,90 @@ function uploadProfilePictureToS3(bucketName, folderName, fileName, fileData, ca
 }
 
 
-function InvoiceSettings(connection, reqInvoice, response) {
-    console.log("reqInvoice", reqInvoice);
-    if (reqInvoice.hostel_Id) {
+function InvoiceSettings(connection, request, response) {
 
-        const Prefix = reqInvoice.prefix !== undefined && reqInvoice.prefix !== null && reqInvoice.prefix !== '';
-        const Suffix = reqInvoice.suffix !== undefined && reqInvoice.suffix !== null && reqInvoice.suffix !== '';
-        const Profile = reqInvoice.profile !== undefined && reqInvoice.profile !== null;
+    var role_permissions = request.role_permissions;
+    var is_admin = request.is_admin;
+
+    const reqInvoice = {
+        profile: request.file,
+        hostel_Id: request.body.hostel_Id,
+        prefix: request.body.prefix,
+        suffix: request.body.suffix
+    };
+    // console.log("reqInvoice", reqInvoice);
+
+    if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_create == 1)) {
+
+        if (reqInvoice.hostel_Id) {
+
+            const Prefix = reqInvoice.prefix !== undefined && reqInvoice.prefix !== null && reqInvoice.prefix !== '';
+            const Suffix = reqInvoice.suffix !== undefined && reqInvoice.suffix !== null && reqInvoice.suffix !== '';
+            const Profile = reqInvoice.profile !== undefined && reqInvoice.profile !== null;
 
 
-        if (Prefix && Suffix && Profile) {
-            const timestamp = Date.now();
-            uploadProfilePictureToS3('smartstaydevs', 'Logo/', 'Logo' + reqInvoice.hostel_Id + `${timestamp}` + '.jpg', reqInvoice.profile, (err, s3Url) => {
-                if (err) {
-                    response.status(202).json({ message: 'Database error' });
-                } else {
-                    const query = `UPDATE hosteldetails SET Profile='${s3Url}', prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}' WHERE id='${reqInvoice.hostel_Id}'`;
-                    connection.query(query, function (error, invoiceData) {
-                        console.log("invoiceData", invoiceData);
-                        console.log("error invoice", error);
-                        if (error) {
-                            response.status(202).json({ message: 'Database error' });
-                        } else {
-                            response.status(200).json({ message: 'Prefix suffix and profile Updated successfully', statusCode: 200 });
-                        }
-                    });
-                }
-            });
+            if (Prefix && Suffix && Profile) {
+                const timestamp = Date.now();
+                uploadProfilePictureToS3('smartstaydevs', 'Logo/', 'Logo' + reqInvoice.hostel_Id + `${timestamp}` + '.jpg', reqInvoice.profile, (err, s3Url) => {
+                    if (err) {
+                        response.status(202).json({ message: 'Database error' });
+                    } else {
+                        const query = `UPDATE hosteldetails SET Profile='${s3Url}', prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}' WHERE id='${reqInvoice.hostel_Id}'`;
+                        connection.query(query, function (error, invoiceData) {
+                            console.log("invoiceData", invoiceData);
+                            console.log("error invoice", error);
+                            if (error) {
+                                response.status(202).json({ message: 'Database error' });
+                            } else {
+                                response.status(200).json({ message: 'Prefix suffix and profile Updated successfully', statusCode: 200 });
+                            }
+                        });
+                    }
+                });
+            }
+
+
+            else if (Profile) {
+                const timestamp = Date.now();
+                console.log("timestamp", timestamp)
+                uploadProfilePictureToS3('smartstaydevs', 'Logo/', 'Logo' + reqInvoice.hostel_Id + `${timestamp}` + '.jpg', reqInvoice.profile, (err, s3Url) => {
+                    console.log("s3URL", s3Url);
+                    if (err) {
+                        console.error('Error uploading profile picture:', err);
+                        response.status(500).json({ message: 'Error uploading profile picture' });
+                    } else {
+                        const query = `UPDATE hosteldetails SET Profile='${s3Url}' WHERE id='${reqInvoice.hostel_Id}'`;
+                        connection.query(query, function (error, invoiceData) {
+                            console.log("invoiceData", invoiceData);
+                            console.log("error invoice", error);
+                            if (error) {
+                                response.status(202).json({ message: 'Database error' });
+                            } else {
+                                response.status(200).json({ message: 'Profile Updated successfully', statusCode: 200 });
+                            }
+                        });
+                    }
+                });
+
+            } else if (Prefix && Suffix) {
+                const query = `UPDATE hosteldetails SET  prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}' WHERE id='${reqInvoice.hostel_Id}'`;
+                connection.query(query, function (error, invoiceData) {
+                    console.log("invoiceData", invoiceData);
+                    console.log("error invoice", error);
+                    if (error) {
+                        response.status(202).json({ message: 'Database error' });
+                    } else {
+                        response.status(200).json({ message: 'prefix and suffix Updated successfully', statusCode: 200 });
+                    }
+                });
+            }
+
+
+        } else {
+            response.status(400).json({ message: 'Missing parameter' });
         }
-
-
-        else if (Profile) {
-            const timestamp = Date.now();
-            console.log("timestamp", timestamp)
-            uploadProfilePictureToS3('smartstaydevs', 'Logo/', 'Logo' + reqInvoice.hostel_Id + `${timestamp}` + '.jpg', reqInvoice.profile, (err, s3Url) => {
-                console.log("s3URL", s3Url);
-                if (err) {
-                    console.error('Error uploading profile picture:', err);
-                    response.status(500).json({ message: 'Error uploading profile picture' });
-                } else {
-                    const query = `UPDATE hosteldetails SET Profile='${s3Url}' WHERE id='${reqInvoice.hostel_Id}'`;
-                    connection.query(query, function (error, invoiceData) {
-                        console.log("invoiceData", invoiceData);
-                        console.log("error invoice", error);
-                        if (error) {
-                            response.status(202).json({ message: 'Database error' });
-                        } else {
-                            response.status(200).json({ message: 'Profile Updated successfully', statusCode: 200 });
-                        }
-                    });
-                }
-            });
-
-        } else if (Prefix && Suffix) {
-            const query = `UPDATE hosteldetails SET  prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}' WHERE id='${reqInvoice.hostel_Id}'`;
-            connection.query(query, function (error, invoiceData) {
-                console.log("invoiceData", invoiceData);
-                console.log("error invoice", error);
-                if (error) {
-                    response.status(202).json({ message: 'Database error' });
-                } else {
-                    response.status(200).json({ message: 'prefix and suffix Updated successfully', statusCode: 200 });
-                }
-            });
-        }
-
-
     } else {
-        response.status(400).json({ message: 'Missing parameter' });
+        response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
 }
 
@@ -185,53 +201,61 @@ function AmenitiesSetting(connection, request, response) {
     var reqData = request.body;
     var created_by = request.user_details.id;
 
-    // console.log("reqData", reqData);
-    if (!reqData) {
-        response.status(201).json({ message: 'Missing parameter' });
-        return;
-    }
-    else {
-        const amenitiesName = reqData?.amenitiesName?.trim().replace(/\s+/g, '');
-        const capitalizedAmenitiesName = amenitiesName?.charAt(0).toUpperCase() + amenitiesName?.slice(1).toLowerCase();
+    var role_permissions = request.role_permissions;
+    var is_admin = request.is_admin;
 
-        connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${reqData.Hostel_Id}`, function (error, amenitiesData) {
-            console.log("amenitiesData", amenitiesData)
-            console.log("capitalizedAmenitiesName", capitalizedAmenitiesName)
+    if (is_admin == 1 || (role_permissions[18] && role_permissions[18].per_view == 1)) {
 
-            let amenityId = reqData.amenityId;
+        // console.log("reqData", reqData);
+        if (!reqData) {
+            response.status(201).json({ message: 'Missing parameter' });
+            return;
+        } else {
+            const amenitiesName = reqData?.amenitiesName?.trim().replace(/\s+/g, '');
+            const capitalizedAmenitiesName = amenitiesName?.charAt(0).toUpperCase() + amenitiesName?.slice(1).toLowerCase();
 
-            if (reqData.amenityId != undefined || reqData.amenitiesName != undefined) {
-                connection.query(`SELECT * FROM AmnitiesName WHERE LOWER(Amnities_Name) = '${capitalizedAmenitiesName}'`, function (err, data) {
-                    console.log("data..?", data)
-                    if (error) {
-                        console.error(error);
-                        response.status(202).json({ message: 'Database error' });
-                    } else if (data.length > 0) {
-                        insertAminity(data[0].id, created_by)
-                    } else {
-                        if (!reqData.amenityId && reqData.amenityId != 0 && reqData.amenityId != "") {
-                            connection.query(`INSERT INTO AmnitiesName (Amnities_Name) VALUES ('${capitalizedAmenitiesName}')`, function (error, data) {
-                                if (!error) {
-                                    connection.query("SELECT * FROM AmnitiesName WHERE Amnities_Name='" + capitalizedAmenitiesName + "' LIMIT 1", function (error, amenityData) {
-                                        if (!error) {
-                                            amenityId = amenityData[0].id
-                                            console.log("amenityData", amenityData[0].id);
-                                            insertAminity(amenityData[0].id, created_by)
-                                        }
-                                    })
-                                }
-                                if (error) {
-                                    response.status(202).json({ message: 'Database error' });
-                                }
-                            })
+            connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${reqData.Hostel_Id}`, function (error, amenitiesData) {
+                console.log("amenitiesData", amenitiesData)
+                console.log("capitalizedAmenitiesName", capitalizedAmenitiesName)
+
+                let amenityId = reqData.amenityId;
+
+                if (reqData.amenityId != undefined || reqData.amenitiesName != undefined) {
+                    connection.query(`SELECT * FROM AmnitiesName WHERE LOWER(Amnities_Name) = '${capitalizedAmenitiesName}'`, function (err, data) {
+                        console.log("data..?", data)
+                        if (error) {
+                            console.error(error);
+                            response.status(202).json({ message: 'Database error' });
+                        } else if (data.length > 0) {
+                            insertAminity(data[0].id, created_by)
                         } else {
-                            insertAminity(reqData.amenityId, created_by)
+                            if (!reqData.amenityId && reqData.amenityId != 0 && reqData.amenityId != "") {
+                                connection.query(`INSERT INTO AmnitiesName (Amnities_Name) VALUES ('${capitalizedAmenitiesName}')`, function (error, data) {
+                                    if (!error) {
+                                        connection.query("SELECT * FROM AmnitiesName WHERE Amnities_Name='" + capitalizedAmenitiesName + "' LIMIT 1", function (error, amenityData) {
+                                            if (!error) {
+                                                amenityId = amenityData[0].id
+                                                console.log("amenityData", amenityData[0].id);
+                                                insertAminity(amenityData[0].id, created_by)
+                                            }
+                                        })
+                                    }
+                                    if (error) {
+                                        response.status(202).json({ message: 'Database error' });
+                                    }
+                                })
+                            } else {
+                                insertAminity(reqData.amenityId, created_by)
+                            }
                         }
-                    }
-                })
-            }
-        })
+                    })
+                }
+            })
+        }
+    } else {
+        response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
+
 
     function insertAminity(id, created_by) {
 
@@ -323,15 +347,23 @@ function AmenitiesSetting(connection, request, response) {
 function getAmenitiesList(req, res) {
 
     var created_by = req.user_details.id;
+    var show_ids = req.show_ids;
+    var role_permissions = req.role_permissions;
+    var is_admin = req.is_admin;
 
-    var sql1 = "SELECT ame.*,amname.Amnities_Name,hsd.Name FROM Amenities AS ame JOIN AmnitiesName AS amname ON ame.Amnities_Id = amname.id JOIN hosteldetails AS hsd ON hsd.id = ame.Hostel_Id WHERE ame.createdBy='" + created_by + "'";
-    connection.query(sql1, function (err, data) {
-        if (err) {
-            res.status(201).json({ statusCode: 201, message: "Unable to Get Amenities List" })
-        } else {
-            res.status(200).json({ statusCode: 200, message: "Amenities List", data: data })
-        }
-    })
+    if (is_admin == 1 || (role_permissions[18] && role_permissions[18].per_view == 1)) {
+
+        var sql1 = "SELECT ame.*,amname.Amnities_Name,hsd.Name FROM Amenities AS ame JOIN AmnitiesName AS amname ON ame.Amnities_Id = amname.id JOIN hosteldetails AS hsd ON hsd.id = ame.Hostel_Id WHERE ame.createdBy IN (" + show_ids + ")";
+        connection.query(sql1, function (err, data) {
+            if (err) {
+                res.status(201).json({ statusCode: 201, message: "Unable to Get Amenities List" })
+            } else {
+                res.status(200).json({ statusCode: 200, message: "Amenities List", data: data })
+            }
+        })
+    } else {
+        res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
 }
 
 function getEbReading(connection, response) {
@@ -345,23 +377,33 @@ function getEbReading(connection, response) {
     })
 }
 
-function UpdateAmnity(connection, attenArray, response) {
+function UpdateAmnity(connection, request, response) {
     // console.log(" attenArray", attenArray)
-    connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${attenArray.Hostel_Id}`, function (error, amenitiesData) {
-        // console.log("amenitiesData", amenitiesData)
-        if (attenArray.id) {
-            connection.query(`UPDATE Amenities SET Amount= ${attenArray.Amount},setAsDefault= ${attenArray.setAsDefault},Status= ${attenArray.Status} WHERE  Amnities_Id='${attenArray.id}' and Hostel_Id = '${attenArray.Hostel_Id}'`, function (error, data) {
-                if (error) {
-                    console.error(error);
-                    response.status(201).json({ message: "doesn't update" });
-                } else {
-                    response.status(200).json({ message: "Update successful" });
-                }
-            });
+
+    var attenArray = request.body;
+    var role_permissions = request.role_permissions;
+    var is_admin = request.is_admin;
+
+    if (is_admin == 1 || (role_permissions[18] && role_permissions[18].per_view == 1)) {
+
+        connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${attenArray.Hostel_Id}`, function (error, amenitiesData) {
+            // console.log("amenitiesData", amenitiesData)
+            if (attenArray.id) {
+                connection.query(`UPDATE Amenities SET Amount= ${attenArray.Amount},setAsDefault= ${attenArray.setAsDefault},Status= ${attenArray.Status} WHERE  Amnities_Id='${attenArray.id}' and Hostel_Id = '${attenArray.Hostel_Id}'`, function (error, data) {
+                    if (error) {
+                        console.error(error);
+                        response.status(201).json({ message: "doesn't update" });
+                    } else {
+                        response.status(200).json({ message: "Update successful" });
+                    }
+                });
 
 
-        }
-    })
+            }
+        })
+    } else {
+        response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
 }
 
 

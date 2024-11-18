@@ -33,13 +33,14 @@ module.exports = (req, res, next) => {
             res.status(206).json({ message: "Access denied. No token provided", statusCode: 206 });
         } else {
             try {
-
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 req.user_details = decoded;
 
                 const created_by = decoded.id;
 
                 let show_ids = [];
+                let role_permissions = [];
+                let is_admin;
 
                 // Query to get user details to determine createdby
                 const sqlGetUser = "SELECT * FROM createaccount WHERE id=?";
@@ -55,8 +56,6 @@ module.exports = (req, res, next) => {
                     const user = data[0];
 
                     if (decoded.user_type === "admin") {
-                        // console.log(decoded.id);
-
                         show_ids.push(decoded.id);
 
                         const sqlAdminDirectUsers = "SELECT id FROM createaccount WHERE createdby = ?";
@@ -68,6 +67,8 @@ module.exports = (req, res, next) => {
                             const directUserIds = directUsers.map(item => item.id);
                             show_ids.push(...directUserIds);
 
+                            is_admin = 1;
+
                             if (directUserIds.length > 0) {
                                 const sqlIndirectUsers = "SELECT id FROM createaccount WHERE createdby IN (?)";
                                 connection.query(sqlIndirectUsers, [directUserIds], function (err, indirectUsers) {
@@ -76,7 +77,6 @@ module.exports = (req, res, next) => {
                                     }
 
                                     show_ids.push(...indirectUsers.map(item => item.id));
-
                                     sendResponseWithToken();
                                 });
                             } else {
@@ -85,8 +85,25 @@ module.exports = (req, res, next) => {
                         });
 
                     } else {
-                        show_ids.push(decoded.id);
-                        sendResponseWithToken();
+                        const role_id = user.role_id;
+
+                        const sqlRolePermissions = `
+                            SELECT rp.*, per.permission_name, ro.role_name 
+                            FROM role_permissions AS rp 
+                            JOIN permissions AS per ON rp.permission_id = per.id 
+                            JOIN roles AS ro ON ro.id = rp.role_id 
+                            WHERE rp.role_id = ?`;
+
+                        connection.query(sqlRolePermissions, [role_id], function (err, permissions) {
+                            if (err) {
+                                return res.status(206).json({ message: "Unable to Get Role Permissions", statusCode: 206 });
+                            }
+
+                            is_admin = 0;
+                            role_permissions = permissions;
+                            show_ids.push(decoded.id, user.createdby);
+                            sendResponseWithToken();
+                        });
                     }
 
                     function sendResponseWithToken() {
@@ -95,15 +112,15 @@ module.exports = (req, res, next) => {
 
                         let newToken = null;
 
+                        req.is_admin = is_admin;
                         req.show_ids = show_ids;
+                        req.role_permissions = role_permissions;
 
                         // Refresh the token if about to expire
                         if (timeToExpire <= 600) {
-
                             newToken = jwt.sign(
                                 { id: decoded.id, sub: decoded.id, user_type: decoded.user_type, username: decoded.username, role_id: decoded.role_id },
-                                process.env.JWT_SECRET,
-                                { expiresIn: '30m' }
+                                process.env.JWT_SECRET, { expiresIn: '30m' }
                             );
                             res.locals.refresh_token = newToken;
                         }
@@ -120,11 +137,10 @@ module.exports = (req, res, next) => {
                         next();
                     }
                 });
-
-
             } catch (err) {
                 res.status(206).json({ message: "Access denied. Invalid Token or Token Expired", statusCode: 206 });
             }
         }
     }
+
 }
