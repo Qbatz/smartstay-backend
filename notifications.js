@@ -609,17 +609,32 @@ function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last
 
     console.log("bbbbbbbbbbbbbbbbbbbbbbbb", startMeterReading, end_Meter_Reading);
 
-    const sql1 = `SELECT *, 
-                  CASE WHEN checkoutDate IS NULL 
-                  THEN DATEDIFF(LEAST(CURDATE(), ?), GREATEST(joining_date, ?)) + 1 
-                  ELSE DATEDIFF(LEAST(checkoutDate, ?), GREATEST(joining_date, ?)) + 1 
-                  END AS days_stayed 
-                  FROM hostel 
-                  WHERE Hostel_Id = ? AND Floor = ? AND Rooms = ? 
-                  AND joining_date <= ? 
-                  AND (checkoutDate >= ? OR checkoutDate IS NULL)`;
+    // const sql1 = `SELECT *, 
+    //               CASE WHEN checkoutDate IS NULL 
+    //               THEN DATEDIFF(LEAST(CURDATE(), ?), GREATEST(joining_date, ?)) + 1 
+    //               ELSE DATEDIFF(LEAST(checkoutDate, ?), GREATEST(joining_date, ?)) + 1 
+    //               END AS days_stayed 
+    //               FROM hostel 
+    //               WHERE Hostel_Id = ? AND Floor = ? AND Rooms = ? 
+    //               AND joining_date <= ? 
+    //               AND (checkoutDate >= ? OR checkoutDate IS NULL)`;
 
-    connection.query(sql1, [new_date, last_cal_date, new_date, last_cal_date, atten.hostel_id, atten.floor_id, atten.room_id, new_date, last_cal_date],
+    var sql1 = `SELECT *, 
+       CASE 
+           WHEN checkoutDate > ? OR checkoutDate IS NULL 
+           THEN DATEDIFF(?, GREATEST(joining_date, ?)) + 1
+           WHEN checkoutDate <= ? 
+           THEN DATEDIFF(checkoutDate, GREATEST(joining_date, ?)) + 1
+           ELSE 0
+       END AS days_stayed FROM hostel WHERE 
+       joining_date <= ? AND Hostel_Id = 1 AND Floor = 1 AND Rooms = 1 
+       AND (checkoutDate >= ? OR checkoutDate IS NULL);`
+
+    // connection.query(sql1, [new_date, last_cal_date, new_date, last_cal_date, atten.hostel_id, atten.floor_id, atten.room_id, new_date, last_cal_date],
+
+    //    connection.query(sql1, [atten.date, atten.date, last_cal_date, atten.date, last_cal_date, atten.date, atten.hostel_id, atten.floor_id, atten.room_id, last_cal_date], function (err, user_data) {
+
+    connection.query(sql1, [new_date, new_date, last_cal_date, new_date, last_cal_date, new_date, atten.hostel_id, atten.floor_id, atten.room_id, last_cal_date],
         function (err, user_data) {
             if (err) {
                 console.error('Error fetching user details:', err);
@@ -676,17 +691,30 @@ function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last
 
 function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, eb_id, created_by, callback) {
 
-    const sql1 = `SELECT *, 
-                  CASE WHEN checkoutDate IS NULL 
-                  THEN DATEDIFF(LEAST(CURDATE(), ?), GREATEST(joining_date, ?)) + 1 
-                  ELSE DATEDIFF(LEAST(checkoutDate, ?), GREATEST(joining_date, ?)) + 1 
-                  END AS days_stayed 
-                  FROM hostel 
-                  WHERE Hostel_Id = ? AND Floor = ? AND Rooms = ? 
-                  AND joining_date <= ? 
-                  AND (checkoutDate >= ? OR checkoutDate IS NULL)`;
+    // const sql1 = `SELECT *, 
+    //               CASE WHEN checkoutDate IS NULL 
+    //               THEN DATEDIFF(LEAST(CURDATE(), ?), GREATEST(joining_date, ?)) + 1 
+    //               ELSE DATEDIFF(LEAST(checkoutDate, ?), GREATEST(joining_date, ?)) + 1 
+    //               END AS days_stayed 
+    //               FROM hostel 
+    //               WHERE Hostel_Id = ? AND Floor = ? AND Rooms = ? 
+    //               AND joining_date <= ? 
+    //               AND (checkoutDate >= ? OR checkoutDate IS NULL)`;
+    // connection.query(sql1, [atten.date, last_cal_date, atten.date, last_cal_date, atten.hostel_id, atten.floor_id, atten.room_id, atten.date, last_cal_date], function (err, user_data) {
 
-    connection.query(sql1, [atten.date, last_cal_date, atten.date, last_cal_date, atten.hostel_id, atten.floor_id, atten.room_id, atten.date, last_cal_date], function (err, user_data) {
+
+    var sql1 = `SELECT *, 
+       CASE 
+           WHEN checkoutDate > ? OR checkoutDate IS NULL 
+           THEN DATEDIFF(?, GREATEST(joining_date, ?)) + 1
+           WHEN checkoutDate <= ? 
+           THEN DATEDIFF(checkoutDate, GREATEST(joining_date, ?)) + 1
+           ELSE 0
+       END AS days_stayed FROM hostel WHERE 
+       joining_date <= ? AND Hostel_Id = 1 AND Floor = 1 AND Rooms = 1 
+       AND (checkoutDate >= ? OR checkoutDate IS NULL);`
+
+    connection.query(sql1, [atten.date, atten.date, last_cal_date, atten.date, last_cal_date, atten.date, atten.hostel_id, atten.floor_id, atten.room_id, last_cal_date], function (err, user_data) {
         if (err) {
             console.error('Error fetching user details:', err);
             return callback({ statusCode: 201, message: 'Unable to Get User Details', error: err });
