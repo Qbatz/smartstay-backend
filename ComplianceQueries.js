@@ -70,7 +70,7 @@ function AddCompliance(connection, request, response) {
 
                                 var title = "New Complaint";
                                 var user_type = 0;
-                                var message = "New Complaint Created by " + atten.Name + "";
+                                var message = "New Complaint Created by " + Name + "";
                                 var unseen_users = 0;
 
                                 await addNotification.add_notification(user_id, title, user_type, message, unseen_users)
