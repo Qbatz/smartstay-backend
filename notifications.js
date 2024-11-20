@@ -637,26 +637,14 @@ function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last
 
             let totalDays = user_data.reduce((acc, user) => acc + user.days_stayed, 0);
             const amountPerDay = total_amount / totalDays;
-            const unitPerDay = total_reading / totalDays;
-            let cumulativeAmount = 0;
-            let cumulativeUnits = 0;
             let insertCounter = 0;
 
             user_data.forEach((user, index) => {
 
                 const user_id = user.ID;
                 const userDays = user.days_stayed;
-                let userAmount = Math.round(userDays * amountPerDay);
-                let userUnits = Math.round(userDays * unitPerDay);
-
-                cumulativeAmount += userAmount;
-                cumulativeUnits += userUnits;
-
-                // If this is the last user, adjust for any rounding differences
-                if (index === user_data.length - 1) {
-                    userAmount += total_amount - cumulativeAmount;
-                    userUnits += total_reading - cumulativeUnits;
-                }
+                const userAmount = Math.round(userDays * amountPerDay); // Calculate and round the amount for this user
+                let per_unit = Math.round((userAmount / total_amount) * total_reading);
 
                 console.log(userAmount, "================== User Amounts ===============");
 
@@ -664,7 +652,7 @@ function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last
                 if (userAmount) {
 
                     const sql2 = "INSERT INTO customer_eb_amount (user_id, start_meter, end_meter, unit, amount, created_by, date, eb_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-                    connection.query(sql2, [user_id, startMeterReading, end_Meter_Reading, userUnits, userAmount, created_by, new_date, eb_id],
+                    connection.query(sql2, [user_id, startMeterReading, end_Meter_Reading, per_unit, userAmount, created_by, atten.date, eb_id],
                         function (err) {
                             if (err) {
                                 console.error('Error inserting customer EB amount:', err);
@@ -680,6 +668,7 @@ function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last
                 } else {
                     insertCounter++;
                     if (insertCounter === user_data.length) {
+                        console.log(`User ID: ${user_id} has a zero amount, skipping insertion.`);
                         // If there was no insert needed (userAmount is 0), increment the counter
                         callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
                     }
@@ -710,28 +699,17 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
             return callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
         }
 
-        let totalDays = user_data.reduce((acc, user) => acc + user.days_stayed, 0);
-        const amountPerDay = total_amount / totalDays;
-        const unitPerDay = total_reading / totalDays;
-        let cumulativeAmount = 0;
-        let cumulativeUnits = 0;
+        let totalDays = user_data.reduce((acc, user) => acc + user.days_stayed, 0); // Total days stayed
+        const amountPerDay = total_amount / totalDays; // Calculate amount per day
+        console.log(amountPerDay);
         let insertCounter = 0;
 
         user_data.forEach((user, index) => {
 
             const user_id = user.ID;
             const userDays = user.days_stayed;
-            let userAmount = Math.round(userDays * amountPerDay);
-            let userUnits = Math.round(userDays * unitPerDay);
-
-            cumulativeAmount += userAmount;
-            cumulativeUnits += userUnits;
-
-            // If this is the last user, adjust for any rounding differences
-            if (index === user_data.length - 1) {
-                userAmount += total_amount - cumulativeAmount;
-                userUnits += total_reading - cumulativeUnits;
-            }
+            const userAmount = Math.round(userDays * amountPerDay); // Calculate and round the amount for this user
+            let per_unit = Math.round((userAmount / total_amount) * total_reading);
 
             console.log(userAmount, "================== User Amounts ===============");
 
@@ -739,7 +717,7 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
             if (userAmount) {
 
                 const sql2 = "INSERT INTO customer_eb_amount (user_id, start_meter, end_meter, unit, amount, created_by, date, eb_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-                connection.query(sql2, [user_id, startMeterReading, end_Meter_Reading, userUnits, userAmount, created_by, atten.date, eb_id],
+                connection.query(sql2, [user_id, startMeterReading, end_Meter_Reading, per_unit, userAmount, created_by, atten.date, eb_id],
                     function (err) {
                         if (err) {
                             console.error('Error inserting customer EB amount:', err);
@@ -755,6 +733,7 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
             } else {
                 insertCounter++;
                 if (insertCounter === user_data.length) {
+                    console.log(`User ID: ${user_id} has a zero amount, skipping insertion.`);
                     // If there was no insert needed (userAmount is 0), increment the counter
                     callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
                 }

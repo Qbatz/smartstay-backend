@@ -248,8 +248,6 @@ async function add_staff_user(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
         }
 
-        const hash_password = await bcrypt.hash(password, 10);
-
         if (id) {
 
             var sql1 = "SELECT * FROM createaccount WHERE id=?";
@@ -273,8 +271,8 @@ async function add_staff_user(req, res) {
                                 } else if (phone_data.length == 0) {
 
                                     // Update User Details
-                                    var sql4 = "UPDATE createaccount SET first_name=?,mobileNo=?,email_Id=?,password=?,description=?,role_id=? WHERE id=?";
-                                    connection.query(sql4, [user_name, phone, email_id, hash_password, description, role_id, id], function (err, up_res) {
+                                    var sql4 = "UPDATE createaccount SET first_name=?,mobileNo=?,email_Id=?,description=?,role_id=? WHERE id=?";
+                                    connection.query(sql4, [user_name, phone, email_id, description, role_id, id], function (err, up_res) {
                                         if (err) {
                                             return res.status(201).json({ statusCode: 201, message: "Unable to Update User Details" })
                                         } else {
@@ -294,6 +292,8 @@ async function add_staff_user(req, res) {
                 }
             })
         } else {
+
+            const hash_password = await bcrypt.hash(password, 10);
 
             var sql1 = "SELECT * FROM createaccount WHERE email_Id=? AND user_status=1";
             connection.query(sql1, [email_id], function (err, check_email) {

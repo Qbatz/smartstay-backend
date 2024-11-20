@@ -366,6 +366,10 @@ function add_ebbilling_settings(req, res) {
         return res.status(201).json({ statusCode: 201, message: "Please Add Mantatory Fields" });
     }
 
+    if (amount < 0 || isNaN(amount)) {
+        return res.status(201).json({ statusCode: 201, message: "Amount cannot be negative or invalid" });
+    }
+
     var sql1 = "SELECT * FROM eb_settings WHERE hostel_id='" + hostel_id + "'";
     connection.query(sql1, (err, sel_res) => {
         if (err) {
