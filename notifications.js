@@ -4,9 +4,6 @@ const addNotification = require('./components/add_notification')
 
 function all_notifications(req, res) {
 
-    var role_permissions = request.role_permissions;
-    var is_admin = request.is_admin;
-
     var user_id = req.body.user_id;
     var user_type = req.body.user_type;
 
