@@ -621,16 +621,19 @@ function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last
 
     var sql1 = `SELECT *, 
        CASE 
-           WHEN checkoutDate > ? OR checkoutDate IS NULL 
-           THEN DATEDIFF(?, GREATEST(joining_date, ?)) + 1
-           WHEN checkoutDate <= ? 
-           THEN DATEDIFF(checkoutDate, GREATEST(joining_date, ?)) + 1
+           WHEN checkoutDate > '${new_date}' OR checkoutDate IS NULL 
+           THEN DATEDIFF('${new_date}', GREATEST(joining_date, '${last_cal_date}')) + 1
+           WHEN checkoutDate <= ${new_date}
+           THEN DATEDIFF(checkoutDate, GREATEST(joining_date, '${last_cal_date}')) + 1
            ELSE 0
        END AS days_stayed FROM hostel WHERE 
-       joining_date <= ? AND Hostel_Id = 1 AND Floor = 1 AND Rooms = 1 
-       AND (checkoutDate >= ? OR checkoutDate IS NULL);`
+       joining_date <= '${last_cal_date}' AND Hostel_Id = '${atten.hostel_id}' AND Floor = '${atten.floor_id}' AND Rooms = '${atten.room_id}'
+       AND (checkoutDate >= '${last_cal_date}' OR checkoutDate IS NULL);`
 
-    // connection.query(sql1, [new_date, last_cal_date, new_date, last_cal_date, atten.hostel_id, atten.floor_id, atten.room_id, new_date, last_cal_date],
+    console.log("Joining Date :", last_cal_date);
+    console.log("Check Out Date :", new_date);
+
+    console.log(sql1);
 
     //    connection.query(sql1, [atten.date, atten.date, last_cal_date, atten.date, last_cal_date, atten.date, atten.hostel_id, atten.floor_id, atten.room_id, last_cal_date], function (err, user_data) {
 
@@ -705,23 +708,28 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
 
     var sql1 = `SELECT *, 
        CASE 
-           WHEN checkoutDate > ? OR checkoutDate IS NULL 
-           THEN DATEDIFF(?, GREATEST(joining_date, ?)) + 1
-           WHEN checkoutDate <= ? 
-           THEN DATEDIFF(checkoutDate, GREATEST(joining_date, ?)) + 1
+           WHEN checkoutDate > '${atten.date}' OR checkoutDate IS NULL 
+           THEN DATEDIFF('${atten.date}', GREATEST(joining_date, '${last_cal_date}')) + 1
+           WHEN checkoutDate <= ${atten.date}
+           THEN DATEDIFF(checkoutDate, GREATEST(joining_date, '${last_cal_date}')) + 1
            ELSE 0
        END AS days_stayed FROM hostel WHERE 
-       joining_date <= ? AND Hostel_Id = 1 AND Floor = 1 AND Rooms = 1 
-       AND (checkoutDate >= ? OR checkoutDate IS NULL);`
+       joining_date <= '${last_cal_date}' AND Hostel_Id = '${atten.hostel_id}' AND Floor = '${atten.floor_id}' AND Rooms = '${atten.room_id}'
+       AND (checkoutDate >= '${last_cal_date}' OR checkoutDate IS NULL);`
 
-    connection.query(sql1, [atten.date, atten.date, last_cal_date, atten.date, last_cal_date, atten.date, atten.hostel_id, atten.floor_id, atten.room_id, last_cal_date], function (err, user_data) {
+    console.log("Joining Date :", last_cal_date);
+    console.log("Check Out Date :", atten.date);
+
+    console.log(sql1);
+
+    connection.query(sql1, [atten.date, atten.date, last_cal_date, atten.date, last_cal_date, atten.date, atten.hostel_id, atten.floor_id, last_cal_date, atten.room_id], function (err, user_data) {
         if (err) {
             console.error('Error fetching user details:', err);
             return callback({ statusCode: 201, message: 'Unable to Get User Details', error: err });
         }
 
         if (user_data.length === 0) {
-            return callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
+            return callback({ statusCode: 200, message: 'Successfully Added EB Amount1' });
         }
 
         let totalDays = user_data.reduce((acc, user) => acc + user.days_stayed, 0); // Total days stayed
