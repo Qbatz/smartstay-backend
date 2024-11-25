@@ -2765,7 +2765,7 @@ function add_manual_invoice(req, res) {
 
     if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_create == 1)) {
 
-        var { user_id, due_date, date, invoice_id, room_rent, advance_amount, eb_amount, amenity } = req.body;
+        var { user_id, due_date, date, invoice_id, amenity } = req.body;
 
         var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
         connection.query(sql1, [user_id], function (err, user_details) {
@@ -2776,29 +2776,18 @@ function add_manual_invoice(req, res) {
 
                 var user_data = user_details[0];
 
-                var total_am_amount = amenity && amenity.length > 0 ? amenity.reduce((sum, user) => sum + user.amount, 0) : 0;
+                var total_amount = amenity && amenity.length > 0 ? amenity.reduce((sum, user) => sum + user.amount, 0) : 0;
 
-                console.log(total_am_amount);
+                // var total_amount = parseInt(total_am_amount) + parseInt(room_rent) + parseInt(eb_amount) + parseInt(advance_amount);
 
-                if (total_am_amount) {
-                    total_am_amount = total_am_amount;
-                } else {
-                    total_am_amount = 0
-                }
-
-                if (!advance_amount) {
-                    advance_amount = 0;
-                }
-
-                var total_amount = parseInt(total_am_amount) + parseInt(room_rent) + parseInt(eb_amount) + parseInt(advance_amount);
-
-                var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,RoomRent,EbAmount,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id,advance_amount) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-                connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, total_amount, due_date, date, invoice_id, 'pending', user_data.User_Id, room_rent, eb_amount, total_am_amount, user_data.Bed, total_amount, 'manual', 1, user_id, advance_amount], function (err, ins_data) {
+                var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,action,invoice_type,hos_user_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, due_date, date, invoice_id, 'pending', user_data.User_Id, user_data.Bed, total_amount, 'manual', 1, user_id], function (err, ins_data) {
                     if (err) {
                         console.log(err);
                         return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
                     } else {
                         var inv_id = ins_data.insertId;
+
                         if (amenity && amenity.length > 0) {
                             var remaining = amenity.length;
                             amenity.forEach(item => {
@@ -2809,7 +2798,7 @@ function add_manual_invoice(req, res) {
                                     }
                                     remaining -= 1;
                                     if (remaining === 0) {
-                                        return res.status(200).json({ statusCode: 200, message: "Invoice and Amenity Details Added Successfully" });
+                                        return res.status(200).json({ statusCode: 200, message: "Invoice Added Successfully" });
                                     }
                                 });
                             });

@@ -619,16 +619,22 @@ function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last
     //               AND joining_date <= ? 
     //               AND (checkoutDate >= ? OR checkoutDate IS NULL)`;
 
-    var sql1 = `SELECT *, 
-       CASE 
-           WHEN checkoutDate > '${new_date}' OR checkoutDate IS NULL 
-           THEN DATEDIFF('${new_date}', GREATEST(joining_date, '${last_cal_date}')) + 1
-           WHEN checkoutDate <= ${new_date}
-           THEN DATEDIFF(checkoutDate, GREATEST(joining_date, '${last_cal_date}')) + 1
-           ELSE 0
-       END AS days_stayed FROM hostel WHERE 
-       joining_date <= '${last_cal_date}' AND Hostel_Id = '${atten.hostel_id}' AND Floor = '${atten.floor_id}' AND Rooms = '${atten.room_id}'
-       AND (checkoutDate >= '${last_cal_date}' OR checkoutDate IS NULL);`
+    var sql1 = `SELECT *,
+    CASE
+        WHEN checkoutDate > '${new_date}' OR checkoutDate IS NULL
+        THEN DATEDIFF('${new_date}', GREATEST(joining_date, '${last_cal_date}')) + 1
+        
+        WHEN checkoutDate <= '${new_date}'
+        THEN DATEDIFF(checkoutDate, GREATEST(joining_date, '${last_cal_date}')) + 1
+        
+        ELSE 0
+    END AS days_stayed
+ FROM hostel
+ WHERE joining_date <= '${last_cal_date}'
+     AND Hostel_Id = '${atten.hostel_id}'
+     AND Floor = '${atten.floor_id}'
+     AND Rooms = '${atten.room_id}'
+     AND (checkoutDate >= '${last_cal_date}' OR checkoutDate IS NULL);`
 
     console.log("Joining Date :", last_cal_date);
     console.log("Check Out Date :", new_date);
@@ -658,7 +664,7 @@ function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last
 
                 const user_id = user.ID;
                 const userDays = user.days_stayed;
-                const userAmount = Math.round(userDays * amountPerDay); // Calculate and round the amount for this user
+                const userAmount = parseFloat((userDays * amountPerDay).toFixed(2));
                 let per_unit = Math.round((userAmount / total_amount) * total_reading);
 
                 console.log(userAmount, "================== User Amounts ===============");
@@ -694,28 +700,33 @@ function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last
 
 function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, eb_id, created_by, callback) {
 
-    // const sql1 = `SELECT *, 
-    //               CASE WHEN checkoutDate IS NULL 
-    //               THEN DATEDIFF(LEAST(CURDATE(), ?), GREATEST(joining_date, ?)) + 1 
-    //               ELSE DATEDIFF(LEAST(checkoutDate, ?), GREATEST(joining_date, ?)) + 1 
-    //               END AS days_stayed 
-    //               FROM hostel 
-    //               WHERE Hostel_Id = ? AND Floor = ? AND Rooms = ? 
-    //               AND joining_date <= ? 
-    //               AND (checkoutDate >= ? OR checkoutDate IS NULL)`;
-    // connection.query(sql1, [atten.date, last_cal_date, atten.date, last_cal_date, atten.hostel_id, atten.floor_id, atten.room_id, atten.date, last_cal_date], function (err, user_data) {
+    // var sql1 = `SELECT *, 
+    //    CASE 
+    //        WHEN checkoutDate > '${atten.date}' OR checkoutDate IS NULL 
+    //        THEN DATEDIFF('${atten.date}', GREATEST(joining_date, '${last_cal_date}')) + 1
+    //        WHEN checkoutDate <= ${atten.date}
+    //        THEN DATEDIFF(checkoutDate, GREATEST(joining_date, '${last_cal_date}')) + 1
+    //        ELSE 0
+    //    END AS days_stayed FROM hostel WHERE 
+    //    joining_date <= '${last_cal_date}' AND Hostel_Id = '${atten.hostel_id}' AND Floor = '${atten.floor_id}' AND Rooms = '${atten.room_id}'
+    //    AND (checkoutDate >= '${last_cal_date}' OR checkoutDate IS NULL);`
 
-
-    var sql1 = `SELECT *, 
-       CASE 
-           WHEN checkoutDate > '${atten.date}' OR checkoutDate IS NULL 
+    var sql1 = `SELECT *,
+       CASE
+           WHEN checkoutDate > '${atten.date}' OR checkoutDate IS NULL
            THEN DATEDIFF('${atten.date}', GREATEST(joining_date, '${last_cal_date}')) + 1
-           WHEN checkoutDate <= ${atten.date}
+           
+           WHEN checkoutDate <= '${atten.date}'
            THEN DATEDIFF(checkoutDate, GREATEST(joining_date, '${last_cal_date}')) + 1
+           
            ELSE 0
-       END AS days_stayed FROM hostel WHERE 
-       joining_date <= '${last_cal_date}' AND Hostel_Id = '${atten.hostel_id}' AND Floor = '${atten.floor_id}' AND Rooms = '${atten.room_id}'
-       AND (checkoutDate >= '${last_cal_date}' OR checkoutDate IS NULL);`
+       END AS days_stayed
+    FROM hostel
+    WHERE joining_date <= '${last_cal_date}'
+        AND Hostel_Id = '${atten.hostel_id}'
+        AND Floor = '${atten.floor_id}'
+        AND Rooms = '${atten.room_id}'
+        AND (checkoutDate >= '${last_cal_date}' OR checkoutDate IS NULL);`
 
     console.log("Joining Date :", last_cal_date);
     console.log("Check Out Date :", atten.date);
@@ -741,11 +752,11 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
 
             const user_id = user.ID;
             const userDays = user.days_stayed;
-            const userAmount = Math.round(userDays * amountPerDay); // Calculate and round the amount for this user
+            // const userAmount1 = Math.round(userDays * amountPerDay); // Calculate and round the amount for this user
+            const userAmount = parseFloat((userDays * amountPerDay).toFixed(2));
             let per_unit = Math.round((userAmount / total_amount) * total_reading);
 
             console.log(userAmount, "================== User Amounts ===============");
-
 
             if (userAmount) {
 

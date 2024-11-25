@@ -1982,30 +1982,46 @@ function get_beduser_details(req, res) {
 }
 
 function get_bill_details(req, res) {
+
   const created_by = req.user_details.id;
+
   var show_ids = req.show_ids;
   var role_permissions = req.role_permissions;
   var is_admin = req.is_admin;
 
   if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_view == 1)) {
 
-    var sql1 =
-      "SELECT inv.* FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id WHERE hs.created_By IN (?) ORDER BY id DESC;";
-    connection.query(sql1, [show_ids], function (err, data) {
+    // var sql1 = "SELECT * FROM invoicedetails WHERE created_By IN (?) AND invoice_status=1 ORDER BY id DESC";
+    var sql1 = "SELECT inv.* FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id WHERE hs.created_By IN (?) AND inv.invoice_status=1 ORDER BY id DESC";
+    connection.query(sql1, [show_ids], function (err, invoices) {
       if (err) {
-        return res
-          .status(201)
-          .json({ message: "Unable to Get Bill Details", statusCode: 201 });
-      } else {
-        return res
-          .status(200)
-          .json({
-            message: "All Bill Details",
-            statusCode: 200,
-            bill_details: data,
-          });
+        return res.status(201).json({ message: "Unable to Get Bill Details", statusCode: 201 });
       }
+
+      if (invoices.length === 0) {
+        return res.status(200).json({ message: "No Bill Details Found", statusCode: 200, bill_details: [] });
+      }
+
+      let completed = 0;
+
+      invoices.forEach((invoice, index) => {
+        var sql2 = "SELECT * FROM manual_invoice_amenities WHERE invoice_id=?";
+        connection.query(sql2, [invoice.id], function (err, amenities) {
+          if (err) {
+            console.log(err);
+            invoices[index]['amenity'] = [];
+          } else {
+            invoices[index]['amenity'] = amenities || [];
+          }
+
+          completed++;
+          if (completed === invoices.length) {
+            return res.status(200).json({ message: "All Bill Details", statusCode: 200, bill_details: invoices });
+          }
+        });
+      });
     });
+
   } else {
     res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
   }

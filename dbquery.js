@@ -149,7 +149,12 @@ const queries = [
 
     "ALTER TABLE `EbAmount` ADD COLUMN`status` INT(11) NULL DEFAULT '1' AFTER`Eb_Unit`;",
 
-    "CREATE TABLE `room_readings` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`hostel_id` BIGINT(20) NULL,`floor_id` BIGINT(20) NULL,`room_id` BIGINT(20) NULL,`date` DATE NULL,`reading` BIGINT(20) NULL,`total_amount` BIGINT(20) NULL,`total_reading` BIGINT(20) NULL,`status` INT NULL DEFAULT 1,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));"
+    "CREATE TABLE `room_readings` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`hostel_id` BIGINT(20) NULL,`floor_id` BIGINT(20) NULL,`room_id` BIGINT(20) NULL,`date` DATE NULL,`reading` BIGINT(20) NULL,`total_amount` BIGINT(20) NULL,`total_reading` BIGINT(20) NULL,`status` INT NULL DEFAULT 1,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+
+    "ALTER TABLE customer_eb_amount MODIFY COLUMN amount DECIMAL(10, 2);",
+
+    "ALTER TABLE `invoicedetails` ADD COLUMN `invoice_status` INT(11) NULL DEFAULT 1 AFTER `hos_user_id`;"
+
 ];
 
 queries.forEach(executeQuery);
