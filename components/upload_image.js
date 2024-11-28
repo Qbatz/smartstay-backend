@@ -2,6 +2,8 @@ const AWS = require('aws-sdk');
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
+const xlsx = require('xlsx');
+
 
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
@@ -56,4 +58,43 @@ function deleteImageFromS3Bucket(bucket, key) {
     });
 };
 
-module.exports = { uploadProfilePictureToS3Bucket, deleteImageFromS3Bucket }
+function export_function(data, filePath) {
+
+    return new Promise((resolve, reject) => {
+
+        try {
+            var bucket_name = 'smartstaydevs';
+
+            const worksheet = xlsx.utils.json_to_sheet(data);
+            const workbook = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+            xlsx.writeFile(workbook, filePath);
+            const fileContent = fs.readFileSync(filePath);
+
+            const params = {
+                Bucket: bucket_name,
+                Key: `exports/${filePath}`,
+                Body: fileContent,
+                ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            };
+
+            s3.upload(params, (err, data) => {
+                fs.unlinkSync(filePath);
+
+                if (err) {
+                    console.error('Error uploading to S3:', err);
+                    return reject(err);
+                }
+
+                console.log(`File uploaded successfully. S3 URL: ${data.Location}`);
+                resolve(data.Location);
+            });
+
+        } catch (error) {
+            console.error('Error generating or uploading file:', error);
+            reject(error);
+        }
+    });
+}
+
+module.exports = { uploadProfilePictureToS3Bucket, deleteImageFromS3Bucket, export_function }

@@ -12,6 +12,8 @@ const xlsx = require('xlsx');
 const fs = require('fs');
 const bookings = require('./bookings');
 const roles = require('./roles');
+const exports_routes = require('./exports');
+
 
 const app = express()
 const userQueries = require('./UserQueries');
@@ -1053,4 +1055,10 @@ app.post('/edit_room_reading', (req, res) => {
 // Delete room Reading
 app.post('/delete_room_reading', (req, res) => {
     notifications.delete_room_reading(req, res)
+})
+
+// ********************* Export API **********************
+
+app.post('/export_details', (req, res) => {
+    exports_routes.export_customer(req, res)
 })
