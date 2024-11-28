@@ -1003,24 +1003,13 @@ function listDashBoard(connection, response, request) {
     var role_permissions = request.role_permissions;
     var is_admin = request.is_admin;
 
-    // COALESCE((select COUNT(hos.Bed) as availableBed from hostelrooms hosroom INNER JOIN hostel hos on hosroom.Room_Id = hos.Rooms where hosroom.isActive=1),0) as Bed,
-    // COALESCE(sum((select COUNT(bd.id) from hostelrooms AS hs JOIN bed_details AS bd ON hs.id=bd.hos_detail_id where hs.Hostel_Id=details.id AND bd.status=1)),0) as Bed ,
-    //     var sql1 = `select creaccount.first_name,creaccount.last_name,COALESCE((select count(id) from hosteldetails where created_By=details.created_By AND isActive=1),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id AND isActive=1)),0) as roomCount, 
-    //    COALESCE(sum((select COUNT(bd.id) from hostelrooms AS hs JOIN bed_details AS bd ON hs.id=bd.hos_detail_id inner join hostelrooms hosroom on  hosroom.Hostel_Id = bd.hos_detail_id where hs.Hostel_Id=details.id AND hosroom.isActive=true)),0) as Bed,
-    //     COALESCE(sum((select COUNT(bd.id) from hostelrooms AS hs JOIN bed_details AS bd ON hs.id=bd.hos_detail_id where hs.Hostel_Id=details.id AND bd.status=1 AND bd.isfilled=1)),0) as occupied_Bed,
-    //     (select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue
-    //     FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By='${created_by}') AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue
-    //     FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By='${created_by}' AND icv.BalanceDue != 0) AS overdue from hosteldetails details
-    //     join createaccount creaccount on creaccount.id = details.created_by
-    //     where details.created_By='${created_by}';`
-
     if (is_admin == 1 || (role_permissions[0] && role_permissions[0].per_view == 1)) {
 
-        var sql1 = "select creaccount.first_name,creaccount.last_name,COALESCE((select count(id) from hosteldetails where created_By=details.created_By AND isActive=1),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id AND isActive=1)),0) as roomCount,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=0 AND hd.created_By IN (" + show_ids + ")),0) as Bed,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By IN (" + show_ids + ")),0) as occupied_Bed,(select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By IN (" + show_ids + ")) AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.BalanceDue != 0) AS overdue from hosteldetails details join createaccount creaccount on creaccount.id = details.created_by where details.created_By IN (" + show_ids + ") GROUP BY creaccount.id"
+        // var sql1 = "select creaccount.first_name,creaccount.last_name,COALESCE((select count(id) from hosteldetails where created_By=details.created_By AND isActive=1),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id AND isActive=1)),0) as roomCount,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=0 AND hd.created_By IN (" + show_ids + ")),0) as Bed,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By IN (" + show_ids + ")),0) as occupied_Bed,(select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By IN (" + show_ids + ")) AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.BalanceDue != 0) AS overdue from hosteldetails details join createaccount creaccount on creaccount.id = details.created_by where details.created_By IN (" + show_ids + ") GROUP BY creaccount.id"
+        var sql1 = "select creaccount.first_name,creaccount.last_name,COALESCE((select count(id) from hosteldetails where created_By=details.created_By AND isActive=1),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id AND isActive=1)),0) as roomCount,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=0 AND hd.created_By IN (" + show_ids + ")),0) as Bed,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By IN (" + show_ids + ")),0) as occupied_Bed,(select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By IN (" + show_ids + ")) AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.BalanceDue != 0) AS overdue,(select COALESCE(COUNT(COALESCE(hos.id, 0)), 0) AS customer_count FROM hostel AS hos JOIN hosteldetails AS hrtl ON hos.Hostel_Id=hrtl.id AND hos.isActive=1 WHERE hos.created_By IN (" + show_ids + ") AND hrtl.isActive = 1) AS customer_count,(select COALESCE(SUM(COALESCE(rr.total_amount, 0)), 0) AS eb_amount FROM room_readings AS rr WHERE rr.created_By IN (" + show_ids + ") AND rr.status = 1) AS eb_amount,(select COALESCE(SUM(COALESCE(total_price, 0)), 0) AS asset_amount FROM assets WHERE created_by IN (" + show_ids + ") AND status = 1) AS asset_amount from hosteldetails details join createaccount creaccount on creaccount.id = details.created_by where details.created_By IN (" + show_ids + ") GROUP BY creaccount.id;"
         connection.query(sql1, function (error, data) {
             if (error) {
                 console.log(error, "Error Message");
-                // response.status(200).json({ dashboardList: [], Revenue_reports: [], totalAmount: [], categoryList: [], error: error });
                 response.status(201).json({ message: "No data found", error: error.message });
             } else {
 
@@ -1043,13 +1032,18 @@ function listDashBoard(connection, response, request) {
                             overdue: item.overdue,
                             current: current,
                             first_name: item.first_name,
-                            last_name: item.last_name
+                            last_name: item.last_name,
+                            eb_amount: item.eb_amount,
+                            asset_amount: item.asset_amount,
+                            free_bed: item.Bed,
+                            customer_count: item.customer_count
                         }
                         // tempArray.push(obj)
                         return obj
 
                     })
 
+                    // Complaint list
                     var sql2 = "SELECT com.*,hos.profile,CASE WHEN com.user_type = 1 THEN com.created_by ELSE hos.id END AS com_created_by,ct.complaint_name FROM compliance AS com JOIN hostel AS hos ON com.User_id = hos.User_Id JOIN complaint_type AS ct ON ct.id = com.Complainttype WHERE CASE WHEN com.user_type = 1 THEN com.created_by ELSE hos.id END IN (" + created_by + ") AND com.Status != 'Completed' ORDER BY com.ID DESC LIMIT 5;"
                     connection.query(sql2, function (err, com_data) {
                         if (err) {
@@ -1065,14 +1059,9 @@ function listDashBoard(connection, response, request) {
                                     return;
                                 } else {
                                     // expense category
-                                    let query = `select sum(expen.purchase_amount) as purchase_amount, expen.category_id, category.category_Name from expenses expen
-                                join Expense_Category_Name category on category.id = expen.category_id
-                                where expen.status = true AND expen.created_by IN (${created_by})
-                                AND YEAR(expen.createdate) BETWEEN  ${startingYear} AND ${endingYear}
-                                           GROUP BY 
-                                        expen.category_id`
+                                    var sql2 = "SELECT SUM(expen.purchase_amount) AS purchase_amount, expen.category_id, category.category_Name FROM expenses expen JOIN Expense_Category_Name category ON category.id = expen.category_id WHERE expen.status = true AND expen.created_by IN (?) AND YEAR(expen.purchase_date) = YEAR(CURDATE()) AND MONTH(expen.createdate) = MONTH(CURDATE()) GROUP BY expen.category_id";
                                     // console.log("query", query);
-                                    connection.query(query, function (error, data) {
+                                    connection.query(sql2, show_ids, function (error, data) {
                                         if (error) {
                                             console.log("error", error);
                                             response.status(201).json({ message: "Error fetching Data" });
@@ -1087,11 +1076,26 @@ function listDashBoard(connection, response, request) {
 
                                                     total_amount += i.purchase_amount;
                                                 }
-                                                response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, total_amount: total_amount, categoryList: data, com_data: com_data });
-                                                // response.status(200).json({ totalAmount, resArray });
 
+                                                // Booking Data
+                                                var sql4 = "SELECT id,first_name,last_name,amount FROM bookings WHERE status=1 AND created_by IN (?) ORDER BY id DESC LIMIT 5;";
+                                                connection.query(sql4, [show_ids], function (err, book_data) {
+                                                    if (err) {
+                                                        response.status(201).json({ message: "Error fetching Booking Data" });
+                                                    } else {
+
+                                                        var sql5 = "SELECT inv.id,inv.Invoices,inv.DueDate,inv.Amount AS total_amount FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id WHERE hs.created_By IN (?) AND inv.invoice_status=1 and inv.BalanceDue !=0 ORDER BY id DESC LIMIT 5;"
+                                                        connection.query(sql5, [show_ids], function (err, bill_details) {
+                                                            if (err) {
+                                                                response.status(201).json({ message: "Error fetching Bill Data" });
+                                                            } else {
+                                                                response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, total_amount: total_amount, categoryList: data, com_data: com_data, book_data: book_data, bill_details: bill_details });
+                                                            }
+                                                        })
+                                                    }
+                                                })
                                             } else {
-                                                response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, totalAmount: [], categoryList: [], com_data: com_data });
+                                                response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, totalAmount: [], categoryList: [], com_data: com_data, bill_details: [], book_data: [] });
                                             }
                                         }
                                     })
