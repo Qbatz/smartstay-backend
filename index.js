@@ -1062,3 +1062,9 @@ app.post('/delete_room_reading', (req, res) => {
 app.post('/export_details', (req, res) => {
     exports_routes.export_customer(req, res)
 })
+
+// dashboard filter api
+
+app.post('/dash_filter', (req, res) => {
+    exports_routes.dash_filter(req, res)
+})

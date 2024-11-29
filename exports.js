@@ -84,4 +84,101 @@ function export_customer(req, res) {
 }
 
 
-module.exports = { export_customer }
+function dash_filter(req, res) {
+
+    var type = req.body.type;
+    var range = req.body.range;
+
+    var show_ids = req.show_ids;
+
+    if (!type) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Data" })
+    }
+
+    const allowedTypes = ['expenses', 'cashback'];
+
+    if (!allowedTypes.includes(type)) {
+        return res.status(201).json({ statusCode: 201, message: `Invalid type` });
+    }
+
+    if (type == 'expenses') {
+
+        if (range == 'this_month') {
+
+            var sql1 = "SELECT SUM(expen.purchase_amount) AS purchase_amount, expen.category_id, category.category_Name FROM expenses expen JOIN Expense_Category_Name category ON category.id = expen.category_id WHERE expen.status = true AND expen.created_by IN (" + show_ids + ") AND YEAR(expen.purchase_date) = YEAR(CURDATE()) AND MONTH(expen.createdate) = MONTH(CURDATE()) GROUP BY expen.category_id"
+
+        } else if (range == 'last_month') {
+
+            var sql1 = "SELECT SUM(expen.purchase_amount) AS purchase_amount, expen.category_id, category.category_Name FROM expenses expen JOIN Expense_Category_Name category ON category.id = expen.category_id WHERE expen.status = true AND expen.created_by IN (" + show_ids + ") AND YEAR(expen.createdate) = YEAR(CURDATE() - INTERVAL 1 MONTH) AND MONTH(expen.createdate) = MONTH(CURDATE() - INTERVAL 1 MONTH) GROUP BY expen.category_id";
+
+        } else if (range == 'last_three_months') {
+
+            var sql1 = "SELECT SUM(expen.purchase_amount) AS purchase_amount, expen.category_id, category.category_Name FROM expenses expen JOIN Expense_Category_Name category ON category.id = expen.category_id WHERE expen.status = true AND expen.created_by IN (" + show_ids + ") AND expen.createdate BETWEEN DATE_SUB(CURDATE(), INTERVAL 3 MONTH) AND CURDATE() GROUP BY expen.category_id";
+
+        } else if (range == 'last_six_months') {
+
+            var sql1 = "SELECT SUM(expen.purchase_amount) AS purchase_amount, expen.category_id, category.category_Name FROM expenses expen JOIN Expense_Category_Name category ON category.id = expen.category_id WHERE expen.status = true AND expen.created_by IN (" + show_ids + ") AND expen.createdate BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 MONTH) AND CURDATE() GROUP BY expen.category_id";
+
+        } else if (range == 'this_year') {
+
+            // var sql1 = "SELECT SUM(expen.purchase_amount) AS purchase_amount, expen.category_id, category.category_Name FROM expenses expen JOIN Expense_Category_Name category ON category.id = expen.category_id WHERE expen.status = true AND expen.created_by IN (" + show_ids + ") AND expen.createdate BETWEEN DATE_SUB(CURDATE(), INTERVAL 12 MONTH) AND CURDATE() GROUP BY expen.category_id";
+            var sql1 = "SELECT SUM(expen.purchase_amount) AS purchase_amount, expen.category_id, category.category_Name FROM expenses expen JOIN Expense_Category_Name category ON category.id = expen.category_id WHERE expen.status = true AND expen.created_by IN (" + show_ids + ") AND expen.createdate BETWEEN DATE_FORMAT(CURDATE(), '%Y-01-01') AND DATE_FORMAT(CURDATE(), '%Y-12-31') GROUP BY expen.category_id";
+
+        } else {
+            // last 24 months
+            var sql1 = "SELECT SUM(expen.purchase_amount) AS purchase_amount, expen.category_id, category.category_Name FROM expenses expen JOIN Expense_Category_Name category ON category.id = expen.category_id WHERE expen.status = true AND expen.created_by IN (" + show_ids + ") AND YEAR(expen.createdate) = YEAR(CURDATE()) - 1 AND MONTH(expen.createdate) BETWEEN 1 AND 12 GROUP BY expen.category_id;";
+
+        }
+
+        connection.query(sql1, function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Unable to Get Expenses Details" })
+            } else {
+                return res.status(200).json({ statusCode: 200, message: "Expenses Details", exp_data: data })
+            }
+        })
+
+    } else {
+
+        if (range == 'this_month') {
+
+            var sql2 = "SELECT creaccount.first_name, creaccount.last_name, (SELECT COALESCE(SUM(COALESCE(icv.Amount, 0)), 0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id = hos.id WHERE hos.created_By IN (" + show_ids + ") AND YEAR(icv.Date) = YEAR(CURDATE()) AND MONTH(icv.Date) = MONTH(CURDATE())) AS Revenue, (SELECT COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS overdue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id = hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.BalanceDue != 0 AND YEAR(icv.Date) = YEAR(CURDATE()) AND MONTH(icv.Date) = MONTH(CURDATE())) AS overdue FROM hosteldetails details JOIN createaccount creaccount ON creaccount.id = details.created_by WHERE details.created_By IN (" + show_ids + ") GROUP BY creaccount.id;"
+
+        } else if (range == 'last_month') {
+
+            var sql2 = "SELECT creaccount.first_name, creaccount.last_name, (SELECT COALESCE(SUM(COALESCE(icv.Amount, 0)), 0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id = hos.id WHERE hos.created_By IN (" + show_ids + ") AND YEAR(icv.Date) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(icv.Date) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))) AS Revenue, (SELECT COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS overdue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id = hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.BalanceDue != 0 AND YEAR(icv.Date) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(icv.Date) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))) AS overdue FROM hosteldetails details JOIN createaccount creaccount ON creaccount.id = details.created_by WHERE details.created_By IN (" + show_ids + ") GROUP BY creaccount.id;";
+
+        } else if (range == 'last_three_months') {
+
+            var sql2 = "SELECT creaccount.first_name, creaccount.last_name, (SELECT COALESCE(SUM(COALESCE(icv.Amount, 0)), 0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id = hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.Date BETWEEN DATE_SUB(CURDATE(), INTERVAL 3 MONTH) AND CURDATE()) AS Revenue, (SELECT COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS overdue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id = hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.BalanceDue != 0 AND icv.Date BETWEEN DATE_SUB(CURDATE(), INTERVAL 3 MONTH) AND CURDATE()) AS overdue FROM hosteldetails details JOIN createaccount creaccount ON creaccount.id = details.created_by WHERE details.created_By IN (" + show_ids + ") GROUP BY creaccount.id;";
+
+        } else if (range == 'last_six_months') {
+
+            var sql2 = "SELECT creaccount.first_name, creaccount.last_name, (SELECT COALESCE(SUM(COALESCE(icv.Amount, 0)), 0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id = hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.Date BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 MONTH) AND CURDATE()) AS Revenue, (SELECT COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS overdue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id = hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.BalanceDue != 0 AND icv.Date BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 MONTH) AND CURDATE()) AS overdue FROM hosteldetails details JOIN createaccount creaccount ON creaccount.id = details.created_by WHERE details.created_By IN (" + show_ids + ") GROUP BY creaccount.id;";
+
+        } else if (range == 'this_year') {
+
+            // var sql2 = "SELECT creaccount.first_name, creaccount.last_name, (SELECT COALESCE(SUM(COALESCE(icv.Amount, 0)), 0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id = hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.Date BETWEEN DATE_SUB(CURDATE(), INTERVAL 12 MONTH) AND CURDATE()) AS Revenue, (SELECT COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS overdue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id = hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.BalanceDue != 0 AND icv.Date BETWEEN DATE_SUB(CURDATE(), INTERVAL 12 MONTH) AND CURDATE()) AS overdue FROM hosteldetails details JOIN createaccount creaccount ON creaccount.id = details.created_by WHERE details.created_By IN (" + show_ids + ") GROUP BY creaccount.id;";
+
+            var sql2 = "SELECT creaccount.first_name, creaccount.last_name, (SELECT COALESCE(SUM(COALESCE(icv.Amount, 0)), 0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id = hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.Date BETWEEN DATE_FORMAT(CURDATE(), '%Y-01-01') AND DATE_FORMAT(CURDATE(), '%Y-12-31')) AS Revenue, (SELECT COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS overdue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id = hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.BalanceDue != 0 AND icv.Date BETWEEN DATE_FORMAT(CURDATE(), '%Y-01-01') AND DATE_FORMAT(CURDATE(), '%Y-12-31')) AS overdue FROM hosteldetails details JOIN createaccount creaccount ON creaccount.id = details.created_by WHERE details.created_By IN (" + show_ids + ") GROUP BY creaccount.id;";
+
+        } else {
+            // last year
+            var sql2 = "SELECT creaccount.first_name, creaccount.last_name, (SELECT COALESCE(SUM(COALESCE(icv.Amount, 0)), 0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id = hos.id WHERE hos.created_By IN (" + show_ids + ") AND YEAR(icv.Date) = YEAR(CURDATE()) - 1 AND icv.Date BETWEEN DATE_SUB(CURDATE(), INTERVAL 12 MONTH) AND CURDATE()) AS Revenue, (SELECT COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS overdue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id = hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.BalanceDue != 0 AND YEAR(icv.Date) = YEAR(CURDATE()) - 1 AND icv.Date BETWEEN DATE_SUB(CURDATE(), INTERVAL 12 MONTH) AND CURDATE()) AS overdue FROM hosteldetails details JOIN createaccount creaccount ON creaccount.id = details.created_by WHERE details.created_By IN (" + show_ids + ") GROUP BY creaccount.id;";
+
+        }
+
+        connection.query(sql2, function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Unable to Get Cashback Details" })
+            } else {
+                return res.status(200).json({ statusCode: 200, message: "Cashback Details", cash_back_data: data })
+            }
+        })
+
+
+    }
+
+}
+
+module.exports = { export_customer, dash_filter }
