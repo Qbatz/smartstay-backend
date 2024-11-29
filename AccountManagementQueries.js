@@ -103,6 +103,7 @@ function update_account_details(request, response) {
     // console.log(request.body);
     var is_admin = request.is_admin;
     var show_ids = request.show_ids;
+    var role_permissions = request.role_permissions;
 
     if (!first_name || !email_id || !phone || !address) {
         response.status(201).json({ message: "Please Add Mandatory Details", statusCode: 201 });
