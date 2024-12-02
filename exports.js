@@ -141,16 +141,19 @@ function dash_filter(req, res) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Expenses Details" })
             } else if (data.length != 0) {
 
-                let total_amount = 0
+                let total_amount = 0;
+
+                console.log(data);
+                
                 for (let i of data) {
                     // console.log("i",i);
                     total_amount += i.purchase_amount;
                 }
 
                 const aggregatedData = Object.values(
-                    data.reduce((acc, { category_name, purchase_amount }) => {
-                        acc[category_name] = acc[category_name] || { category_name, purchase_amount: 0 };
-                        acc[category_name].purchase_amount += purchase_amount;
+                    data.reduce((acc, { category_Name, purchase_amount }) => {
+                        acc[category_Name] = acc[category_Name] || { category_Name, purchase_amount: 0 };
+                        acc[category_Name].purchase_amount += purchase_amount;
                         return acc;
                     }, {})
                 ).sort((a, b) => b.purchase_amount - a.purchase_amount);
@@ -158,7 +161,7 @@ function dash_filter(req, res) {
                 const result = [
                     ...aggregatedData.slice(0, 5),
                     {
-                        category_name: "Others",
+                        category_Name: "Others",
                         purchase_amount: aggregatedData.slice(5).reduce((sum, { purchase_amount }) => sum + purchase_amount, 0)
                     }
                 ];
@@ -227,7 +230,7 @@ function dash_filter(req, res) {
 
         }
 
-        connection.query(sql2, function (err, data) {
+        connection.query(sql3, function (err, data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Cashback Details" })
             } else {
