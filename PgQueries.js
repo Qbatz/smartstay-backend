@@ -1003,6 +1003,9 @@ function listDashBoard(connection, response, request) {
     var role_permissions = request.role_permissions;
     var is_admin = request.is_admin;
 
+    console.log(show_ids, "=======================");
+
+
     if (is_admin == 1 || (role_permissions[0] && role_permissions[0].per_view == 1)) {
 
         // var sql1 = "select creaccount.first_name,creaccount.last_name,COALESCE((select count(id) from hosteldetails where created_By=details.created_By AND isActive=1),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id AND isActive=1)),0) as roomCount,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=0 AND hd.created_By IN (" + show_ids + ")),0) as Bed,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By IN (" + show_ids + ")),0) as occupied_Bed,(select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By IN (" + show_ids + ")) AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.BalanceDue != 0) AS overdue from hosteldetails details join createaccount creaccount on creaccount.id = details.created_by where details.created_By IN (" + show_ids + ") GROUP BY creaccount.id"
@@ -1051,56 +1054,61 @@ function listDashBoard(connection, response, request) {
                         } else {
                             // Get Revenue Details 
                             // var query1 = `SELECT m.month,COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue,COALESCE(SUM(COALESCE(expen.purchase_amount, 0)), 0) AS expense FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS numbers) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month, invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By IN (${created_by})) AS invo ON m.month = invo.month LEFT JOIN (SELECT DATE_FORMAT(expen.createdate, '%Y-%m') AS month, expen.purchase_amount FROM expenses AS expen WHERE expen.created_by IN (${created_by})) AS expen ON m.month = expen.month GROUP BY m.month ORDER BY m.month;`
-                            var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue,COALESCE(SUM(COALESCE(expen.purchase_amount, 0)), 0) AS expense FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) AS numbers) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By IN (" + show_ids + ")) AS invo ON m.month = invo.month LEFT JOIN (SELECT DATE_FORMAT(expen.createdate, '%Y-%m') AS month, expen.purchase_amount FROM expenses AS expen WHERE expen.created_by IN (" + show_ids + ")) AS expen ON m.month = expen.month GROUP BY m.month ORDER BY  m.month;"
-                            // Execute the query
-                            connection.query(query1, [created_by], (error, results, fields) => {
-                                if (error) {
-                                    console.error('Error executing query:', error);
-                                    return;
+
+                            // Booking Data
+                            var sql4 = "SELECT id,first_name,last_name,amount,joining_date FROM bookings WHERE status=1 AND created_by IN (?) ORDER BY id DESC LIMIT 5;";
+                            connection.query(sql4, [show_ids], function (err, book_data) {
+                                if (err) {
+                                    response.status(201).json({ message: "Error fetching Booking Data" });
                                 } else {
-                                    // expense category
-                                    var sql2 = "SELECT SUM(expen.purchase_amount) AS purchase_amount, expen.category_id, category.category_Name FROM expenses expen JOIN Expense_Category_Name category ON category.id = expen.category_id WHERE expen.status = true AND expen.created_by IN (?) AND YEAR(expen.purchase_date) = YEAR(CURDATE()) AND MONTH(expen.createdate) = MONTH(CURDATE()) GROUP BY expen.category_id";
-                                    // console.log("query", query);
-                                    connection.query(sql2, show_ids, function (error, data) {
-                                        if (error) {
-                                            console.log("error", error);
-                                            response.status(201).json({ message: "Error fetching Data" });
-                                        }
-                                        else {
-                                            if (data.length > 0) {
-                                                // console.log("data",data);
 
-                                                let total_amount = 0
-                                                for (let i of data) {
-                                                    // console.log("i",i);
+                                    var sql5 = "SELECT inv.id,inv.Invoices,inv.DueDate,inv.Amount AS total_amount FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id WHERE hs.created_By IN (?) AND inv.invoice_status=1 and inv.BalanceDue !=0 ORDER BY id DESC LIMIT 5;"
+                                    connection.query(sql5, [show_ids], function (err, bill_details) {
+                                        if (err) {
+                                            response.status(201).json({ message: "Error fetching Bill Data" });
+                                        } else {
 
-                                                    total_amount += i.purchase_amount;
-                                                }
+                                            var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue,COALESCE(SUM(COALESCE(expen.purchase_amount, 0)), 0) AS expense FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) AS numbers) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By IN (" + show_ids + ")) AS invo ON m.month = invo.month LEFT JOIN (SELECT DATE_FORMAT(expen.createdate, '%Y-%m') AS month, expen.purchase_amount FROM expenses AS expen WHERE expen.created_by IN (" + show_ids + ")) AS expen ON m.month = expen.month GROUP BY m.month ORDER BY  m.month;"
+                                            // Execute the query
+                                            connection.query(query1, [created_by], (error, results, fields) => {
+                                                if (error) {
+                                                    console.error('Error executing query:', error);
+                                                    return;
+                                                } else {
+                                                    // expense category
+                                                    var sql2 = "SELECT SUM(expen.purchase_amount) AS purchase_amount, expen.category_id, category.category_Name FROM expenses expen JOIN Expense_Category_Name category ON category.id = expen.category_id WHERE expen.status = true AND expen.created_by IN (?) AND YEAR(expen.purchase_date) = YEAR(CURDATE()) AND MONTH(expen.createdate) = MONTH(CURDATE()) GROUP BY expen.category_id";
+                                                    // console.log("query", query);
+                                                    connection.query(sql2, show_ids, function (error, data) {
+                                                        if (error) {
+                                                            console.log("error", error);
+                                                            response.status(201).json({ message: "Error fetching Data" });
+                                                        }
+                                                        else {
+                                                            if (data.length > 0) {
+                                                                // console.log("data",data);
 
-                                                // Booking Data
-                                                var sql4 = "SELECT id,first_name,last_name,amount,joining_date FROM bookings WHERE status=1 AND created_by IN (?) ORDER BY id DESC LIMIT 5;";
-                                                connection.query(sql4, [show_ids], function (err, book_data) {
-                                                    if (err) {
-                                                        response.status(201).json({ message: "Error fetching Booking Data" });
-                                                    } else {
+                                                                let total_amount = 0
+                                                                for (let i of data) {
+                                                                    // console.log("i",i);
 
-                                                        var sql5 = "SELECT inv.id,inv.Invoices,inv.DueDate,inv.Amount AS total_amount FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id WHERE hs.created_By IN (?) AND inv.invoice_status=1 and inv.BalanceDue !=0 ORDER BY id DESC LIMIT 5;"
-                                                        connection.query(sql5, [show_ids], function (err, bill_details) {
-                                                            if (err) {
-                                                                response.status(201).json({ message: "Error fetching Bill Data" });
-                                                            } else {
+                                                                    total_amount += i.purchase_amount;
+                                                                }
+
                                                                 response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, total_amount: total_amount, categoryList: data, com_data: com_data, book_data: book_data, bill_details: bill_details });
+
+                                                            } else {
+                                                                response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, total_amount: 0, categoryList: [], com_data: com_data, book_data: book_data, bill_details: bill_details });
                                                             }
-                                                        })
-                                                    }
-                                                })
-                                            } else {
-                                                response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, totalAmount: [], categoryList: [], com_data: com_data, bill_details: [], book_data: [] });
-                                            }
+                                                        }
+                                                    })
+                                                }
+                                            })
                                         }
                                     })
                                 }
                             })
+
+
                         }
                     })
                 } else {

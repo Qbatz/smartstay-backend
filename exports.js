@@ -91,11 +91,17 @@ function dash_filter(req, res) {
 
     var show_ids = req.show_ids;
 
+    const now = new Date(); // Get the current date
+
+    const year = now.getFullYear(); // Get the current year (e.g., 2024)
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Get the current month (e.g., 11 for November)
+
+
     if (!type) {
         return res.status(201).json({ statusCode: 201, message: "Missing Data" })
     }
 
-    const allowedTypes = ['expenses', 'cashback'];
+    const allowedTypes = ['expenses', 'cashback', 'exp_vs_rev'];
 
     if (!allowedTypes.includes(type)) {
         return res.status(201).json({ statusCode: 201, message: `Invalid type` });
@@ -133,12 +139,39 @@ function dash_filter(req, res) {
         connection.query(sql1, function (err, data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Expenses Details" })
+            } else if (data.length != 0) {
+
+                let total_amount = 0
+                for (let i of data) {
+                    // console.log("i",i);
+                    total_amount += i.purchase_amount;
+                }
+
+                const aggregatedData = Object.values(
+                    data.reduce((acc, { category_name, purchase_amount }) => {
+                        acc[category_name] = acc[category_name] || { category_name, purchase_amount: 0 };
+                        acc[category_name].purchase_amount += purchase_amount;
+                        return acc;
+                    }, {})
+                ).sort((a, b) => b.purchase_amount - a.purchase_amount);
+
+                const result = [
+                    ...aggregatedData.slice(0, 5),
+                    {
+                        category_name: "Others",
+                        purchase_amount: aggregatedData.slice(5).reduce((sum, { purchase_amount }) => sum + purchase_amount, 0)
+                    }
+                ];
+
+                return res.status(200).json({ statusCode: 200, message: "Expenses Details", exp_data: result, total_amount: total_amount })
+
+
             } else {
-                return res.status(200).json({ statusCode: 200, message: "Expenses Details", exp_data: data })
+                return res.status(200).json({ statusCode: 200, message: "Expenses Details", exp_data: data, total_amount: 0 })
             }
         })
 
-    } else {
+    } else if (type == 'cashback') {
 
         if (range == 'this_month') {
 
@@ -177,8 +210,35 @@ function dash_filter(req, res) {
         })
 
 
+    } else {
+
+        if (range == 'six_month') {
+
+            var sql3 = "SELECT m.month, COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue, COALESCE(SUM(COALESCE(expen.purchase_amount, 0)), 0) AS expense FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) AS numbers) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month, invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By IN (" + show_ids + ")) AS invo ON m.month = invo.month LEFT JOIN (SELECT DATE_FORMAT(expen.createdate, '%Y-%m') AS month, expen.purchase_amount FROM expenses AS expen WHERE expen.created_by IN (" + show_ids + ")) AS expen ON m.month = expen.month GROUP BY m.month ORDER BY m.month;"
+
+        } else if (range == 'this_year') {
+
+            var sql3 = "SELECT m.month, COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue, COALESCE(SUM(COALESCE(expen.purchase_amount, 0)), 0) AS expense FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS numbers) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month, invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By IN (" + show_ids + ") AND YEAR(invo.Date) = YEAR(CURDATE())) AS invo ON m.month = invo.month LEFT JOIN (SELECT DATE_FORMAT(expen.createdate, '%Y-%m') AS month, expen.purchase_amount FROM expenses AS expen WHERE expen.created_by IN (" + show_ids + ") AND YEAR(expen.createdate) = YEAR(CURDATE())) AS expen ON m.month = expen.month WHERE m.month BETWEEN CONCAT(YEAR(CURDATE()), '-01') AND CONCAT(YEAR(CURDATE()), '-12') GROUP BY m.month ORDER BY m.month;";
+
+        } else {
+
+            // last Year
+            var sql3 = "SELECT m.month, COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue, COALESCE(SUM(COALESCE(expen.purchase_amount, 0)), 0) AS expense FROM (SELECT DATE_FORMAT(DATE(CONCAT(YEAR(CURDATE()) - 1, '-', LPAD(n, 2, '0'), '-01')), '%Y-%m') AS month FROM (SELECT 1 AS n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12) AS numbers) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month, invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By IN (" + show_ids + ") AND YEAR(invo.Date) = YEAR(CURDATE()) - 1) AS invo ON m.month = invo.month LEFT JOIN (SELECT DATE_FORMAT(expen.createdate, '%Y-%m') AS month, expen.purchase_amount FROM expenses AS expen WHERE expen.created_by IN (" + show_ids + ") AND YEAR(expen.createdate) = YEAR(CURDATE()) - 1) AS expen ON m.month = expen.month GROUP BY m.month ORDER BY m.month;";
+
+        }
+
+        connection.query(sql2, function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Unable to Get Cashback Details" })
+            } else {
+                return res.status(200).json({ statusCode: 200, message: "Cashback Details", cash_back_data: data })
+            }
+        })
+
     }
 
 }
+
+
 
 module.exports = { export_customer, dash_filter }
