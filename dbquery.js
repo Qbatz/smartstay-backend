@@ -153,8 +153,9 @@ const queries = [
 
     "ALTER TABLE customer_eb_amount MODIFY COLUMN amount DECIMAL(10, 2);",
 
-    "ALTER TABLE `invoicedetails` ADD COLUMN `invoice_status` INT(11) NULL DEFAULT 1 AFTER `hos_user_id`;"
+    "ALTER TABLE `invoicedetails` ADD COLUMN `invoice_status` INT(11) NULL DEFAULT 1 AFTER `hos_user_id`;",
 
+    "ALTER TABLE `subscribtion_history` ADD COLUMN `event_id` VARCHAR(255) NULL AFTER `updateat`;"
 ];
 
 queries.forEach(executeQuery);

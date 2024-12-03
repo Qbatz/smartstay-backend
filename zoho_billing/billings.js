@@ -225,12 +225,18 @@ async function webhook_status(req, res) {
 
     var event = req.body.event_type;
 
+    console.log(req.body);
+
+    var body_val = req.body;
+
     if (event == 'payment_thankyou') {
 
-        const paymentId = req.body.data.payment_id;
-        const subscriptionId = req.body.data.subscription_id;
-        const amount = req.body.data.amount;
-        var customer_id = req.body.data.customer_id;
+        const paymentId = req.body.data.payment.payment_id;
+        const subscriptionId = 0;
+        const amount = req.body.data.payment.amount;
+        var customer_id = body_val.data.payment.customer_id;
+
+        var event_id = body_val.event_id;
 
         var plan_code = 'one_rupee';
         var plan_status = 1;
@@ -242,18 +248,18 @@ async function webhook_status(req, res) {
         end_date.setMonth(end_date.getMonth() + 1);
 
         var sql1 = `INSERT INTO subscribtion_history 
-            (customer_id, plan_code, subscribtion_id, amount, plan_status, plan_type, plan_duration, payment_status, startdate, end_date,payment_id) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
+            (customer_id, plan_code, subscribtion_id, amount, plan_status, plan_type, plan_duration, payment_status, startdate, end_date,payment_id,event_id) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?)
         `;
         connection.query(sql1, [
-            customer_id, plan_code, subscriptionId, amount, plan_status, plan_type, plan_duration, payment_status, start_date, end_date, paymentId
+            customer_id, plan_code, subscriptionId, amount, plan_status, plan_type, plan_duration, payment_status, start_date, end_date, paymentId, event_id
         ], function (error, results, fields) {
             if (error) {
                 console.error('Error executing query:', error);
             }
 
             var sql2 = "UPDATE createaccount SET plan_status=1 WHERE customer_id=?";
-            connection.query(sql2, function (err, up_date) {
+            connection.query(sql2, [customer_id], function (err, up_date) {
                 if (err) {
                     console.log(err);
                 } else {
