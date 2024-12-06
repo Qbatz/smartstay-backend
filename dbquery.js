@@ -169,6 +169,8 @@ const queries = [
 
     "ALTER TABLE `Expense_Subcategory_Name` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `subcategory`;",
 
+    "ALTER TABLE `complaint_type` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `complaint_name`;"
+
 ];
 
 queries.forEach(executeQuery);

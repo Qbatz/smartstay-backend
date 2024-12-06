@@ -381,9 +381,16 @@ function GetExpensesCategory(request, response) {
     var is_admin = request.is_admin;
     var show_ids = request.show_ids;
 
+    var hostel_id = request.body.hostel_id;
+
     if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_view === 1)) {
 
         var sql1 = "SELECT category.category_Name,category.id as category_Id,category.status,subcategory.id as subcategory_Id,subcategory.subcategory FROM Expense_Category_Name category LEFT JOIN Expense_Subcategory_Name subcategory on subcategory.category_id = category.id and subcategory.status = true WHERE category.status = true AND category.created_by IN (" + show_ids + ")";
+
+        if (hostel_id) {
+            sql1 += " AND category.hostel_id=" + hostel_id + ""
+        }
+
         connection.query(sql1, function (error, data) {
             if (error) {
                 response.status(201).json({ message: "Error fetching Data" });

@@ -192,6 +192,8 @@ function add_complainttypes(req, res) {
     var is_admin = req.is_admin;
 
     var complaint_name = req.body.complaint_name;
+    var hostel_id = req.body.hostel_id;
+
 
     if (is_admin == 1 || (role_permissions[13] && role_permissions[13].per_create == 1)) {
 
@@ -199,14 +201,18 @@ function add_complainttypes(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Please Add Complaint Name" })
         }
 
-        var sql1 = "SELECT * FROM complaint_type WHERE complaint_name COLLATE latin1_general_ci = ? AND status=1 AND created_by ='" + user_id + "'";
+        if (!hostel_id) {
+            return res.status(201).json({ statusCode: 201, message: "Please Add Hostel Details" })
+        }
+
+        var sql1 = "SELECT * FROM complaint_type WHERE complaint_name COLLATE latin1_general_ci = ? AND status=1 AND hostel_id ='" + hostel_id + "'";
         connection.query(sql1, [complaint_name], (err, sel_data) => {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Complaint Details" })
             } else if (sel_data.length == 0) {
 
-                var sql2 = "INSERT INTO complaint_type (complaint_name,status,created_by) VALUES (?,1,?)";
-                connection.query(sql2, [complaint_name, user_id], (err, ins_data) => {
+                var sql2 = "INSERT INTO complaint_type (complaint_name,hostel_id,status,created_by) VALUES (?,?,1,?)";
+                connection.query(sql2, [complaint_name, hostel_id, user_id], (err, ins_data) => {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Add Complaint Details" })
                     } else {
@@ -230,8 +236,16 @@ function all_complaint_types(req, res) {
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
+    var hostel_id = req.body.hostel_id;
+
     if (is_admin == 1 || (role_permissions[13] && role_permissions[13].per_view == 1)) {
+
         var sql1 = "SELECT * FROM complaint_type WHERE status=1 AND created_by IN (" + show_ids + ")";
+
+        if (hostel_id) {
+            sql1 += " AND hostel_id=" + hostel_id + ""
+        }
+
         connection.query(sql1, (sql_err, sel_res) => {
             if (sql_err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Complaint Types" })
