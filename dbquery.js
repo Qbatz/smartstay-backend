@@ -163,13 +163,13 @@ const queries = [
 
     "ALTER TABLE `Amenities` ADD COLUMN`recuring` INT(11) NULL DEFAULT 0 AFTER`Amnities_Id`,ADD COLUMN`startdate` DATE NULL AFTER`recuring`,ADD COLUMN`enddate` DATE NULL AFTER`startdate`,ADD COLUMN`duration` VARCHAR(45) NULL AFTER`enddate`,ADD COLUMN`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP AFTER`createdBy`; ",
 
-    "CREATE TABLE `amenities_settings` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`hostel_id` BIGINT(20) NULL,`recure` INT(11) NULL DEFAULT 0,`start_date` DATE NULL,`end_date` DATE NULL,`duration` INT(11) NULL,`createdby` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
-
     "ALTER TABLE `Expense_Category_Name` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `category_Name`;",
 
     "ALTER TABLE `Expense_Subcategory_Name` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `subcategory`;",
 
-    "ALTER TABLE `complaint_type` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `complaint_name`;"
+    "ALTER TABLE `complaint_type` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `complaint_name`;",
+
+    "ALTER TABLE `hosteldetails` ADD COLUMN `inv_date` DATE NULL AFTER `duration`,ADD COLUMN `due_date` DATE NULL AFTER `inv_date`;"
 
 ];
 

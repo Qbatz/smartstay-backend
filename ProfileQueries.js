@@ -86,6 +86,9 @@ function InvoiceSettings(connection, request, response) {
     var role_permissions = request.role_permissions;
     var is_admin = request.is_admin;
 
+    var inv_date = request.body.inv_date;
+    var due_date = request.body.due_date;
+
     const reqInvoice = {
         profile: request.file,
         hostel_Id: request.body.hostel_Id,
@@ -109,7 +112,7 @@ function InvoiceSettings(connection, request, response) {
                     if (err) {
                         response.status(202).json({ message: 'Database error' });
                     } else {
-                        const query = `UPDATE hosteldetails SET Profile='${s3Url}', prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}' WHERE id='${reqInvoice.hostel_Id}'`;
+                        const query = `UPDATE hosteldetails SET Profile='${s3Url}', prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}',inv_date='${inv_date}',due_date='${due_date}' WHERE id='${reqInvoice.hostel_Id}'`;
                         connection.query(query, function (error, invoiceData) {
                             console.log("invoiceData", invoiceData);
                             console.log("error invoice", error);
@@ -147,7 +150,7 @@ function InvoiceSettings(connection, request, response) {
                 });
 
             } else if (Prefix && Suffix) {
-                const query = `UPDATE hosteldetails SET  prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}' WHERE id='${reqInvoice.hostel_Id}'`;
+                const query = `UPDATE hosteldetails SET  prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}',inv_date='${inv_date}',due_date='${due_date}' WHERE id='${reqInvoice.hostel_Id}'`;
                 connection.query(query, function (error, invoiceData) {
                     console.log("invoiceData", invoiceData);
                     console.log("error invoice", error);
@@ -203,10 +206,16 @@ function AmenitiesSetting(connection, request, response) {
 
     var role_permissions = request.role_permissions;
     var is_admin = request.is_admin;
+    var hostel_id = request.body.hostel_id;
 
     if (is_admin == 1 || (role_permissions[18] && role_permissions[18].per_view == 1)) {
 
         // console.log("reqData", reqData);
+
+        if (!hostel_id) {
+            return response.status(201).json({ message: 'Missing Hostel Details' });
+        }
+
         if (!reqData) {
             response.status(201).json({ message: 'Missing parameter' });
             return;
@@ -221,6 +230,7 @@ function AmenitiesSetting(connection, request, response) {
                 let amenityId = reqData.amenityId;
 
                 if (reqData.amenityId != undefined || reqData.amenitiesName != undefined) {
+
                     connection.query(`SELECT * FROM AmnitiesName WHERE LOWER(Amnities_Name) = '${capitalizedAmenitiesName}'`, function (err, data) {
                         console.log("data..?", data)
                         if (error) {
@@ -360,7 +370,7 @@ function getAmenitiesList(req, res) {
         if (hostel_id) {
             sql1 += " AND ame.Hostel_Id=" + hostel_id + ""
         }
-        
+
         connection.query(sql1, function (err, data) {
             if (err) {
                 res.status(201).json({ statusCode: 201, message: "Unable to Get Amenities List" })
