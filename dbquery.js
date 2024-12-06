@@ -169,7 +169,13 @@ const queries = [
 
     "ALTER TABLE `complaint_type` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `complaint_name`;",
 
-    "ALTER TABLE `hosteldetails` ADD COLUMN `inv_date` DATE NULL AFTER `duration`,ADD COLUMN `due_date` DATE NULL AFTER `inv_date`;"
+    "ALTER TABLE `hosteldetails` ADD COLUMN `inv_date` DATE NULL AFTER `duration`,ADD COLUMN `due_date` DATE NULL AFTER `inv_date`;",
+
+    "ALTER TABLE `hosteldetails` CHANGE COLUMN `inv_startdate` `inv_startdate` INT(11) NULL DEFAULT NULL ,CHANGE COLUMN `inv_enddate` `inv_enddate` INT(11) NULL ;",
+
+    "ALTER TABLE `eb_settings` CHANGE COLUMN `start_date` `start_date` INT(11) NULL DEFAULT NULL ,CHANGE COLUMN `end_date` `end_date` INT(11) NULL DEFAULT NULL ;",
+
+    "ALTER TABLE `Amenities` CHANGE COLUMN `startdate` `startdate` INT(11) NULL DEFAULT NULL ,CHANGE COLUMN `enddate` `enddate` INT(11) NULL DEFAULT NULL ;"
 
 ];
 
