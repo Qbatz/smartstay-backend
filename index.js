@@ -1068,3 +1068,19 @@ app.post('/export_details', (req, res) => {
 app.post('/dash_filter', (req, res) => {
     exports_routes.dash_filter(req, res)
 })
+
+
+// Settings Page API
+var settings_router = require('./settings/general')
+
+app.post('/settings/add_general_user', upload.fields([{ name: 'profile', maxCount: 1 }]), settings_router.add_general_user)
+
+app.get('/settings/all_general_users', settings_router.all_general_user)
+
+app.post('/settings/change_staff_password', settings_router.change_password)
+
+app.post('/settings/delete_general_user', settings_router.delete_general_user)
+
+var recure_settings_router = require('./settings/recurings')
+
+app.post('/settings/add_recuring', recure_settings_router.add_recuring)

@@ -155,7 +155,20 @@ const queries = [
 
     "ALTER TABLE `invoicedetails` ADD COLUMN `invoice_status` INT(11) NULL DEFAULT 1 AFTER `hos_user_id`;",
 
-    "ALTER TABLE `subscribtion_history` ADD COLUMN `event_id` VARCHAR(255) NULL AFTER `updateat`;"
+    "ALTER TABLE `subscribtion_history` ADD COLUMN `event_id` VARCHAR(255) NULL AFTER `updateat`;",
+
+    "ALTER TABLE `eb_settings` ADD COLUMN `room_based` INT(11) NULL DEFAULT 0 AFTER `amount`,ADD COLUMN `hostel_based` INT(11) NUL DEFAULT 0L AFTER `room_based`,ADD COLUMN `recuring` INT(11) NULL AFTER `hostel_based`,ADD COLUMN `start_date` DATE NULL AFTER `recuring`,ADD COLUMN `end_date` DATE NULL AFTER `start_date`,ADD COLUMN `duration` VARCHAR(45) NULL AFTER `end_date`;",
+
+    "ALTER TABLE `hosteldetails` ADD COLUMN `recure` INT(11) NULL DEFAULT 0 AFTER `image4`,ADD COLUMN `inv_startdate` DATE NULL AFTER `recure`,ADD COLUMN `inv_enddate` DATE NULL AFTER `inv_startdate`,ADD COLUMN `duration` VARCHAR(45) NULL AFTER `inv_enddate`,CHANGE COLUMN `created_By` `created_By` INT(11) NOT NULL AFTER `duration`,CHANGE COLUMN `create_At` `create_At` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `created_By`;",
+
+    "ALTER TABLE `Amenities` ADD COLUMN`recuring` INT(11) NULL DEFAULT 0 AFTER`Amnities_Id`,ADD COLUMN`startdate` DATE NULL AFTER`recuring`,ADD COLUMN`enddate` DATE NULL AFTER`startdate`,ADD COLUMN`duration` VARCHAR(45) NULL AFTER`enddate`,ADD COLUMN`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP AFTER`createdBy`; ",
+
+    "CREATE TABLE `amenities_settings` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`hostel_id` BIGINT(20) NULL,`recure` INT(11) NULL DEFAULT 0,`start_date` DATE NULL,`end_date` DATE NULL,`duration` INT(11) NULL,`createdby` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+
+    "ALTER TABLE `Expense_Category_Name` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `category_Name`;",
+
+    "ALTER TABLE `Expense_Subcategory_Name` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `subcategory`;",
+
 ];
 
 queries.forEach(executeQuery);

@@ -83,6 +83,11 @@ module.exports = (req, res, next) => {
                                 sendResponseWithToken();
                             }
                         });
+                    } else if (decoded.user_type === "agent") {
+
+                        is_admin = 1;
+                        show_ids.push(decoded.id, user.createdby);
+                        sendResponseWithToken();
 
                     } else {
                         const role_id = user.role_id;

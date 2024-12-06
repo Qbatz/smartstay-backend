@@ -301,6 +301,8 @@ function AddExpenseCategory(request, response) {
     let reqData = request.body;
     var created_by = request.user_details.id;
 
+    var hostel_id = request.body.hostel_id;
+
     var role_permissions = request.role_permissions;
     var is_admin = request.is_admin;
 
@@ -309,9 +311,14 @@ function AddExpenseCategory(request, response) {
         if (!reqData.category_Name) {
             return response.status(201).json({ statusCode: 201, message: "Missing Category Name" })
         }
+        if (!hostel_id) {
+            return response.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+        }
+
         if (reqData.category_Name) {
+
             var category_Name = reqData.category_Name.replace(/\s+/g, '').toLowerCase();
-            var sql1 = "SELECT * FROM Expense_Category_Name WHERE REPLACE(LOWER(category_Name), ' ', '') = '" + category_Name + "' AND status=1 AND created_by ='" + created_by + "'";
+            var sql1 = "SELECT * FROM Expense_Category_Name WHERE REPLACE(LOWER(category_Name), ' ', '') = '" + category_Name + "' AND status=1 AND hostel_id ='" + hostel_id + "'";
             connection.query(sql1, function (error, data) {
                 if (error) {
                     console.log("error", error);
@@ -323,8 +330,9 @@ function AddExpenseCategory(request, response) {
                         return response.status(201).json({ statusCode: 201, message: "Category Name Already Exist" });
                     }
                     if (reqData.sub_Category) {
+
                         var subcategory = reqData.sub_Category.replace(/\s+/g, '').toLowerCase();
-                        var sql3 = "SELECT * FROM Expense_Subcategory_Name WHERE REPLACE(LOWER(subcategory), ' ', '') = '" + subcategory + "' AND status=1 AND created_by ='" + created_by + "'";
+                        var sql3 = "SELECT * FROM Expense_Subcategory_Name WHERE REPLACE(LOWER(subcategory), ' ', '') = '" + subcategory + "' AND status=1 AND hostel_id ='" + hostel_id + "'";
                         connection.query(sql3, function (err, sql3_res) {
                             if (err) {
                                 return response.status(201).json({ statusCode: 201, message: "Unble to Get Subcategory Details" });
@@ -332,7 +340,7 @@ function AddExpenseCategory(request, response) {
                                 return response.status(201).json({ statusCode: 201, message: "Sub Category Name Already Exist" });
                             } else {
                                 // Add Subcategory
-                                var sql4 = "INSERT INTO Expense_Subcategory_Name (category_id,subcategory,status,created_by) VALUES ('" + reqData.id + "','" + reqData.sub_Category + "',1,'" + created_by + "')";
+                                var sql4 = "INSERT INTO Expense_Subcategory_Name (category_id,subcategory,hostel_id,status,created_by) VALUES ('" + reqData.id + "','" + reqData.sub_Category + "'," + hostel_id + ",1,'" + created_by + "')";
                                 connection.query(sql4, function (ins_err, ins_res) {
                                     if (ins_err) {
                                         console.log(ins_err);
@@ -348,7 +356,7 @@ function AddExpenseCategory(request, response) {
                         return response.status(201).json({ statusCode: 201, message: "Missing Subcategory Name" });
                     }
                 } else {
-                    var sql2 = `INSERT INTO Expense_Category_Name(category_Name,created_by) VALUES('${reqData.category_Name}','${created_by}');`;
+                    var sql2 = `INSERT INTO Expense_Category_Name(category_Name,hostel_id,created_by) VALUES('${reqData.category_Name}',${hostel_id},'${created_by}');`;
                     connection.query(sql2, function (insertErr, insertData) {
                         if (insertErr) {
                             response.status(201).json({ statusCode: 201, message: "Does not Save" });
@@ -375,7 +383,7 @@ function GetExpensesCategory(request, response) {
 
     if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_view === 1)) {
 
-        var sql1 = "SELECT category.category_Name,category.id as category_Id,category.status,subcategory.id as subcategory_Id,subcategory.subcategory FROM Expense_Category_Name category LEFT JOIN Expense_Subcategory_Name subcategory on subcategory.category_id = category.id and subcategory.status = true WHERE category.status = true AND category.created_by IN (" + show_ids + ")"
+        var sql1 = "SELECT category.category_Name,category.id as category_Id,category.status,subcategory.id as subcategory_Id,subcategory.subcategory FROM Expense_Category_Name category LEFT JOIN Expense_Subcategory_Name subcategory on subcategory.category_id = category.id and subcategory.status = true WHERE category.status = true AND category.created_by IN (" + show_ids + ")";
         connection.query(sql1, function (error, data) {
             if (error) {
                 response.status(201).json({ message: "Error fetching Data" });

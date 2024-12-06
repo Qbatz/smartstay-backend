@@ -419,9 +419,16 @@ function get_ebbilling_settings(req, res) {
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
+    var hostel_id = req.body.hostel_id;
+
     if (is_admin == 1 || (role_permissions[12] && role_permissions[12].per_view == 1)) {
 
-        var sql1 = "SELECT ebs.*,hos.Name FROM eb_settings AS ebs JOIN hosteldetails AS hos ON hos.id = ebs.hostel_id WHERE ebs.created_by IN (" + show_ids + ");"
+        var sql1 = "SELECT ebs.*,hos.Name FROM eb_settings AS ebs JOIN hosteldetails AS hos ON hos.id = ebs.hostel_id WHERE ebs.created_by IN (" + show_ids + ")";
+
+        if (hostel_id) {
+            sql1 += " AND ebs.hostel_id=" + hostel_id + ""
+        }
+
         connection.query(sql1, function (err, data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Eb Billing Settings" })
