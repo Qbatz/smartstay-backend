@@ -2781,7 +2781,7 @@ function add_manual_invoice(req, res) {
                 // var total_amount = parseInt(total_am_amount) + parseInt(room_rent) + parseInt(eb_amount) + parseInt(advance_amount);
 
                 var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,action,invoice_type,hos_user_id,Amount) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-                connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, due_date, date, invoice_id, 'pending', user_data.User_Id, user_data.Bed, total_amount, 'manual', 1, user_id,total_amount], function (err, ins_data) {
+                connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, due_date, date, invoice_id, 'pending', user_data.User_Id, user_data.Bed, total_amount, 'manual', 1, user_id, total_amount], function (err, ins_data) {
                     if (err) {
                         console.log(err);
                         return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
@@ -2826,17 +2826,42 @@ function customer_readings(req, res) {
 
     var show_ids = req.show_ids;
 
+    var hostel_id = req.body.hostel_id;
+
+    if (!hostel_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+    }
+
     if (is_admin == 1 || (role_permissions[12] && role_permissions[12].per_view == 1)) {
 
-        var sql1 = "SELECT cb.*,hos.Name,hos.profile,hos.HostelName,hf.floor_name,hr.Room_Id, DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id JOIN Hostel_Floor AS hf ON hf.floor_id=hos.Floor AND hf.hostel_id=hos.Hostel_Id JOIN hostelrooms AS hr ON hr.id=hos.Rooms WHERE cb.created_by IN (" + show_ids + ")";
-        connection.query(sql1, [created_by], function (err, data) {
+        var ch_query = "SELECT * FROM eb_settings WHERE hostel_id=?";
+        connection.query(ch_query, [hostel_id], function (err, ch_res) {
             if (err) {
-                console.log(err);
-                return res.status(201).json({ statusCode: 201, message: "Unable to Get Eb Details" })
+                return res.status(201).json({ statusCode: 201, message: err.message })
+            } else if (ch_res.length != 0) {
+
+                var hostel_based = ch_res[0].hostel_based;
+
+                if (hostel_based == 1) {
+                    var sql1 = "SELECT cb.*,hos.Name,hos.profile,hos.HostelName,DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id WHERE type='hostel' AND hos.Hostel_Id=? ORDER BY cb.start_meter DESC;"
+                } else {
+                    var sql1 = "SELECT cb.*,hos.Name,hos.profile,hos.HostelName,hf.floor_name,hr.Room_Id, DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id JOIN Hostel_Floor AS hf ON hf.floor_id=hos.Floor AND hf.hostel_id=hos.Hostel_Id JOIN hostelrooms AS hr ON hr.id=hos.Rooms WHERE type='room' AND hos.Hostel_Id=? ORDER BY cb.start_meter DESC";
+                }
+
+                connection.query(sql1, [hostel_id], function (err, data) {
+                    if (err) {
+                        console.log(err);
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Get Eb Details" })
+                    } else {
+                        return res.status(200).json({ statusCode: 200, message: "Customer Eb Details", eb_details: data })
+                    }
+                })
+
             } else {
-                return res.status(200).json({ statusCode: 200, message: "Customer Eb Details", eb_details: data })
+                return res.status(201).json({ statusCode: 201, message: "Not Added Settings" })
             }
         })
+
     } else {
         res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }

@@ -1310,4 +1310,23 @@ function delete_hostel_reading(req, res) {
     }
 }
 
-module.exports = { all_notifications, add_notification, update_notification_status, add_room_reading, edit_room_reading, delete_room_reading, add_hostel_reading, edit_hostel_reading, delete_hostel_reading }
+function get_hostel_reading(req, res) {
+
+    var hostel_id = req.body.hostel_id;
+
+    if (!hostel_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+    }
+
+    var sql1 = "SELECT hos.Name as hoatel_Name,eb.id as eb_Id,hos.id as hostel_Id,hos.profile,eb.hostel_id,eb.total_amount,eb.total_reading,eb.date,eb.reading FROM hostel_readings eb JOIN hosteldetails hos ON hos.id = eb.hostel_id where eb.status=1 AND eb.hostel_id=?;";
+    connection.query(sql1, [hostel_id], function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: err.message })
+        } else {
+            return res.status(200).json({ statusCode: 200, message: "Hostel Readings", hostel_readings: data })
+        }
+    })
+
+}
+
+module.exports = { all_notifications, add_notification, update_notification_status, add_room_reading, edit_room_reading, delete_room_reading, add_hostel_reading, edit_hostel_reading, delete_hostel_reading, get_hostel_reading }

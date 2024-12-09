@@ -1072,6 +1072,11 @@ app.post('/delete_room_reading', (req, res) => {
     notifications.delete_room_reading(req, res)
 })
 
+// Hostel Reading Details
+app.post('/get_hostel_reading', (req, res) => {
+    notifications.get_hostel_reading(req, res)
+})
+
 // Delete room Reading
 app.post('/delete_hostel_reading', (req, res) => {
     notifications.delete_hostel_reading(req, res)
