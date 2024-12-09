@@ -2,12 +2,10 @@ const connection = require("../config/connection");
 
 exports.add_recuring = (req, res) => {
 
-    var { type, hostel_id, start_date, end_date } = req.body;
+    var { type, hostel_id, start_date, end_date, am_id } = req.body;
 
-    var duration = req.body.duration || 0;
+    var duration = req.body.duration || 1;
     var recure = req.body.recure || 1;
-
-    var created_by = req.user_details.id;
 
     if (!type || !hostel_id || !start_date || !end_date) {
         res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
@@ -17,6 +15,10 @@ exports.add_recuring = (req, res) => {
 
     if (!allowedTypes.includes(type)) {
         return res.status(201).json({ statusCode: 201, message: `Invalid type. Allowed types are: ${allowedTypes.join(', ')}` });
+    }
+
+    if (type == 'amenities' && !am_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Amentie Id" });
     }
 
     var sql1 = "SELECT * FROM hosteldetails WHERE id=? AND isActive=1";
@@ -47,34 +49,28 @@ exports.add_recuring = (req, res) => {
                 })
             } else {
 
-                var sql2 = "SELECT * FROM amenities_settings WHERE hostel_id=?";
-                connection.query(sql2, [hostel_id], function (err, am_data) {
+
+                var sql3 = "SELECT * FROM Amenities WHERE id=? AND Hostel_Id=? AND Status=1";
+                connection.query(sql3, [am_id, hostel_id], function (err, checK_data) {
                     if (err) {
-                        return res.status(201).json({ statusCode: 201, message: "Unable to Get Amenities Details" });
-                    } else if (am_data.length != 0) {
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Get Amenity Details" });
+                    } else if (checK_data.length != 0) {
 
-                        var sql3 = "UPDATE amenities_settings SET recure=?,start_date=?,end_date=?,duration=? WHERE id=?";
-                        connection.query(sql3, [recure, start_date, end_date, duration, hostel_id], function (err, up_data) {
+                        var sql2 = "UPDATE Amenities SET recuring=?,startdate=?,enddate=?,duration=? WHERE id=?";
+                        connection.query(sql2, [recure, start_date, end_date, duration, am_id], function (err, up_res) {
                             if (err) {
-                                return res.status(201).json({ statusCode: 201, message: "Unable to Update Amenities Details" });
-                            } else {
-                                return res.status(200).json({ statusCode: 200, message: "Updated Amenities Details" });
-                            }
-                        })
-                    } else {
-
-                        var sql4 = "INSERT INTO amenities_settings (hostel_id,recure,start_date,end_date,duration,createdby) VALUES (?,?,?,?,?,?,?)";
-                        connection.query(sql4, [hostel_id, recure, start_date, end_date, duration, created_by], function (err, ins_res) {
-                            if (err) {
-                                return res.status(201).json({ statusCode: 201, message: "Unable to Add Amenities Details" });
+                                console.log(err);
+                                return res.status(201).json({ statusCode: 201, message: "Unable to Update Amenity Details" });
                             } else {
                                 return res.status(200).json({ statusCode: 200, message: "Added Amenities Details" });
                             }
                         })
+
+                    } else {
+                        return res.status(201).json({ statusCode: 201, message: "Invalid Amenity Details" });
                     }
                 })
             }
-
         } else {
             return res.status(201).json({ statusCode: 201, message: "Invalid Hostel Details" });
         }

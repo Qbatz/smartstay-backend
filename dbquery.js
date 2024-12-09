@@ -163,14 +163,27 @@ const queries = [
 
     "ALTER TABLE `Amenities` ADD COLUMN`recuring` INT(11) NULL DEFAULT 0 AFTER`Amnities_Id`,ADD COLUMN`startdate` DATE NULL AFTER`recuring`,ADD COLUMN`enddate` DATE NULL AFTER`startdate`,ADD COLUMN`duration` VARCHAR(45) NULL AFTER`enddate`,ADD COLUMN`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP AFTER`createdBy`; ",
 
-    "CREATE TABLE `amenities_settings` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`hostel_id` BIGINT(20) NULL,`recure` INT(11) NULL DEFAULT 0,`start_date` DATE NULL,`end_date` DATE NULL,`duration` INT(11) NULL,`createdby` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
-
     "ALTER TABLE `Expense_Category_Name` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `category_Name`;",
 
     "ALTER TABLE `Expense_Subcategory_Name` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `subcategory`;",
 
-    "ALTER TABLE `complaint_type` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `complaint_name`;"
+    "ALTER TABLE `complaint_type` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `complaint_name`;",
 
+    "ALTER TABLE `hosteldetails` ADD COLUMN `inv_date` DATE NULL AFTER `duration`,ADD COLUMN `due_date` DATE NULL AFTER `inv_date`;",
+
+    "ALTER TABLE `hosteldetails` CHANGE COLUMN `inv_startdate` `inv_startdate` INT(11) NULL DEFAULT NULL ,CHANGE COLUMN `inv_enddate` `inv_enddate` INT(11) NULL ;",
+
+    "ALTER TABLE `eb_settings` CHANGE COLUMN `start_date` `start_date` INT(11) NULL DEFAULT NULL ,CHANGE COLUMN `end_date` `end_date` INT(11) NULL DEFAULT NULL ;",
+
+    "ALTER TABLE `Amenities` CHANGE COLUMN `startdate` `startdate` INT(11) NULL DEFAULT NULL ,CHANGE COLUMN `enddate` `enddate` INT(11) NULL DEFAULT NULL ;",
+
+    "ALTER TABLE `hosteldetails` ADD COLUMN `inv_date` DATE NULL AFTER `duration`,ADD COLUMN `due_date` DATE NULL AFTER `inv_date`;",
+
+    "ALTER TABLE `roles` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `role_name`;",
+
+    "ALTER TABLE `customer_eb_amount` ADD COLUMN `type` VARCHAR(45) NULL DEFAULT 'room' AFTER `date`;",
+
+    "CREATE TABLE `hostel_readings` (`id` BIGINT(20) NOT NULL,`hostel_id` BIGINT(20) NULL,`date` DATE NULL,`reading` VARCHAR(45) NULL,`total_amount` BIGINT(20) NULL,`total_reading` BIGINT(20) NULL,`status` INT(11) NULL DEFAULT 1,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));"
 ];
 
 queries.forEach(executeQuery);

@@ -63,6 +63,11 @@ app.post('/add/expense-category', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     expensesManagement.AddExpenseCategory(request, response)
 })
+
+app.post('/edit/expense_category', (req, res) => {
+    expensesManagement.edit_expense_category(req, res)
+})
+
 app.post('/get/expense-category', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     expensesManagement.GetExpensesCategory(request, response)
@@ -1046,6 +1051,10 @@ app.post('/edit_eb_readings', (req, res) => {
 
 app.post('/add_room_reading', (req, res) => {
     notifications.add_room_reading(req, res)
+})
+
+app.post('/add_hostel_reading', (req, res) => {
+    notifications.add_hostel_reading(req, res)
 })
 
 app.post('/edit_room_reading', (req, res) => {
