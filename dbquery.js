@@ -169,8 +169,13 @@ const queries = [
 
     "ALTER TABLE `complaint_type` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `complaint_name`;",
 
-    "ALTER TABLE `hosteldetails` ADD COLUMN `inv_date` DATE NULL AFTER `duration`,ADD COLUMN `due_date` DATE NULL AFTER `inv_date`;"
+    "ALTER TABLE `hosteldetails` ADD COLUMN `inv_date` DATE NULL AFTER `duration`,ADD COLUMN `due_date` DATE NULL AFTER `inv_date`;",
 
+    "ALTER TABLE `roles` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `role_name`;",
+
+    "ALTER TABLE `customer_eb_amount` ADD COLUMN `type` VARCHAR(45) NULL DEFAULT 'room' AFTER `date`;",
+
+    "CREATE TABLE `hostel_readings` (`id` BIGINT(20) NOT NULL,`hostel_id` BIGINT(20) NULL,`date` DATE NULL,`reading` VARCHAR(45) NULL,`total_amount` BIGINT(20) NULL,`total_reading` BIGINT(20) NULL,`status` INT(11) NULL DEFAULT 1,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));"
 ];
 
 queries.forEach(executeQuery);
