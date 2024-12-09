@@ -881,17 +881,7 @@ WHERE expen.status = true AND expen.created_by = ${createdBy}`;
             response.status(201).json({ message: 'No Data Found' });
         }
 
-
-
     })
-
-
-
-
-
-
-
-
 }
 
 
@@ -907,4 +897,61 @@ function deletePDfs(filename) {
     }
 }
 
-module.exports = { AddExpense, AddExpenseCategory, GetExpensesCategory, CalculateExpenses, GetHostelExpenses, DeleteExpenses, DeleteExpensesCategory, GenerateExpenseHistoryPDF };
+function edit_expense_category(req, res) {
+
+    var { id, name, type, hostel_id } = req.body;
+
+    if (!id || !name || !type || !hostel_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    if (type == 1) {
+        // Main Category
+
+        var sql1 = "SELECT * FROM Expense_Category_Name WHERE id=? AND hostel_id=? AND status=1";
+        connection.query(sql1, [id, hostel_id], function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: err.message })
+            } else if (data.length != 0) {
+
+                var sql2 = "UPDATE Expense_Category_Name SET category_Name=? WHERE id=?";
+                connection.query(sql2, [name, id], function (err, up_res) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: err.message })
+                    } else {
+                        return res.status(200).json({ statusCode: 200, message: "Category Updated Successfully!" })
+                    }
+                })
+            } else {
+                return res.status(201).json({ statusCode: 201, message: "Invalid Category Details" })
+            }
+        })
+
+    } else {
+        // Sub Category
+
+        var sql1 = "SELECT * FROM Expense_Subcategory_Name WHERE id=? AND hostel_id=? AND status=1";
+        connection.query(sql1, [id, hostel_id], function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: err.message })
+            } else if (data.length != 0) {
+
+                var sql2 = "UPDATE Expense_Subcategory_Name SET subcategory=? WHERE id=?";
+                connection.query(sql2, [name, id], function (err, up_res) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: err.message })
+                    } else {
+                        return res.status(200).json({ statusCode: 200, message: "Successfully Update Sub Category!" })
+                    }
+                })
+
+            } else {
+                return res.status(201).json({ statusCode: 201, message: "Invalid Category Details" })
+            }
+        })
+
+    }
+
+}
+
+module.exports = { AddExpense, AddExpenseCategory, GetExpensesCategory, CalculateExpenses, GetHostelExpenses, DeleteExpenses, DeleteExpensesCategory, GenerateExpenseHistoryPDF, edit_expense_category };

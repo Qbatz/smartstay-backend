@@ -5,16 +5,18 @@ function add_role(req, res) {
 
     var { role_name, permissions } = req.body;
     var created_by = req.user_details.id;
-
     var is_admin = req.is_admin;
+
+    var hostel_id = req.body.hostel_id;
+
     if (is_admin == 1) {
 
-        if (!role_name) {
+        if (!role_name || !hostel_id) {
             return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
         }
 
-        var sq1 = "SELECT * FROM roles WHERE status=1 AND createdby=? AND LOWER(role_name) = LOWER(?)";
-        connection.query(sq1, [created_by, role_name], function (err, data) {
+        var sq1 = "SELECT * FROM roles WHERE status=1 AND hostel_id=? AND LOWER(role_name) = LOWER(?)";
+        connection.query(sq1, [hostel_id, role_name], function (err, data) {
             if (err) {
                 console.log(err);
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Role Details" })
@@ -23,8 +25,8 @@ function add_role(req, res) {
             } else {
 
                 // Insert Role Name
-                var sql1 = "INSERT INTO roles (role_name,status,createdby) VALUES (?,?,?)";
-                connection.query(sql1, [role_name, 1, created_by], function (err, ins_res) {
+                var sql1 = "INSERT INTO roles (role_name,hostel_id,status,createdby) VALUES (?,?,?,?)";
+                connection.query(sql1, [role_name, hostel_id, 1, created_by], function (err, ins_res) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Add Role Details" })
                     } else {
@@ -35,6 +37,7 @@ function add_role(req, res) {
                         let totalPermissions = permissions?.length;
 
                         for (let i = 0; i < permissions?.length; i++) {
+
                             var { permission_id, per_view, per_create, per_edit, per_delete } = permissions[i];
 
                             var sql2 = "INSERT INTO role_permissions (role_id, permission_id, per_view, per_create, per_edit, per_delete) VALUES (?, ?, ?, ?, ?, ?)";
@@ -63,12 +66,14 @@ function add_role(req, res) {
 function edit_role(req, res) {
 
     var { role_name, permissions, id } = req.body;
-    var created_by = req.user_details.id;
+
+    var hostel_id = req.body.hostel_id;
 
     var is_admin = req.is_admin;
+
     if (is_admin == 1) {
 
-        if (!role_name || !id) {
+        if (!role_name || !hostel_id || !id) {
             return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
         }
 
@@ -78,8 +83,8 @@ function edit_role(req, res) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Role Details" })
             } else if (check_res.length != 0) {
 
-                var sq1 = "SELECT * FROM roles WHERE status=1 AND createdby=? AND LOWER(role_name) = LOWER(?) AND id !=?";
-                connection.query(sq1, [role_name, created_by, id], function (err, data) {
+                var sq1 = "SELECT * FROM roles WHERE status=1 AND hostel_id=? AND LOWER(role_name) = LOWER(?) AND id !=?";
+                connection.query(sq1, [role_name, hostel_id, id], function (err, data) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Get Role Details" })
                     } else if (data.length > 0) {
@@ -196,11 +201,13 @@ function all_roles(req, res) {
     var created_by = req.user_details.id;
     var show_ids = req.show_ids;
 
+    var hostel_id = req.body.hostel_id;
+
     var is_admin = req.is_admin;
     if (is_admin == 1) {
 
-        var sql1 = "SELECT * FROM roles WHERE status=1 AND createdby IN (?)";
-        connection.query(sql1, [show_ids], function (err, data) {
+        var sql1 = "SELECT * FROM roles WHERE status=1 AND createdby IN (?) AND hostel_id=?";
+        connection.query(sql1, [show_ids, hostel_id], function (err, data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Role Details" })
             } else {
