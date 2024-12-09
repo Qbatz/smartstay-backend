@@ -1038,6 +1038,8 @@ app.get('/get_all_staffs', (req, res) => {
     roles.get_all_staffs(req, res)
 })
 
+// ( *********************  Eb Readings  ********************** )
+
 // Edit Room Reading
 // Not Use
 app.post('/edit_eb_readings', (req, res) => {
@@ -1061,10 +1063,20 @@ app.post('/edit_room_reading', (req, res) => {
     notifications.edit_room_reading(req, res)
 })
 
+app.post('/edit_hostel_reading', (req, res) => {
+    notifications.edit_hostel_reading(req, res)
+})
+
 // Delete room Reading
 app.post('/delete_room_reading', (req, res) => {
     notifications.delete_room_reading(req, res)
 })
+
+// Delete room Reading
+app.post('/delete_hostel_reading', (req, res) => {
+    notifications.delete_hostel_reading(req, res)
+})
+
 
 // ********************* Export API **********************
 
