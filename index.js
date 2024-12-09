@@ -697,7 +697,7 @@ app.post('/complaint_types', (req, res) => {
     complianceQueries.add_complainttypes(req, res)
 })
 
-app.get('/all_complaint_types', (req, res) => {
+app.post('/all_complaint_types', (req, res) => {
     complianceQueries.all_complaint_types(req, res)
 })
 

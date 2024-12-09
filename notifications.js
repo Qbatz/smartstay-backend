@@ -268,87 +268,79 @@ function add_hostel_reading(req, res) {
 
     if (is_admin == 1 || (role_permissions[12] && role_permissions[12].per_create == 1)) {
 
-        var { hostel_id, date, reading } = req.body;
+        var { hostel_id, date, reading, particular_amount } = req.body;
 
         if (!hostel_id || !date || !reading) {
             return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
         }
 
-        var sql1 = "SELECT * FROM eb_settings WHERE hostel_id=?";
-        connection.query(sql1, [hostel_id], function (err, amount_details) {
+        // Check Date
+        var sql2 = "SELECT * FROM hostel_readings WHERE hostel_id=? AND date=? AND status=1";
+        connection.query(sql2, [hostel_id, floor_id, room_id, date], function (err, date_res) {
             if (err) {
-                return res.status(201).json({ statusCode: 201, message: 'Database error' });
-            } else if (amount_details.length != 0) {
+                return res.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Amount Details', error: err });
+            } else if (date_res.length == 0) {
 
-                // Check Date
-                var sql2 = "SELECT * FROM room_readings WHERE hostel_id=? AND floor_id=? AND room_id=? AND date=? AND status=1";
-                connection.query(sql2, [hostel_id, floor_id, room_id, date], function (err, date_res) {
+                var sql3 = "SELECT *,DATE_FORMAT(date, '%Y-%m-%d') AS get_date FROM hostel_readings WHERE hostel_id = ? AND status=1 ORDER BY id DESC";
+                connection.query(sql3, [hostel_id, floor_id, room_id], function (err, data_res) {
                     if (err) {
-                        return res.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Amount Details', error: err });
-                    } else if (date_res.length == 0) {
+                        return res.status(201).json({ message: 'Unable to Get Eb Amount Details', error: err });
+                    } else if (data_res.length == 0) {
 
-                        var sql3 = "SELECT *,DATE_FORMAT(date, '%Y-%m-%d') AS get_date FROM room_readings WHERE hostel_id = ? AND floor_id= ? AND room_id= ? AND status=1 ORDER BY id DESC";
-                        connection.query(sql3, [hostel_id, floor_id, room_id], function (err, data_res) {
+                        // Insert Process
+                        var sql4 = "INSERT INTO hostel_readings (hostel_id,date,reading,total_amount,total_reading,created_by) VALUES (?,?,?,?,?,?)";
+                        connection.query(sql4, [hostel_id, date, reading, 0, 0, created_by], function (err, ins_data) {
                             if (err) {
-                                return res.status(201).json({ message: 'Unable to Get Eb Amount Details', error: err });
-                            } else if (data_res.length == 0) {
-
-                                // Insert Process
-                                var sql4 = "INSERT INTO room_readings (hostel_id,floor_id,room_id,date,reading,total_amount,total_reading,created_by) VALUES (?,?,?,?,?,?,?,?)";
-                                connection.query(sql4, [hostel_id, floor_id, room_id, date, reading, 0, 0, created_by], function (err, ins_data) {
-                                    if (err) {
-                                        return res.status(201).json({ message: 'Unable to Add Eb Amount Details', error: err });
-                                    } else {
-                                        return res.status(200).json({ message: 'Successfully Added Eb Amount' });
-                                    }
-                                })
-
+                                return res.status(201).json({ message: 'Unable to Add Eb Amount Details', error: err });
                             } else {
-
-                                var cal_startmeter = data_res[0].reading;
-
-                                if (reading > cal_startmeter) {
-
-                                    var total_reading = reading - cal_startmeter;
-
-                                    var last_cal_date = data_res[0].get_date;
-
-                                    var particular_amount = amount_details[0].amount;  // Get Single Amount
-                                    var total_amount = particular_amount * total_reading;  // Get Total Amount
-
-                                    var sql5 = "INSERT INTO room_readings (hostel_id,floor_id,room_id,date,reading,total_amount,total_reading,created_by) VALUES (?,?,?,?,?,?,?,?)";
-                                    connection.query(sql5, [hostel_id, floor_id, room_id, date, reading, total_amount, total_reading, created_by], function (err, ins_data) {
-                                        if (err) {
-                                            return res.status(201).json({ message: 'Unable to Add Eb Amount Details', error: err });
-                                        } else {
-
-                                            console.log("Reading Inserted!");
-
-                                            var eb_id = ins_data.insertId;
-
-                                            split_eb_amounts(atten, cal_startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, function (result) {
-                                                if (result.statusCode === 200) {
-                                                    return res.status(200).json({ statusCode: result.statusCode, message: result.message });
-                                                } else {
-                                                    return res.status(201).json({ statusCode: result.statusCode, message: result.message, error: result.error });
-                                                }
-                                            });
-                                        }
-                                    })
-
-                                } else {
-                                    return res.status(201).json({ message: 'New reading must be greater than the old reading' });
-                                }
+                                return res.status(200).json({ message: 'Successfully Added Eb Amount' });
                             }
                         })
+
                     } else {
-                        return res.status(201).json({ statusCode: 201, message: 'Date already has an added in this Room. Please select a different date.' });
+
+                        var cal_startmeter = data_res[0].reading;
+
+                        if (reading > cal_startmeter) {
+
+                            var total_reading = reading - cal_startmeter;
+
+                            var last_cal_date = data_res[0].get_date;
+
+                            var total_amount = particular_amount * total_reading;  // Get Total Amount
+
+                            var sql5 = "INSERT INTO hostel_readings (hostel_id,date,reading,total_amount,total_reading,created_by) VALUES (?,?,?,?,?,?)";
+                            connection.query(sql5, [hostel_id, date, reading, total_amount, total_reading, created_by], function (err, ins_data) {
+                                if (err) {
+                                    return res.status(201).json({ message: 'Unable to Add Eb Amount Details', error: err });
+                                } else {
+
+                                    console.log("Reading Inserted!");
+
+                                    var eb_id = ins_data.insertId;
+
+                                    var type = 'hostel'
+
+                                    split_eb_amounts(atten, cal_startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, type, function (result) {
+                                        if (result.statusCode === 200) {
+                                            return res.status(200).json({ statusCode: result.statusCode, message: result.message });
+                                        } else {
+                                            return res.status(201).json({ statusCode: result.statusCode, message: result.message, error: result.error });
+                                        }
+                                    });
+                                }
+                            })
+
+                        } else {
+                            return res.status(201).json({ message: 'New reading must be greater than the old reading' });
+                        }
                     }
                 })
             } else {
-                return res.status(201).json({ statusCode: 201, message: 'Kindly Add Eb Setings' });
+                return res.status(201).json({ statusCode: 201, message: 'Date already has an added in this Room. Please select a different date.' });
             }
         })
+
     } else {
         res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
@@ -796,18 +788,7 @@ function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last
         });
 }
 
-function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, eb_id, created_by, callback) {
-
-    // var sql1 = `SELECT *, 
-    //    CASE 
-    //        WHEN checkoutDate > '${atten.date}' OR checkoutDate IS NULL 
-    //        THEN DATEDIFF('${atten.date}', GREATEST(joining_date, '${last_cal_date}')) + 1
-    //        WHEN checkoutDate <= ${atten.date}
-    //        THEN DATEDIFF(checkoutDate, GREATEST(joining_date, '${last_cal_date}')) + 1
-    //        ELSE 0
-    //    END AS days_stayed FROM hostel WHERE 
-    //    joining_date <= '${last_cal_date}' AND Hostel_Id = '${atten.hostel_id}' AND Floor = '${atten.floor_id}' AND Rooms = '${atten.room_id}'
-    //    AND (checkoutDate >= '${last_cal_date}' OR checkoutDate IS NULL);`
+function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, eb_id, created_by, type, callback) {
 
     var sql1 = `SELECT *,
        CASE
@@ -822,16 +803,19 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
     FROM hostel
     WHERE joining_date <= '${last_cal_date}'
         AND Hostel_Id = '${atten.hostel_id}'
-        AND Floor = '${atten.floor_id}'
-        AND Rooms = '${atten.room_id}'
-        AND (checkoutDate >= '${last_cal_date}' OR checkoutDate IS NULL);`
+        
+        AND (checkoutDate >= '${last_cal_date}' OR checkoutDate IS NULL)`
+
+    if (!type) {
+        sql1 += ` AND Floor = '${atten.floor_id}' AND Rooms = '${atten.room_id}'`
+    }
 
     console.log("Joining Date :", last_cal_date);
     console.log("Check Out Date :", atten.date);
 
     console.log(sql1);
 
-    connection.query(sql1, [atten.date, atten.date, last_cal_date, atten.date, last_cal_date, atten.date, atten.hostel_id, atten.floor_id, last_cal_date, atten.room_id], function (err, user_data) {
+    connection.query(sql1, function (err, user_data) {
         if (err) {
             console.error('Error fetching user details:', err);
             return callback({ statusCode: 201, message: 'Unable to Get User Details', error: err });
@@ -856,10 +840,16 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
 
             console.log(userAmount, "================== User Amounts ===============");
 
+            if (type && type == 'hostel') {
+                var type = 'hostel';
+            } else {
+                var type = 'room';
+            }
+
             if (userAmount) {
 
-                const sql2 = "INSERT INTO customer_eb_amount (user_id, start_meter, end_meter, unit, amount, created_by, date, eb_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-                connection.query(sql2, [user_id, startMeterReading, end_Meter_Reading, per_unit, userAmount, created_by, atten.date, eb_id],
+                const sql2 = "INSERT INTO customer_eb_amount (user_id, start_meter, end_meter, unit, amount, created_by, date, eb_id,type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                connection.query(sql2, [user_id, startMeterReading, end_Meter_Reading, per_unit, userAmount, created_by, atten.date, eb_id, type],
                     function (err) {
                         if (err) {
                             console.error('Error inserting customer EB amount:', err);
@@ -882,6 +872,7 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
             }
         });
     });
+
 }
 
 function delete_room_reading(req, res) {

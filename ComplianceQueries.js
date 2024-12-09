@@ -240,12 +240,11 @@ function all_complaint_types(req, res) {
 
     if (is_admin == 1 || (role_permissions[13] && role_permissions[13].per_view == 1)) {
 
-        var sql1 = "SELECT * FROM complaint_type WHERE status=1 AND created_by IN (" + show_ids + ")";
-
-        if (hostel_id) {
-            sql1 += " AND hostel_id=" + hostel_id + ""
+        if (!hostel_id) {
+            return res.status(201).json({ statusCode: 201, message: "Please Choose Hostel Details" })
         }
 
+        var sql1 = "SELECT * FROM complaint_type WHERE status=1 AND created_by IN (" + show_ids + ") AND hostel_id=" + hostel_id + "";
         connection.query(sql1, (sql_err, sel_res) => {
             if (sql_err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Complaint Types" })
