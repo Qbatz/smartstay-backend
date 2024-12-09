@@ -988,7 +988,7 @@ function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last
         sql1 += ` AND Floor = '${atten.floor_id}' AND Rooms = '${atten.room_id}'`
     }
 
-    console.log(sql1);
+    // console.log(sql1);
 
     connection.query(sql1, function (err, user_data) {
         if (err) {
@@ -1074,7 +1074,7 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
     console.log("Joining Date :", last_cal_date);
     console.log("Check Out Date :", atten.date);
 
-    console.log(sql1);
+    // console.log(sql1);
 
     connection.query(sql1, function (err, user_data) {
         if (err) {
