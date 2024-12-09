@@ -12,10 +12,6 @@ exports.add_general_user = async (req, res) => {
 
     if (user_type == 'admin') {
 
-        if (!f_name || !email_id || !mob_no || !password) {
-            return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
-        }
-
         var bucket_name = "smartstaydevs";
         var folderName = "general_user_profile/";
         var timestamp = Date.now();
@@ -23,6 +19,10 @@ exports.add_general_user = async (req, res) => {
         const profile = req.files?.profile || 0;
 
         if (id) {
+
+            if (!f_name || !email_id || !mob_no ) {
+                return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
+            }
 
             var sql1 = "SELECT * FROM createaccount WHERE id=?";
             connection.query(sql1, [id], function (err, check_user_data) {
@@ -82,6 +82,10 @@ exports.add_general_user = async (req, res) => {
                 }
             })
         } else {
+
+            if (!f_name || !email_id || !mob_no || !password ) {
+                return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
+            }
 
             const hash_password = await bcrypt.hash(password, 10);
 
