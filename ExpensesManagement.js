@@ -389,15 +389,51 @@ function GetExpensesCategory(request, response) {
 
     if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_view === 1)) {
 
-        var sql1 = "SELECT category.category_Name,category.id as category_Id,category.status,subcategory.id as subcategory_Id,subcategory.subcategory FROM Expense_Category_Name category LEFT JOIN Expense_Subcategory_Name subcategory on subcategory.category_id = category.id and subcategory.status = true WHERE category.status = true AND category.created_by IN (" + show_ids + ") AND category.hostel_id=" + hostel_id + "";
+        // var sql1 = "SELECT category.category_Name,category.id as category_Id,category.status,subcategory.id as subcategory_Id,subcategory.subcategory FROM Expense_Category_Name category LEFT JOIN Expense_Subcategory_Name subcategory on subcategory.category_id = category.id and subcategory.status = true WHERE category.status = true AND category.created_by IN (" + show_ids + ") AND category.hostel_id=" + hostel_id + "";
+
+        // connection.query(sql1, function (error, data) {
+        //     if (error) {
+        //         response.status(201).json({ message: "Error fetching Data" });
+        //     } else {
+        //         response.status(200).json({ message: "Expense Categories", statusCode: 200, data: data });
+        //     }
+        // })
+
+        var sql1 = `SELECT category.category_Name,category.id AS category_Id,subcategory.id AS subcategory_Id,subcategory.subcategory FROM Expense_Category_Name category LEFT JOIN Expense_Subcategory_Name subcategory ON subcategory.category_id = category.id AND subcategory.status = true WHERE category.status = true AND category.created_by IN (${show_ids}) AND category.hostel_id = ${hostel_id}`;
 
         connection.query(sql1, function (error, data) {
             if (error) {
                 response.status(201).json({ message: "Error fetching Data" });
             } else {
-                response.status(200).json({ message: "Expense Categories", statusCode: 200, data: data });
+                const result = [];
+
+                data.forEach(item => {
+                    // Check if the category already exists
+                    let category = result.find(cat => cat.category_Id === item.category_Id);
+
+                    if (!category) {
+                        // If not, add a new category object
+                        category = {
+                            category_Name: item.category_Name,
+                            category_Id: item.category_Id,
+                            subcategory: []
+                        };
+                        result.push(category);
+                    }
+
+                    // Add subcategory if it exists
+                    if (item.subcategory_Id && item.subcategory) {
+                        category.subcategory.push({
+                            subcategory_Id: item.subcategory_Id,
+                            subcategory: item.subcategory
+                        });
+                    }
+                });
+
+                response.status(200).json({ message: "Expense Categories", statusCode: 200, data: result });
             }
-        })
+        });
+
     } else {
         response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
