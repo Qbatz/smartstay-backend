@@ -950,12 +950,22 @@ function edit_expense_category(req, res) {
                 return res.status(201).json({ statusCode: 201, message: err.message })
             } else if (data.length != 0) {
 
-                var sql2 = "UPDATE Expense_Category_Name SET category_Name=? WHERE id=?";
-                connection.query(sql2, [name, id], function (err, up_res) {
+                var sq3 = "SELECT * FROM Expense_Category_Name WHERE status=1 AND hostel_id=? AND LOWER(category_Name) = LOWER(?) WHERE id !=?";
+                connection.query(sq3, [hostel_id, name, id], function (err, ch_res) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: err.message })
+                    } else if (ch_res.length == 0) {
+
+                        var sql2 = "UPDATE Expense_Category_Name SET category_Name=? WHERE id=?";
+                        connection.query(sql2, [name, id], function (err, up_res) {
+                            if (err) {
+                                return res.status(201).json({ statusCode: 201, message: err.message })
+                            } else {
+                                return res.status(200).json({ statusCode: 200, message: "Category Updated Successfully!" })
+                            }
+                        })
                     } else {
-                        return res.status(200).json({ statusCode: 200, message: "Category Updated Successfully!" })
+                        return res.status(201).json({ statusCode: 201, message: "Category Name Already Exists!" })
                     }
                 })
             } else {
@@ -972,15 +982,24 @@ function edit_expense_category(req, res) {
                 return res.status(201).json({ statusCode: 201, message: err.message })
             } else if (data.length != 0) {
 
-                var sql2 = "UPDATE Expense_Subcategory_Name SET subcategory=? WHERE id=?";
-                connection.query(sql2, [name, id], function (err, up_res) {
+                var sq3 = "SELECT * FROM Expense_Subcategory_Name WHERE status=1 AND hostel_id=? AND LOWER(subcategory) = LOWER(?) WHERE id !=?";
+                connection.query(sq3, [hostel_id, name, id], function (err, ch_res) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: err.message })
+                    } else if (ch_res.length == 0) {
+
+                        var sql2 = "UPDATE Expense_Subcategory_Name SET subcategory=? WHERE id=?";
+                        connection.query(sql2, [name, id], function (err, up_res) {
+                            if (err) {
+                                return res.status(201).json({ statusCode: 201, message: err.message })
+                            } else {
+                                return res.status(200).json({ statusCode: 200, message: "Successfully Update Sub Category!" })
+                            }
+                        })
                     } else {
-                        return res.status(200).json({ statusCode: 200, message: "Successfully Update Sub Category!" })
+                        return res.status(201).json({ statusCode: 201, message: "Sub Category Name Already Exists!" })
                     }
                 })
-
             } else {
                 return res.status(201).json({ statusCode: 201, message: "Invalid Category Details" })
             }
