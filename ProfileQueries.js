@@ -206,7 +206,7 @@ function AmenitiesSetting(connection, request, response) {
 
     var role_permissions = request.role_permissions;
     var is_admin = request.is_admin;
-    var hostel_id = request.body.hostel_id;
+    var hostel_id = request.body.Hostel_Id;
 
     if (is_admin == 1 || (role_permissions[18] && role_permissions[18].per_view == 1)) {
 
