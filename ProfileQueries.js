@@ -223,7 +223,7 @@ function AmenitiesSetting(connection, request, response) {
             const amenitiesName = reqData?.amenitiesName?.trim().replace(/\s+/g, '');
             const capitalizedAmenitiesName = amenitiesName?.charAt(0).toUpperCase() + amenitiesName?.slice(1).toLowerCase();
 
-            connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${reqData.Hostel_Id}`, function (error, amenitiesData) {
+            connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${hostel_id}`, function (error, amenitiesData) {
                 console.log("amenitiesData", amenitiesData)
                 console.log("capitalizedAmenitiesName", capitalizedAmenitiesName)
 
