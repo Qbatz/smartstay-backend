@@ -269,14 +269,14 @@ function AmenitiesSetting(connection, request, response) {
 
     function insertAminity(id, created_by) {
 
-        connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${reqData.Hostel_Id} AND Amnities_Id = ${id}`, function (error, existingAmenity) {
+        connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${hostel_id} AND Amnities_Id = ${id}`, function (error, existingAmenity) {
             if (error) {
                 console.error(error);
                 response.status(202).json({ message: 'Database error' });
             } else if (existingAmenity.length > 0) {
                 response.status(203).json({ message: 'Amenity already exists for this Hostel_Id' });
             } else {
-                connection.query(`INSERT INTO Amenities (Amount, setAsDefault, Hostel_Id,  Amnities_Id, createdBy) VALUES (${reqData.Amount}, ${reqData.setAsDefault}, ${reqData.Hostel_Id}, ${id}, ${created_by})`, function (error, data) {
+                connection.query(`INSERT INTO Amenities (Amount, setAsDefault, Hostel_Id,  Amnities_Id, createdBy) VALUES (${reqData.Amount}, ${reqData.setAsDefault}, ${hostel_id}, ${id}, ${created_by})`, function (error, data) {
                     if (error) {
                         console.error(error);
                         response.status(202).json({ message: 'Database error' });
