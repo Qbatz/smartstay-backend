@@ -1021,7 +1021,7 @@ app.post('/delete_role', (req, res) => {
     roles.delete_role(req, res)
 })
 
-app.get('/all_roles', (req, res) => {
+app.post('/all_roles', (req, res) => {
     roles.all_roles(req, res)
 })
 
