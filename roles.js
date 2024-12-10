@@ -355,4 +355,35 @@ function get_all_staffs(req, res) {
     }
 }
 
-module.exports = { add_role, edit_role, delete_role, all_roles, role_permissions, add_staff_user, get_all_staffs }
+function delete_staff(req, res) {
+
+    var staff_id = req.body.id;
+
+    var created_by = req.user_details.id;
+
+    if (!staff_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    var sql1 = "SELECT * FROM createaccount WHERE id=? AND user_status=1 AND createdby=? AND user_type='staff'";
+    connection.query(sql1, [id, created_by], function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to get Staff details", reason: err.message })
+        } else if (data.length != 0) {
+
+            var sql2 = "UPDATE createaccount SET user_status=1 WHERE id=?";
+            connection.query(sql2, [staff_id], function (err, up_res) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Delete Staff details", reason: err.message })
+                } else {
+                    return res.status(200).json({ statusCode: 200, message: "Staff Deleted Successfully!" })
+                }
+            })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Staff details" })
+        }
+    })
+
+}
+
+module.exports = { add_role, edit_role, delete_role, all_roles, role_permissions, add_staff_user, get_all_staffs, delete_staff }

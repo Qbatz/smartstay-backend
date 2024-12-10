@@ -220,12 +220,13 @@ function AmenitiesSetting(connection, request, response) {
             response.status(201).json({ message: 'Missing parameter' });
             return;
         } else {
+
             const amenitiesName = reqData?.amenitiesName?.trim().replace(/\s+/g, '');
             const capitalizedAmenitiesName = amenitiesName?.charAt(0).toUpperCase() + amenitiesName?.slice(1).toLowerCase();
 
             connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${hostel_id}`, function (error, amenitiesData) {
-                console.log("amenitiesData", amenitiesData)
-                console.log("capitalizedAmenitiesName", capitalizedAmenitiesName)
+                // console.log("amenitiesData", amenitiesData)
+                // console.log("capitalizedAmenitiesName", capitalizedAmenitiesName)
 
                 let amenityId = reqData.amenityId;
 

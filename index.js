@@ -1038,6 +1038,10 @@ app.get('/get_all_staffs', (req, res) => {
     roles.get_all_staffs(req, res)
 })
 
+app.post('/staffs/delete_staff', (req, res) => {
+    roles.delete_staff(req, res)
+})
+
 // ( *********************  Eb Readings  ********************** )
 
 // Edit Room Reading
@@ -1110,3 +1114,5 @@ app.post('/settings/delete_general_user', settings_router.delete_general_user)
 var recure_settings_router = require('./settings/recurings')
 
 app.post('/settings/add_recuring', recure_settings_router.add_recuring)
+
+
