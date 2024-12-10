@@ -947,18 +947,21 @@ function edit_expense_category(req, res) {
         var sql1 = "SELECT * FROM Expense_Category_Name WHERE id=? AND hostel_id=? AND status=1";
         connection.query(sql1, [id, hostel_id], function (err, data) {
             if (err) {
+                console.log(err);
                 return res.status(201).json({ statusCode: 201, message: err.message })
             } else if (data.length != 0) {
 
-                var sq3 = "SELECT * FROM Expense_Category_Name WHERE status=1 AND hostel_id=? AND LOWER(category_Name) = LOWER(?) WHERE id !=?";
+                var sq3 = "SELECT * FROM Expense_Category_Name WHERE status=1 AND hostel_id=? AND LOWER(category_Name) = LOWER(?) AND id !=?";
                 connection.query(sq3, [hostel_id, name, id], function (err, ch_res) {
                     if (err) {
+                        console.log(err);
                         return res.status(201).json({ statusCode: 201, message: err.message })
                     } else if (ch_res.length == 0) {
 
                         var sql2 = "UPDATE Expense_Category_Name SET category_Name=? WHERE id=?";
                         connection.query(sql2, [name, id], function (err, up_res) {
                             if (err) {
+                                console.log(err);
                                 return res.status(201).json({ statusCode: 201, message: err.message })
                             } else {
                                 return res.status(200).json({ statusCode: 200, message: "Category Updated Successfully!" })
@@ -982,7 +985,7 @@ function edit_expense_category(req, res) {
                 return res.status(201).json({ statusCode: 201, message: err.message })
             } else if (data.length != 0) {
 
-                var sq3 = "SELECT * FROM Expense_Subcategory_Name WHERE status=1 AND hostel_id=? AND LOWER(subcategory) = LOWER(?) WHERE id !=?";
+                var sq3 = "SELECT * FROM Expense_Subcategory_Name WHERE status=1 AND hostel_id=? AND LOWER(subcategory) = LOWER(?) AND id !=?";
                 connection.query(sq3, [hostel_id, name, id], function (err, ch_res) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: err.message })
