@@ -366,13 +366,14 @@ function getAmenitiesList(req, res) {
 
     if (is_admin == 1 || (role_permissions[18] && role_permissions[18].per_view == 1)) {
 
-        var sql1 = "SELECT ame.*,amname.Amnities_Name,hsd.Name FROM Amenities AS ame JOIN AmnitiesName AS amname ON ame.Amnities_Id = amname.id JOIN hosteldetails AS hsd ON hsd.id = ame.Hostel_Id WHERE ame.createdBy IN (" + show_ids + ")";
+        var hostel_id = req.body.hostel_id;
 
-        if (hostel_id) {
-            sql1 += " AND ame.Hostel_Id=" + hostel_id + ""
+        if (!hostel_id) {
+            return res.status(201).json({ statusCode: 201, message: "Missing Hostel Id" });
         }
 
-        connection.query(sql1, function (err, data) {
+        var sql1 = "SELECT ame.*,amname.Amnities_Name,hsd.Name FROM Amenities AS ame JOIN AmnitiesName AS amname ON ame.Amnities_Id = amname.id JOIN hosteldetails AS hsd ON hsd.id = ame.Hostel_Id WHERE ame.Status=1 AND ame.Hostel_Id=?";
+        connection.query(sql1,[hostel_id], function (err, data) {
             if (err) {
                 res.status(201).json({ statusCode: 201, message: "Unable to Get Amenities List" })
             } else {
