@@ -13,6 +13,8 @@ const fs = require('fs');
 const bookings = require('./bookings');
 const roles = require('./roles');
 const exports_routes = require('./exports');
+const newBookings = require('./new_bookings');
+
 
 
 const app = express()
@@ -403,7 +405,7 @@ app.post('/invoice/settings', upload.single('profile'), (request, response) => {
 })
 
 
-app.get('/list/amenities-list', (req, res) => {
+app.post('/list/amenities-list', (req, res) => {
     // response.set('Access-Control-Allow-Origin', '*')
     profileQueries.getAmenitiesList(req, res)
 })
@@ -893,8 +895,12 @@ app.get('/get_bill_details', (req, res) => {
 // Completed
 
 // Bookings
-app.post('/add_booking', (req, res) => {
-    bookings.add_booking(req, res)
+// app.post('/add_booking', (req, res) => {
+//     bookings.add_booking(req, res)
+// });
+
+app.post('/add_booking', upload.single('profile'), (req, res) => {
+    newBookings.add_booking(req, res)
 });
 
 app.get('/all_bookings', (req, res) => {
@@ -1122,4 +1128,6 @@ app.post('/settings/add_recuring', recure_settings_router.add_recuring)
 var amen_settings_router = require('./settings/amenities')
 
 app.post('/settings/all_customer_list', amen_settings_router.all_customer_list)
+
+app.post('/settings/remove_user_amenitie', amen_settings_router.remove_user_amenitie)
 

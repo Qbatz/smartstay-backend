@@ -270,7 +270,7 @@ function AmenitiesSetting(connection, request, response) {
 
     function insertAminity(id, created_by) {
 
-        connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${hostel_id} AND Amnities_Id = ${id}`, function (error, existingAmenity) {
+        connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${hostel_id} AND Amnities_Id = ${id} AND Status=1`, function (error, existingAmenity) {
             if (error) {
                 console.error(error);
                 response.status(202).json({ message: 'Database error' });
@@ -373,7 +373,7 @@ function getAmenitiesList(req, res) {
         }
 
         var sql1 = "SELECT ame.*,amname.Amnities_Name,hsd.Name FROM Amenities AS ame JOIN AmnitiesName AS amname ON ame.Amnities_Id = amname.id JOIN hosteldetails AS hsd ON hsd.id = ame.Hostel_Id WHERE ame.Status=1 AND ame.Hostel_Id=?";
-        connection.query(sql1,[hostel_id], function (err, data) {
+        connection.query(sql1, [hostel_id], function (err, data) {
             if (err) {
                 res.status(201).json({ statusCode: 201, message: "Unable to Get Amenities List" })
             } else {

@@ -31,7 +31,7 @@ exports.all_customer_list = (req, res) => {
                         connection.query(sql3, [am_id, hostel_id], function (err, unsel_res) {
                             if (err) {
                                 console.log(err);
-                                
+
                                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Un Selected List", reason: err.message })
                             } else {
                                 return res.status(200).json({ statusCode: 200, message: "All Amenities", selected: sel_res, unselected: unsel_res })
@@ -44,4 +44,8 @@ exports.all_customer_list = (req, res) => {
             return res.status(201).json({ statusCode: 201, message: "Invalid or Inactive Amenitie" })
         }
     })
+}
+
+exports.remove_user_amenitie = (req, res) => {
+    
 }
