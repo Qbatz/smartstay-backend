@@ -1119,4 +1119,7 @@ var recure_settings_router = require('./settings/recurings')
 
 app.post('/settings/add_recuring', recure_settings_router.add_recuring)
 
+var amen_settings_router = require('./settings/amenities')
+
+app.post('/settings/all_customer_list', amen_settings_router.all_customer_list)
 
