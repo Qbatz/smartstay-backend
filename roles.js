@@ -366,12 +366,12 @@ function delete_staff(req, res) {
     }
 
     var sql1 = "SELECT * FROM createaccount WHERE id=? AND user_status=1 AND createdby=? AND user_type='staff'";
-    connection.query(sql1, [id, created_by], function (err, data) {
+    connection.query(sql1, [staff_id, created_by], function (err, data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Unable to get Staff details", reason: err.message })
         } else if (data.length != 0) {
 
-            var sql2 = "UPDATE createaccount SET user_status=1 WHERE id=?";
+            var sql2 = "UPDATE createaccount SET user_status=0 WHERE id=?";
             connection.query(sql2, [staff_id], function (err, up_res) {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Delete Staff details", reason: err.message })
