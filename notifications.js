@@ -1329,4 +1329,70 @@ function get_hostel_reading(req, res) {
 
 }
 
-module.exports = { all_notifications, add_notification, update_notification_status, add_room_reading, edit_room_reading, delete_room_reading, add_hostel_reading, edit_hostel_reading, delete_hostel_reading, get_hostel_reading }
+function delete_amenities(req, res) {
+
+    var { hostel_id, am_id } = req.body;
+
+    if (!hostel_id || !am_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Details" });
+    }
+
+    // Check if amenity exists and is active
+    var ch_query = "SELECT * FROM Amenities WHERE id = ? AND Status = 1 AND Hostel_Id = ?";
+    connection.query(ch_query, [am_id, hostel_id], function (err, ch_res) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get Amenities Details", reason: err.message });
+        }
+        if (ch_res.length === 0) {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Amenity Details" });
+        }
+
+        // Check if the amenity is currently being used
+        var sql1 = `
+        SELECT user_Id, amenity_Id, hostel_Id, status
+        FROM AmenitiesHistory
+        WHERE amenity_Id = ? AND hostel_Id = ? AND 
+              (user_Id, amenity_Id, hostel_Id, created_At) IN (
+                  SELECT user_Id, amenity_Id, hostel_Id, MAX(created_At)
+                  FROM AmenitiesHistory
+                  WHERE amenity_Id = ? AND hostel_Id = ?
+                  GROUP BY user_Id, amenity_Id, hostel_Id
+              )`;
+
+        connection.query(sql1, [am_id, hostel_id, am_id, hostel_id], function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Unable to Get Amenities Details", reason: err.message });
+            }
+
+            if (data.length === 0) {
+
+                var sql2 = "UPDATE Amenities SET Status = 0 WHERE id = ?";
+                connection.query(sql2, [am_id], function (err, up_res) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Delete Amenities Details", reason: err.message });
+                    }
+                    return res.status(200).json({ statusCode: 200, message: "Amenity Deleted Successfully" });
+                });
+            } else {
+                const activeAmenities = data.filter(row => row.status === 1);
+
+                if (activeAmenities.length > 0) {
+                    // Amenity is currently being used
+                    return res.status(201).json({ statusCode: 201, message: "Cannot delete the amenity as it is currently in use." });
+                }
+
+                // Amenity is not in use; proceed to update
+                var sql2 = "UPDATE Amenities SET Status = 0 WHERE id = ?";
+                connection.query(sql2, [am_id], function (err, up_res) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Delete Amenities Details", reason: err.message });
+                    }
+                    return res.status(200).json({ statusCode: 200, message: "Amenity Deleted Successfully" });
+                });
+            }
+        });
+    });
+
+}
+
+module.exports = { all_notifications, add_notification, update_notification_status, add_room_reading, edit_room_reading, delete_room_reading, add_hostel_reading, edit_hostel_reading, delete_hostel_reading, get_hostel_reading, delete_amenities }

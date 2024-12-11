@@ -422,6 +422,10 @@ app.post('/amenities/setting', (request, response) => {
     profileQueries.AmenitiesSetting(connection, request, response)
 })
 
+app.post('/amenities/delete', (req, res) => {
+    notifications.delete_amenities(req, res)
+})
+
 // Not Use
 app.post('/ebamount/setting', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
