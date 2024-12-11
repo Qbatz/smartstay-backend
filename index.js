@@ -899,7 +899,7 @@ app.get('/get_bill_details', (req, res) => {
 //     bookings.add_booking(req, res)
 // });
 
-app.post('/add_booking', upload.single('profile'), (req, res) => {
+app.post('/add_booking', upload.fields([{ name: 'profile', maxCount: 1 }]), (req, res) => {
     newBookings.add_booking(req, res)
 });
 

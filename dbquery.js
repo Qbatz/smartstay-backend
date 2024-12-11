@@ -185,7 +185,9 @@ const queries = [
 
     "CREATE TABLE `hostel_readings` (`id` BIGINT(20) NOT NULL,`hostel_id` BIGINT(20) NULL,`date` DATE NULL,`reading` VARCHAR(45) NULL,`total_amount` BIGINT(20) NULL,`total_reading` BIGINT(20) NULL,`status` INT(11) NULL DEFAULT 1,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 
-    "ALTER TABLE `hostel_readings` CHANGE COLUMN `id` `id` BIGINT(20) NOT NULL AUTO_INCREMENT ;"
+    "ALTER TABLE `hostel_readings` CHANGE COLUMN `id` `id` BIGINT(20) NOT NULL AUTO_INCREMENT ;",
+
+    "ALTER TABLE `bookings` ADD COLUMN `profile` VARCHAR(255) NULL DEFAULT 0 AFTER `address`;"
 ];
 
 queries.forEach(executeQuery);
