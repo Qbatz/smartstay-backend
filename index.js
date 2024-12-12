@@ -1129,5 +1129,8 @@ var amen_settings_router = require('./settings/amenities')
 
 app.post('/settings/all_customer_list', amen_settings_router.all_customer_list)
 
-app.post('/settings/remove_user_amenitie', amen_settings_router.remove_user_amenitie)
+app.post('/settings/remove_assigned_amenitie', amen_settings_router.remove_assigned_amenitie)
+
+app.post('/settings/assign_amenity', amen_settings_router.assign_amenity)
+
 
