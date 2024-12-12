@@ -295,7 +295,7 @@ app.post('/compliance/compliance-list', (request, response) => {
 
 app.post('/list/hostel-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    pgQueries.getHostelList(connection, response, request)
+    pgQueries.getHostelList(request, response)
 })
 
 app.get('/room-id/check-room-id', (request, response) => {

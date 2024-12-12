@@ -12,6 +12,7 @@ function getDatabasePool() {
             database: process.env.DATABASE,
             multipleStatements: true,
             connectTimeout: 10000,
+            connectionLimit: 10
         });
 
         pool.on('connection', (connection) => {

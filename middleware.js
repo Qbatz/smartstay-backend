@@ -36,6 +36,9 @@ module.exports = (req, res, next) => {
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 req.user_details = decoded;
 
+                console.log(req.originalUrl);
+                console.log("decoded.id", decoded.id);
+
                 const created_by = decoded.id;
 
                 let show_ids = [];
@@ -68,6 +71,8 @@ module.exports = (req, res, next) => {
                             show_ids.push(...directUserIds);
 
                             is_admin = 1;
+
+                            // console.log(directUserIds);
 
                             if (directUserIds.length > 0) {
                                 const sqlIndirectUsers = "SELECT id FROM createaccount WHERE createdby IN (?)";

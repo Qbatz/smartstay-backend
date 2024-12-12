@@ -15,7 +15,7 @@ AWS.config.update({
 });
 const s3 = new AWS.S3();
 
-function getHostelList(connection, response, request) {
+function getHostelList(request,response) {
 
     const created_by = request.user_details.id;
     let hostelDetails = [];
@@ -26,6 +26,7 @@ function getHostelList(connection, response, request) {
     var show_ids = request.show_ids;
 
     if (is_admin == 1 || (role_permissions[3] && role_permissions[3].per_view == 1)) {
+
         const queryHostelList = `SELECT hstl.*,eb.amount AS eb_amount FROM hosteldetails AS hstl LEFT JOIN eb_settings AS eb ON hstl.id=eb.hostel_id WHERE hstl.created_By IN (${show_ids}) AND hstl.isActive = true ORDER BY hstl.create_At DESC`;
         // Query to get the hostels
         connection.query(queryHostelList, function (err, hostels) {
@@ -47,52 +48,55 @@ function getHostelList(connection, response, request) {
                     if (floorErr) {
                         console.error("Error fetching floor details: ", floorErr);
                         return response.status(201).json({ statusCode: 201, message: 'Error fetching floor details' });
+                    } else {
+                        // Fetch additional details
+                        const additionalDetailsQuery = `
+                        SELECT 
+                            COALESCE(SUM((SELECT COUNT(id) FROM Hostel_Floor WHERE Hostel_Id='${hostel.id}' AND status=1)), 0) AS floorcount,
+                            COALESCE(SUM((SELECT COUNT(Room_Id) FROM hostelrooms WHERE Hostel_Id='${hostel.id}' AND isActive=1)), 0) AS roomCount,
+                            COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr 
+                                JOIN bed_details AS bd ON bd.hos_detail_id=hr.id 
+                                JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id 
+                                WHERE hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=0 AND hr.Hostel_Id='${hostel.id}'), 0) AS Bed,
+                            COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr 
+                                JOIN bed_details AS bd ON bd.hos_detail_id=hr.id 
+                                JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id 
+                                WHERE hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By='${created_by}' AND hr.Hostel_Id='${hostel.id}'), 0) AS occupied_Bed 
+                        FROM hosteldetails details 
+                        JOIN createaccount creaccount ON creaccount.id = details.created_by 
+                        WHERE details.created_By IN (${show_ids}) AND details.id='${hostel.id}' 
+                        GROUP BY creaccount.id`;
+
+                        connection.query(additionalDetailsQuery, function (additionalErr, additionalDetails) {
+                            if (additionalErr) {
+                                console.error("Error fetching additional details: ", additionalErr);
+                                return response.status(201).json({ statusCode: 201, message: 'Error fetching additional details' });
+                            } else {
+                                const image_list = [1, 2, 3, 4].map(i => ({
+                                    name: `image${i}`,
+                                    image: hostel[`image${i}`]
+                                }));
+
+                                hostelDetails.push({
+                                    ...hostel,
+                                    floorDetails: floorDetails || [],
+                                    ...additionalDetails[0],
+                                    image_list: image_list
+                                });
+
+                                processedHostels++;
+                                if (processedHostels === hostels.length) {
+                                    return response.status(200).json({ data: hostelDetails });
+                                }
+                            }
+                        });
                     }
 
-                    // Fetch additional details
-                    const additionalDetailsQuery = `
-                    SELECT 
-                        COALESCE(SUM((SELECT COUNT(id) FROM Hostel_Floor WHERE Hostel_Id='${hostel.id}' AND status=1)), 0) AS floorcount,
-                        COALESCE(SUM((SELECT COUNT(Room_Id) FROM hostelrooms WHERE Hostel_Id='${hostel.id}' AND isActive=1)), 0) AS roomCount,
-                        COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr 
-                            JOIN bed_details AS bd ON bd.hos_detail_id=hr.id 
-                            JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id 
-                            WHERE hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=0 AND hr.Hostel_Id='${hostel.id}'), 0) AS Bed,
-                        COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr 
-                            JOIN bed_details AS bd ON bd.hos_detail_id=hr.id 
-                            JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id 
-                            WHERE hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By='${created_by}' AND hr.Hostel_Id='${hostel.id}'), 0) AS occupied_Bed 
-                    FROM hosteldetails details 
-                    JOIN createaccount creaccount ON creaccount.id = details.created_by 
-                    WHERE details.created_By IN (${show_ids}) AND details.id='${hostel.id}' 
-                    GROUP BY creaccount.id`;
-
-                    connection.query(additionalDetailsQuery, function (additionalErr, additionalDetails) {
-                        if (additionalErr) {
-                            console.error("Error fetching additional details: ", additionalErr);
-                            return response.status(201).json({ statusCode: 201, message: 'Error fetching additional details' });
-                        }
-
-                        const image_list = [1, 2, 3, 4].map(i => ({
-                            name: `image${i}`,
-                            image: hostel[`image${i}`]
-                        }));
-
-                        hostelDetails.push({
-                            ...hostel,
-                            floorDetails: floorDetails || [],
-                            ...additionalDetails[0],
-                            image_list: image_list
-                        });
-
-                        processedHostels++;
-                        if (processedHostels === hostels.length) {
-                            return response.status(200).json({ data: hostelDetails });
-                        }
-                    });
                 });
             });
         });
+
+
 
     } else {
         response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
@@ -1003,9 +1007,6 @@ function listDashBoard(connection, response, request) {
     var role_permissions = request.role_permissions;
     var is_admin = request.is_admin;
 
-    console.log(show_ids, "=======================");
-
-
     if (is_admin == 1 || (role_permissions[0] && role_permissions[0].per_view == 1)) {
 
         // var sql1 = "select creaccount.first_name,creaccount.last_name,COALESCE((select count(id) from hosteldetails where created_By=details.created_By AND isActive=1),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id AND isActive=1)),0) as roomCount,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=0 AND hd.created_By IN (" + show_ids + ")),0) as Bed,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By IN (" + show_ids + ")),0) as occupied_Bed,(select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By IN (" + show_ids + ")) AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.BalanceDue != 0) AS overdue from hosteldetails details join createaccount creaccount on creaccount.id = details.created_by where details.created_By IN (" + show_ids + ") GROUP BY creaccount.id"
@@ -1022,7 +1023,7 @@ function listDashBoard(connection, response, request) {
                 connection.query(sql12, function (err, pro_res) {
                     if (err) {
                         console.log("Unable to get Projection");
-                        response.status(201).json({ message: "Unable to get Projection", error: error.message });
+                        response.status(201).json({ message: "Unable to get Projection", error: err.message });
                     } else {
 
                         if (data.length > 0) {

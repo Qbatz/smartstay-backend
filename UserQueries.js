@@ -2211,9 +2211,9 @@ function user_check_out(req, res) {
 
   if (is_admin == 1 || (role_permissions[6] && role_permissions[6].per_create == 1)) {
 
-    var { checkout_date, user_id, hostel_id, comments, action } = req.body;
+    var { checkout_date, user_id, hostel_id, comments, action, req_date } = req.body;
 
-    if (!user_id || !checkout_date) {
+    if (!user_id || !checkout_date || !req_date) {
       return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
     }
 
@@ -2233,7 +2233,8 @@ function user_check_out(req, res) {
         if (action == 1 && sel_res[0].CheckoutDate) {
           return res.status(201).json({ statusCode: 201, message: "Already Added Checkout Date" })
         } else {
-          var sql2 = "UPDATE hostel SET checkout_comment=?,CheckOutDate=? WHERE ID=?";
+
+          var sql2 = "UPDATE hostel SET checkout_comment=?,CheckOutDate=?,req_date=? WHERE ID=?";
           connection.query(sql2, [comments, checkout_date, user_id], function (err, data) {
             if (err) {
               return res.status(201).json({ statusCode: 201, message: "Unable to Update User Details" })
@@ -2245,6 +2246,7 @@ function user_check_out(req, res) {
               }
             }
           })
+
         }
       } else {
         return res.status(201).json({ statusCode: 201, message: "Please select a valid hostel name. This customer does not exist for this hostel." })
