@@ -88,6 +88,7 @@ function createUser(connection, request, response) {
         if (sel_err) {
           response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
         } else if (sel_res.length != 0) {
+
           var user_ids = atten.ID;
           var unique_user_id = sel_res[0].User_Id;
           var paid_rent = atten.paid_rent;
@@ -100,6 +101,8 @@ function createUser(connection, request, response) {
           var old_room = sel_res[0].Rooms;
           var old_floor = sel_res[0].Floor;
           var old_bed = sel_res[0].Bed;
+
+          var booking_id = atten.booking_id;
 
           connection.query(`SELECT * FROM hostel WHERE Phone='${atten.Phone}' AND isActive = 1 AND ID !='${atten.ID}'`,
             function (error, data) {
@@ -182,6 +185,18 @@ function createUser(connection, request, response) {
                                     });
                                   }
                                 });
+
+                                if (booking_id) {
+
+                                  var sql123 = "UPDATE bookings SET status=0 WHERE id=?";
+                                  connection.query(sql123, [booking_id], function (err, data) {
+                                    if (err) {
+                                      console.log("Not Remove Booking", err);
+                                    } else {
+                                      console.log("Booking Removed");
+                                    }
+                                  })
+                                }
 
                                 return response.status(200).json({ statusCode: 200, message: "Changes Saved Successfully!" })
 

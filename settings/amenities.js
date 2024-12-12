@@ -21,14 +21,15 @@ exports.all_customer_list = (req, res) => {
             } else {
 
                 // Selected Users
-                var sql2 = "SELECT u.id, u.name AS user_Name,u.User_Id AS user_id, ah.amenity_Id FROM hostel u INNER JOIN AmenitiesHistory ah ON u.user_Id = ah.user_Id WHERE ah.amenity_Id = ? AND ah.status = 1 AND ah.hostel_Id=?";
+                var sql2 = "SELECT u.id, u.name AS user_Name, u.User_Id AS user_id, ah.amenity_Id FROM hostel u INNER JOIN AmenitiesHistory ah ON u.user_Id = ah.user_Id WHERE ah.amenity_Id = ? AND ah.status = 1 AND ah.hostel_Id = ? AND ah.created_At = (SELECT MAX(created_At) FROM AmenitiesHistory WHERE user_Id = ah.user_Id AND amenity_Id = ah.amenity_Id)";
                 connection.query(sql2, [am_id, hostel_id], function (err, sel_res) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Get Selected List", reason: err.message })
                     } else {
 
-                        var sql3 = "SELECT u.id,u.name AS user_Name,u.User_Id AS user_id FROM hostel u WHERE NOT EXISTS (SELECT 1 FROM AmenitiesHistory ah WHERE ah.user_Id = u.user_Id AND ah.amenity_Id = ? AND ah.status = 1 AND u.isActive=1 AND u.Hostel_Id=?)"
-                        connection.query(sql3, [am_id, hostel_id], function (err, unsel_res) {
+                        // var sql3 = "SELECT u.id,u.name AS user_Name,u.User_Id AS user_id FROM hostel u WHERE NOT EXISTS (SELECT 1 FROM AmenitiesHistory ah WHERE ah.user_Id = u.user_Id AND ah.amenity_Id = ? AND ah.status = 0 AND u.isActive=1 AND u.Hostel_Id=?)"
+                        var sql3 = "SELECT u.id, u.name AS user_Name, u.User_Id AS user_id FROM hostel u WHERE u.Hostel_Id = 1 AND u.isActive = 1 AND NOT EXISTS (SELECT 1 FROM AmenitiesHistory ah WHERE ah.user_Id = u.User_Id AND ah.amenity_Id = ? AND ah.status = 0 AND ah.created_At = (SELECT MAX(created_At) FROM AmenitiesHistory WHERE user_Id = ah.user_Id AND amenity_Id = ah.amenity_Id));"
+                        connection.query(sql3, [am_id], function (err, unsel_res) {
                             if (err) {
                                 console.log(err);
 

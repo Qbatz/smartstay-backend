@@ -306,4 +306,57 @@ function remove_complaint_types(req, res) {
         res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
 }
-module.exports = { AddCompliance, GetComplianceList, add_complainttypes, all_complaint_types, remove_complaint_types };
+
+function change_details(req, res) {
+
+    var { type, assigner, status, id, hostel_id } = req.body;
+
+    if (!id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Complaints Details" })
+    }
+
+    if (!type) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Type Field" })
+    }
+
+    const allowedTypes = ['assign', 'status_change'];
+
+    if (!allowedTypes.includes(type)) {
+        return res.status(201).json({ statusCode: 201, message: `Invalid type. Allowed types are: ${allowedTypes.join(', ')}` });
+    }
+
+    if (type == 'assign' && !assigner) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Assigner Field" })
+    }
+
+    if (type == 'status_change' && !status) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Status Field" })
+    }
+
+    var sql1 = "SELECT * FROM compliance WHERE ID=? AND Hostel_id=?";
+    connection.query(sql1, [id, hostel_id], function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Missing Status Field" })
+        } else if (data.length != 0) {
+
+            if (type == 'assign') {
+                var sql2 = "UPDATE compliance SET Status=? WHERE ID=?";
+            } else {
+                var sql2 = "UPDATE compliance SET Assign=? WHERE ID=?";
+            }
+
+            connection.query(sql2, [id], function (err, up_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Update Compliance Details", reason: err.message })
+                } else {
+                    return res.status(200).json({ statusCode: 200, message: "Updated Complaince Details" })
+                }
+            })
+
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Complaince Details" })
+        }
+    })
+}
+
+module.exports = { AddCompliance, GetComplianceList, add_complainttypes, all_complaint_types, remove_complaint_types, change_details };

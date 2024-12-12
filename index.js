@@ -278,7 +278,11 @@ app.get('/get/userAccount', (request, response) => {
 app.post('/compliance/add-details', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     complianceQueries.AddCompliance(connection, request, response)
+})
 
+app.post('/compliance/change_details', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    complianceQueries.change_details(connection, request, response)
 })
 
 
@@ -1132,5 +1136,3 @@ app.post('/settings/all_customer_list', amen_settings_router.all_customer_list)
 app.post('/settings/remove_assigned_amenitie', amen_settings_router.remove_assigned_amenitie)
 
 app.post('/settings/assign_amenity', amen_settings_router.assign_amenity)
-
-

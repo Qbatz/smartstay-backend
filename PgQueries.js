@@ -87,7 +87,7 @@ function getHostelList(connection, response, request) {
 
                         processedHostels++;
                         if (processedHostels === hostels.length) {
-                            response.status(200).json({ data: hostelDetails });
+                            return response.status(200).json({ data: hostelDetails });
                         }
                     });
                 });

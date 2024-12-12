@@ -8,7 +8,7 @@ exports.add_recuring = (req, res) => {
     var recure = req.body.recure || 1;
 
     if (!type || !hostel_id || !start_date || !end_date) {
-        res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
     }
 
     const allowedTypes = ['electricity', 'invoice', 'amenities'];

@@ -425,6 +425,7 @@ function GetExpensesCategory(request, response) {
                     if (item.subcategory_Id && item.subcategory) {
                         category.subcategory.push({
                             subcategory_Id: item.subcategory_Id,
+                            cat_id:item.category_Id,
                             subcategory: item.subcategory
                         });
                     }
