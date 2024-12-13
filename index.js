@@ -720,7 +720,7 @@ app.post('/add_ebbilling_settings', (req, res) => {
     vendorQueries.add_ebbilling_settings(req, res)
 })
 
-app.get('/get_ebbilling_settings', (req, res) => {
+app.post('/get_ebbilling_settings', (req, res) => {
     vendorQueries.get_ebbilling_settings(req, res)
 })
 
