@@ -2235,7 +2235,7 @@ function user_check_out(req, res) {
         } else {
 
           var sql2 = "UPDATE hostel SET checkout_comment=?,CheckOutDate=?,req_date=? WHERE ID=?";
-          connection.query(sql2, [comments, checkout_date, user_id], function (err, data) {
+          connection.query(sql2, [comments, checkout_date, req_date, user_id], function (err, data) {
             if (err) {
               return res.status(201).json({ statusCode: 201, message: "Unable to Update User Details" })
             } else {
@@ -2255,6 +2255,74 @@ function user_check_out(req, res) {
   } else {
     res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
   }
+}
+
+function get_confirm_checkout(req, res) {
+
+  var { id, hostel_id } = req.body;
+
+  if (!id || !hostel_id) {
+    return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+  }
+
+  var sql1 = "SELECT * FROM hostel WHERE ID=? AND Hostel_Id=? AND isActive=1";
+  connection.query(sql1, [id, hostel_id], function (err, data) {
+    if (err) {
+      return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message })
+    } else if (data.length != 0) {
+
+      var sql2 = "SELECT * FROM invoicedetails WHERE hos_user_id=?";
+      connection.query(sql2, [id], function (err, inv_data) {
+        if (err) {
+          return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message })
+        } else if (inv_data.length != 0) {
+
+          const bill_details = inv_data.map(row => ({
+            invoiceid: row.Invoices,
+            balance: row.BalanceDue
+          }));
+
+          return res.status(200).json({ statusCode: 200, message: "Success", bill_details: bill_details });
+
+        } else {
+          return res.status(200).json({ statusCode: 200, message: "No Due Amounts", bill_details: [] })
+        }
+      })
+    } else {
+      return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+    }
+  })
+
+}
+
+function add_confirm_checkout(req, res) {
+
+  var { id, hostel_id, checkout_date, advance_return, due_amount, comments } = req.body;
+
+  if (!id || !hostel_id || !checkout_date || !due_amount) {
+    return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+  }
+
+  var sql1 = "SELECT * FROM hostel WHERE ID=? AND Hostel_Id=? AND isActive=1 AND CheckoutDate !='null'";
+  connection.query(sql1, [id, hostel_id], function (err, data) {
+    if (err) {
+      return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message })
+    } else if (data.length != 0) {
+
+      if (due_amount == 0) {
+
+        var old_checkoutdate = data[0].CheckoutDate;
+
+
+      } else {
+        return res.status(201).json({ statusCode: 201, message: "Kindly Pay Due Amounts" })
+      }
+
+    } else {
+      return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+    }
+  })
+
 }
 
 function checkout_list(req, res) {
@@ -2401,5 +2469,7 @@ module.exports = {
   checkout_list,
   delete_check_out,
   available_checkout_users,
-  available_beds
+  available_beds,
+  get_confirm_checkout,
+  add_confirm_checkout
 };

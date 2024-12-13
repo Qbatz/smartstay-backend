@@ -945,6 +945,14 @@ app.post('/user_check_out', (req, res) => {
     userQueries.user_check_out(req, res)
 });
 
+app.post('/get/confirm_checkout', (req, res) => {
+    userQueries.get_confirm_checkout(req, res)
+});
+
+app.post('/add/confirm_checkout', (req, res) => {
+    userQueries.add_confirm_checkout(req, res)
+});
+
 app.get('/checkout_list', (req, res) => {
     userQueries.checkout_list(req, res)
 });
