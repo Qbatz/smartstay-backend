@@ -132,4 +132,104 @@ function add_booking(req, res) {
 
 }
 
-module.exports = { add_booking }
+function generateUserId(firstName, user_id) {
+    const userIdPrefix = firstName.substring(0, 4).toUpperCase();
+    const user_ids = user_id.toString().padStart(3, "0");
+    const userId = userIdPrefix + user_ids;
+    return userId;
+}
+
+function assign_booking(req, res) {
+
+    var { id, floor, room, hostel_id, bed, join_date, ad_amount, rent_amount } = req.body;
+
+    var created_by = req.user_details.id;
+
+    if (!id || !floor || !room || !hostel_id || !bed || !join_date || !ad_amount || !rent_amount) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
+    }
+
+    var sql1 = "SELECT bo.*,hstl.Name AS hostel_name FROM bookings AS bo JOIN hosteldetails AS hstl ON hstl.id=bo.hostel_id WHERE bo.id=? AND bo.status=1 AND bo.hostel_id=?";
+    connection.query(sql1, [id, hostel_id], function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get Booking Details", reason: err.message });
+        } else if (data.length != 0) {
+
+            var booking_details = data[0];
+            var mob_no = booking_details.phone_number;
+            var email_id = booking_details.email_id || 'NA';
+
+            if (email_id != 'NA') {
+
+                var sql3 = "SELECT * FROM hostel WHERE email_id=? AND isActive=1";
+                connection.query(sql3, [email_id], function (err, em_data) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Get Email Details", reason: err.message });
+                    } else if (em_data.length != 0) {
+                        return res.status(201).json({ statusCode: 201, message: "Email Already Exists" });
+                    } else {
+                        next_function();
+                    }
+                })
+            } else {
+                next_function();
+            }
+
+            function next_function() {
+
+                var sql3 = "SELECT * FROM hostel WHERE Phone=? AND isActive=1";
+                connection.query(sql3, [mob_no], function (err, ph_data) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Get Phone Details", reason: err.message });
+                    } else if (ph_data.length == 0) {
+
+                        var f_name = booking_details.first_name;
+                        var l_name = booking_details.last_name;
+
+                        const FirstNameInitial = f_name.charAt(0).toUpperCase();
+                        var LastNameInitial2 = f_name.charAt(1).toUpperCase();
+                        if (l_name) {
+                            var LastNameInitial = l_name.charAt(0).toUpperCase();
+                            var circle = FirstNameInitial + LastNameInitial;
+                        } else {
+                            var circle = FirstNameInitial + LastNameInitial2;
+                        }
+
+                        var name = f_name + l_name;
+                        var address = booking_details.address;
+                        var hostel_name = booking_details.hostel_name;
+                        var profile = booking_details.profile || 0;
+
+                        var sql4 = "INSERT INTO hostel (Circle, Name, Phone, Email, Address,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent,paid_advance,pending_advance,created_by,joining_Date,profile) VALUES (?)";
+                        var params = [circle, name, mob_no, email_id, address, hostel_name, hostel_id, floor, room, bed, ad_amount, rent_amount, 0, ad_amount, created_by, join_date, profile];
+                        connection.query(sql4, [params], function (err, ins_data) {
+                            if (err) {
+                                console.log(err);
+                                return res.status(201).json({ statusCode: 201, message: "Unable to Assign Checkin Details", reason: err.message });
+                            } else {
+
+                                var user_ids = ins_data.insertId;
+                                const gen_user_id = generateUserId(f_name, user_ids);
+
+                                var sql5 = "UPDATE bookings SET status=0 WHERE id=" + id + ";UPDATE hostel SET User_Id='" + gen_user_id + "' WHERE ID=" + user_ids + ";UPDATE bed_details SET user_id=" + user_ids + ", isfilled=1 WHERE id=" + bed + "";
+                                connection.query(sql5, function (err, up_res) {
+                                    if (err) {
+                                        return res.status(201).json({ statusCode: 201, message: "Unable to Remove Booking Details", reason: err.message });
+                                    } else {
+                                        return res.status(200).json({ statusCode: 200, message: "Checkin Assigned Successfully" });
+                                    }
+                                })
+                            }
+                        })
+                    } else {
+                        return res.status(201).json({ statusCode: 201, message: "Mobile Number Already Exists" });
+                    }
+                })
+            }
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Booking Details" });
+        }
+    })
+}
+
+module.exports = { add_booking, assign_booking }
