@@ -925,7 +925,7 @@ app.post('/assign_booking', (req, res) => {
 });
 
 // Customer Eb Reading
-app.get('/customer_readings', (req, res) => {
+app.post('/customer_readings', (req, res) => {
     invoiceQueries.customer_readings(req, res)
 });
 

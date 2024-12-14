@@ -169,6 +169,8 @@ function add_room_reading(req, res) {
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
+    var type='room';
+
     if (is_admin == 1 || (role_permissions[12] && role_permissions[12].per_create == 1)) {
 
         var { hostel_id, floor_id, room_id, date, reading } = req.body;
@@ -229,7 +231,7 @@ function add_room_reading(req, res) {
 
                                             var eb_id = ins_data.insertId;
 
-                                            split_eb_amounts(atten, cal_startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, function (result) {
+                                            split_eb_amounts(atten, cal_startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by,type, function (result) {
                                                 if (result.statusCode === 200) {
                                                     return res.status(200).json({ statusCode: result.statusCode, message: result.message });
                                                 } else {
@@ -368,6 +370,8 @@ function edit_room_reading(req, res) {
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
+    var type='room';
+
     if (is_admin == 1 || (role_permissions[12] && role_permissions[12].per_edit == 1)) {
 
         const { hostel_id, floor_id, room_id, date, reading, id } = req.body;
@@ -425,7 +429,7 @@ function edit_room_reading(req, res) {
                                                             var total_reading = prevResult.total_reading;
                                                             var eb_id = id;
 
-                                                            edit_split_eb_amounts(atten, startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, date, function (response) {
+                                                            edit_split_eb_amounts(atten, startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, date,type, function (response) {
                                                                 console.log("Final Response", response);
                                                             });
                                                         }
@@ -437,7 +441,7 @@ function edit_room_reading(req, res) {
                                                             var total_reading = nextResult.total_reading;
                                                             var eb_id = nextResult.next_id;
 
-                                                            edit_split_eb_amounts(atten, reading, startmeter, date, total_amount, total_reading, eb_id, created_by, last_cal_date, function (response) {
+                                                            edit_split_eb_amounts(atten, reading, startmeter, date, total_amount, total_reading, eb_id, created_by, last_cal_date,type, function (response) {
                                                                 console.log("Final Response1", response);
                                                             });
                                                         }
@@ -486,7 +490,7 @@ function edit_room_reading(req, res) {
 
                                                                             var reading = req.body.reading;
 
-                                                                            await edit_split_eb_amounts(atten, startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, date, function (response) {
+                                                                            await edit_split_eb_amounts(atten, startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, date,type, function (response) {
                                                                                 console.log("Final Response", response);
                                                                             });
                                                                         }
@@ -503,7 +507,7 @@ function edit_room_reading(req, res) {
 
                                                                             var reading = req.body.reading;
 
-                                                                            await edit_split_eb_amounts(atten, reading, startmeter, date, total_amount, total_reading, eb_id, created_by, last_cal_date, function (response) {
+                                                                            await edit_split_eb_amounts(atten, reading, startmeter, date, total_amount, total_reading, eb_id, created_by, last_cal_date,type, function (response) {
                                                                                 console.log("Final Response1", response);
                                                                             });
                                                                         }
@@ -529,7 +533,7 @@ function edit_room_reading(req, res) {
                                                                                 room_id: old_room
                                                                             }
 
-                                                                            await edit_split_eb_amounts(attens, new_read, startmeter, new_date, total_amount, total_reading, eb_id, created_by, last_cal_date, function (response) {
+                                                                            await edit_split_eb_amounts(attens, new_read, startmeter, new_date, total_amount, total_reading, eb_id, created_by, last_cal_date,type, function (response) {
                                                                                 console.log("Old Response Final Response1", response);
                                                                             });
                                                                         }
@@ -984,7 +988,7 @@ function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last
     console.log("Joining Date :", last_cal_date);
     console.log("Check Out Date :", new_date);
 
-    if (!type) {
+    if (type == 'room') {
         sql1 += ` AND Floor = '${atten.floor_id}' AND Rooms = '${atten.room_id}'`
     }
 
@@ -1015,7 +1019,7 @@ function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last
 
             console.log(userAmount, "================== User Amounts ===============");
 
-            if (!type) {
+            if (type == 'room') {
                 var type_val = 'room';
             } else {
                 var type_val = 'hostel';
@@ -1067,7 +1071,7 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
         
         AND (checkoutDate >= '${last_cal_date}' OR checkoutDate IS NULL)`
 
-    if (!type) {
+    if (type == 'room') {
         sql1 += ` AND Floor = '${atten.floor_id}' AND Rooms = '${atten.room_id}'`
     }
 
@@ -1101,7 +1105,7 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
 
             console.log(userAmount, "================== User Amounts ===============");
 
-            if (!type) {
+            if (type == 'room') {
                 var type_val = 'room';
             } else {
                 var type_val = 'hostel';
@@ -1120,7 +1124,7 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
                         insertCounter++;
                         if (insertCounter === user_data.length) {
                             // All inserts are done
-                            callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
+                            return callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
                         }
                     });
             } else {
@@ -1128,7 +1132,7 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
                 if (insertCounter === user_data.length) {
                     console.log(`User ID: ${user_id} has a zero amount, skipping insertion.`);
                     // If there was no insert needed (userAmount is 0), increment the counter
-                    callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
+                    return callback({ statusCode: 200, message: 'Successfully Added EB Amount' });
                 }
             }
         });
