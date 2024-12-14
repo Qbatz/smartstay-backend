@@ -234,12 +234,12 @@ function assign_booking(req, res) {
 
 function add_confirm_checkout(req, res) {
 
-    const { id, hostel_id, checkout_date, advance_return, due_amount, comments, reinburse, roomRent } = req.body;
+    const { id, hostel_id, checkout_date, advance_return, due_amount, comments, reinburse } = req.body;
 
     const created_by = req.user_details.id;
 
     // Validate mandatory fields
-    if (!id || !hostel_id || !checkout_date || !due_amount || !advance_return) {
+    if (!id || !hostel_id || !checkout_date || !advance_return) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
     }
 
@@ -250,7 +250,7 @@ function add_confirm_checkout(req, res) {
         }
 
         if (hostelData.length === 0) {
-            return res.status(404).json({ statusCode: 404, message: "Invalid User Details" });
+            return res.status(201).json({ statusCode: 201, message: "Invalid User Details" });
         }
 
         const bed_id = hostelData[0].Bed;
@@ -279,8 +279,8 @@ function add_confirm_checkout(req, res) {
 
                 const totalBalanceDue = result[0]?.totalBalanceDue || 0;
 
-                if (roomRent >= totalBalanceDue) {
-                    processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, created_by, checkout_date, bed_id, advance_return, comments, res);
+                if (advance_return >= totalBalanceDue) {
+                    processInvoicesAndFinalizeCheckout(id, totalBalanceDue, advance_return, created_by, checkout_date, bed_id, advance_return, comments, res);
                 } else {
                     return res.status(201).json({ statusCode: 201, message: "Room rent is less than total balance due" });
                 }
@@ -314,7 +314,10 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
 
         const queries = invoices.map((invoice) => {
 
-            const { BalanceDue, id: invoiceId } = invoice;
+            const { BalanceDue, id: invoiceId, PaidAmount } = invoice;
+
+            const all_amount = PaidAmount + totalBalanceDue
+
             const updateInvoice = `UPDATE invoicedetails SET BalanceDue = 0, PaidAmount = ?, Status = 'Success' WHERE id = ?`;
             const insertTransaction = `
                 INSERT INTO transactions 
@@ -322,7 +325,7 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
                 VALUES (?, ?, ?, 1, ?, 'CASH', ?, 'Invoice', 1)
             `;
             return new Promise((resolve, reject) => {
-                connection.query(updateInvoice, [BalanceDue, invoiceId], (err) => {
+                connection.query(updateInvoice, [all_amount, invoiceId], (err) => {
                     if (err) return reject(err);
 
                     connection.query(insertTransaction, [id, invoiceId, BalanceDue, created_by, checkout_date], (err) => {

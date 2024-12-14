@@ -169,7 +169,7 @@ function add_room_reading(req, res) {
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
-    var type='room';
+    var type = 'room';
 
     if (is_admin == 1 || (role_permissions[12] && role_permissions[12].per_create == 1)) {
 
@@ -231,7 +231,7 @@ function add_room_reading(req, res) {
 
                                             var eb_id = ins_data.insertId;
 
-                                            split_eb_amounts(atten, cal_startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by,type, function (result) {
+                                            split_eb_amounts(atten, cal_startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, type, function (result) {
                                                 if (result.statusCode === 200) {
                                                     return res.status(200).json({ statusCode: result.statusCode, message: result.message });
                                                 } else {
@@ -242,7 +242,7 @@ function add_room_reading(req, res) {
                                     })
 
                                 } else {
-                                    return res.status(201).json({ message: 'New reading must be greater than the old reading' });
+                                    return res.status(201).json({ statusCode: 201, message: 'New reading must be greater than the old reading' });
                                 }
                             }
                         })
@@ -370,7 +370,7 @@ function edit_room_reading(req, res) {
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
-    var type='room';
+    var type = 'room';
 
     if (is_admin == 1 || (role_permissions[12] && role_permissions[12].per_edit == 1)) {
 
@@ -429,7 +429,7 @@ function edit_room_reading(req, res) {
                                                             var total_reading = prevResult.total_reading;
                                                             var eb_id = id;
 
-                                                            edit_split_eb_amounts(atten, startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, date,type, function (response) {
+                                                            edit_split_eb_amounts(atten, startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, date, type, function (response) {
                                                                 console.log("Final Response", response);
                                                             });
                                                         }
@@ -441,7 +441,7 @@ function edit_room_reading(req, res) {
                                                             var total_reading = nextResult.total_reading;
                                                             var eb_id = nextResult.next_id;
 
-                                                            edit_split_eb_amounts(atten, reading, startmeter, date, total_amount, total_reading, eb_id, created_by, last_cal_date,type, function (response) {
+                                                            edit_split_eb_amounts(atten, reading, startmeter, date, total_amount, total_reading, eb_id, created_by, last_cal_date, type, function (response) {
                                                                 console.log("Final Response1", response);
                                                             });
                                                         }
@@ -490,7 +490,7 @@ function edit_room_reading(req, res) {
 
                                                                             var reading = req.body.reading;
 
-                                                                            await edit_split_eb_amounts(atten, startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, date,type, function (response) {
+                                                                            await edit_split_eb_amounts(atten, startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, date, type, function (response) {
                                                                                 console.log("Final Response", response);
                                                                             });
                                                                         }
@@ -507,7 +507,7 @@ function edit_room_reading(req, res) {
 
                                                                             var reading = req.body.reading;
 
-                                                                            await edit_split_eb_amounts(atten, reading, startmeter, date, total_amount, total_reading, eb_id, created_by, last_cal_date,type, function (response) {
+                                                                            await edit_split_eb_amounts(atten, reading, startmeter, date, total_amount, total_reading, eb_id, created_by, last_cal_date, type, function (response) {
                                                                                 console.log("Final Response1", response);
                                                                             });
                                                                         }
@@ -533,7 +533,7 @@ function edit_room_reading(req, res) {
                                                                                 room_id: old_room
                                                                             }
 
-                                                                            await edit_split_eb_amounts(attens, new_read, startmeter, new_date, total_amount, total_reading, eb_id, created_by, last_cal_date,type, function (response) {
+                                                                            await edit_split_eb_amounts(attens, new_read, startmeter, new_date, total_amount, total_reading, eb_id, created_by, last_cal_date, type, function (response) {
                                                                                 console.log("Old Response Final Response1", response);
                                                                             });
                                                                         }
