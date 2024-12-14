@@ -685,6 +685,10 @@ app.post('/add_expenses', (req, res) => {
     assets.add_expenses(req, res);
 })
 
+app.post('/add_expense_tag', (req, res) => {
+    assets.add_expense_tag(req, res);
+})
+
 app.post('/remove_expenses', (req, res) => {
     assets.remove_expenses(req, res);
 })
