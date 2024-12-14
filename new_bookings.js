@@ -232,4 +232,115 @@ function assign_booking(req, res) {
     })
 }
 
-module.exports = { add_booking, assign_booking }
+function add_confirm_checkout(req, res) {
+
+    const { id, hostel_id, checkout_date, advance_return, due_amount, comments, reinburse, roomRent } = req.body;
+
+    const created_by = req.user_details.id;
+
+    // Validate mandatory fields
+    if (!id || !hostel_id || !checkout_date || !due_amount || !advance_return) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
+    }
+
+    const sql1 = `SELECT * FROM hostel WHERE ID = ? AND Hostel_Id = ? AND isActive = 1 AND CheckoutDate IS NOT NULL`;
+    connection.query(sql1, [id, hostel_id], (err, hostelData) => {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to fetch hostel details", reason: err.message });
+        }
+
+        if (hostelData.length === 0) {
+            return res.status(404).json({ statusCode: 404, message: "Invalid User Details" });
+        }
+
+        const bed_id = hostelData[0].Bed;
+
+        // Handle non-reimbursement case
+        if (!reinburse || reinburse === 0) {
+            const sql2 = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
+            connection.query(sql2, [id], (err, invoiceData) => {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to fetch invoice details", reason: err.message });
+                }
+
+                if (invoiceData.length > 0) {
+                    return res.status(201).json({ statusCode: 201, message: "Kindly pay due amounts before checkout" });
+                }
+
+                finalizeCheckout(id, bed_id, advance_return, comments, res);
+            });
+        } else {
+            // Handle reimbursement case
+            const sql3 = `SELECT SUM(BalanceDue) AS totalBalanceDue FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
+            connection.query(sql3, [id], (err, result) => {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Error fetching balance due", reason: err.message });
+                }
+
+                const totalBalanceDue = result[0]?.totalBalanceDue || 0;
+
+                if (roomRent >= totalBalanceDue) {
+                    processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, created_by, checkout_date, bed_id, advance_return, comments, res);
+                } else {
+                    return res.status(201).json({ statusCode: 201, message: "Room rent is less than total balance due" });
+                }
+            });
+        }
+    });
+}
+
+// Helper function to finalize checkout
+function finalizeCheckout(id, bed_id, advance_return, comments, res) {
+    const sql = `
+        UPDATE hostel SET isActive = 0, return_advance = ?, checkout_comment = ? WHERE ID = ?;
+        UPDATE bed_details SET user_id = 0, isfilled = 0 WHERE id = ?;
+    `;
+    connection.query(sql, [advance_return, comments, id, bed_id], (err) => {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to finalize checkout", reason: err.message });
+        }
+        res.status(200).json({ statusCode: 200, message: "Checkout added successfully!" });
+    });
+}
+
+// Helper function to process invoices and finalize checkout
+function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, created_by, checkout_date, bed_id, advance_return, comments, res) {
+
+    const sql = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
+    connection.query(sql, [id], (err, invoices) => {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to fetch invoices for processing", reason: err.message });
+        }
+
+        const queries = invoices.map((invoice) => {
+
+            const { BalanceDue, id: invoiceId } = invoice;
+            const updateInvoice = `UPDATE invoicedetails SET BalanceDue = 0, PaidAmount = ?, Status = 'Success' WHERE id = ?`;
+            const insertTransaction = `
+                INSERT INTO transactions 
+                (user_id, invoice_id, amount, status, created_by, payment_type, payment_date, description, action) 
+                VALUES (?, ?, ?, 1, ?, 'CASH', ?, 'Invoice', 1)
+            `;
+            return new Promise((resolve, reject) => {
+                connection.query(updateInvoice, [BalanceDue, invoiceId], (err) => {
+                    if (err) return reject(err);
+
+                    connection.query(insertTransaction, [id, invoiceId, BalanceDue, created_by, checkout_date], (err) => {
+                        if (err) return reject(err);
+                        resolve();
+                    });
+                });
+            });
+        });
+
+        Promise.all(queries)
+            .then(() => {
+                finalizeCheckout(id, bed_id, advance_return, comments, res);
+            })
+            .catch((err) => {
+                res.status(201).json({ statusCode: 201, message: "Error processing invoices", reason: err.message });
+            });
+    });
+}
+
+module.exports = { add_booking, assign_booking, add_confirm_checkout }

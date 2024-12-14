@@ -2271,16 +2271,17 @@ function get_confirm_checkout(req, res) {
       return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message })
     } else if (data.length != 0) {
 
+      var user_details = {
+        advance_amount: data[0].AdvanceAmount,
+        comments: data[0].checkout_comment
+      }
+
       var sql2 = "SELECT * FROM invoicedetails WHERE hos_user_id=?";
       connection.query(sql2, [id], function (err, inv_data) {
         if (err) {
           return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message })
         } else if (inv_data.length != 0) {
 
-          var user_details = {
-            advance_amount: data[0].AdvanceAmount,
-            comments: data[0].checkout_comment
-          }
 
           const bill_details = inv_data.map(row => ({
             invoiceid: row.Invoices,
@@ -2290,7 +2291,7 @@ function get_confirm_checkout(req, res) {
           return res.status(200).json({ statusCode: 200, message: "Success", bill_details: bill_details, checkout_details: user_details });
 
         } else {
-          return res.status(200).json({ statusCode: 200, message: "No Due Amounts", bill_details: [] })
+          return res.status(200).json({ statusCode: 200, message: "No Due Amounts", bill_details: [], checkout_details: user_details })
         }
       })
     } else {
@@ -2300,113 +2301,113 @@ function get_confirm_checkout(req, res) {
 
 }
 
-function add_confirm_checkout(req, res) {
+// function add_confirm_checkout(req, res) {
 
-  var { id, hostel_id, checkout_date, advance_return, due_amount, comments, reinburse } = req.body;
+//   var { id, hostel_id, checkout_date, advance_return, due_amount, comments, reinburse } = req.body;
 
-  var created_by = req.user_details.id;
+//   var created_by = req.user_details.id;
 
-  if (!id || !hostel_id || !checkout_date || !due_amount || !advance_return) {
-    return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
-  }
+//   if (!id || !hostel_id || !checkout_date || !due_amount || !advance_return) {
+//     return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+//   }
 
-  var sql1 = "SELECT * FROM hostel WHERE ID=? AND Hostel_Id=? AND isActive=1 AND CheckoutDate !='null'";
-  connection.query(sql1, [id, hostel_id], function (err, data) {
-    if (err) {
-      return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message })
-    } else if (data.length != 0) {
+//   var sql1 = "SELECT * FROM hostel WHERE ID=? AND Hostel_Id=? AND isActive=1 AND CheckoutDate !='null'";
+//   connection.query(sql1, [id, hostel_id], function (err, data) {
+//     if (err) {
+//       return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message })
+//     } else if (data.length != 0) {
 
-      var bed_id = data[0].Bed;
+//       var bed_id = data[0].Bed;
 
-      if (!reinburse || reinburse == 0) {
+//       if (!reinburse || reinburse == 0) {
 
-        var sql2 = "SELECT * FROM invoicedetails WHERE hos_user_id=? AND BalanceDue !=0  AND invoice_status=1";
-        connection.query(sql2, [id], function (err, inv_data) {
-          if (err) {
-            return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message })
-          } else if (inv_data.length == 0) {
+//         var sql2 = "SELECT * FROM invoicedetails WHERE hos_user_id=? AND BalanceDue !=0  AND invoice_status=1";
+//         connection.query(sql2, [id], function (err, inv_data) {
+//           if (err) {
+//             return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message })
+//           } else if (inv_data.length == 0) {
 
-            var sql3 = "UPDATE hostel SET isActive=0,return_advance='" + advance_return + "',checkout_comment='" + comments + "' WHERE ID=" + id + ";UPDATE bed_details SET user_id=0,isfilled=0 WHERE id=" + bed_id + "";
-            connection.query(sql3, function (err, up_res) {
-              if (err) {
-                return res.status(201).json({ statusCode: 201, message: "Unable to Checkout User Details", reason: err.message })
-              } else {
-                return res.status(200).json({ statusCode: 200, message: "Checkout Added Successfully!" })
-              }
-            })
-          } else {
-            return res.status(201).json({ statusCode: 201, message: "Kindly Pay Due Amounts" })
-          }
-        })
-      } else {
+//             var sql3 = "UPDATE hostel SET isActive=0,return_advance='" + advance_return + "',checkout_comment='" + comments + "' WHERE ID=" + id + ";UPDATE bed_details SET user_id=0,isfilled=0 WHERE id=" + bed_id + "";
+//             connection.query(sql3, function (err, up_res) {
+//               if (err) {
+//                 return res.status(201).json({ statusCode: 201, message: "Unable to Checkout User Details", reason: err.message })
+//               } else {
+//                 return res.status(200).json({ statusCode: 200, message: "Checkout Added Successfully!" })
+//               }
+//             })
+//           } else {
+//             return res.status(201).json({ statusCode: 201, message: "Kindly Pay Due Amounts" })
+//           }
+//         })
+//       } else {
 
-        var sql2 = "SELECT SUM(BalanceDue) AS totalBalanceDue FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status=1";
-        connection.query(sql2, [id], function (err, results) {
-          if (err) {
-            console.error("Error fetching balance due:", err);
-            return res.status(201).json({ statusCode: 201, message: "Error fetching balance due", reason: err.message })
-          }
+//         var sql2 = "SELECT SUM(BalanceDue) AS totalBalanceDue FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status=1";
+//         connection.query(sql2, [id], function (err, results) {
+//           if (err) {
+//             console.error("Error fetching balance due:", err);
+//             return res.status(201).json({ statusCode: 201, message: "Error fetching balance due", reason: err.message })
+//           }
 
-          const totalBalanceDue = results[0]?.totalBalanceDue || 0;
+//           const totalBalanceDue = results[0]?.totalBalanceDue || 0;
 
-          if (roomRent >= totalBalanceDue) {
+//           if (roomRent >= totalBalanceDue) {
 
-            var sql2 = "SELECT * FROM invoicedetails WHERE hos_user_id=? AND BalanceDue !=0  AND invoice_status=1";
-            connection.query(sql2, [id], function (err, inv_data) {
-              if (err) {
-                return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message })
-              } else if (inv_data.length != 0) {
+//             var sql2 = "SELECT * FROM invoicedetails WHERE hos_user_id=? AND BalanceDue !=0  AND invoice_status=1";
+//             connection.query(sql2, [id], function (err, inv_data) {
+//               if (err) {
+//                 return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message })
+//               } else if (inv_data.length != 0) {
 
-                for (let i = 0; i < inv_data.length; i++) {
+//                 for (let i = 0; i < inv_data.length; i++) {
 
-                  var c_bal = inv_data[i].BalanceDue;
-                  var invoice_id = inv_data[i].id;
+//                   var c_bal = inv_data[i].BalanceDue;
+//                   var invoice_id = inv_data[i].id;
 
-                  var sql2 = "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=?,Status=? WHERE id=?";
-                  connection.query(sql2, [c_bal, c_bal, "Success", id], function (up_err, up_res) {
-                    if (up_err) {
-                      response.status(201).json({ message: "Unable to Update User Details" });
-                    } else {
+//                   var sql2 = "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=?,Status=? WHERE id=?";
+//                   connection.query(sql2, [c_bal, c_bal, "Success", id], function (up_err, up_res) {
+//                     if (up_err) {
+//                       response.status(201).json({ message: "Unable to Update User Details" });
+//                     } else {
 
-                      var sql3 = "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by,payment_type,payment_date,description,action) VALUES (?,?,?,1,?,?,?,'Invoice',1)";
-                      connection.query(sql3, [id, invoice_id, c_bal, created_by, "CASH", checkout_date], function (ins_err, ins_res) {
-                        if (ins_err) {
-                          response.status(201).json({ message: "Unable to Add Transactions Details", });
-                        } else {
-                        }
-                      })
-                    }
-                  })
-                }
+//                       var sql3 = "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by,payment_type,payment_date,description,action) VALUES (?,?,?,1,?,?,?,'Invoice',1)";
+//                       connection.query(sql3, [id, invoice_id, c_bal, created_by, "CASH", checkout_date], function (ins_err, ins_res) {
+//                         if (ins_err) {
+//                           response.status(201).json({ message: "Unable to Add Transactions Details", });
+//                         } else {
+//                         }
+//                       })
+//                     }
+//                   })
+//                 }
 
-                var sql3 = "UPDATE hostel SET isActive=0,return_advance='" + advance_return + "',checkout_comment='" + comments + "' WHERE ID=" + id + ";UPDATE bed_details SET user_id=0,isfilled=0 WHERE id=" + bed_id + "";
-                connection.query(sql3, function (err, up_res) {
-                  if (err) {
-                    return res.status(201).json({ statusCode: 201, message: "Unable to Checkout User Details", reason: err.message })
-                  } else {
-                    return res.status(200).json({ statusCode: 200, message: "Checkout Added Successfully!" })
-                  }
-                })
+//                 var sql3 = "UPDATE hostel SET isActive=0,return_advance='" + advance_return + "',checkout_comment='" + comments + "' WHERE ID=" + id + ";UPDATE bed_details SET user_id=0,isfilled=0 WHERE id=" + bed_id + "";
+//                 connection.query(sql3, function (err, up_res) {
+//                   if (err) {
+//                     return res.status(201).json({ statusCode: 201, message: "Unable to Checkout User Details", reason: err.message })
+//                   } else {
+//                     return res.status(200).json({ statusCode: 200, message: "Checkout Added Successfully!" })
+//                   }
+//                 })
 
-              } else {
-                return res.status(201).json({ statusCode: 201, message: "" })
-              }
-            })
+//               } else {
+//                 return res.status(201).json({ statusCode: 201, message: "" })
+//               }
+//             })
 
-          } else {
-            console.error("Error: Room rent is less than or equal to total balance due.");
-            return res.status(201).json({ statusCode: 201, message: "Room rent is less than to total balance due" })
-          }
-        });
+//           } else {
+//             console.error("Error: Room rent is less than or equal to total balance due.");
+//             return res.status(201).json({ statusCode: 201, message: "Room rent is less than to total balance due" })
+//           }
+//         });
 
-      }
+//       }
 
-    } else {
-      return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
-    }
-  })
+//     } else {
+//       return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+//     }
+//   })
 
-}
+// }
 
 function checkout_list(req, res) {
 
@@ -2553,6 +2554,5 @@ module.exports = {
   delete_check_out,
   available_checkout_users,
   available_beds,
-  get_confirm_checkout,
-  add_confirm_checkout
+  get_confirm_checkout
 };
