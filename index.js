@@ -685,6 +685,10 @@ app.post('/add_expenses', (req, res) => {
     assets.add_expenses(req, res);
 })
 
+app.post('/add_expense_tag', (req, res) => {
+    assets.add_expense_tag(req, res);
+})
+
 app.post('/remove_expenses', (req, res) => {
     assets.remove_expenses(req, res);
 })
@@ -916,12 +920,16 @@ app.post('/delete_booking', (req, res) => {
 });
 
 // Assign Booking
+// app.post('/assign_booking', (req, res) => {
+//     bookings.assign_booking(req, res)
+// });
+
 app.post('/assign_booking', (req, res) => {
-    bookings.assign_booking(req, res)
+    newBookings.assign_booking(req, res)
 });
 
 // Customer Eb Reading
-app.get('/customer_readings', (req, res) => {
+app.post('/customer_readings', (req, res) => {
     invoiceQueries.customer_readings(req, res)
 });
 
@@ -950,10 +958,10 @@ app.post('/get/confirm_checkout', (req, res) => {
 });
 
 app.post('/add/confirm_checkout', (req, res) => {
-    userQueries.add_confirm_checkout(req, res)
+    newBookings.add_confirm_checkout(req, res)
 });
 
-app.get('/checkout_list', (req, res) => {
+app.post('/checkout_list', (req, res) => {
     userQueries.checkout_list(req, res)
 });
 
@@ -1144,3 +1152,14 @@ app.post('/settings/all_customer_list', amen_settings_router.all_customer_list)
 app.post('/settings/remove_assigned_amenitie', amen_settings_router.remove_assigned_amenitie)
 
 app.post('/settings/assign_amenity', amen_settings_router.assign_amenity)
+
+
+// Mobile API
+
+var twofactor_routes = require('./2factor/otp')
+
+app.post('/users/login', twofactor_routes.user_login)
+
+app.post('/users/verify_otp', twofactor_routes.verify_otp)
+
+app.post('/users/dashborad', twofactor_routes.dashborad)

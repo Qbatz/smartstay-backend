@@ -397,11 +397,12 @@ function input_validations(data) {
 }
 
 function expense_validation(data) {
-    if (!data.asset_id) {
-        return { message: "Please Add Asset Name", statusCode: 201 };
-    } else if (!data.vendor_id) {
-        return { message: "Please Add Vendor Details", statusCode: 201 };
-    } else if (!data.category_id) {
+    // if (!data.asset_id) {
+    //     return { message: "Please Add Asset Name", statusCode: 201 };
+    // } else if (!data.vendor_id) {
+    //     return { message: "Please Add Vendor Details", statusCode: 201 };
+    // } else 
+    if (!data.category_id) {
         return { message: "Please Add Category", statusCode: 201 };
     } else if (!data.purchase_date) {
         return { message: "Please Add Purchase Date", statusCode: 201 };
@@ -422,76 +423,82 @@ function add_expenses(req, res) {
 
     var data = req.body;
 
+    var hostel_id = data.hostel_id;
+
+    if (!hostel_id) {
+        return res.json(201).json({ statusCode: 201, message: "Please Add Hostel Details" })
+    }
+
     var validationResult = expense_validation(data);
 
     if (validationResult.statusCode == 200) {
 
         // validate vendor id
-        var sql1 = "SELECT * FROM Vendor WHERE id=? AND Status=1";
-        connection.query(sql1, [data.vendor_id], (ven_err, ven_res) => {
-            if (ven_err) {
-                return res.status(201).json({ message: "Unable to Get Vendor Details", statusCode: 201 })
-            } else if (ven_res.length != 0) {
+        // var sql1 = "SELECT * FROM Vendor WHERE id=? AND Status=1";
+        // connection.query(sql1, [data.vendor_id], (ven_err, ven_res) => {
+        //     if (ven_err) {
+        //         return res.status(201).json({ message: "Unable to Get Vendor Details", statusCode: 201 })
+        //     } else if (ven_res.length != 0) {
 
-                // Check asset ID
-                var sql2 = "SELECT * FROM assets WHERE id=? AND status=1";
-                connection.query(sql2, [data.asset_id], (as_err, as_res) => {
-                    if (as_err) {
-                        return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
-                    } else if (as_res.length != 0) {
+        //         // Check asset ID
+        //         var sql2 = "SELECT * FROM assets WHERE id=? AND status=1";
+        //         connection.query(sql2, [data.asset_id], (as_err, as_res) => {
+        //             if (as_err) {
+        //                 return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
+        //             } else if (as_res.length != 0) {
 
-                        var purchase_amount = data.unit_count * data.unit_amount;
+        var purchase_amount = data.unit_count * data.unit_amount;
 
-                        if (data.id) {
+        if (data.id) {
 
-                            if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_edit == 1)) {
+            if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_edit == 1)) {
 
-                                // Update Expenses
-                                var sql3 = "SELECT * FROM expenses WHERE id=?";
-                                connection.query(sql3, [data.id], (exp_err, exp_res) => {
-                                    if (exp_err) {
-                                        return res.status(201).json({ message: "Unable to Get Expenses Details", statusCode: 201 })
-                                    } else if (exp_res.length != 0) {
+                // Update Expenses
+                var sql3 = "SELECT * FROM expenses WHERE id=? AND hostel_id=?";
+                connection.query(sql3, [data.id, hostel_id], (exp_err, exp_res) => {
+                    if (exp_err) {
+                        return res.status(201).json({ message: "Unable to Get Expenses Details", statusCode: 201 })
+                    } else if (exp_res.length != 0) {
 
-                                        var sql4 = "UPDATE expenses SET vendor_id=?,asset_id=?,category_id=?,purchase_date=?,unit_count=?,unit_amount=?,purchase_amount=?,description=?,updated_by=? WHERE id=?";
-                                        connection.query(sql4, [data.vendor_id, data.asset_id, data.category_id, data.purchase_date, data.unit_count, data.unit_amount, purchase_amount, data.description, user_id, data.id], (up_err, up_res) => {
-                                            if (up_err) {
-                                                return res.status(201).json({ message: "Unable to Update Expenses Details", statusCode: 201 })
-                                            } else {
-                                                return res.status(200).json({ message: "Successfully Updated Expenses Details", statusCode: 200 })
-                                            }
-                                        })
-                                    } else {
-                                        return res.status(201).json({ message: "Invalid Espenses Details", statusCode: 201 })
-                                    }
-                                })
+                        var sql4 = "UPDATE expenses SET category_id=?,purchase_date=?,unit_count=?,unit_amount=?,purchase_amount=?,description=?,updated_by=? WHERE id=?";
+                        connection.query(sql4, [data.category_id, data.purchase_date, data.unit_count, data.unit_amount, purchase_amount, data.description, user_id, data.id], (up_err, up_res) => {
+                            if (up_err) {
+                                return res.status(201).json({ message: "Unable to Update Expenses Details", statusCode: 201 })
                             } else {
-                                res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+                                return res.status(200).json({ message: "Successfully Updated Expenses Details", statusCode: 200 })
                             }
-                        } else {
-                            if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_create == 1)) {
-
-                                // Add Expense
-                                var sql4 = "INSERT INTO expenses (vendor_id,asset_id,category_id,purchase_date,unit_count,unit_amount,purchase_amount,description,created_by) VALUES (?,?,?,?,?,?,?,?,?)";
-                                connection.query(sql4, [data.vendor_id, data.asset_id, data.category_id, data.purchase_date, data.unit_count, data.unit_amount, purchase_amount, data.description, user_id], (ins_err, ins_res) => {
-                                    if (ins_err) {
-                                        return res.status(201).json({ message: "Unable to Add Expenses Details", statusCode: 201 })
-                                    } else {
-                                        return res.status(200).json({ message: "Successfully Add Expenses Details", statusCode: 200 })
-                                    }
-                                })
-                            } else {
-                                res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
-                            }
-                        }
+                        })
                     } else {
-                        return res.status(201).json({ message: "Invalid Or Inactive Asset Details", statusCode: 201 })
+                        return res.status(201).json({ message: "Invalid Espenses Details", statusCode: 201 })
                     }
                 })
             } else {
-                return res.status(201).json({ message: "Invalid Or Inactive Vendor Details", statusCode: 201 })
+                res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
             }
-        })
+        } else {
+            if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_create == 1)) {
+
+                // Add Expense
+                var sql4 = "INSERT INTO expenses (category_id,purchase_date,unit_count,unit_amount,purchase_amount,description,created_by,hostel_id) VALUES (?,?,?,?,?,?,?,?)";
+                connection.query(sql4, [data.category_id, data.purchase_date, data.unit_count, data.unit_amount, purchase_amount, data.description, user_id, hostel_id], (ins_err, ins_res) => {
+                    if (ins_err) {
+                        return res.status(201).json({ message: "Unable to Add Expenses Details", statusCode: 201 })
+                    } else {
+                        return res.status(200).json({ message: "Successfully Add Expenses Details", statusCode: 200 })
+                    }
+                })
+            } else {
+                res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+            }
+        }
+        //             } else {
+        //                 return res.status(201).json({ message: "Invalid Or Inactive Asset Details", statusCode: 201 })
+        //             }
+        //         })
+        //     } else {
+        //         return res.status(201).json({ message: "Invalid Or Inactive Vendor Details", statusCode: 201 })
+        //     }
+        // })
     } else {
         res.status(201).send(validationResult);
     }
@@ -543,7 +550,7 @@ function all_expenses(req, res) {
 
     if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_view == 1)) {
 
-        var sql1 = "SELECT ex.*,ven.Vendor_Name,ven.Vendor_profile,ass.asset_name,ass.brand_name,exca.category_Name FROM expenses AS ex JOIN Vendor AS ven ON ven.id=ex.vendor_id JOIN assets AS ass ON ass.id=ex.asset_id JOIN Expense_Category_Name AS exca ON exca.id=ex.category_id WHERE ex.status=1 AND ass.status=1 AND ex.created_by=? ORDER BY ex.id DESC";
+        var sql1 = "SELECT ex.*,ven.Vendor_Name,ven.Vendor_profile,ass.asset_name,ass.brand_name,exca.category_Name FROM expenses AS ex LEFT JOIN Vendor AS ven ON ven.id=ex.vendor_id LEFT JOIN assets AS ass ON ass.id=ex.asset_id JOIN Expense_Category_Name AS exca ON exca.id=ex.category_id WHERE ex.status=1 AND ass.status=1 AND ex.created_by=? ORDER BY ex.id DESC";
         connection.query(sql1, [user_id], (err, data) => {
             if (err) {
                 return res.status(201).json({ message: "Unable to Get Expenses Details", statusCode: 201 })
@@ -606,5 +613,33 @@ function all_reports(req, res) {
     }
 }
 
+function add_expense_tag(req, res) {
 
-module.exports = { all_assets, add_asset, remove_asset, asseign_asset, add_expenses, remove_expenses, all_expenses, all_reports }
+    var { id, asset_id, hostel_id } = req.body;
+
+    if (!id || !asset_id || !hostel_id) {
+        return res.status(201).json({ message: "Missing Mandatory Fields", statusCode: 201 })
+    }
+
+    var sql1 = "SELECT * FROM expenses WHERE id=? AND status=1 AND hostel_id=?";
+    connection.query(sql1, [id, hostel_id], (err, ch_res) => {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get Expense Details", reason: err.message })
+        } else if (ch_res.length != 0) {
+
+            var up_query = "UPDATE expenses SET asset_id=? WHERE id=?";
+            connection.query(up_query, [asset_id, hostel_id], function (err, data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Update Expense Details", reason: err.message })
+                } else {
+                    return res.status(200).json({ statusCode: 200, message: "Expenses Tag Updated Successfully!" })
+                }
+            })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Expense Details" })
+        }
+    })
+
+}
+
+module.exports = { all_assets, add_asset, remove_asset, asseign_asset, add_expenses, remove_expenses, all_expenses, all_reports, add_expense_tag }

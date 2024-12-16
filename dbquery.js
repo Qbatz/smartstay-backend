@@ -189,7 +189,10 @@ const queries = [
 
     "ALTER TABLE `bookings` ADD COLUMN `profile` VARCHAR(255) NULL DEFAULT 0 AFTER `address`;",
 
-    "ALTER TABLE `hostel` ADD COLUMN `req_date` DATE NULL AFTER `checkout_comment`;"
+    "ALTER TABLE `hostel` ADD COLUMN `req_date` DATE NULL AFTER `checkout_comment`;",
+
+    "ALTER TABLE `hostel` ADD COLUMN `return_advance` BIGINT(20) NULL DEFAULT 0 AFTER `req_date`;"
+
 ];
 
 queries.forEach(executeQuery);

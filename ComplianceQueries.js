@@ -167,10 +167,17 @@ function GetComplianceList(connection, response, request) {
     var role_permissions = request.role_permissions;
     var is_admin = request.is_admin;
 
+    var hostel_id = request.body.hostel_id;
+
+    if (!hostel_id) {
+        return response.status(201).json({ statusCode: 201, message: 'Missing Hostel Details' });
+    }
+
     if (is_admin == 1 || (role_permissions[13] && role_permissions[13].per_view == 1)) {
 
-        const query1 = `SELECT comp.*,ct.complaint_name,hf.floor_name AS floor_name,hr.Room_Id AS room_name FROM hosteldetails hstlDetails inner join compliance comp on comp.Hostel_id=hstlDetails.id JOIN complaint_type AS ct ON ct.id=comp.Complainttype JOIN Hostel_Floor AS hf ON hf.floor_id=comp.Floor_id AND hf.hostel_id=comp.Hostel_id JOIN hostelrooms AS hr ON hr.id=comp.Room WHERE hstlDetails.created_By IN (${show_ids}) ORDER BY comp.ID DESC`;
-        connection.query(query1, function (error, hostelData) {
+        // const query1 = `SELECT comp.*,ct.complaint_name,hf.floor_name AS floor_name,hr.Room_Id AS room_name FROM hosteldetails hstlDetails inner join compliance comp on comp.Hostel_id=hstlDetails.id JOIN complaint_type AS ct ON ct.id=comp.Complainttype JOIN Hostel_Floor AS hf ON hf.floor_id=comp.Floor_id AND hf.hostel_id=comp.Hostel_id JOIN hostelrooms AS hr ON hr.id=comp.Room WHERE hstlDetails.created_By IN (${show_ids}) ORDER BY comp.ID DESC`;
+        var sql1 = "SELECT comp.*,ct.complaint_name,hf.floor_name AS floor_name,hr.Room_Id AS room_name,cr.first_name AS assigner_name FROM hosteldetails hstlDetails inner join compliance comp on comp.Hostel_id=hstlDetails.id JOIN complaint_type AS ct ON ct.id=comp.Complainttype LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=comp.Floor_id AND hf.hostel_id=comp.Hostel_id LEFT JOIN hostelrooms AS hr ON hr.id=comp.Room LEFT JOIN createaccount AS cr ON cr.id=comp.Assign  WHERE hstlDetails.ID =? ORDER BY comp.ID DESC;"
+        connection.query(query1, [hostel_id], function (error, hostelData) {
             if (error) {
                 console.error(error);
                 response.status(403).json({ message: 'Error fetching hostel data' });
