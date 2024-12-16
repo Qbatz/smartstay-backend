@@ -191,6 +191,36 @@ async function generateInvoiceForDate(inv_data) {
     }
 }
 
+nodeCron.schedule('0 0 * * *', () => {
+
+    const today = moment().format('YYYY-MM-DD');
+
+    const sql1 = `SELECT * FROM hostel WHERE CheckoutDate='${today}' AND isActive=1;`;
+
+    connection.query(sql1, function (err, data) {
+        if (err) {
+            console.log(err.message, "Unable to Get Checkout Details");
+        } else if (data.length != 0) {
+
+            data.forEach(user_data => {
+
+                var user_id = user_data.ID;
+
+                var sql2 = "SELECT * FROM invoicedetails WHERE hos_user_id=? AND invoice_status=1";
+                connection.query(sql2, [user_id], function (inv_data) {
+                    if (err) {
+                        console.log("Error Fetching Invoice Details", err.message);
 
 
+                    }
+                })
 
+            });
+
+
+        } else {
+            console.log("" + today + " No Checkout Date");
+
+        }
+    })
+});

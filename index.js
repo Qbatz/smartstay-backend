@@ -961,7 +961,7 @@ app.post('/add/confirm_checkout', (req, res) => {
     newBookings.add_confirm_checkout(req, res)
 });
 
-app.get('/checkout_list', (req, res) => {
+app.post('/checkout_list', (req, res) => {
     userQueries.checkout_list(req, res)
 });
 
