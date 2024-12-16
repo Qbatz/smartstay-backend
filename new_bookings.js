@@ -161,7 +161,7 @@ function assign_booking(req, res) {
 
             if (email_id != 'NA') {
 
-                var sql3 = "SELECT * FROM hostel WHERE email_id=? AND isActive=1";
+                var sql3 = "SELECT * FROM hostel WHERE Email=? AND isActive=1";
                 connection.query(sql3, [email_id], function (err, em_data) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Get Email Details", reason: err.message });
