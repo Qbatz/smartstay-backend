@@ -340,12 +340,11 @@ function change_details(req, res) {
         } else if (data.length != 0) {
 
             if (type == 'assign') {
-                var sql2 = "UPDATE compliance SET Status=? WHERE ID=?";
+                var sql2 = `UPDATE compliance SET Status= '${status}' WHERE ID= ${id} `;
             } else {
-                var sql2 = "UPDATE compliance SET Assign=? WHERE ID=?";
+                var sql2 = `UPDATE compliance SET Assign= '${assigner}' WHERE ID= ${id} `;
             }
-
-            connection.query(sql2, [id], function (err, up_data) {
+            connection.query(sql2, function (err, up_data) {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Update Compliance Details", reason: err.message })
                 } else {
