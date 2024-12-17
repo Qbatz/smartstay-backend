@@ -282,7 +282,7 @@ app.post('/compliance/add-details', (request, response) => {
 
 app.post('/compliance/change_details', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    complianceQueries.change_details(connection, request, response)
+    complianceQueries.change_details(request, response)
 })
 
 
