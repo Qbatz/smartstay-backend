@@ -191,7 +191,9 @@ const queries = [
 
     "ALTER TABLE `hostel` ADD COLUMN `req_date` DATE NULL AFTER `checkout_comment`;",
 
-    "ALTER TABLE `hostel` ADD COLUMN `return_advance` BIGINT(20) NULL DEFAULT 0 AFTER `req_date`;"
+    "ALTER TABLE `hostel` ADD COLUMN `return_advance` BIGINT(20) NULL DEFAULT 0 AFTER `req_date`;",
+
+    "CREATE TABLE `contacts` (`id` INT NOT NULL AUTO_INCREMENT,`user_name` VARCHAR(255) NULL,`guardian` VARCHAR(255) NULL,`mob_no` BIGINT(20) NULL,`address` VARCHAR(255) NULL,`user_id` BIGINT(20) NULL,`status` INT NULL DEFAULT 1,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));"
 
 ];
 

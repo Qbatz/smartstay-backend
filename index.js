@@ -1153,6 +1153,15 @@ app.post('/settings/remove_assigned_amenitie', amen_settings_router.remove_assig
 
 app.post('/settings/assign_amenity', amen_settings_router.assign_amenity)
 
+app.post('/settings/assign_amenity', amen_settings_router.assign_amenity)
+
+var contacts_router = require('./new_pages/contacts')
+
+app.post('/contacts/add_contact', contacts_router.add_contact)
+
+app.post('/contacts/delete_contact', contacts_router.delete_contact)
+
+
 
 // Mobile API
 
