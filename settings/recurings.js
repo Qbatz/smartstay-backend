@@ -5,7 +5,7 @@ exports.add_recuring = (req, res) => {
     var { type, hostel_id, start_date, end_date, am_id } = req.body;
 
     var duration = req.body.duration || 1;
-    var recure = req.body.recure || 1;
+    var recure = req.body.recure;
 
     if (!type || !hostel_id || !start_date || !end_date) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })

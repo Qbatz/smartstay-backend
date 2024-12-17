@@ -1225,7 +1225,17 @@ function customer_details(req, res) {
                             if (err) {
                               return res.status(201).json({ message: "Unable to Get Eb Details", statusCode: 201 });
                             }
-                            res.status(200).json({ statusCode: 200, message: "View Customer Details", data: user_data, eb_data: eb_data, invoice_details: inv_res, transactions: trans_res, all_amenities: am_res, comp_data: comp_data });
+
+                            // Contact Details
+
+                            var sql8 = "SELECT * FROM contacts WHERE user_id=? AND status=1";
+                            connection.query(sql8, [user_id], function (err, Data) {
+                              if (err) {
+                                return res.status(201).json({ message: "Unable to Get Contact Details", statusCode: 201 });
+                              } else {
+                                res.status(200).json({ statusCode: 200, message: "View Customer Details", data: user_data, eb_data: eb_data, invoice_details: inv_res, transactions: trans_res, all_amenities: am_res, comp_data: comp_data, contact_details: Data });
+                              }
+                            })
                           })
                         }
                       });
