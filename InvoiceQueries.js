@@ -2312,14 +2312,20 @@ function getEbStart(connection, response, request) {
     var role_permissions = request.role_permissions;
     var is_admin = request.is_admin;
 
+    var hostel_id=request.body.hostel_id;
+
     if (is_admin == 1 || (role_permissions[12] && role_permissions[12].per_view == 1)) {
 
-        let query = "SELECT hos.Name as hoatel_Name,eb.id as eb_Id,hos.id as hostel_Id,hos.profile,eb.hostel_id,eb.floor_id,eb.room_id,eb.total_amount,eb.total_reading,hf.floor_name,hr.Room_Id,eb.date,eb.reading FROM room_readings eb JOIN hosteldetails hos ON hos.id = eb.hostel_id LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=eb.floor_id AND hf.hostel_id=eb.hostel_id JOIN hostelrooms AS hr ON hr.id=eb.room_id where hos.created_By IN (" + show_ids + ") AND eb.status=1;"
-        connection.query(query, function (error, data) {
+        if(!hostel_id){
+            return response.status(201).json({statusCode:201,message:"Missing Hostel Id"})
+        }
+
+        let query = "SELECT hos.Name as hoatel_Name,eb.id as eb_Id,hos.id as hostel_Id,hos.profile,eb.hostel_id,eb.floor_id,eb.room_id,eb.total_amount,eb.total_reading,hf.floor_name,hr.Room_Id,eb.date,eb.reading FROM room_readings eb JOIN hosteldetails hos ON hos.id = eb.hostel_id LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=eb.floor_id AND hf.hostel_id=eb.hostel_id JOIN hostelrooms AS hr ON hr.id=eb.room_id where hos.created_By IN (" + show_ids + ") AND eb.hostel_id=? AND eb.status=1;"
+        connection.query(query,[hostel_id], function (error, data) {
             if (error) {
-                response.status(203).json({ message: 'not connected' })
+                response.status(203).json({statusCode:201, message: 'not connected' })
             } else {
-                response.status(200).json({ data: data })
+                response.status(200).json({statusCode:200, data: data})
             }
         })
     } else {

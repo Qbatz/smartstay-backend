@@ -450,7 +450,7 @@ app.get('/list/EbReading', (request, response) => {
     profileQueries.getEbReading(connection, response)
 })
 
-app.get('/list/Ebstartmeter', (request, response) => {
+app.post('/list/Ebstartmeter', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     invoiceQueries.getEbStart(connection, response, request)
 })
