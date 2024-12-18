@@ -10,7 +10,7 @@ function AddCompliance(connection, request, response) {
 
     var { User_id, date, Hostel_id, hostelname, Complainttype, Status, Assign, Bed, Description, Floor_id, Name, Room, id } = request.body;
 
-    if (!User_id || !date || !Hostel_id || !hostelname || !Complainttype || !Status) {
+    if (!User_id || !date || !Hostel_id || !hostelname || !Complainttype) {
         return response.status(201).json({ message: "Please Add Mandatory Fields", statusCode: 201 })
     }
 

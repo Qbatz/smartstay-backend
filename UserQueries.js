@@ -12,10 +12,8 @@ const { bed_details } = require("./PgQueries");
 
 function getUsers(connection, response, request) {
   // Get values in middleware
-  const userDetails = request.user_details;
   var role_permissions = request.role_permissions;
   var is_admin = request.is_admin;
-  var show_ids = request.show_ids;
 
   // var page = parseInt(request.body.page) || 1;
   // var limit = request.body.page_limit || 10;
@@ -25,9 +23,15 @@ function getUsers(connection, response, request) {
 
   if (is_admin == 1 || (role_permissions[4] && role_permissions[4].per_view == 1)) {
 
+    var hostel_id = request.body.hostel_id;
+
+    if (!hostel_id) {
+      return response.status(201).json({ statusCode: 201, message: "Missing Hostel Id" })
+    }
+
     // var sql1 = "SELECT COUNT(*) as totalItems FROM hostel WHERE created_by='" + userDetails.id + "' AND isActive=1;";
-    var query = "SELECT hstl.*,bd.bed_no AS Bed,hstl.Bed AS hstl_Bed,hsroom.Room_Id AS Rooms,hstl.Rooms AS hstl_Rooms,hsroom.id AS room_id,hsroom.Room_Id,DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,hstl.Hostel_Id AS user_hostel FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true LEFT JOIN country_list AS cl ON hstl.country_code=cl.country_code Left Join hostelrooms hsroom ON hsroom.Hostel_Id = hstlDetails.id and hsroom.Floor_Id = hstl.Floor and hsroom.id = hstl.Rooms LEFT JOIN bed_details AS bd ON bd.id=hstl.Bed  WHERE hstlDetails.created_By IN (" + show_ids + ") ORDER BY hstl.ID DESC";
-    connection.query(query, function (error, hostelData) {
+    var query = "SELECT hstl.*,bd.bed_no AS Bed,hstl.Bed AS hstl_Bed,hsroom.Room_Id AS Rooms,hstl.Rooms AS hstl_Rooms,hsroom.id AS room_id,hsroom.Room_Id,DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,hstl.Hostel_Id AS user_hostel FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true LEFT JOIN country_list AS cl ON hstl.country_code=cl.country_code Left Join hostelrooms hsroom ON hsroom.Hostel_Id = hstlDetails.id and hsroom.Floor_Id = hstl.Floor and hsroom.id = hstl.Rooms LEFT JOIN bed_details AS bd ON bd.id=hstl.Bed  WHERE hstl.Hostel_Id=? ORDER BY hstl.ID DESC";
+    connection.query(query, [hostel_id], function (error, hostelData) {
       if (error) {
         console.error(error);
         response.status(403).json({ message: "Error  hostel data" });
