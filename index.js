@@ -1163,6 +1163,7 @@ app.post('/contacts/delete_contact', contacts_router.delete_contact)
 
 app.post('/customers/reassign_bed', contacts_router.reassign_bed)
 
+app.post('/customers/all_contacts', contacts_router.all_contacts)
 
 // Mobile API
 

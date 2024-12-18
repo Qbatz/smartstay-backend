@@ -178,3 +178,31 @@ exports.reassign_bed = (req, res) => {
         }
     })
 }
+
+exports.all_contacts = (req, res) => {
+
+    var user_id = req.body.user_id;
+
+    if (!user_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing User Details" })
+    }
+
+    var sql = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
+    connection.query(sql, [user_id], function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Error Fetching User Details", reason: err.message })
+        } else if (data.length != 0) {
+
+            var sql2 = "SELECT * FROM contacts WHERE user_id=? AND status=1";
+            connection.query(sql2, [user_id], function (err, Data) {
+                if (err) {
+                    return res.status(201).json({ message: "Unable to Get Contact Details", statusCode: 201 });
+                } else {
+                    res.status(200).json({ statusCode: 200, message: "View Customer Details", contact_details: Data });
+                }
+            })
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+        }
+    })
+}
