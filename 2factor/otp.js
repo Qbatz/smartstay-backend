@@ -22,7 +22,7 @@ exports.user_login = (req, res) => {
             return res.status(201).json({ statusCode: 201, message: "Error Fetching User Details", reason: err.message });
         } else if (data.length != 0) {
 
-            var api_url = "https://2factor.in/API/V1/" + api_key + "/SMS/+" + new_mob + "/AUTOGEN/" + template_id + "";
+            var api_url = "https://2factor.in/API/V1/" + api_key + "/SMS/+" + new_mob + "/AUTOGEN3/" + template_id + "";
 
             console.log(api_url);
 
