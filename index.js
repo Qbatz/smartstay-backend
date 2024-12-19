@@ -911,7 +911,7 @@ app.post('/add_booking', upload.fields([{ name: 'profile', maxCount: 1 }]), (req
     newBookings.add_booking(req, res)
 });
 
-app.get('/all_bookings', (req, res) => {
+app.post('/all_bookings', (req, res) => {
     bookings.all_bookings(req, res)
 });
 

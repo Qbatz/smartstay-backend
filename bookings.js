@@ -237,24 +237,20 @@ function all_bookings(req, res) {
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
+    var hostel_id = req.body.hostel_id;
 
     if (is_admin == 1 || (role_permissions[5] && role_permissions[5].per_view == 1)) {
 
-        var sql1 =
-            "SELECT book.*,hst.Name AS hostel_name,hf.floor_name AS floor_name,hosroom.Room_Id AS room_name,bed.bed_no AS bed_name FROM bookings AS book LEFT JOIN hosteldetails AS hst ON hst.id=book.hostel_id LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=book.floor_id AND hf.hostel_id=book.hostel_id LEFT JOIN hostelrooms AS hosroom ON hosroom.id=book.room_id LEFT JOIN bed_details AS bed ON bed.id=book.bed_id WHERE book.created_by IN (?) AND book.status= true";
-        connection.query(sql1, [show_ids], function (err, data) {
+        if (!hostel_id) {
+            return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+        }
+
+        var sql1 = "SELECT book.*,hst.Name AS hostel_name,hf.floor_name AS floor_name,hosroom.Room_Id AS room_name,bed.bed_no AS bed_name FROM bookings AS book LEFT JOIN hosteldetails AS hst ON hst.id=book.hostel_id LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=book.floor_id AND hf.hostel_id=book.hostel_id LEFT JOIN hostelrooms AS hosroom ON hosroom.id=book.room_id LEFT JOIN bed_details AS bed ON bed.id=book.bed_id WHERE book.hostel_id=? AND book.status= true";
+        connection.query(sql1, [hostel_id], function (err, data) {
             if (err) {
-                return res
-                    .status(201)
-                    .json({ statusCode: 201, message: "Unable to Get Bookings" });
+                return res.status(201).json({ statusCode: 201, message: "Unable to Get Bookings" });
             } else {
-                return res
-                    .status(200)
-                    .json({
-                        statusCode: 200,
-                        message: "All Booking Details",
-                        bookings: data,
-                    });
+                return res.status(200).json({ statusCode: 200, message: "All Booking Details", bookings: data });
             }
         });
     } else {
