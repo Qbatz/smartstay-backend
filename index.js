@@ -939,7 +939,7 @@ app.post('/add_walkin-customer', (req, res) => {
 });
 
 // get walk-in customer_list
-app.get('/get_walkin-customer', (req, res) => {
+app.post('/get_walkin-customer', (req, res) => {
     userQueries.get_walk_in_customer_list(req, res)
 });
 
