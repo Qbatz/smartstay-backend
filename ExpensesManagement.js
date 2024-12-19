@@ -30,6 +30,12 @@ function AddExpense(request, response) {
     var role_permissions = request.role_permissions;
     var is_admin = request.is_admin;
 
+    var hostel_id = request.body.hostel_id;
+
+    if (!hostel_id) {
+        return response.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+    }
+
     // console.log("createdate", createdate);
     if (reqData) {
 
@@ -205,10 +211,7 @@ function AddExpense(request, response) {
                     var new_bank_id = reqData.bank_id;
                 }
 
-                let query = `INSERT INTO expenses ( vendor_id, asset_id, category_id, purchase_date, unit_count, unit_amount, purchase_amount, description, created_by,createdate,payment_mode,hostel_id,bank_id)
-VALUES
-  ('${reqData.vendor_id}', '${reqData.asset_id}', '${reqData.category_id}', '${purchase_date}', '${reqData.unit_count}', '${reqData.unit_amount}','${purchase_amount}', '${reqData.description}', ${createdBy}, '${createdate}','${reqData.payment_mode}','${reqData.hostel_id}','${new_bank_id}');
-`
+                let query = `INSERT INTO expenses ( vendor_id, asset_id, category_id, purchase_date, unit_count, unit_amount, purchase_amount, description, created_by,createdate,payment_mode,hostel_id,bank_id) VALUES ('${reqData.vendor_id}', '${reqData.asset_id}', '${reqData.category_id}', '${purchase_date}', '${reqData.unit_count}', '${reqData.unit_amount}','${purchase_amount}', '${reqData.description}', ${createdBy}, '${createdate}','${reqData.payment_mode}','${hostel_id}','${new_bank_id}');`
                 // console.log("query", query);
                 connection.query(query, function (insertErr, insertData) {
                     if (insertErr) {
@@ -247,8 +250,8 @@ VALUES
                                                             console.log("Purchase Amont is Greater than Balance Amount");
 
                                                         } else {
-                                                            var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,`desc`,type,status,createdby,edit_id) VALUES (?,?,?,?,?,?,?,?)";
-                                                            connection.query(sql4, [reqData.bank_id, purchase_date, purchase_amount, 'Expenses', 2, 1, createdBy, edit_id], function (err, ins_data) {
+                                                            var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,`desc`,type,status,createdby,edit_id,hostel_id) VALUES (?,?,?,?,?,?,?,?,?)";
+                                                            connection.query(sql4, [reqData.bank_id, purchase_date, purchase_amount, 'Expenses', 2, 1, createdBy, edit_id, hostel_id], function (err, ins_data) {
                                                                 if (err) {
                                                                     console.log(err, "Insert Transactions Error");
                                                                 } else {
@@ -425,7 +428,7 @@ function GetExpensesCategory(request, response) {
                     if (item.subcategory_Id && item.subcategory) {
                         category.subcategory.push({
                             subcategory_Id: item.subcategory_Id,
-                            cat_id:item.category_Id,
+                            cat_id: item.category_Id,
                             subcategory: item.subcategory
                         });
                     }
@@ -565,6 +568,12 @@ function GetHostelExpenses(request, response) {
     var start_date = request.body?.start_date ? moment(new Date(request.body.start_date)).format('YYYY-MM-DD') : null;
     var end_date = request.body?.end_date ? moment(new Date(request.body.end_date)).format('YYYY-MM-DD') : null;
 
+    var hostel_id = request.body.hostel_id;
+
+    if (!hostel_id) {
+        return response.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+    }
+
     // let query = `select expen.id,expen.category_id,expen.vendor_id,expen.asset_id,ven.Vendor_profile,expen.purchase_date,expen.unit_count,expen.unit_amount,expen.purchase_amount,expen.status,expen.description,expen.created_by,expen.createdate,expen.payment_mode,category.category_Name,ven.Vendor_Name,ast.asset_name from expenses expen
     // join Expense_Category_Name category on category.id = expen.category_id
     // join Vendor ven on ven.id = expen.vendor_id
@@ -574,14 +583,14 @@ function GetHostelExpenses(request, response) {
     if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_view === 1)) {
 
         let query = `SELECT expen.hostel_id,hos.Name as hostel_name,hos.email_id as hostel_email,hos.Address as hostel_address,hos.hostel_PhoneNo as hostel_phoneNo, expen.id, expen.category_id, expen.vendor_id, expen.asset_id, ven.Vendor_profile, expen.purchase_date, expen.unit_count, expen.unit_amount, expen.purchase_amount, expen.status, expen.description, expen.created_by, expen.createdate, expen.payment_mode,expen.bank_id, category.category_Name, ven.Vendor_Name, asname.asset_name,ban.acc_name,ban.acc_num 
-FROM expenses expen
-LEFT JOIN Expense_Category_Name category ON category.id = expen.category_id
-LEFT JOIN Vendor ven ON ven.id = expen.vendor_id
-LEFT JOIN assets ast ON ast.id = expen.asset_id
-LEFT JOIN asset_names asname ON asname.id=expen.asset_id
-LEFT JOIN hosteldetails hos ON hos.id = expen.hostel_id
-LEFT JOIN bankings ban ON ban.id=expen.bank_id
-WHERE expen.status = true AND expen.created_by IN (${show_ids})`;
+                    FROM expenses expen
+                    LEFT JOIN Expense_Category_Name category ON category.id = expen.category_id
+                    LEFT JOIN Vendor ven ON ven.id = expen.vendor_id
+                    LEFT JOIN assets ast ON ast.id = expen.asset_id
+                    LEFT JOIN asset_names asname ON asname.id=expen.asset_id
+                    LEFT JOIN hosteldetails hos ON hos.id = expen.hostel_id
+                    LEFT JOIN bankings ban ON ban.id=expen.bank_id
+                    WHERE expen.status = true AND expen.hostel_id=${hostel_id}`;
 
         if (asset_id) {
             query += ` AND expen.asset_id = ${asset_id}`;
@@ -626,7 +635,6 @@ WHERE expen.status = true AND expen.created_by IN (${show_ids})`;
 
         query += ` ORDER BY expen.id DESC`;
 
-        console.log("query", query);
         connection.query(query, function (err, data) {
             if (err) {
                 console.log("err", err);

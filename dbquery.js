@@ -199,7 +199,9 @@ const queries = [
 
     "ALTER TABLE `hostel` ADD COLUMN `reassign_date` DATE NULL AFTER `return_advance`;",
 
-    "ALTER TABLE `reassign_userdetails` ADD COLUMN `old_bed` BIGINT(20) NULL AFTER `old_room`;"
+    "ALTER TABLE `reassign_userdetails` ADD COLUMN `old_bed` BIGINT(20) NULL AFTER `old_room`;",
+
+    "ALTER TABLE `bank_transactions` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `description`;"
 ];
 
 queries.forEach(executeQuery);

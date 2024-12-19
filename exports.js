@@ -61,7 +61,7 @@ function export_customer(req, res) {
 
     }
 
-    connection.query(sql1, [show_ids], function (err, data) {
+    connection.query(sql1, [hostel_id], function (err, data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Unable to Get All Details" })
         } else if (data.length != 0) {
