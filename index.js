@@ -911,7 +911,7 @@ app.post('/add_booking', upload.fields([{ name: 'profile', maxCount: 1 }]), (req
     newBookings.add_booking(req, res)
 });
 
-app.get('/all_bookings', (req, res) => {
+app.post('/all_bookings', (req, res) => {
     bookings.all_bookings(req, res)
 });
 
@@ -939,7 +939,7 @@ app.post('/add_walkin-customer', (req, res) => {
 });
 
 // get walk-in customer_list
-app.get('/get_walkin-customer', (req, res) => {
+app.post('/get_walkin-customer', (req, res) => {
     userQueries.get_walk_in_customer_list(req, res)
 });
 
@@ -1064,7 +1064,7 @@ app.post('/add_staff_user', (req, res) => {
     roles.add_staff_user(req, res)
 })
 
-app.get('/get_all_staffs', (req, res) => {
+app.post('/get_all_staffs', (req, res) => {
     roles.get_all_staffs(req, res)
 })
 

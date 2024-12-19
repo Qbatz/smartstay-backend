@@ -202,11 +202,11 @@ function all_roles(req, res) {
     var show_ids = req.show_ids;
 
     var hostel_id = req.body.hostel_id;
-
     var is_admin = req.is_admin;
+
     if (is_admin == 1) {
 
-        var sql1 = "SELECT * FROM roles WHERE status=1 AND createdby IN (?) AND hostel_id=?";
+        var sql1 = "SELECT * FROM roles WHERE status=1 AND createdby IN (?) AND hostel_id=? ORDER BY id DESC";
         connection.query(sql1, [show_ids, hostel_id], function (err, data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Role Details" })
@@ -343,7 +343,11 @@ function get_all_staffs(req, res) {
 
     if (is_admin == 1) {
 
-        var sql1 = "SELECT ca.id,ca.first_name,ca.email_Id,ca.mobileNo,ca.role_id,ro.role_name,ca.description,ro.hostel_id FROM createaccount AS ca JOIN roles AS ro ON ca.role_id=ro.id WHERE ca.createdby=? AND ca.user_status=1;";
+        if (!hostel_id) {
+            return res.status(201).json({ statusCode: 201, message: "Missing Hostel Id" })
+        }
+
+        var sql1 = "SELECT ca.id,ca.first_name,ca.email_Id,ca.mobileNo,ca.role_id,ro.role_name,ca.description,ro.hostel_id FROM createaccount AS ca JOIN roles AS ro ON ca.role_id=ro.id WHERE ro.hostel_id=? AND ca.user_status=1 AND ro.status=1 ORDER BY ca.id DESC;";
         connection.query(sql1, [created_by], function (err, data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })

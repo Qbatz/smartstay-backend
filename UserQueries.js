@@ -2064,10 +2064,15 @@ function add_walk_in_customer(req, res) {
 
   var role_permissions = req.role_permissions;
   var is_admin = req.is_admin;
+  var hostel_id = req.body.hostel_id;
 
   // Check if required fields are provided
   if (!customer_Name || !mobile_Number) {
     return res.status(201).json({ message: 'Missing parameters' });
+  }
+
+  if (!hostel_id) {
+    return res.status(201).json({ message: 'Missing Hostel Details', statusCode: 201 });
   }
 
   // If an id is provided, first check if it exists
@@ -2117,8 +2122,8 @@ function add_walk_in_customer(req, res) {
       // }
 
       // Step 2: Check if mobile_Number already exists
-      const checkMobileQuery = `SELECT * FROM customer_walk_in_details WHERE mobile_Number = ? AND isActive = true`;
-      connection.query(checkMobileQuery, [mobile_Number], (err, mobileResults) => {
+      const checkMobileQuery = `SELECT * FROM customer_walk_in_details WHERE mobile_Number = ? AND isActive = true AND hostel_id=?`;
+      connection.query(checkMobileQuery, [mobile_Number, hostel_id], (err, mobileResults) => {
         if (err) {
           return res.status(201).json({ error: 'Error checking mobile number' });
         }
@@ -2129,8 +2134,8 @@ function add_walk_in_customer(req, res) {
         }
 
         // Step 3: If both email and mobile do not exist, proceed to insert the new record
-        const insertQuery = `INSERT INTO customer_walk_in_details (customer_Name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-        connection.query(insertQuery, [customer_Name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By], (insertErr, insertResults) => {
+        const insertQuery = `INSERT INTO customer_walk_in_details (customer_Name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By,hostel_id) VALUES (?, ?, ?, ?, ?, ?, ?,?)`;
+        connection.query(insertQuery, [customer_Name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By, hostel_id], (insertErr, insertResults) => {
           if (insertErr) {
             return res.status(201).json({ error: 'Error inserting data' });
           }
@@ -2153,19 +2158,23 @@ function get_walk_in_customer_list(req, res) {
   var show_ids = req.show_ids;
   var role_permissions = req.role_permissions;
   var is_admin = req.is_admin;
+  var hostel_id = req.body.hostel_id;
 
   if (is_admin == 1 || (role_permissions[7] && role_permissions[7].per_view == 1)) {
 
-    // Query to fetch customer details by ID
-    const query = `SELECT * FROM customer_walk_in_details WHERE created_By IN (${show_ids}) AND isActive = true ORDER BY id DESC`;
+    if (!hostel_id) {
+      return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+    }
 
-    connection.query(query, (err, results) => {
+    // Query to fetch customer details by ID
+    const query = `SELECT * FROM customer_walk_in_details WHERE hostel_id=? AND isActive = true ORDER BY id DESC`;
+    connection.query(query, [hostel_id], (err, results) => {
       if (err) {
         return res.status(201).json({ error: 'Error retrieving customer details' });
       }
 
       // Check if customer exists
-      if (results.length === 0) {
+      if (results.length == 0) {
         return res.status(201).json({ message: 'Customer not found' });
       }
 
