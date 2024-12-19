@@ -8,21 +8,27 @@ function all_assets(req, res) {
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
+    var hostel_id = req.body.hostel_id;
+
     if (is_admin == 1 || (role_permissions[8] && role_permissions[8].per_view == 1)) {
+
+        if (!hostel_id) {
+            return res.status(201).json({ message: "Missing Hostel Details", statusCode: 201 })
+        }
 
         // var sql1 = "SELECT assets.*,ven.Vendor_Name,aa.asset_id,aa.hostel_id,aa.room_id,aa.assigned_date FROM assets JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id WHERE assets.created_by=? AND assets.status=1 ORDER BY assets.id DESC";
         // var sql1 = "SELECT assets.*,aname.asset_name,ven.Vendor_Name,aa.asset_id AS Asset_id,aa.hostel_id,aa.room_id,aa.assigned_date FROM assets JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id JOIN asset_names AS aname ON assets.asset_id=aname.id WHERE assets.created_by=? AND assets.status=1 ORDER BY assets.id DESC"
         var sql1 = `SELECT distinct assets.*,hos.Name as hostel_Name,hosfloor.floor_name,hr.Room_id AS room_name,aa.room_id,aname.asset_name as asset,ven.Vendor_Name,aa.asset_id AS Asset_id,aa.hostel_id,
                 aa.room_id,aa.assigned_date,aa.floor_id,ban.acc_name,ban.acc_num FROM assets LEFT JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id 
                 LEFT JOIN asset_names AS aname ON aa.asset_id=aname.id LEFT JOIN hosteldetails hos ON hos.id = aa.hostel_id LEFT JOIN Hostel_Floor hosfloor ON
-                hosfloor.floor_id = aa.floor_id AND hosfloor.hostel_id = aa.hostel_id LEFT JOIN hostelrooms AS hr ON hr.id=aa.room_id LEFT JOIN bankings AS ban ON ban.id=assets.bank_id WHERE assets.created_by IN (${show_ids}) AND assets.status=true ORDER BY assets.id DESC`
+                hosfloor.floor_id = aa.floor_id AND hosfloor.hostel_id = aa.hostel_id LEFT JOIN hostelrooms AS hr ON hr.id=aa.room_id LEFT JOIN bankings AS ban ON ban.id=assets.bank_id WHERE assets.hostel_id =? AND assets.status=true ORDER BY assets.id DESC`
 
-        connection.query(sql1, (err, data) => {
+        connection.query(sql1, [hostel_id], (err, data) => {
             if (err) {
                 return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
-            } else if (data && data.length > 0) {
-                // console.log("data", data);
-                return res.status(200).json({ message: "All Asset Details", statusCode: 200, assets: data })
+                // } else if (data && data.length > 0) {
+                //     // console.log("data", data);
+                //     return res.status(200).json({ message: "All Asset Details", statusCode: 200, assets: data })
             } else {
                 return res.status(200).json({ message: "All Asset Details", statusCode: 200, assets: data })
             }
@@ -39,6 +45,12 @@ function add_asset(req, res) {
     var is_admin = req.is_admin;
 
     var data = req.body;
+
+    var hostel_id = data.hostel_id;
+
+    if (!hostel_id) {
+        return res.status(201).json({ message: "Missing Hostel Details", statusCode: 201 })
+    }
 
     var validationResult = input_validations(data);
 
@@ -65,15 +77,15 @@ function add_asset(req, res) {
                         return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
                     } else if (as_res.length > 0) {
 
-                        var sql6 = "SELECT * FROM assets WHERE serial_number=? AND id !='" + data.id + "' AND status=1";
-                        connection.query(sql6, [data.serial_number], function (err, ass_res) {
+                        var sql6 = "SELECT * FROM assets WHERE serial_number=? AND id !='" + data.id + "' AND status=1 AND hostel_id=?";
+                        connection.query(sql6, [data.serial_number, hostel_id], function (err, ass_res) {
                             if (err) {
                                 return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
                             } else if (ass_res.length != 0) {
                                 return res.status(201).json({ message: "Serial Number Already Exists", statusCode: 201 })
                             } else {
-                                var sql4 = "SELECT * FROM assets WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "' AND id !='" + data.id + "' AND status=1";
-                                connection.query(sql4, (err, asss_data) => {
+                                var sql4 = "SELECT * FROM assets WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "' AND id !='" + data.id + "' AND status=1 AND hostel_id=?";
+                                connection.query(sql4, [hostel_id], (err, asss_data) => {
                                     if (err) {
                                         return res.status(201).json({ message: "Unable to Get Asset Name Details", statusCode: 201 })
                                     } else if (asss_data.length == 0) {
@@ -173,21 +185,21 @@ function add_asset(req, res) {
 
                 // Add Process
                 // Check Serial Number
-                var sql5 = "SELECT * FROM assets WHERE serial_number=? AND status=1";
-                connection.query(sql5, [data.serial_number], function (err, ass_res) {
+                var sql5 = "SELECT * FROM assets WHERE serial_number=? AND status=1 AND hostel_id=?";
+                connection.query(sql5, [data.serial_number, hostel_id], function (err, ass_res) {
                     if (err) {
                         return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
                     } else if (ass_res.length != 0) {
                         return res.status(201).json({ message: "Serial Number Already Exists", statusCode: 201 })
                     } else {
-                        var sql3 = "SELECT * FROM assets WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "' AND status=1";
-                        connection.query(sql3, (err, asss_data) => {
+                        var sql3 = "SELECT * FROM assets WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "' AND status=1 AND hostel_id=?";
+                        connection.query(sql3, [hostel_id], (err, asss_data) => {
                             if (err) {
                                 return res.status(201).json({ message: "Unable to Get Asset Name Details", statusCode: 201 })
                             } else if (asss_data.length == 0) {
 
-                                var sql2 = "INSERT INTO assets (asset_name,vendor_id,product_name,brand_name,serial_number,product_count,purchase_date,price,total_price,status,created_by,payment_mode,bank_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
-                                connection.query(sql2, [data.asset_name, data.vendor_id, data.product_name, data.brand_name, data.serial_number, 1, data.purchase_date, data.price, data.price, 1, user_id, data.payment_type, new_bank_id], (ins_err, ins_res) => {
+                                var sql2 = "INSERT INTO assets (asset_name,vendor_id,product_name,brand_name,serial_number,product_count,purchase_date,price,total_price,status,created_by,payment_mode,bank_id,hostel_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                                connection.query(sql2, [data.asset_name, data.vendor_id, data.product_name, data.brand_name, data.serial_number, 1, data.purchase_date, data.price, data.price, 1, user_id, data.payment_type, new_bank_id, hostel_id], (ins_err, ins_res) => {
                                     if (ins_err) {
                                         console.log(ins_err);
                                         return res.status(201).json({ message: "Unable to Add Asset Details", statusCode: 201 })

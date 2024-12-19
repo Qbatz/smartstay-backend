@@ -68,6 +68,7 @@ function getHostelList(request,response) {
                         GROUP BY creaccount.id`;
 
                         connection.query(additionalDetailsQuery, function (additionalErr, additionalDetails) {
+                            connection.release();
                             if (additionalErr) {
                                 console.error("Error fetching additional details: ", additionalErr);
                                 return response.status(201).json({ statusCode: 201, message: 'Error fetching additional details' });

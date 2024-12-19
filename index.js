@@ -648,7 +648,7 @@ app.post('/delete-vendor-list', (request, response) => {
 // ****************** Assets Start ***************** //
 
 // All Asset Details
-app.get('/all_assets', (req, res) => {
+app.post('/all_assets', (req, res) => {
     assets.all_assets(req, res);
 })
 
