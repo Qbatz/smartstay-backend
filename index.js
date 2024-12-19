@@ -1064,7 +1064,7 @@ app.post('/add_staff_user', (req, res) => {
     roles.add_staff_user(req, res)
 })
 
-app.get('/get_all_staffs', (req, res) => {
+app.post('/get_all_staffs', (req, res) => {
     roles.get_all_staffs(req, res)
 })
 

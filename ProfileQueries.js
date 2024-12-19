@@ -372,7 +372,7 @@ function getAmenitiesList(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Missing Hostel Id" });
         }
 
-        var sql1 = "SELECT ame.*,amname.Amnities_Name,hsd.Name FROM Amenities AS ame JOIN AmnitiesName AS amname ON ame.Amnities_Id = amname.id JOIN hosteldetails AS hsd ON hsd.id = ame.Hostel_Id WHERE ame.Status=1 AND ame.Hostel_Id=?";
+        var sql1 = "SELECT ame.*,amname.Amnities_Name,hsd.Name FROM Amenities AS ame JOIN AmnitiesName AS amname ON ame.Amnities_Id = amname.id JOIN hosteldetails AS hsd ON hsd.id = ame.Hostel_Id WHERE ame.Status=1 AND ame.Hostel_Id=? ORDER BY ame.id DESC";
         connection.query(sql1, [hostel_id], function (err, data) {
             if (err) {
                 res.status(201).json({ statusCode: 201, message: "Unable to Get Amenities List" })

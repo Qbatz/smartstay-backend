@@ -245,7 +245,7 @@ function all_bookings(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
         }
 
-        var sql1 = "SELECT book.*,hst.Name AS hostel_name,hf.floor_name AS floor_name,hosroom.Room_Id AS room_name,bed.bed_no AS bed_name FROM bookings AS book LEFT JOIN hosteldetails AS hst ON hst.id=book.hostel_id LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=book.floor_id AND hf.hostel_id=book.hostel_id LEFT JOIN hostelrooms AS hosroom ON hosroom.id=book.room_id LEFT JOIN bed_details AS bed ON bed.id=book.bed_id WHERE book.hostel_id=? AND book.status= true";
+        var sql1 = "SELECT book.*,hst.Name AS hostel_name,hf.floor_name AS floor_name,hosroom.Room_Id AS room_name,bed.bed_no AS bed_name FROM bookings AS book LEFT JOIN hosteldetails AS hst ON hst.id=book.hostel_id LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=book.floor_id AND hf.hostel_id=book.hostel_id LEFT JOIN hostelrooms AS hosroom ON hosroom.id=book.room_id LEFT JOIN bed_details AS bed ON bed.id=book.bed_id WHERE book.hostel_id=? AND book.status= true ORDER BY book.id DESC";
         connection.query(sql1, [hostel_id], function (err, data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Bookings" });
