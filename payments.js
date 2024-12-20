@@ -72,6 +72,12 @@ function add_bank(req, res) {
     var desc = req.body.desc || 0;
     var id = req.body.id;
 
+    var hostel_id = req.body.hostel_id;
+
+    if (!hostel_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+    }
+
     if (!acc_name || !bank_name) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
     }
@@ -87,8 +93,8 @@ function add_bank(req, res) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Get Bank Details" })
                 } else if (sel_data.length != 0) {
 
-                    var sql1 = "SELECT * FROM bankings WHERE acc_name=? AND bank_name=? AND status=1 AND id !=?";
-                    connection.query(sql1, [acc_name, bank_name, id], function (err, acc_data) {
+                    var sql1 = "SELECT * FROM bankings WHERE acc_name=? AND bank_name=? AND status=1 AND id !=? AND hostel_id=?";
+                    connection.query(sql1, [acc_name, bank_name, id, hostel_id], function (err, acc_data) {
                         if (err) {
                             return res.status(201).json({ statusCode: 201, message: "Unable to Get Bank Details" })
                         } else if (acc_data.length != 0) {
@@ -119,16 +125,16 @@ function add_bank(req, res) {
         if (is_admin == 1 || (role_permissions[16] && role_permissions[16].per_create == 1)) {
 
             // Add Process
-            var sql1 = "SELECT * FROM bankings WHERE acc_name=? AND bank_name=? AND status=1";
-            connection.query(sql1, [acc_name, bank_name], function (err, acc_data) {
+            var sql1 = "SELECT * FROM bankings WHERE acc_name=? AND bank_name=? AND status=1 AND hostel_id=?";
+            connection.query(sql1, [acc_name, bank_name, hostel_id], function (err, acc_data) {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Get Bank Details" })
                 } else if (acc_data.length != 0) {
                     return res.status(202).json({ statusCode: 202, message: "Account Name and Bank Name Already Exists!" })
                 } else {
 
-                    var sql1 = "INSERT INTO bankings (acc_name,acc_num,bank_name,ifsc_code,description,setus_default,balance,createdby) VALUES (?,?,?,?,?,?,?,?)";
-                    connection.query(sql1, [acc_name, acc_no, bank_name, ifsc_code, desc, 0, 0, created_by], function (err, data) {
+                    var sql1 = "INSERT INTO bankings (acc_name,acc_num,bank_name,ifsc_code,description,setus_default,balance,createdby,hostel_id) VALUES (?,?,?,?,?,?,?,?,?)";
+                    connection.query(sql1, [acc_name, acc_no, bank_name, ifsc_code, desc, 0, 0, created_by, hostel_id], function (err, data) {
                         if (err) {
                             return res.status(201).json({ statusCode: 201, message: "Unable to Add Bank Details" })
                         } else {
@@ -154,13 +160,19 @@ function all_bankings(req, res) {
 
     if (is_admin == 1 || (role_permissions[16] && role_permissions[16].per_view == 1)) {
 
-        var sql1 = "SELECT * FROM bankings WHERE createdby IN (?) AND status=1";
-        connection.query(sql1, [show_ids], function (err, data) {
+        var hostel_id = req.body.hostel_id;
+
+        if (!hostel_id) {
+            return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+        }
+
+        var sql1 = "SELECT * FROM bankings WHERE hostel_id=? AND status=1";
+        connection.query(sql1, [hostel_id], function (err, data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Add Bank Details" })
             } else {
-                var sql2 = "SELECT trans.*,ban.acc_name,ban.bank_name FROM bank_transactions AS trans JOIN bankings AS ban ON ban.id=trans.bank_id WHERE trans.status=1 AND trans.createdby IN (?)";
-                connection.query(sql2, [show_ids], function (err, trans_data) {
+                var sql2 = "SELECT trans.*,ban.acc_name,ban.bank_name FROM bank_transactions AS trans JOIN bankings AS ban ON ban.id=trans.bank_id WHERE trans.status=1 AND ban.hostel_id=?";
+                connection.query(sql2, [hostel_id], function (err, trans_data) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Get Bank Transactions" })
                     } else {

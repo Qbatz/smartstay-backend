@@ -2312,20 +2312,20 @@ function getEbStart(connection, response, request) {
     var role_permissions = request.role_permissions;
     var is_admin = request.is_admin;
 
-    var hostel_id=request.body.hostel_id;
+    var hostel_id = request.body.hostel_id;
 
     if (is_admin == 1 || (role_permissions[12] && role_permissions[12].per_view == 1)) {
 
-        if(!hostel_id){
-            return response.status(201).json({statusCode:201,message:"Missing Hostel Id"})
+        if (!hostel_id) {
+            return response.status(201).json({ statusCode: 201, message: "Missing Hostel Id" })
         }
 
         let query = "SELECT hos.Name as hoatel_Name,eb.id as eb_Id,hos.id as hostel_Id,hos.profile,eb.hostel_id,eb.floor_id,eb.room_id,eb.total_amount,eb.total_reading,hf.floor_name,hr.Room_Id,eb.date,eb.reading FROM room_readings eb JOIN hosteldetails hos ON hos.id = eb.hostel_id LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=eb.floor_id AND hf.hostel_id=eb.hostel_id JOIN hostelrooms AS hr ON hr.id=eb.room_id where hos.created_By IN (" + show_ids + ") AND eb.hostel_id=? AND eb.status=1;"
-        connection.query(query,[hostel_id], function (error, data) {
+        connection.query(query, [hostel_id], function (error, data) {
             if (error) {
-                response.status(203).json({statusCode:201, message: 'not connected' })
+                response.status(203).json({ statusCode: 201, message: 'not connected' })
             } else {
-                response.status(200).json({statusCode:200, data: data})
+                response.status(200).json({ statusCode: 200, data: data })
             }
         })
     } else {
@@ -3053,11 +3053,17 @@ function all_recuring_bills(req, res) {
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
+    var hostel_id = req.body.hostel_id;
+
     if (is_admin == 1 || (role_permissions[11] && role_permissions[11].per_view == 1)) {
 
+        if (!hostel_id) {
+            return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+        }
+
         // var sql1 = "SELECT inv.id,inv.Name AS user_name,inv.Invoices,inv.DueDate,inv.Date AS invoice_date,DATE_ADD(inv.Date, INTERVAL 1 MONTH) AS next_invoice_date,inv.Status,inv.BalanceDue,inv.PaidAmount,inv.hos_user_id AS user_id,inv.action,inv.invoice_type FROM recuring_inv_details AS rec JOIN hostel AS hs ON hs.id=rec.user_id JOIN invoicedetails AS inv ON inv.hos_user_id=rec.user_id AND inv.action='recuring' WHERE rec.created_by=?";
-        var sql1 = "SELECT rec.id AS recuire_id,inv.id,inv.Name AS user_name,inv.Invoices,inv.DueDate,inv.Date AS invoice_date,DATE_ADD(inv.Date, INTERVAL 1 MONTH) AS next_invoice_date,inv.Status,inv.BalanceDue,inv.PaidAmount, inv.Amount AS total_amount,inv.hos_user_id AS user_id,inv.action,inv.invoice_type FROM recuring_inv_details AS rec JOIN hostel AS hs ON hs.id = rec.user_id JOIN invoicedetails AS inv ON inv.hos_user_id = rec.user_id JOIN (SELECT hos_user_id, MAX(Date) AS latest_invoice_date FROM invoicedetails WHERE action IN ('recuring', 'auto_recuring') GROUP BY hos_user_id) AS latest_inv ON latest_inv.hos_user_id = inv.hos_user_id AND latest_inv.latest_invoice_date = inv.Date WHERE inv.action IN ('recuring', 'auto_recuring') AND rec.created_by IN (?) AND rec.status=1 ORDER BY inv.id DESC;"
-        connection.query(sql1, [show_ids], function (err, inv_data) {
+        var sql1 = "SELECT rec.id AS recuire_id,inv.id,inv.Name AS user_name,inv.Invoices,inv.DueDate,inv.Date AS invoice_date,DATE_ADD(inv.Date, INTERVAL 1 MONTH) AS next_invoice_date,inv.Status,inv.BalanceDue,inv.PaidAmount, inv.Amount AS total_amount,inv.hos_user_id AS user_id,inv.action,inv.invoice_type FROM recuring_inv_details AS rec JOIN hostel AS hs ON hs.id = rec.user_id JOIN invoicedetails AS inv ON inv.hos_user_id = rec.user_id JOIN (SELECT hos_user_id, MAX(Date) AS latest_invoice_date FROM invoicedetails WHERE action IN ('recuring', 'auto_recuring') GROUP BY hos_user_id) AS latest_inv ON latest_inv.hos_user_id = inv.hos_user_id AND latest_inv.latest_invoice_date = inv.Date WHERE inv.action IN ('recuring', 'auto_recuring') AND inv.Hostel_Id=? AND rec.status=1 ORDER BY inv.id DESC;"
+        connection.query(sql1, [hostel_id], function (err, inv_data) {
             if (err) {
                 return res.status(201).json({ message: "Unable to Get Bill Details", statusCode: 201 });
             } else {

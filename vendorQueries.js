@@ -106,6 +106,12 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
     var role_permissions = request.role_permissions;
     var is_admin = request.is_admin;
 
+    var hostel_id = request.body.hostel_id;
+
+    if (!hostel_id) {
+        return response.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+    }
+
     if (reqInvoice) {
         const timestamp = Date.now();
         const firstName = reqInvoice.firstName;
@@ -199,8 +205,8 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                                     if (err) {
                                         response.status(201).json({ message: 'Database error' });
                                     } else {
-                                        const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, Vendor_profile, CreatedBy,  Business_Name, Country, Pincode) 
-                            VALUES ('${Vendor_Name}', '${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}', '${vendor_profile}','${created_by}' ,'${reqInvoice.Business_Name}', '${reqInvoice.Country}',${reqInvoice.Pincode})`;
+                                        const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, Vendor_profile, CreatedBy,  Business_Name, Country, Pincode,hostel_id) 
+                            VALUES ('${Vendor_Name}', '${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}', '${vendor_profile}','${created_by}' ,'${reqInvoice.Business_Name}', '${reqInvoice.Country}',${reqInvoice.Pincode},${hostel_id})`;
 
                                         connection.query(insertVendor, function (error, insertVendorData) {
                                             if (error) {
@@ -226,8 +232,8 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                                     }
                                 });
                             } else {
-                                const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, CreatedBy,  Business_Name, Country, Pincode ) 
-                    VALUES ('${Vendor_Name}','${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}','${created_by}','${reqInvoice.Business_Name}', '${reqInvoice.Country}', ${reqInvoice.Pincode})`;
+                                const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, CreatedBy,  Business_Name, Country, Pincode,hostel_id ) 
+                                VALUES ('${Vendor_Name}','${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}','${created_by}','${reqInvoice.Business_Name}', '${reqInvoice.Country}', ${reqInvoice.Pincode}),${hostel_id}`;
 
                                 connection.query(insertVendor, function (error, insertVendorData) {
                                     if (error) {
@@ -309,17 +315,26 @@ function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileDa
 
 
 function GetVendorList(connection, response, request) {
+    
     const admin_Id = request.user_details.id
     var show_ids = request.show_ids;
     var role_permissions = request.role_permissions;
     var is_admin = request.is_admin;
 
+    var hostel_id = request.body.hostel_id;
+
     if (is_admin == 1 || (role_permissions[9] && role_permissions[9].per_view == 1)) {
-        connection.query(`select * from Vendor where Status = true and  createdBy IN (${show_ids}) ORDER BY CreatedAt DESC`, function (error, getVendorList) {
+
+        if (!hostel_id) {
+            return response.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+        }
+
+        var sql1 = "SELECT * FROM Vendor WHERE Status =1 AND hostel_id=? ORDER BY CreatedAt DESC";
+        connection.query(sql1, [hostel_id], function (error, getVendorList) {
             if (error) {
                 response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
             } else {
-                response.status(200).json({ VendorList: getVendorList });
+                response.status(200).json({ VendorList: getVendorList, statusCode: 200 });
             }
         })
     } else {

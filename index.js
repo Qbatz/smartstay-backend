@@ -896,7 +896,7 @@ app.post('/get_beduser_details', (req, res) => {
     userQueries.get_beduser_details(req, res)
 });
 
-app.get('/get_bill_details', (req, res) => {
+app.post('/get_bill_details', (req, res) => {
     userQueries.get_bill_details(req, res)
 });
 
@@ -1012,7 +1012,7 @@ app.post('/add_bank', (req, res) => {
 })
 
 // Get All Bankings
-app.get('/all_bankings', (req, res) => {
+app.post('/all_bankings', (req, res) => {
     payments.all_bankings(req, res)
 })
 

@@ -2017,12 +2017,17 @@ function get_bill_details(req, res) {
   var show_ids = req.show_ids;
   var role_permissions = req.role_permissions;
   var is_admin = req.is_admin;
+  var hostel_id = req.body.hostel_id;
 
   if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_view == 1)) {
 
+    if (!hostel_id) {
+      return res.status(201).json({ message: "Missing Hostel Details", statusCode: 201 });
+    }
+
     // var sql1 = "SELECT * FROM invoicedetails WHERE created_By IN (?) AND invoice_status=1 ORDER BY id DESC";
-    var sql1 = "SELECT inv.* FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id WHERE hs.created_By IN (?) AND inv.invoice_status=1 ORDER BY id DESC";
-    connection.query(sql1, [show_ids], function (err, invoices) {
+    var sql1 = "SELECT inv.* FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id WHERE inv.Hostel_Id=? AND inv.invoice_status=1 ORDER BY id DESC";
+    connection.query(sql1, [hostel_id], function (err, invoices) {
       if (err) {
         return res.status(201).json({ message: "Unable to Get Bill Details", statusCode: 201 });
       }
