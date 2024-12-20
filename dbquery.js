@@ -205,7 +205,9 @@ const queries = [
 
     "ALTER TABLE `customer_walk_in_details` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `joining_Date`,CHANGE COLUMN `created_By` `created_By` INT(11) NULL DEFAULT NULL AFTER `isActive`,CHANGE COLUMN `created_At` `created_At` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER `created_By`;",
 
-    "ALTER TABLE `bankings` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `balance`;"
+    "ALTER TABLE `bankings` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `balance`;",
+
+    "CREATE TABLE otp_verification (id INT AUTO_INCREMENT PRIMARY KEY,phone_number VARCHAR(15) NOT NULL,otp VARCHAR(6) NOT NULL,expires_at DATETIME NOT NULL,verified BOOLEAN DEFAULT FALSE,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); "
 ];
 
 queries.forEach(executeQuery);
