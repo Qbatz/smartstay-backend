@@ -175,6 +175,8 @@ function InvoiceSettings(connection, request, response) {
 
 
 function UpdateEB(connection, attenArray, response) {
+    console.log("attenArray",attenArray);
+    
     if (attenArray && Array.isArray(attenArray)) {
         const numUpdates = attenArray.length;
         let numCompleted = 0;

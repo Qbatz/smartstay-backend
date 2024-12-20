@@ -373,6 +373,8 @@ function add_ebbilling_settings(req, res) {
     var hostel_id = req.body.hostel_id;
     var unit = req.body.unit;
     var amount = req.body.amount;
+    var hostel_based = req.body.hostel_based;
+    var room_based = req.body.room_based;
 
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
@@ -395,7 +397,7 @@ function add_ebbilling_settings(req, res) {
 
                 var up_id = sel_res[0].id;
                 // Update Records
-                var sql2 = "UPDATE eb_settings SET unit='" + unit + "',amount='" + amount + "' WHERE id='" + up_id + "'";
+                var sql2 = "UPDATE eb_settings SET unit='" + unit + "',amount='" + amount + "', hostel_based = '" + hostel_based + "', room_based = '" + room_based + "' WHERE id='" + up_id + "'";
                 connection.query(sql2, (err, ins_res) => {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unble to Update Eb Details" });
