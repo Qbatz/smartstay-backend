@@ -1169,8 +1169,10 @@ app.post('/customers/all_contacts', contacts_router.all_contacts)
 
 var twofactor_routes = require('./2factor/otp')
 
-app.post('/users/login', twofactor_routes.user_login)
+var user_middleware = require('./user_middleware')
+
+app.post('/users/login', user_middleware, twofactor_routes.user_login)
 
 app.post('/users/verify_otp', twofactor_routes.verify_otp)
 
-app.post('/users/dashborad', twofactor_routes.dashborad)
+app.post('/users/dashborad', user_middleware, twofactor_routes.dashborad)

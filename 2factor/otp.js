@@ -1,9 +1,11 @@
 const request = require('request')
 const connection = require('../config/connection')
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
 exports.user_login = (req, res) => {
 
-    var mob_no = req.body.mob_no;
+    var mob_no = req.body.mob_no;j
 
     if (!mob_no) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mobile Number" });
@@ -69,6 +71,10 @@ function generateOtp() {
     return Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit OTP
 }
 
+// Generate JWT Token
+const generateToken = (user) => {
+    return jwt.sign({ id: user.ID, sub: "customers", username: user.Name, hostel_id: user.Hostel_Id }, process.env.JWT_SECRET, { expiresIn: '30m' });
+};
 
 exports.verify_otp = (req, res) => {
 
@@ -103,7 +109,23 @@ exports.verify_otp = (req, res) => {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: 'Error Fetching for Update Otp Details' });
             } else {
-                return res.status(200).json({ statusCode: 200, message: "OTP verified successfully" });
+
+                var new_mob = "91" + mob_no;
+
+                var sql3 = "SELECT * FROM hostel WHERE Phone=? AND isActive=1";
+                connection.query(sql3, [new_mob], function (err, sel_res) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: 'Error Fetching Get User Details', reason: err.message });
+                    } else if (sel_res.length != 0) {
+
+                        const token = generateToken(sel_res[0]); // token is generated
+
+                        return res.status(200).json({ statusCode: 200, message: "OTP verified successfully", token: token });
+                    } else {
+
+                        return res.status(201).json({ statusCode: 201, message: "Invalid User Details" });
+                    }
+                })
             }
         })
     })

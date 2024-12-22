@@ -29,13 +29,14 @@ module.exports = (req, res, next) => {
     ];
 
 
-    if (openEndpoints.includes(req.originalUrl) || req.originalUrl.startsWith('/login/login?')) {
+    if (openEndpoints.includes(req.originalUrl) || req.originalUrl.startsWith('/login/login?') || req.originalUrl.startsWith('/users')) {
         return next();
     } else {
         if (!token) {
             res.status(206).json({ message: "Access denied. No token provided", statusCode: 206 });
         } else {
             try {
+
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 req.user_details = decoded;
 
