@@ -24,12 +24,12 @@ module.exports = (req, res, next) => {
         '/export_expenses',
         '/export_invoices',
         '/user_amenities_history',
-        '/users/login',
-        '/users/verify_otp'
+        '/customers/login',
+        '/customers/verify_otp',
     ];
 
 
-    if (openEndpoints.includes(req.originalUrl) || req.originalUrl.startsWith('/login/login?') || req.originalUrl.startsWith('/users')) {
+    if (openEndpoints.includes(req.originalUrl) || req.originalUrl.startsWith('/login/login?') || req.originalUrl.startsWith('/customers')) {
         return next();
     } else {
         if (!token) {

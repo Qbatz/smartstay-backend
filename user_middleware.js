@@ -9,8 +9,9 @@ module.exports = (req, res, next) => {
 
     // Endpoints that do not require validation
     const openEndpoints = [
-        '/users/login',
-        '/users/verify_otp'
+        '/customers/login',
+        '/customers/verify_otp',
+        '/customers/user-list'
     ];
 
     if (openEndpoints.includes(req.originalUrl)) {

@@ -233,7 +233,7 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                                 });
                             } else {
                                 const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, CreatedBy,  Business_Name, Country, Pincode,hostel_id ) 
-                                VALUES ('${Vendor_Name}','${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}','${created_by}','${reqInvoice.Business_Name}', '${reqInvoice.Country}', ${reqInvoice.Pincode}),${hostel_id}`;
+                                VALUES ('${Vendor_Name}','${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}','${created_by}','${reqInvoice.Business_Name}', '${reqInvoice.Country}', ${reqInvoice.Pincode},${hostel_id})`;
 
                                 connection.query(insertVendor, function (error, insertVendorData) {
                                     if (error) {
@@ -315,7 +315,7 @@ function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileDa
 
 
 function GetVendorList(connection, response, request) {
-    
+
     const admin_Id = request.user_details.id
     var show_ids = request.show_ids;
     var role_permissions = request.role_permissions;
