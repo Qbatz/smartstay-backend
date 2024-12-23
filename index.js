@@ -979,7 +979,7 @@ app.post('/add_recuring_bill', (req, res) => {
     invoiceQueries.add_recuring_bill(req, res)
 });
 
-app.get('/all_recuring_bills', (req, res) => {
+app.post('/all_recuring_bills', (req, res) => {
     invoiceQueries.all_recuring_bills(req, res)
 });
 

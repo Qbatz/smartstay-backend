@@ -207,7 +207,10 @@ const queries = [
 
     "ALTER TABLE `bankings` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `balance`;",
 
-    "CREATE TABLE otp_verification (id INT AUTO_INCREMENT PRIMARY KEY,phone_number VARCHAR(15) NOT NULL,otp VARCHAR(6) NOT NULL,expires_at DATETIME NOT NULL,verified BOOLEAN DEFAULT FALSE,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); "
+    "CREATE TABLE otp_verification (id INT AUTO_INCREMENT PRIMARY KEY,phone_number VARCHAR(15) NOT NULL,otp VARCHAR(6) NOT NULL,expires_at DATETIME NOT NULL,verified BOOLEAN DEFAULT FALSE,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); ",
+
+    "CREATE TABLE `smart_stay`.`announcements` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`title` VARCHAR(45) NULL,`description` LONGTEXT NULL,`status` INT NULL DEFAULT 1,`hostel_id` BIGINT(20) NULL,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));"
+
 ];
 
 queries.forEach(executeQuery);
