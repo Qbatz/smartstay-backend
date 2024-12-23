@@ -1176,3 +1176,11 @@ app.post('/customers/login', user_middleware, twofactor_routes.user_login)
 app.post('/customers/verify_otp', twofactor_routes.verify_otp)
 
 app.post('/customers/dashborad', user_middleware, twofactor_routes.dashborad)
+
+
+app.post('/add/announcement', contacts_router.add_annoncement)
+
+app.post('/delete/announcement', contacts_router.delete_announcement)
+
+
+app.post('/announcement/all_announcement', contacts_router.all_announce)

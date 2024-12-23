@@ -1707,4 +1707,11 @@ function delete_hostel_image(req, res) {
     }
 }
 
+
+
+
+
+
+
+
 module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, update_floor, RoomFull, UpdateEB, listDashBoard, deleteHostel, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details, delete_hostel_image }

@@ -206,3 +206,190 @@ exports.all_contacts = (req, res) => {
         }
     })
 }
+
+
+exports.add_annoncement = (req, res) => {
+
+    var { title, description, hostel_id, id } = req.body;
+
+    var created_by = req.user_details.id;
+
+    if (!title || !hostel_id || !description) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    // if (id) {
+        
+
+    //     var sql2 = "SELECT * FROM announcements WHERE id=? AND status=1";
+    //     connection.query(sql2, [id], function (err, ch_data) {
+    //         if (err) {
+    //             return res.status(201).json({ statusCode: 201, message: "Error Fetching Contact Details", reason: err.message })
+    //         } else if (ch_data.length != 0) {
+
+    //             var sql3 = "UPDATE announcements SET title=?,description=? WHERE id=?";
+    //             connection.query(sql3, [title, description, id], function (err, ins_data) {
+    //                 if (err) {
+    //                     return res.status(201).json({ statusCode: 201, message: "Error Fetching Edit AnnounceMent Details", reason: err.message })
+    //                 } else {
+    //                     return res.status(200).json({ statusCode: 200, message: "Announcement Updated Successfully!" })
+    //                 }
+    //             })
+
+    //         } else {
+    //             return res.status(201).json({ statusCode: 201, message: "Invalid Announcement Details" })
+    //         }
+    //     })
+
+    // } 
+    if (id) {
+        var sql2 = "SELECT * FROM announcements WHERE id=? AND status=1";
+        connection.query(sql2, [id], function (err, ch_data) {
+            if (err) {
+                return res.status(201).json({
+                    statusCode: 201,
+                    message: "Error Fetching Contact Details",
+                    reason: err.message
+                });
+            } else if (ch_data.length != 0) {
+                var sqlCheck = "SELECT COUNT(*) AS count FROM announcements WHERE LOWER(title) = LOWER(?) AND id != ?";
+                connection.query(sqlCheck, [title, id], function (err, checkResult) {
+                    if (err) {
+                        return res.status(202).json({
+                            statusCode: 202,
+                            message: "Error Checking Title Uniqueness",
+                            reason: err.message
+                        });
+                    }
+    
+                    if (checkResult[0].count > 0) {
+                        return res.status(201).json({
+                            statusCode: 201,
+                            message: "Title already exists. Please use a different title."
+                        });
+                    } else {
+                        // Proceed with the update if the title is unique
+                        var sql3 = "UPDATE announcements SET title=?, description=? WHERE id=?";
+                        connection.query(sql3, [title, description, id], function (err, ins_data) {
+                            if (err) {
+                                return res.status(201).json({
+                                    statusCode: 201,
+                                    message: "Error Updating Announcement Details",
+                                    reason: err.message
+                                });
+                            } else {
+                                return res.status(200).json({
+                                    statusCode: 200,
+                                    message: "Announcement Updated Successfully!"
+                                });
+                            }
+                        });
+                    }
+                });
+            } else {
+                return res.status(201).json({
+                    statusCode: 201,
+                    message: "Invalid Announcement Details"
+                });
+            }
+        });
+    }
+    
+    else {
+
+    //     var sql3 = "INSERT INTO announcements (title,hostel_id,description,created_by) VALUES (?,?,?,?)";
+    //     connection.query(sql3, [title, hostel_id, description,created_by], function (err, ins_data) {
+    //         if (err) {
+    //             return res.status(201).json({ statusCode: 201, message: "Error Fetching Edit AnnounceMent Details", reason: err.message })
+    //         } else {
+    //             return res.status(200).json({ statusCode: 200, message: "Announcement Addeed Successfully!" })
+    //         }
+    //     })
+    var sqlCheck = "SELECT COUNT(*) AS count FROM announcements WHERE LOWER(title) = LOWER(?)";
+connection.query(sqlCheck, [title], function (err, result) {
+    if (err) {
+        return res.status(202).json({
+            statusCode: 202,
+            message: "Error Checking Title Existence",
+            reason: err.message
+        });
+    } else if (result[0].count > 0) {
+        return res.status(201).json({
+            statusCode: 201,
+            message: "Title already exists. Please use a different title."
+        });
+    }
+     else {
+       
+        var sqlInsert = "INSERT INTO announcements (title, hostel_id, description, created_by) VALUES (?, ?, ?, ?)";
+        connection.query(sqlInsert, [title, hostel_id, description, created_by], function (err, ins_data) {
+            if (err) {
+                return res.status(202).json({
+                    statusCode: zz,
+                    message: "Error Adding Announcement",
+                    reason: err.message
+                });
+            } else {
+                return res.status(200).json({
+                    statusCode: 200,
+                    message: "Announcement Added Successfully!"
+                });
+            }
+        });
+    }
+});
+    }
+
+}
+
+
+exports.delete_announcement = (req, res) => {
+
+    var id = req.body.id;
+
+    if (!id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    var sql2 = "SELECT * FROM announcements WHERE id=? AND status=1";
+    connection.query(sql2, [id], function (err, ch_data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Error Fetching announcements Details", reason: err.message })
+        } else if (ch_data.length != 0) {
+
+            var sql3 = "UPDATE announcements SET status=0 WHERE id=?";
+            connection.query(sql3, [id], function (err, ins_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Error Fetching Delete announcements Details", reason: err.message })
+                } else {
+                    return res.status(200).json({ statusCode: 200, message: "Announcements Deleted Successfully!" })
+                }
+            })
+
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Announcement Details" })
+        }
+    })
+
+}
+
+
+
+exports.all_announce = (req, res) => {
+
+    var hostel_id = req.body.hostel_id;
+
+    if (!hostel_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing User Details" })
+    }
+
+    var sql = "SELECT * FROM announcements WHERE status=1 AND hostel_id=?";
+    connection.query(sql, [hostel_id], function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Error Fetching User Details", reason: err.message })
+            
+        } else {
+            return res.status(200).json({ statusCode: 200, message: "View Announcement Details", announcements: data });
+        }
+    })
+}
