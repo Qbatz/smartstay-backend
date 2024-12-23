@@ -341,6 +341,8 @@ function get_all_staffs(req, res) {
     var created_by = req.user_details.id;
     var is_admin = req.is_admin;
 
+    var hostel_id =req.body.hostel_id;
+
     if (is_admin == 1) {
 
         if (!hostel_id) {
