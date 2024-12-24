@@ -15,7 +15,7 @@ AWS.config.update({
 });
 const s3 = new AWS.S3();
 
-function getHostelList(request,response) {
+function getHostelList(request, response) {
 
     const created_by = request.user_details.id;
     let hostelDetails = [];
@@ -61,7 +61,7 @@ function getHostelList(request,response) {
                             COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr 
                                 JOIN bed_details AS bd ON bd.hos_detail_id=hr.id 
                                 JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id 
-                                WHERE hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By='${created_by}' AND hr.Hostel_Id='${hostel.id}'), 0) AS occupied_Bed 
+                                WHERE hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By IN ('${show_ids}') AND hr.Hostel_Id='${hostel.id}'), 0) AS occupied_Bed 
                         FROM hosteldetails details 
                         JOIN createaccount creaccount ON creaccount.id = details.created_by 
                         WHERE details.created_By IN (${show_ids}) AND details.id='${hostel.id}' 
@@ -1009,9 +1009,15 @@ function listDashBoard(connection, response, request) {
 
     if (is_admin == 1 || (role_permissions[0] && role_permissions[0].per_view == 1)) {
 
-        // var sql1 = "select creaccount.first_name,creaccount.last_name,COALESCE((select count(id) from hosteldetails where created_By=details.created_By AND isActive=1),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id AND isActive=1)),0) as roomCount,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=0 AND hd.created_By IN (" + show_ids + ")),0) as Bed,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By IN (" + show_ids + ")),0) as occupied_Bed,(select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By IN (" + show_ids + ")) AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.BalanceDue != 0) AS overdue from hosteldetails details join createaccount creaccount on creaccount.id = details.created_by where details.created_By IN (" + show_ids + ") GROUP BY creaccount.id"
-        var sql1 = "select creaccount.first_name,creaccount.last_name,COALESCE((select count(id) from hosteldetails where created_By=details.created_By AND isActive=1),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id AND isActive=1)),0) as roomCount,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=0 AND hd.created_By IN (" + show_ids + ")),0) as Bed,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By IN (" + show_ids + ")),0) as occupied_Bed,(select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By IN (" + show_ids + ")) AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.BalanceDue != 0) AS overdue,(select COALESCE(COUNT(COALESCE(hos.id, 0)), 0) AS customer_count FROM hostel AS hos JOIN hosteldetails AS hrtl ON hos.Hostel_Id=hrtl.id AND hos.isActive=1 WHERE hos.created_By IN (" + show_ids + ") AND hrtl.isActive = 1) AS customer_count,(select COALESCE(SUM(COALESCE(rr.total_amount, 0)), 0) AS eb_amount FROM room_readings AS rr WHERE rr.created_By IN (" + show_ids + ") AND rr.status = 1) AS eb_amount,(select COALESCE(SUM(COALESCE(total_price, 0)), 0) AS asset_amount FROM assets WHERE created_by IN (" + show_ids + ") AND status = 1) AS asset_amount from hosteldetails details join createaccount creaccount on creaccount.id = details.created_by where details.created_By IN (" + show_ids + ") GROUP BY creaccount.id;"
-        connection.query(sql1, function (error, data) {
+        var hostel_id = request.body.hostel_id;
+
+        if (!hostel_id) {
+            return response.status(201).json({ statusCode: 201, message: "Missing Hostel Details" });
+        }
+
+        // var sql1 = "select creaccount.first_name,creaccount.last_name,COALESCE((select count(id) from hosteldetails where created_By=details.created_By AND isActive=1),0) as hostelCount,COALESCE(sum((select count(Room_Id) from hostelrooms where Hostel_Id=details.id AND isActive=1)),0) as roomCount,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=0 AND hd.created_By IN (" + show_ids + ")),0) as Bed,COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id=hr.id JOIN hosteldetails AS hd ON hd.id=hr.Hostel_Id AND hd.isActive=1 AND hr.isActive=1 AND bd.status=1 AND bd.isfilled=1 AND hd.created_By IN (" + show_ids + ")),0) as occupied_Bed,(select COALESCE(SUM(COALESCE(icv.Amount, 0)),0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By IN (" + show_ids + ")) AS Revenue,(select COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) AS revenue FROM invoicedetails AS icv JOIN hosteldetails AS hos ON icv.Hostel_Id=hos.id WHERE hos.created_By IN (" + show_ids + ") AND icv.BalanceDue != 0) AS overdue,(select COALESCE(COUNT(COALESCE(hos.id, 0)), 0) AS customer_count FROM hostel AS hos JOIN hosteldetails AS hrtl ON hos.Hostel_Id=hrtl.id AND hos.isActive=1 WHERE hos.created_By IN (" + show_ids + ") AND hrtl.isActive = 1) AS customer_count,(select COALESCE(SUM(COALESCE(rr.total_amount, 0)), 0) AS eb_amount FROM room_readings AS rr WHERE rr.created_By IN (" + show_ids + ") AND rr.status = 1) AS eb_amount,(select COALESCE(SUM(COALESCE(total_price, 0)), 0) AS asset_amount FROM assets WHERE created_by IN (" + show_ids + ") AND status = 1) AS asset_amount from hosteldetails details join createaccount creaccount on creaccount.id = details.created_by where details.created_By IN (" + show_ids + ") GROUP BY creaccount.id;";
+        var sql1 = "SELECT creaccount.first_name, creaccount.last_name, COALESCE((SELECT COUNT(id) FROM hosteldetails WHERE created_By = details.created_By AND isActive = 1), 0) AS hostelCount, COALESCE((SELECT COUNT(Room_Id) FROM hostelrooms WHERE Hostel_Id = details.id AND isActive = 1), 0) AS roomCount, COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id = hr.id WHERE hr.Hostel_Id = details.id AND hr.isActive = 1 AND bd.status = 1 AND bd.isfilled = 0), 0) AS Bed, COALESCE((SELECT COUNT(bd.id) FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id = hr.id WHERE hr.Hostel_Id = details.id AND hr.isActive = 1 AND bd.status = 1 AND bd.isfilled = 1), 0) AS occupied_Bed, (SELECT COALESCE(SUM(COALESCE(icv.Amount, 0)), 0) FROM invoicedetails AS icv WHERE icv.Hostel_Id = details.id) AS Revenue, (SELECT COALESCE(SUM(COALESCE(icv.BalanceDue, 0)), 0) FROM invoicedetails AS icv WHERE icv.Hostel_Id = details.id AND icv.BalanceDue != 0) AS overdue, (SELECT COALESCE(COUNT(hos.id), 0) FROM hostel AS hos WHERE hos.Hostel_Id = details.id AND hos.isActive = 1) AS customer_count, (SELECT COALESCE(SUM(COALESCE(rr.total_amount, 0)), 0) FROM room_readings AS rr WHERE rr.hostel_id = details.id AND rr.status = 1) AS eb_amount, (SELECT COALESCE(SUM(COALESCE(total_price, 0)), 0) FROM assets WHERE hostel_id = details.id AND status = 1) AS asset_amount FROM hosteldetails AS details JOIN createaccount AS creaccount ON creaccount.id = details.created_by WHERE details.id = ? GROUP BY creaccount.id;"
+        connection.query(sql1, [hostel_id], function (error, data) {
             if (error) {
                 console.log(error, "Error Message");
                 response.status(201).json({ message: "No data found", error: error.message });
@@ -1019,8 +1025,8 @@ function listDashBoard(connection, response, request) {
 
                 let project_amount;
 
-                var sql12 = "SELECT *, CASE WHEN CheckoutDate IS NOT NULL AND ((MONTH(CheckoutDate) <= MONTH(NOW()) AND YEAR(CheckoutDate) = YEAR(NOW())) OR (YEAR(CheckoutDate) < YEAR(NOW()))) THEN 0 WHEN CheckoutDate IS NOT NULL AND MONTH(CheckoutDate) = MONTH(DATE_ADD(NOW(), INTERVAL 1 MONTH)) AND YEAR(CheckoutDate) = YEAR(DATE_ADD(NOW(), INTERVAL 1 MONTH)) THEN ROUND((DAY(CheckoutDate) / DAY(LAST_DAY(DATE_ADD(NOW(), INTERVAL 1 MONTH)))) * RoomRent, 2) ELSE RoomRent END AS projected_amount FROM hostel WHERE created_by IN (" + show_ids + ") AND isActive = 1;";
-                connection.query(sql12, function (err, pro_res) {
+                var sql12 = "SELECT *, CASE WHEN CheckoutDate IS NOT NULL AND ((MONTH(CheckoutDate) <= MONTH(NOW()) AND YEAR(CheckoutDate) = YEAR(NOW())) OR (YEAR(CheckoutDate) < YEAR(NOW()))) THEN 0 WHEN CheckoutDate IS NOT NULL AND MONTH(CheckoutDate) = MONTH(DATE_ADD(NOW(), INTERVAL 1 MONTH)) AND YEAR(CheckoutDate) = YEAR(DATE_ADD(NOW(), INTERVAL 1 MONTH)) THEN ROUND((DAY(CheckoutDate) / DAY(LAST_DAY(DATE_ADD(NOW(), INTERVAL 1 MONTH)))) * RoomRent, 2) ELSE RoomRent END AS projected_amount FROM hostel WHERE Hostel_Id=? AND isActive = 1;";
+                connection.query(sql12, [hostel_id], function (err, pro_res) {
                     if (err) {
                         console.log("Unable to get Projection");
                         response.status(201).json({ message: "Unable to get Projection", error: err.message });
@@ -1073,8 +1079,8 @@ function listDashBoard(connection, response, request) {
                             // })
 
                             // Complaint list
-                            var sql2 = "SELECT com.*,hos.profile,CASE WHEN com.user_type = 1 THEN com.created_by ELSE hos.id END AS com_created_by,ct.complaint_name FROM compliance AS com JOIN hostel AS hos ON com.User_id = hos.User_Id JOIN complaint_type AS ct ON ct.id = com.Complainttype WHERE CASE WHEN com.user_type = 1 THEN com.created_by ELSE hos.id END IN (" + created_by + ") AND com.Status != 'Completed' ORDER BY com.ID DESC LIMIT 5;"
-                            connection.query(sql2, function (err, com_data) {
+                            var sql2 = "SELECT com.*,hos.profile,CASE WHEN com.user_type = 1 THEN com.created_by ELSE hos.id END AS com_created_by,ct.complaint_name FROM compliance AS com JOIN hostel AS hos ON com.User_id = hos.User_Id JOIN complaint_type AS ct ON ct.id = com.Complainttype WHERE CASE WHEN com.user_type = 1 THEN com.hostel_id ELSE hos.id END =? AND com.Status != 'Completed' ORDER BY com.ID DESC LIMIT 5;"
+                            connection.query(sql2, [hostel_id], function (err, com_data) {
                                 if (err) {
                                     response.status(201).json({ message: "Unable to Get Complaince Details", err: err.message });
                                 } else {
@@ -1082,29 +1088,29 @@ function listDashBoard(connection, response, request) {
                                     // var query1 = `SELECT m.month,COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue,COALESCE(SUM(COALESCE(expen.purchase_amount, 0)), 0) AS expense FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS numbers) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month, invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By IN (${created_by})) AS invo ON m.month = invo.month LEFT JOIN (SELECT DATE_FORMAT(expen.createdate, '%Y-%m') AS month, expen.purchase_amount FROM expenses AS expen WHERE expen.created_by IN (${created_by})) AS expen ON m.month = expen.month GROUP BY m.month ORDER BY m.month;`
 
                                     // Booking Data
-                                    var sql4 = "SELECT id,first_name,last_name,amount,joining_date FROM bookings WHERE status=1 AND created_by IN (?) ORDER BY id DESC LIMIT 5;";
-                                    connection.query(sql4, [show_ids], function (err, book_data) {
+                                    var sql4 = "SELECT id,first_name,last_name,amount,joining_date FROM bookings WHERE status=1 AND hostel_id=? ORDER BY id DESC LIMIT 5;";
+                                    connection.query(sql4, [hostel_id], function (err, book_data) {
                                         if (err) {
                                             response.status(201).json({ message: "Error fetching Booking Data" });
                                         } else {
 
-                                            var sql5 = "SELECT inv.id,inv.Invoices,inv.DueDate,inv.Amount AS total_amount FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id WHERE hs.created_By IN (?) AND inv.invoice_status=1 and inv.BalanceDue !=0 ORDER BY id DESC LIMIT 5;"
-                                            connection.query(sql5, [show_ids], function (err, bill_details) {
+                                            var sql5 = "SELECT inv.id,inv.Invoices,inv.DueDate,inv.Amount AS total_amount FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id WHERE hs.id =? AND inv.invoice_status=1 and inv.BalanceDue !=0 ORDER BY id DESC LIMIT 5;"
+                                            connection.query(sql5, [hostel_id], function (err, bill_details) {
                                                 if (err) {
                                                     response.status(201).json({ message: "Error fetching Bill Data" });
                                                 } else {
 
-                                                    var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue,COALESCE(SUM(COALESCE(expen.purchase_amount, 0)), 0) AS expense FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) AS numbers) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.created_By IN (" + show_ids + ")) AS invo ON m.month = invo.month LEFT JOIN (SELECT DATE_FORMAT(expen.createdate, '%Y-%m') AS month, expen.purchase_amount FROM expenses AS expen WHERE expen.created_by IN (" + show_ids + ")) AS expen ON m.month = expen.month GROUP BY m.month ORDER BY  m.month;"
+                                                    var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue,COALESCE(SUM(COALESCE(expen.purchase_amount, 0)), 0) AS expense FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) AS numbers) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.id=?) AS invo ON m.month = invo.month LEFT JOIN (SELECT DATE_FORMAT(expen.createdate, '%Y-%m') AS month, expen.purchase_amount FROM expenses AS expen WHERE expen.hostel_id=?) AS expen ON m.month = expen.month GROUP BY m.month ORDER BY  m.month;"
                                                     // Execute the query
-                                                    connection.query(query1, [created_by], (error, results, fields) => {
+                                                    connection.query(query1, [hostel_id, hostel_id], (error, results, fields) => {
                                                         if (error) {
                                                             console.error('Error executing query:', error);
                                                             return;
                                                         } else {
                                                             // expense category
-                                                            var sql2 = "SELECT SUM(expen.purchase_amount) AS purchase_amount, expen.category_id, category.category_Name FROM expenses expen JOIN Expense_Category_Name category ON category.id = expen.category_id WHERE expen.status = true AND expen.created_by IN (?) AND YEAR(expen.purchase_date) = YEAR(CURDATE()) AND MONTH(expen.createdate) = MONTH(CURDATE()) GROUP BY expen.category_id";
+                                                            var sql2 = "SELECT SUM(expen.purchase_amount) AS purchase_amount, expen.category_id, category.category_Name FROM expenses expen JOIN Expense_Category_Name category ON category.id = expen.category_id WHERE expen.status = true AND expen.hostel_id=? AND YEAR(expen.purchase_date) = YEAR(CURDATE()) AND MONTH(expen.createdate) = MONTH(CURDATE()) GROUP BY expen.category_id";
                                                             // console.log("query", query);
-                                                            connection.query(sql2, show_ids, function (error, data) {
+                                                            connection.query(sql2, [hostel_id], function (error, data) {
                                                                 if (error) {
                                                                     console.log("error", error);
                                                                     response.status(201).json({ message: "Error fetching Data" });
@@ -1168,7 +1174,7 @@ function deleteHostel(request, response) {
                     response.status(201).json({ message: "Error While Fetching Hostel room details" });
                 }
                 else {
-                    if (floorData && floorData.length > 0) {
+                    if (floorData && floorData.length != 0) {
                         response.status(201).json({ message: "This hostel has some users, so first delete the users.", FloorStatus: 201 });
                     }
                     else {
