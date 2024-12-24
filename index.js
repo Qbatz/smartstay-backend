@@ -1161,9 +1161,9 @@ app.post('/contacts/add_contact', contacts_router.add_contact)
 
 app.post('/contacts/delete_contact', contacts_router.delete_contact)
 
-app.post('/customers/reassign_bed', contacts_router.reassign_bed)
+app.post('/users/reassign_bed', contacts_router.reassign_bed)
 
-app.post('/customers/all_contacts', contacts_router.all_contacts)
+app.post('/users/all_contacts', contacts_router.all_contacts)
 
 // Mobile API
 
