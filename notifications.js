@@ -1010,29 +1010,68 @@ function check_next_entry(id, reading, per_unit_amount, atten, callback) {
 
 function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, eb_id, created_by, new_date, type, callback) {
 
-    var sql1 = `SELECT *,
-    CASE
-        WHEN checkoutDate > '${new_date}' OR checkoutDate IS NULL
-        THEN DATEDIFF('${new_date}', GREATEST(joining_date, '${last_cal_date}')) + 1
-        
-        WHEN checkoutDate <= '${new_date}'
-        THEN DATEDIFF(checkoutDate, GREATEST(joining_date, '${last_cal_date}')) + 1
-        
-        ELSE 0
-    END AS days_stayed
- FROM hostel
- WHERE joining_date <= '${last_cal_date}'
-     AND Hostel_Id = '${atten.hostel_id}'
-     AND (checkoutDate >= '${last_cal_date}' OR checkoutDate IS NULL);`
+    //     var sql1 = `SELECT *,
+    //     CASE
+    //         WHEN checkoutDate > '${new_date}' OR checkoutDate IS NULL
+    //         THEN DATEDIFF('${new_date}', GREATEST(joining_date, '${last_cal_date}')) + 1
 
-    console.log("Joining Date :", last_cal_date);
-    console.log("Check Out Date :", new_date);
+    //         WHEN checkoutDate <= '${new_date}'
+    //         THEN DATEDIFF(checkoutDate, GREATEST(joining_date, '${last_cal_date}')) + 1
+
+    //         ELSE 0
+    //     END AS days_stayed
+    //  FROM hostel
+    //  WHERE joining_date <= '${last_cal_date}'
+    //      AND Hostel_Id = '${atten.hostel_id}'
+    //      AND (checkoutDate >= '${last_cal_date}' OR checkoutDate IS NULL);`
+
+    //     console.log("Joining Date :", last_cal_date);
+    //     console.log("Check Out Date :", new_date);
+
+    //     if (type == 'room') {
+    //         sql1 += ` AND Floor = '${atten.floor_id}' AND Rooms = '${atten.room_id}'`
+    //     }
 
     if (type == 'room') {
-        sql1 += ` AND Floor = '${atten.floor_id}' AND Rooms = '${atten.room_id}'`
-    }
 
-    // console.log(sql1);
+        var sql1 = `SELECT *,
+        CASE
+        WHEN r.reassign_date IS NOT NULL THEN
+            GREATEST(0, DATEDIFF(r.reassign_date, GREATEST(h.joining_date, '${last_cal_date}')))
+        ELSE
+            CASE
+                WHEN h.checkoutDate > '${atten.date}' OR h.checkoutDate IS NULL THEN
+                    GREATEST(0, DATEDIFF('${atten.date}', GREATEST(h.joining_date, '${last_cal_date}')) + 1)
+                WHEN h.checkoutDate <= '${atten.date}' THEN
+                    GREATEST(0, DATEDIFF(h.checkoutDate, GREATEST(h.joining_date, '${last_cal_date}')) + 1)
+                ELSE 0
+            END
+        END AS days_stayed
+        FROM hostel h
+        LEFT JOIN reassign_userdetails r 
+        ON h.id = r.user_id
+        WHERE h.Hostel_Id = ${atten.hostel_id}
+        AND h.joining_date <= '${last_cal_date}'
+        AND (h.checkoutDate >= '${last_cal_date}' OR h.checkoutDate IS NULL)
+        AND (h.Floor = ${atten.floor_id} OR r.old_floor = ${atten.floor_id} OR r.new_floor = ${atten.floor_id})
+        AND (r.old_room = ${atten.room_id} OR r.new_room = ${atten.room_id} OR h.Rooms = ${atten.room_id});`
+
+    } else {
+
+        var sql1 = `SELECT *,
+        CASE       
+            WHEN h.checkoutDate > '${atten.date}' OR h.checkoutDate IS NULL THEN
+                GREATEST(0, DATEDIFF('${atten.date}', GREATEST(h.joining_date, '${last_cal_date}')) + 1)
+            WHEN h.checkoutDate <= '${atten.date}' THEN
+                GREATEST(0, DATEDIFF(h.checkoutDate, GREATEST(h.joining_date, '${last_cal_date}')) + 1)
+            ELSE 0
+        END AS days_stayed
+        FROM hostel h
+        LEFT JOIN reassign_userdetails r 
+            ON h.id = r.user_id
+        WHERE h.Hostel_Id = ${atten.hostel_id}`;
+        // }
+    }
 
     connection.query(sql1, function (err, user_data) {
         if (err) {
@@ -1095,23 +1134,86 @@ function edit_split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last
 
 function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_date, total_amount, total_reading, eb_id, created_by, type, callback) {
 
-    var sql1 = `SELECT *,
-       CASE
-           WHEN checkoutDate > '${atten.date}' OR checkoutDate IS NULL
-           THEN DATEDIFF('${atten.date}', GREATEST(joining_date, '${last_cal_date}')) + 1
+    // var sql1 = `SELECT *,
+    //    CASE
+    //        WHEN checkoutDate > '${atten.date}' OR checkoutDate IS NULL
+    //        THEN DATEDIFF('${atten.date}', GREATEST(joining_date, '${last_cal_date}')) + 1
 
-           WHEN checkoutDate <= '${atten.date}'
-           THEN DATEDIFF(checkoutDate, GREATEST(joining_date, '${last_cal_date}')) + 1
+    //        WHEN checkoutDate <= '${atten.date}'
+    //        THEN DATEDIFF(checkoutDate, GREATEST(joining_date, '${last_cal_date}')) + 1
 
-           ELSE 0
-       END AS days_stayed
-    FROM hostel
-    WHERE joining_date <= '${last_cal_date}'
-        AND Hostel_Id = '${atten.hostel_id}'
-        AND (checkoutDate >= '${last_cal_date}' OR checkoutDate IS NULL)`
+    //        ELSE 0
+    //    END AS days_stayed
+    // FROM hostel
+    // WHERE joining_date <= '${last_cal_date}'
+    //     AND Hostel_Id = '${atten.hostel_id}'
+    //     AND (checkoutDate >= '${last_cal_date}' OR checkoutDate IS NULL)`
+
+    // if (type == 'room') {
+    //     sql1 += ` AND Floor = '${atten.floor_id}' AND Rooms = '${atten.room_id}'`
+    // }
 
     if (type == 'room') {
-        sql1 += ` AND Floor = '${atten.floor_id}' AND Rooms = '${atten.room_id}'`
+
+        // var sql1 = `SELECT *,
+        //     CASE
+        //         WHEN r.reassign_date IS NOT NULL THEN
+        //             DATEDIFF(r.reassign_date, GREATEST(h.joining_date, '${last_cal_date}'))
+        //         ELSE
+        //             CASE
+        //                 WHEN h.checkoutDate > '${atten.date}' OR h.checkoutDate IS NULL
+        //                 THEN DATEDIFF('${atten.date}', GREATEST(h.joining_date, '${last_cal_date}')) + 1
+        //                 WHEN h.checkoutDate <= '${atten.date}'
+        //                 THEN DATEDIFF(h.checkoutDate, GREATEST(h.joining_date, '${last_cal_date}')) + 1
+        //                 ELSE 0
+        //             END
+        //     END AS days_stayed
+        //     FROM hostel h
+        //     LEFT JOIN reassign_userdetails r 
+        //     ON h.id = r.user_id 
+        //     WHERE h.Hostel_Id = ${atten.hostel_id}
+
+        //     AND h.joining_date <= '${last_cal_date}'
+        //     AND (h.checkoutDate >= '${last_cal_date}' OR h.checkoutDate IS NULL)
+        //     AND (h.Floor = ${atten.floor_id} OR r.old_floor = ${atten.floor_id} OR r.new_floor = ${atten.floor_id}) AND (r.old_room = ${atten.room_id} OR r.new_room = ${atten.room_id} OR h.Rooms = ${atten.room_id})`
+        var sql1 = `SELECT *,
+        CASE
+        WHEN r.reassign_date IS NOT NULL THEN
+            GREATEST(0, DATEDIFF(r.reassign_date, GREATEST(h.joining_date, '${last_cal_date}')))
+        ELSE
+            CASE
+                WHEN h.checkoutDate > '${atten.date}' OR h.checkoutDate IS NULL THEN
+                    GREATEST(0, DATEDIFF('${atten.date}', GREATEST(h.joining_date, '${last_cal_date}')) + 1)
+                WHEN h.checkoutDate <= '${atten.date}' THEN
+                    GREATEST(0, DATEDIFF(h.checkoutDate, GREATEST(h.joining_date, '${last_cal_date}')) + 1)
+                ELSE 0
+            END
+        END AS days_stayed
+        FROM hostel h
+        LEFT JOIN reassign_userdetails r 
+        ON h.id = r.user_id
+        WHERE h.Hostel_Id = ${atten.hostel_id}
+        AND h.joining_date <= '${last_cal_date}'
+        AND (h.checkoutDate >= '${last_cal_date}' OR h.checkoutDate IS NULL)
+        AND (h.Floor = ${atten.floor_id} OR r.old_floor = ${atten.floor_id} OR r.new_floor = ${atten.floor_id})
+        AND (r.old_room = ${atten.room_id} OR r.new_room = ${atten.room_id} OR h.Rooms = ${atten.room_id});
+`
+
+    } else {
+
+        var sql1 = `SELECT *,
+        CASE       
+            WHEN h.checkoutDate > '${atten.date}' OR h.checkoutDate IS NULL THEN
+                GREATEST(0, DATEDIFF('${atten.date}', GREATEST(h.joining_date, '${last_cal_date}')) + 1)
+            WHEN h.checkoutDate <= '${atten.date}' THEN
+                GREATEST(0, DATEDIFF(h.checkoutDate, GREATEST(h.joining_date, '${last_cal_date}')) + 1)
+            ELSE 0
+        END AS days_stayed
+        FROM hostel h
+        LEFT JOIN reassign_userdetails r 
+            ON h.id = r.user_id
+        WHERE h.Hostel_Id = ${atten.hostel_id}`;
+
     }
 
     console.log("Joining Date :", last_cal_date);
