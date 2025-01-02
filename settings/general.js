@@ -20,7 +20,7 @@ exports.add_general_user = async (req, res) => {
 
         if (id) {
 
-            if (!f_name || !email_id || !mob_no ) {
+            if (!f_name || !email_id || !mob_no) {
                 return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
             }
 
@@ -83,7 +83,7 @@ exports.add_general_user = async (req, res) => {
             })
         } else {
 
-            if (!f_name || !email_id || !mob_no || !password ) {
+            if (!f_name || !email_id || !mob_no || !password) {
                 return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
             }
 
@@ -173,8 +173,8 @@ exports.change_password = (req, res) => {
 
         if (new_pass == cn_pass) {
 
-            var sql1 = "SELECT * FROM createaccount WHERE id=? AND createdby=?";
-            connection.query(sql1, [id, created_by], async (err, data) => {
+            var sql1 = "SELECT * FROM createaccount WHERE id=?";
+            connection.query(sql1, [id], async (err, data) => {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
                 } else if (data.length != 0) {
@@ -238,4 +238,37 @@ exports.delete_general_user = (req, res) => {
     } else {
         res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
+}
+
+exports.check_password = (req, res) => {
+
+    var { id, password } = req.body;
+
+    if (!id || !password) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    var sql1 = "SELECT * FROM createaccount WHERE id=? AND user_status=1";
+    connection.query(sql1, [id], async function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Error Fetching User Details", reason: err.message })
+        }
+
+        if (data.length == 0) {
+            return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+        }
+
+        var old_pass = data[0].password;
+
+        try {
+            const isMatch = await bcrypt.compare(password, old_pass);
+            if (isMatch) {
+                return res.status(200).json({ statusCode: 200, message: "Password Matched!" });
+            } else {
+                return res.status(201).json({ statusCode: 201, message: "Password Does Not Matched !" });
+            }
+        } catch (bcryptError) {
+            return res.status(201).json({ statusCode: 201, message: "Error Verifying Password", reason: bcryptError.message });
+        }
+    })
 }

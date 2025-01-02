@@ -1137,6 +1137,8 @@ app.post('/settings/add_general_user', upload.fields([{ name: 'profile', maxCoun
 
 app.get('/settings/all_general_users', settings_router.all_general_user)
 
+app.post('/settings/check_password', settings_router.check_password)
+
 app.post('/settings/change_staff_password', settings_router.change_password)
 
 app.post('/settings/delete_general_user', settings_router.delete_general_user)
