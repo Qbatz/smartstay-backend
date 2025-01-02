@@ -5,7 +5,7 @@ const bcrypt = require('bcrypt');
 
 exports.user_login = (req, res) => {
 
-    var mob_no = req.body.mob_no;j
+    var mob_no = req.body.mob_no;
 
     if (!mob_no) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mobile Number" });
