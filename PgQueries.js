@@ -24,11 +24,19 @@ function getHostelList(request, response) {
     var is_admin = request.is_admin;
 
     var show_ids = request.show_ids;
+    var hostel_id = request.body.hostel_id;
 
     if (is_admin == 1 || (role_permissions[3] && role_permissions[3].per_view == 1)) {
 
-        const queryHostelList = `SELECT hstl.*,eb.amount AS eb_amount FROM hosteldetails AS hstl LEFT JOIN eb_settings AS eb ON hstl.id=eb.hostel_id WHERE hstl.created_By IN (${show_ids}) AND hstl.isActive = true ORDER BY hstl.create_At DESC`;
+        var queryHostelList = `SELECT hstl.*,eb.amount AS eb_amount FROM hosteldetails AS hstl LEFT JOIN eb_settings AS eb ON hstl.id=eb.hostel_id WHERE hstl.created_By IN (${show_ids}) AND hstl.isActive = true `;
         // Query to get the hostels
+
+        if (hostel_id) {
+            queryHostelList += " AND hstl.id=" + hostel_id + ""
+        }
+
+        queryHostelList += " ORDER BY hstl.id DESC"
+
         connection.query(queryHostelList, function (err, hostels) {
             if (err) {
                 console.error("Error fetching hostels: ", err);
