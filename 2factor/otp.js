@@ -133,7 +133,10 @@ exports.verify_otp = (req, res) => {
 
 exports.dashborad = (req, res) => {
 
-    var id = req.body.id;
+    var id = req.user_details;
 
-    var sql1 = "SELECT * FROM customer_eb_amount "
+    console.log(req.user_details);
+
+    var sql1 = "SELECT SUM(amount) AS last_month_ebamount FROM customer_eb_amount WHERE DATE_FORMAT(date, '%Y-%m') = DATE_FORMAT(CURDATE() - INTERVAL 1 MONTH, '%Y-%m') AND user_id=? AND status=1;"
+    var sql2 = ""
 }

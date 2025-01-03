@@ -1167,6 +1167,12 @@ app.post('/users/reassign_bed', contacts_router.reassign_bed)
 
 app.post('/users/all_contacts', contacts_router.all_contacts)
 
+app.post('/add/announcement', contacts_router.add_annoncement)
+
+app.post('/delete/announcement', contacts_router.delete_announcement)
+
+app.post('/announcement/all_announcement', contacts_router.all_announce)
+
 // Mobile API
 
 var twofactor_routes = require('./2factor/otp')
@@ -1180,9 +1186,6 @@ app.post('/customers/verify_otp', twofactor_routes.verify_otp)
 app.post('/customers/dashborad', user_middleware, twofactor_routes.dashborad)
 
 
-app.post('/add/announcement', contacts_router.add_annoncement)
-
-app.post('/delete/announcement', contacts_router.delete_announcement)
 
 
-app.post('/announcement/all_announcement', contacts_router.all_announce)
+
