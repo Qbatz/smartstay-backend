@@ -365,4 +365,52 @@ function change_details(req, res) {
     })
 }
 
-module.exports = { AddCompliance, GetComplianceList, add_complainttypes, all_complaint_types, remove_complaint_types, change_details };
+function edit_complaint_type(req, res) {
+
+    var user_id = req.user_details.id;
+    var role_permissions = req.role_permissions;
+    var is_admin = req.is_admin;
+
+    var complaint_name = req.body.complaint_name;
+    var hostel_id = req.body.hostel_id;
+    var id = req.body.id;
+
+    if (is_admin == 1 || (role_permissions[13] && role_permissions[13].per_edit == 1)) {
+
+        if (!complaint_name) {
+            return res.status(201).json({ statusCode: 201, message: "Please Add Complaint Name" })
+        }
+
+        if (!hostel_id) {
+            return res.status(201).json({ statusCode: 201, message: "Please Add Hostel Details" })
+        }
+
+        if (!id) {
+            return res.status(201).json({ statusCode: 201, message: "Missing Complaint Id" })
+        }
+
+        var sql1 = "SELECT * FROM complaint_type WHERE id=? AND hostel_id =? AND status=1";
+        connection.query(sql1, [id, hostel_id], (err, sel_data) => {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Unable to Get Complaint Details" })
+            } else if (sel_data.length != 0) {
+
+                var sql2 = "UPDATE complaint_type SET complaint_name=? WHERE id=?";
+                connection.query(sql2, [complaint_name, id], (err, ins_data) => {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Add Complaint Details" })
+                    } else {
+                        return res.status(200).json({ statusCode: 200, message: "Successfully Updated Complaint Details" })
+                    }
+                })
+            } else {
+                return res.status(201).json({ statusCode: 201, message: "Invalid Complaint Details" })
+            }
+        })
+    } else {
+        res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
+
+}
+
+module.exports = { AddCompliance, GetComplianceList, add_complainttypes, all_complaint_types, remove_complaint_types, change_details, edit_complaint_type };
