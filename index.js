@@ -1180,6 +1180,7 @@ app.post('/announcement/all_announcement', contacts_router.all_announce)
 // Mobile API
 
 var twofactor_routes = require('./2factor/otp')
+var user_list_routes = require('./2factor/user_details')
 
 var user_middleware = require('./user_middleware')
 
@@ -1189,7 +1190,16 @@ app.post('/customers/verify_otp', twofactor_routes.verify_otp)
 
 app.post('/customers/dashboard', user_middleware, twofactor_routes.dashborad)
 
+app.get('/customers/amenities_list', user_middleware, user_list_routes.amenities_list)
 
+app.get('/customers/eb_list', user_middleware, user_list_routes.eb_list)
 
+app.get('/customers/invoice_list', user_middleware, user_list_routes.invoice_list)
 
+app.post('/customers/getinvoice_byid', user_middleware, user_list_routes.getinvoice_byid)
 
+app.post('/customers/create_complaint', user_middleware, user_list_routes.create_complaint)
+
+app.get('/customers/all_complaints', user_middleware, user_list_routes.all_complaints)
+
+app.get('/customers/complaint_types', user_middleware, user_list_routes.complaint_types)

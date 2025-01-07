@@ -44,7 +44,7 @@ module.exports = (req, res, next) => {
                     if (timeToExpire <= 600) {
                         newToken = jwt.sign(
                             { id: decoded.id, sub: "customers", username: decoded.username, hostel_id: decoded.hostel_id },
-                            process.env.JWT_SECRET, { expiresIn: '30m' }
+                            process.env.JWT_SECRET, { expiresIn: '2hr' }
                         );
                         res.locals.refresh_token = newToken;
                     }

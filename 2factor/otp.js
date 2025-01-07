@@ -73,7 +73,7 @@ function generateOtp() {
 
 // Generate JWT Token
 const generateToken = (user) => {
-    return jwt.sign({ id: user.ID, sub: "customers", username: user.Name, hostel_id: user.Hostel_Id }, process.env.JWT_SECRET, { expiresIn: '30m' });
+    return jwt.sign({ id: user.ID, sub: "customers", username: user.Name, hostel_id: user.Hostel_Id }, process.env.JWT_SECRET, { expiresIn: '1hr' });
 };
 
 exports.verify_otp = (req, res) => {
@@ -135,8 +135,8 @@ exports.dashborad = (req, res) => {
 
     var id = req.user_details.id;
 
-    var sql1 = "SELECT SUM(amount) AS last_month_ebamount FROM customer_eb_amount WHERE DATE_FORMAT(date, '%Y-%m') = DATE_FORMAT(CURDATE() - INTERVAL 1 MONTH, '%Y-%m') AND user_id=" + id + " AND status=1;"
-    var sql2 = `SELECT ID.user_id, COALESCE((SELECT MIA.amount FROM manual_invoice_amenities MIA WHERE MIA.invoice_id = ID.id AND LOWER(MIA.am_name) IN ('roomrent', 'room rent', 'rent', 'room') ORDER BY MIA.id DESC LIMIT 1), ID.RoomRent, 0) AS last_month_room_rent FROM invoicedetails ID WHERE ID.Date = (SELECT MAX(Date) FROM invoicedetails WHERE Date >= DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL -1 MONTH), '%Y-%m-01') AND Date < DATE_FORMAT(CURDATE(), '%Y-%m-01') AND hos_user_id = ID.hos_user_id) AND ID.hos_user_id = ${id} GROUP BY ID.user_id;`;
+    var sql1 = "SELECT COALESCE(SUM(amount),0) AS last_month_ebamount FROM customer_eb_amount WHERE DATE_FORMAT(date, '%Y-%m') = DATE_FORMAT(CURDATE() - INTERVAL 1 MONTH, '%Y-%m') AND user_id=" + id + " AND status=1;"
+    var sql2 = "SELECT ID.user_id, COALESCE((SELECT MIA.amount FROM manual_invoice_amenities MIA WHERE MIA.invoice_id = ID.id AND LOWER(MIA.am_name) IN ('roomrent', 'room rent', 'rent', 'room') ORDER BY MIA.id DESC LIMIT 1), ID.RoomRent, 0) AS last_month_room_rent FROM invoicedetails ID WHERE ID.Date = (SELECT MAX(Date) FROM invoicedetails WHERE Date >= DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL -1 MONTH), '%Y-%m-01') AND Date < DATE_FORMAT(CURDATE(), '%Y-%m-01') AND hos_user_id = ID.hos_user_id) AND ID.hos_user_id = " + id + " GROUP BY ID.user_id;";
 
     var sql3 = "SELECT * FROM compliance WHERE created_by=? AND user_type=2 ORDER BY id DESC"; // Complaints Query
     var sql4 = "SELECT * FROM customer_eb_amount WHERE user_id=? AND status=1"; // Eb Details
@@ -151,8 +151,10 @@ exports.dashborad = (req, res) => {
             return res.status(201).json({ statusCode: 201, message: "Error Fetching User Details", reason: err.message })
         }
 
-        var last_month_ebamount = data[0][0].last_month_ebamount
-        var last_month_rent = data[1][0].last_month_room_rent
+        console.log(data);
+
+        const last_month_ebamount = (data[0] && data[0][0] && data[0][0].last_month_ebamount) || 0;
+        const last_month_rent = (data[1] && data[1][0] && data[1][0].last_month_room_rent) || 0;
 
         connection.query(sql3, [id], function (err, comp_data) {
             if (err) {
@@ -201,7 +203,6 @@ exports.dashborad = (req, res) => {
                 })
             })
         })
-        console.log(last_month_ebamount, last_month_rent);
     })
 
 }
