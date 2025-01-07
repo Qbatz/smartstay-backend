@@ -39,6 +39,8 @@ module.exports = (req, res, next) => {
                     const currentTime = Math.floor(Date.now() / 1000);
                     const timeToExpire = decoded.exp - currentTime;
 
+                    let newToken = null;
+
                     if (timeToExpire <= 600) {
                         newToken = jwt.sign(
                             { id: decoded.id, sub: "customers", username: decoded.username, hostel_id: decoded.hostel_id },
