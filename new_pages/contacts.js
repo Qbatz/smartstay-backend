@@ -218,126 +218,58 @@ exports.add_annoncement = (req, res) => {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
     }
 
-    // if (id) {
-        
-
-    //     var sql2 = "SELECT * FROM announcements WHERE id=? AND status=1";
-    //     connection.query(sql2, [id], function (err, ch_data) {
-    //         if (err) {
-    //             return res.status(201).json({ statusCode: 201, message: "Error Fetching Contact Details", reason: err.message })
-    //         } else if (ch_data.length != 0) {
-
-    //             var sql3 = "UPDATE announcements SET title=?,description=? WHERE id=?";
-    //             connection.query(sql3, [title, description, id], function (err, ins_data) {
-    //                 if (err) {
-    //                     return res.status(201).json({ statusCode: 201, message: "Error Fetching Edit AnnounceMent Details", reason: err.message })
-    //                 } else {
-    //                     return res.status(200).json({ statusCode: 200, message: "Announcement Updated Successfully!" })
-    //                 }
-    //             })
-
-    //         } else {
-    //             return res.status(201).json({ statusCode: 201, message: "Invalid Announcement Details" })
-    //         }
-    //     })
-
-    // } 
     if (id) {
+
         var sql2 = "SELECT * FROM announcements WHERE id=? AND status=1";
         connection.query(sql2, [id], function (err, ch_data) {
             if (err) {
-                return res.status(201).json({
-                    statusCode: 201,
-                    message: "Error Fetching Contact Details",
-                    reason: err.message
-                });
+                return res.status(201).json({ statusCode: 201, message: "Error Fetching Contact Details", reason: err.message });
             } else if (ch_data.length != 0) {
-                var sqlCheck = "SELECT COUNT(*) AS count FROM announcements WHERE LOWER(title) = LOWER(?) AND id != ?";
-                connection.query(sqlCheck, [title, id], function (err, checkResult) {
+
+                var sqlCheck = "SELECT COUNT(*) AS count FROM announcements WHERE LOWER(title) = LOWER(?) AND hostel_id=? AND status=1 AND id != ?";
+                connection.query(sqlCheck, [title, hostel_id, id], function (err, checkResult) {
                     if (err) {
-                        return res.status(202).json({
-                            statusCode: 202,
-                            message: "Error Checking Title Uniqueness",
-                            reason: err.message
-                        });
+                        return res.status(202).json({ statusCode: 202, message: "Error Checking Title Uniqueness", reason: err.message });
                     }
-    
+
                     if (checkResult[0].count > 0) {
-                        return res.status(201).json({
-                            statusCode: 201,
-                            message: "Title already exists. Please use a different title."
-                        });
+                        return res.status(201).json({ statusCode: 201, message: "Title already exists. Please use a different title." });
                     } else {
-                        // Proceed with the update if the title is unique
                         var sql3 = "UPDATE announcements SET title=?, description=? WHERE id=?";
                         connection.query(sql3, [title, description, id], function (err, ins_data) {
                             if (err) {
-                                return res.status(201).json({
-                                    statusCode: 201,
-                                    message: "Error Updating Announcement Details",
-                                    reason: err.message
-                                });
+                                return res.status(201).json({ statusCode: 201, message: "Error Updating Announcement Details", reason: err.message });
                             } else {
-                                return res.status(200).json({
-                                    statusCode: 200,
-                                    message: "Announcement Updated Successfully!"
-                                });
+                                return res.status(200).json({ statusCode: 200, message: "Announcement Updated Successfully!" });
                             }
                         });
                     }
                 });
             } else {
-                return res.status(201).json({
-                    statusCode: 201,
-                    message: "Invalid Announcement Details"
-                });
+                return res.status(201).json({ statusCode: 201, message: "Invalid Announcement Details" });
             }
         });
-    }
-    
-    else {
+    } else {
 
-    //     var sql3 = "INSERT INTO announcements (title,hostel_id,description,created_by) VALUES (?,?,?,?)";
-    //     connection.query(sql3, [title, hostel_id, description,created_by], function (err, ins_data) {
-    //         if (err) {
-    //             return res.status(201).json({ statusCode: 201, message: "Error Fetching Edit AnnounceMent Details", reason: err.message })
-    //         } else {
-    //             return res.status(200).json({ statusCode: 200, message: "Announcement Addeed Successfully!" })
-    //         }
-    //     })
-    var sqlCheck = "SELECT COUNT(*) AS count FROM announcements WHERE LOWER(title) = LOWER(?)";
-connection.query(sqlCheck, [title], function (err, result) {
-    if (err) {
-        return res.status(202).json({
-            statusCode: 202,
-            message: "Error Checking Title Existence",
-            reason: err.message
-        });
-    } else if (result[0].count > 0) {
-        return res.status(201).json({
-            statusCode: 201,
-            message: "Title already exists. Please use a different title."
-        });
-    }
-     else {
-       
-        var sqlInsert = "INSERT INTO announcements (title, hostel_id, description, created_by) VALUES (?, ?, ?, ?)";
-        connection.query(sqlInsert, [title, hostel_id, description, created_by], function (err, ins_data) {
+        var sqlCheck = "SELECT COUNT(*) AS count FROM announcements WHERE LOWER(title) = LOWER(?) AND hostel_id=? AND status=1";
+        connection.query(sqlCheck, [title, hostel_id], function (err, result) {
             if (err) {
-                return res.status(202).json({
-                    statusCode: zz,
-                    message: "Error Adding Announcement",
-                    reason: err.message
-                });
-            } else {
-                return res.status(200).json({
-                    statusCode: 200,
-                    message: "Announcement Added Successfully!"
+                return res.status(202).json({ statusCode: 202, message: "Error Checking Title Existence", reason: err.message });
+            } else if (result[0].count > 0) {
+                return res.status(201).json({ statusCode: 201, message: "Title already exists. Please use a different title." });
+            }
+            else {
+
+                var sqlInsert = "INSERT INTO announcements (title, hostel_id, description, created_by) VALUES (?, ?, ?, ?)";
+                connection.query(sqlInsert, [title, hostel_id, description, created_by], function (err, ins_data) {
+                    if (err) {
+                        return res.status(202).json({ statusCode: 201, message: "Error Adding Announcement", reason: err.message });
+                    } else {
+                        return res.status(200).json({ statusCode: 200, message: "Announcement Added Successfully!" });
+                    }
                 });
             }
         });
-    }
-});
     }
 
 }
@@ -387,7 +319,7 @@ exports.all_announce = (req, res) => {
     connection.query(sql, [hostel_id], function (err, data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Error Fetching User Details", reason: err.message })
-            
+
         } else {
             return res.status(200).json({ statusCode: 200, message: "View Announcement Details", announcements: data });
         }
