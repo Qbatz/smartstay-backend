@@ -146,8 +146,8 @@ exports.all_general_user = (req, res) => {
 
     if (user_type == 'admin') {
 
-        var sql1 = "SELECT id,first_name,last_name,mobileNo,email_Id,Address,profile,user_status,createdby FROM createaccount WHERE createdby=? AND user_status=1 AND user_type='agent'";
-        connection.query(sql1, [created_by], function (err, data) {
+        var sql1 = "SELECT id,first_name,last_name,mobileNo,email_Id,Address,profile,user_status,createdby FROM createaccount WHERE createdby=? OR id=? AND user_status=1";
+        connection.query(sql1, [created_by,created_by], function (err, data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
             } else {
