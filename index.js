@@ -842,6 +842,14 @@ app.post('/add_manual_invoice', (req, res) => {
     invoiceQueries.add_manual_invoice(req, res)
 });
 
+app.post('/edit_manual_invoice', (req, res) => {
+    invoiceQueries.edit_manual_invoice(req, res)
+});
+
+app.post('/delete_manual_invoice', (req, res) => {
+    invoiceQueries.delete_manual_invoice(req, res)
+});
+
 // Show Invoice Id
 app.post('/get_invoice_id', (req, res) => {
     userQueries.get_invoice_id(req, res)

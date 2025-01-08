@@ -2824,6 +2824,89 @@ function add_manual_invoice(req, res) {
 
 }
 
+function edit_manual_invoice(req, res) {
+
+    var role_permissions = req.role_permissions;
+    var is_admin = req.is_admin;
+
+    if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_create == 1)) {
+
+        var { user_id, due_date, date, amenity, id } = req.body;
+
+        if (!user_id || !due_date || !date || !amenity || !id) {
+            return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+        }
+
+        var total_amount = amenity && amenity.length > 0 ? amenity.reduce((sum, user) => sum + user.amount, 0) : 0;
+
+        var sql1 = "SELECT * FROM invoicedetails WHERE id=? AND invoice_status=1";
+        connection.query(sql1, [id], function (err, inv_data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Error to Get Invoice Details", reason: err.message })
+            }
+
+            if (inv_data.length == 0) {
+                return res.status(201).json({ statusCode: 201, message: "Invalid Invoice Details" })
+            }
+
+            var paid_amount = inv_data[0].PaidAmount;
+
+            if (paid_amount > total_amount) {
+                return res.status(201).json({ statusCode: 201, message: "Paid Amount Greater Than Total Amount" })
+            }
+
+            var balance_due = total_amount - paid_amount;
+
+            var sql2 = "UPDATE invoicedetails SET Date=?,DueDate=?,Amount=?,BalanceDue=? WHERE id=?";
+            connection.query(sql2, [date, due_date, total_amount, balance_due, id], function (err, up_res) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Error to Update Invoice Details", reason: err.message })
+                }
+
+                var sql3 = "DELETE FROM manual_invoice_amenities WHERE user_id=? AND invoice_id=?";
+                connection.query(sql3, [user_id, id], function (err, del_inv) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Error to Remove Old Invoice Details", reason: err.message })
+                    }
+
+                    if (amenity && amenity.length > 0) {
+
+                        var remaining = amenity.length;
+
+                        amenity.forEach(item => {
+                            var sql3 = "INSERT INTO manual_invoice_amenities (am_name, user_id, amount,invoice_id) VALUES (?, ?, ?,?)";
+                            connection.query(sql3, [item.am_name, user_id, item.amount, id], function (err) {
+                                if (err) {
+                                    console.log("Error inserting amenity details:", err);
+                                }
+                                remaining -= 1;
+                                if (remaining === 0) {
+                                    return res.status(200).json({ statusCode: 200, message: "Invoice Updated Successfully" });
+                                }
+                            });
+                        });
+                    } else {
+                        return res.status(200).json({ statusCode: 200, message: "Invoice Updated Successfully" });
+                    }
+                })
+            })
+        })
+    } else {
+        res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
+}
+
+function delete_manual_invoice(req, res) {
+
+    var { user_id, id } = req.body;
+
+    if (!user_id || !id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    
+}
+
 function customer_readings(req, res) {
 
     var created_by = req.user_details.id;
@@ -3341,4 +3424,4 @@ function edit_eb_readings(req, res) {
     })
 }
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice, customer_readings, add_recuring_bill, get_recuring_amount, all_recuring_bills, delete_recuring_bill, update_recuring_bill, edit_eb_readings }
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice, customer_readings, add_recuring_bill, get_recuring_amount, all_recuring_bills, delete_recuring_bill, update_recuring_bill, edit_eb_readings, edit_manual_invoice, delete_manual_invoice }
