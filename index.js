@@ -292,6 +292,12 @@ app.post('/compliance/compliance-list', (request, response) => {
 
 })
 
+// app.post('/complaint/delete_compliant', complianceQueries.delete_compliant)
+
+app.post('/complaint/delete_compliant', (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    complianceQueries.delete_compliant(request, response)
+})
 
 app.post('/list/hostel-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');

@@ -413,4 +413,39 @@ function edit_complaint_type(req, res) {
 
 }
 
-module.exports = { AddCompliance, GetComplianceList, add_complainttypes, all_complaint_types, remove_complaint_types, change_details, edit_complaint_type };
+
+function delete_compliant (req, res)  {
+
+    var id = req.body.id;
+
+    if (!id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    var sql2 = "SELECT * FROM compliance WHERE id=? ";
+    connection.query(sql2, [id], function (err, ch_data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Error Fetching Contact Details", reason: err.message })
+        } else if (ch_data.length != 0) {
+
+            var sql3 = "UPDATE compliance SET isActive = 0  WHERE id=?";
+            connection.query(sql3, [id], function (err, ins_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Error Fetching Delete compliance Details", reason: err.message })
+                } else {
+                    return res.status(200).json({ statusCode: 200, message: "compliance Deleted Successfully!" })
+                }
+            })
+
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid compliance Details" })
+        }
+    })
+
+}
+
+
+
+
+
+module.exports = { AddCompliance, GetComplianceList, add_complainttypes, all_complaint_types, remove_complaint_types, change_details, edit_complaint_type,delete_compliant };
