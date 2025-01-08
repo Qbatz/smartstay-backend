@@ -39,6 +39,8 @@ module.exports = (req, res, next) => {
                     const currentTime = Math.floor(Date.now() / 1000);
                     const timeToExpire = decoded.exp - currentTime;
 
+                    req.hostel_id = data[0].Hostel_Id;
+
                     let newToken = null;
 
                     if (timeToExpire <= 600) {

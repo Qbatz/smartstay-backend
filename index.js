@@ -1195,6 +1195,7 @@ app.post('/announcement/all_announcement', contacts_router.all_announce)
 
 var twofactor_routes = require('./2factor/otp')
 var user_list_routes = require('./2factor/user_details')
+var user_announcements_routes = require('./2factor/user_announcements')
 
 var user_middleware = require('./user_middleware')
 
@@ -1216,4 +1217,8 @@ app.post('/customers/create_complaint', user_middleware, user_list_routes.create
 
 app.get('/customers/all_complaints', user_middleware, user_list_routes.all_complaints)
 
-app.get('/customers/complaint_types', user_middleware, user_list_routes.complaint_types)
+app.get('/customers/complaint_types', user_middleware, user_list_routes.complaint_types);
+
+app.post('/customers/announcement/add_like', user_middleware, user_announcements_routes.like_announcement);
+
+app.get('/customers/announcement/all_announcements', user_middleware, user_announcements_routes.all_announcements);

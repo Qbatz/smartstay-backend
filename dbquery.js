@@ -211,8 +211,9 @@ const queries = [
 
     "CREATE TABLE `announcements` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`title` VARCHAR(45) NULL,`description` LONGTEXT NULL,`status` INT NULL DEFAULT 1,`hostel_id` BIGINT(20) NULL,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 
-    "ALTER TABLE `assets` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `total_price`;"
+    "ALTER TABLE `assets` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `total_price`;",
 
+    "CREATE TABLE `announcement_likes` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`user_id` BIGINT(20) NULL,`status` INT NULL DEFAULT 1,`an_id` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));"
 ];
 
 queries.forEach(executeQuery);
