@@ -176,7 +176,7 @@ function GetComplianceList(connection, response, request) {
     if (is_admin == 1 || (role_permissions[13] && role_permissions[13].per_view == 1)) {
 
         // const query1 = `SELECT comp.*,ct.complaint_name,hf.floor_name AS floor_name,hr.Room_Id AS room_name FROM hosteldetails hstlDetails inner join compliance comp on comp.Hostel_id=hstlDetails.id JOIN complaint_type AS ct ON ct.id=comp.Complainttype JOIN Hostel_Floor AS hf ON hf.floor_id=comp.Floor_id AND hf.hostel_id=comp.Hostel_id JOIN hostelrooms AS hr ON hr.id=comp.Room WHERE hstlDetails.created_By IN (${show_ids}) ORDER BY comp.ID DESC`;
-        var sql1 = "SELECT comp.*,ct.complaint_name,hf.floor_name AS floor_name,hr.Room_Id AS room_name,cr.first_name AS assigner_name FROM hosteldetails hstlDetails inner join compliance comp on comp.Hostel_id=hstlDetails.id JOIN complaint_type AS ct ON ct.id=comp.Complainttype LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=comp.Floor_id AND hf.hostel_id=comp.Hostel_id LEFT JOIN hostelrooms AS hr ON hr.id=comp.Room LEFT JOIN createaccount AS cr ON cr.id=comp.Assign  WHERE hstlDetails.ID =? ORDER BY comp.ID DESC;"
+        var sql1 = "SELECT comp.*,ct.complaint_name,hf.floor_name AS floor_name,hr.Room_Id AS room_name,cr.first_name AS assigner_name FROM hosteldetails hstlDetails inner join compliance comp on comp.Hostel_id=hstlDetails.id JOIN complaint_type AS ct ON ct.id=comp.Complainttype LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=comp.Floor_id AND hf.hostel_id=comp.Hostel_id LEFT JOIN hostelrooms AS hr ON hr.id=comp.Room LEFT JOIN createaccount AS cr ON cr.id=comp.Assign  WHERE hstlDetails.ID =? AND comp.isActive=1 ORDER BY comp.ID DESC;"
         connection.query(sql1, [hostel_id], function (error, hostelData) {
             if (error) {
                 console.error(error);
@@ -413,4 +413,39 @@ function edit_complaint_type(req, res) {
 
 }
 
-module.exports = { AddCompliance, GetComplianceList, add_complainttypes, all_complaint_types, remove_complaint_types, change_details, edit_complaint_type };
+
+function delete_compliant (req, res)  {
+
+    var id = req.body.id;
+
+    if (!id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    var sql2 = "SELECT * FROM compliance WHERE id=? ";
+    connection.query(sql2, [id], function (err, ch_data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Error Fetching Contact Details", reason: err.message })
+        } else if (ch_data.length != 0) {
+
+            var sql3 = "UPDATE compliance SET isActive = 0  WHERE id=?";
+            connection.query(sql3, [id], function (err, ins_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Error Fetching Delete compliance Details", reason: err.message })
+                } else {
+                    return res.status(200).json({ statusCode: 200, message: "compliance Deleted Successfully!" })
+                }
+            })
+
+        } else {
+            return res.status(201).json({ statusCode: 201, message: "Invalid compliance Details" })
+        }
+    })
+
+}
+
+
+
+
+
+module.exports = { AddCompliance, GetComplianceList, add_complainttypes, all_complaint_types, remove_complaint_types, change_details, edit_complaint_type,delete_compliant };
