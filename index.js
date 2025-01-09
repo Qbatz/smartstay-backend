@@ -118,6 +118,10 @@ app.post('/add/adduser-list', upload.single('profile'), (request, response) => {
     userQueries.createUser(connection, request, response)
 })
 
+app.post('/generate/advance_invoice', (req, res) => {
+    invoiceQueries.advance_invoice(req, res)
+})
+
 // Not Use
 app.get('/user-list/bill-payment', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')

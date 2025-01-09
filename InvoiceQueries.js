@@ -3449,4 +3449,79 @@ function edit_eb_readings(req, res) {
     })
 }
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice, customer_readings, add_recuring_bill, get_recuring_amount, all_recuring_bills, delete_recuring_bill, update_recuring_bill, edit_eb_readings, edit_manual_invoice, delete_manual_invoice }
+function advance_invoice(req, res) {
+
+    var user_id = req.body.user_id;
+
+    if (!user_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing User Details" })
+    }
+
+    var sql1 = "SELECT * FROM invoicedetails WHERE hos_user_id=? AND invoice_status=1 AND action='advance'";
+    connection.query(sql1, [user_id], function (err, check_data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Error to Fetch Invoice Details", reason: err.message })
+        }
+
+        if (check_data.length != 0) {
+            return res.status(201).json({ statusCode: 201, message: "Advance Invoice Already Generated" })
+        }
+
+        var sql2 = "SELECT rms.Price,rms.Hostel_Id AS roomHostel_Id,rms.Floor_Id AS roomFloor_Id,rms.Room_Id AS roomRoom_Id,dtls.id AS detHostel_Id,dtls.isHostelBased,dtls.prefix,dtls.suffix,dtls.Name,hstl.ID AS hos_user_id,hstl.User_Id,hstl.Address,hstl.Name AS UserName,hstl.Hostel_Id AS hosHostel_Id,hstl.Rooms AS hosRoom,hstl.Floor AS hosFloor,hstl.Bed,hstl.RoomRent,hstl.Name AS user_name,hstl.Phone,hstl.Email,hstl.Address,hstl.paid_advance,hstl.pending_advance,hstl.AdvanceAmount AS advance_amount, hstl.CheckoutDate,CASE WHEN dtls.isHostelBased = true THEN (SELECT eb.EbAmount FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id ORDER BY eb.id DESC LIMIT 1)ELSE (SELECT eb.EbAmount FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id AND eb.Floor = hstl.Floor AND eb.Room = hstl.Rooms ORDER BY eb.id DESC LIMIT 1)END AS ebBill,(SELECT eb.Floor FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id ORDER BY eb.id DESC LIMIT 1) AS ebFloor, (SELECT eb.hostel_Id FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id ORDER BY eb.id DESC LIMIT 1 ) AS ebhostel_Id,(SELECT eb.Room FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id ORDER BY eb.id DESC LIMIT 1) AS ebRoom,(SELECT eb.createAt FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id AND eb.Floor = hstl.Floor AND eb.Room = hstl.Rooms ORDER BY eb.id DESC LIMIT 1) AS createdAt,( SELECT invd.Invoices FROM invoicedetails invd WHERE invd.Invoices LIKE CONCAT(dtls.prefix, '%')ORDER BY CAST(SUBSTRING(invd.Invoices, LENGTH(dtls.prefix) + 1) AS UNSIGNED) DESC LIMIT 1) AS InvoiceDetails FROM hostel hstl INNER JOIN hosteldetails dtls ON dtls.id = hstl.Hostel_Id INNER JOIN hostelrooms rms ON rms.Hostel_Id = hstl.Hostel_Id AND rms.Floor_Id = hstl.Floor AND rms.id = hstl.Rooms WHERE hstl.isActive = true AND hstl.id =?;";
+        connection.query(sql2, [user_id], function (sel_err, sel_res) {
+            if (sel_err) {
+                return res.status(201).json({ statusCode: 201, message: "Error to Fetch User Details", reason: err.message })
+            } else if (sel_res.length != 0) {
+
+                var inv_data = sel_res[0];
+                var currentDate = moment().format("YYYY-MM-DD");
+                var dueDate = moment(currentDate).endOf("month").format("YYYY-MM-DD");
+
+                if (inv_data.prefix && inv_data.suffix) {
+                    let numericSuffix;
+                    if (inv_data.InvoiceDetails != null) {
+                        numericSuffix = parseInt(inv_data.InvoiceDetails.substring(inv_data.prefix.length)) || 0;
+                        numericSuffix++;
+                    } else {
+                        numericSuffix = inv_data.suffix;
+                    }
+                    invoiceNo = inv_data.prefix + numericSuffix;
+                } else {
+                    const userID = inv_data.User_Id.toString().slice(0, 4);
+                    const month = moment(new Date()).month() + 1;
+                    const year = moment(new Date()).year();
+                    invoiceNo = "AD_INVC" + month + year + userID;
+                }
+
+                var status = "Pending";
+
+                var pending_advance = inv_data.advance_amount;
+
+                var sql2 = "INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Amnities_deduction_Amount, Hostel_Based, Room_Based, Bed,BalanceDue,PaidAmount,numberofdays,invoice_type,hos_user_id,action) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,2,?,'advance')";
+                connection.query(sql2, [inv_data.user_name, inv_data.Phone, inv_data.Email, inv_data.Name, inv_data.detHostel_Id, inv_data.hosFloor, inv_data.hosRoom, inv_data.advance_amount, inv_data.Address, currentDate, dueDate, invoiceNo, status, inv_data.User_Id, 0, 0, 0, 0, 0, 0, inv_data.Bed, pending_advance, inv_data.paid_advance, inv_data.hos_user_id], function (ins_err, ins_res) {
+                    if (ins_err) {
+                        console.log("Insert Error", ins_err);
+                        return res.status(201).json({ statusCode: 201, message: "Error to Add Invoice Details", reason: err.message })
+                    } else {
+
+                        var inv_id = ins_res.insertId;
+
+                        var sql3 = "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES ('advance',?,?,?)";
+                        connection.query(sql3, [user_id, pending_advance, inv_id], function (err, ins_res) {
+                            if (err) {
+                                return res.status(201).json({ statusCode: 201, message: "Error to Add Invoice Details", reason: err.message })
+                            } else {
+                                console.log("Insert Successfully");
+                                return res.status(200).json({ statusCode: 200, message: "Successfully Invoice Generated !" })
+                            }
+                        })
+                    }
+                });
+            } else {
+                console.log("Invalid Advance User Details");
+            }
+        });
+    })
+}
+
+module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice, customer_readings, add_recuring_bill, get_recuring_amount, all_recuring_bills, delete_recuring_bill, update_recuring_bill, edit_eb_readings, edit_manual_invoice, delete_manual_invoice, advance_invoice }
