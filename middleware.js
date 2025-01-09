@@ -39,6 +39,7 @@ module.exports = (req, res, next) => {
 
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 req.user_details = decoded;
+                req.user_type = decoded.user_type;
 
                 const created_by = decoded.id;
 

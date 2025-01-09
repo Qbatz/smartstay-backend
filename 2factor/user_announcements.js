@@ -69,3 +69,25 @@ exports.all_announcements = (req, res) => {
         }
     })
 }
+
+exports.add_comment = (req, res) => {
+
+    var { an_id, comment } = req.body;
+
+    var user_type = req.user_type;
+    var user_id = req.user_details.id;
+
+    if (!an_id || !comment) {
+        return res.status(201).json({ statusCode: 201, message: "Missing required fields" });
+    }
+
+    var sql1 = "INSERT INTO announcement_comments (an_id,comment,user_id,user_type) VALUES (?,?,?,?)";
+    connection.query(sql1, [an_id, comment, user_id, user_type], function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Error to Add Comment Details", reason: err.message });
+        }
+
+        return res.status(200).json({ statusCode: 200, message: "Comment added successfully!" });
+    })
+
+}

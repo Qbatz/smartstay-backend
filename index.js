@@ -1226,3 +1226,5 @@ app.get('/customers/complaint_types', user_middleware, user_list_routes.complain
 app.post('/customers/announcement/add_like', user_middleware, user_announcements_routes.like_announcement);
 
 app.get('/customers/announcement/all_announcements', user_middleware, user_announcements_routes.all_announcements);
+
+app.post('/customers/announcement/add_comment', user_middleware, user_announcements_routes.add_comment);

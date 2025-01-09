@@ -26,6 +26,8 @@ module.exports = (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user_details = decoded;
 
+        req.user_type = decoded.sub;
+
         const user_id = decoded.id;
 
         if (decoded.sub == 'customers') {

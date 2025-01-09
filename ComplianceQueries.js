@@ -347,9 +347,9 @@ function change_details(req, res) {
         } else if (data.length != 0) {
 
             if (type == 'assign') {
-                var sql2 = `UPDATE compliance SET Status= '${status}' WHERE ID= ${id} `;
-            } else {
                 var sql2 = `UPDATE compliance SET Assign= '${assigner}' WHERE ID= ${id} `;
+            } else {
+                var sql2 = `UPDATE compliance SET Status= '${status}' WHERE ID= ${id} `;
             }
             connection.query(sql2, function (err, up_data) {
                 if (err) {
