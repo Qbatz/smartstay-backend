@@ -422,13 +422,13 @@ function delete_compliant (req, res)  {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
     }
 
-    var sql2 = "SELECT * FROM compliance WHERE id=? ";
+    var sql2 = "SELECT * FROM compliance WHERE ID=? ";
     connection.query(sql2, [id], function (err, ch_data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Error Fetching Contact Details", reason: err.message })
         } else if (ch_data.length != 0) {
 
-            var sql3 = "UPDATE compliance SET isActive = 0  WHERE id=?";
+            var sql3 = "UPDATE compliance SET isActive = 0  WHERE ID=?";
             connection.query(sql3, [id], function (err, ins_data) {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Error Fetching Delete compliance Details", reason: err.message })
