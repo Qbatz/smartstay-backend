@@ -2898,13 +2898,38 @@ function edit_manual_invoice(req, res) {
 
 function delete_manual_invoice(req, res) {
 
-    var { user_id, id } = req.body;
+    var id = req.body.id;
 
-    if (!user_id || !id) {
+    if (!id) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
     }
 
-    
+    var sql1 = "SELECT * FROM invoicedetails WHERE id=? AND invoice_status=1";
+    connection.query(sql1, [id], function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Error to Get Invoice Details" })
+        }
+
+        if (data.length == 0) {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Invoice Details" })
+        }
+
+        var paid_amount = data[0].PaidAmount;
+
+        if (paid_amount > 0) {
+            return res.status(201).json({ statusCode: 201, message: "Already Added Paid Amount In this Invoice. So Not Deleted" })
+        }
+
+        var sql2 = "UPDATE invoicedetails SET invoice_status=0 WHERE id=?";
+        connection.query(sql2, [id], function (err, up_res) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Error to Delete Invoice Details" })
+            }
+
+            return res.status(200).json({ statusCode: 200, message: "Successfully Invoice Deleted!" })
+        })
+    })
+
 }
 
 function customer_readings(req, res) {
