@@ -341,7 +341,7 @@ function get_all_staffs(req, res) {
     var created_by = req.user_details.id;
     var is_admin = req.is_admin;
 
-    var hostel_id =req.body.hostel_id;
+    var hostel_id = req.body.hostel_id;
 
     if (is_admin == 1) {
 
@@ -350,7 +350,7 @@ function get_all_staffs(req, res) {
         }
 
         var sql1 = "SELECT ca.id,ca.first_name,ca.email_Id,ca.mobileNo,ca.role_id,ro.role_name,ca.description,ro.hostel_id FROM createaccount AS ca JOIN roles AS ro ON ca.role_id=ro.id WHERE ro.hostel_id=? AND ca.user_status=1 AND ro.status=1 ORDER BY ca.id DESC;";
-        connection.query(sql1, [created_by], function (err, data) {
+        connection.query(sql1, [hostel_id], function (err, data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
             } else {
