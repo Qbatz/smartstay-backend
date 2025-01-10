@@ -217,7 +217,11 @@ const queries = [
 
     "CREATE TABLE announcement_comments (id BIGINT AUTO_INCREMENT PRIMARY KEY,an_id BIGINT NOT NULL,comment TEXT NOT NULL,user_id BIGINT NOT NULL,user_type VARCHAR(255),created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
 
-    "CREATE TABLE `recuring_inv_details` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`user_id` VARCHAR(45) NULL,`invoice_date` VARCHAR(45) NULL,`due_date` VARCHAR(45) NULL,`advance` VARCHAR(45) NULL,`rent` VARCHAR(45) NULL,`aminity` VARCHAR(45) NULL,`eb` VARCHAR(45) NULL,`status` INT(11) NULL DEFAULT '1',`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));"
+    "CREATE TABLE `recuring_inv_details` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`user_id` VARCHAR(45) NULL,`invoice_date` VARCHAR(45) NULL,`due_date` VARCHAR(45) NULL,`advance` VARCHAR(45) NULL,`rent` VARCHAR(45) NULL,`aminity` VARCHAR(45) NULL,`eb` VARCHAR(45) NULL,`status` INT(11) NULL DEFAULT '1',`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+
+    "ALTER TABLE `compliance` ADD COLUMN `isActive` INT(11) NULL DEFAULT '1' AFTER `updatedat`;",
+
+    "CREATE TABLE complaice_comments (id BIGINT AUTO_INCREMENT PRIMARY KEY,com_id BIGINT NOT NULL,comment TEXT NOT NULL,user_id BIGINT NOT NULL,user_type VARCHAR(255),created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"
 ];
 
 queries.forEach(executeQuery);

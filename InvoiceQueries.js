@@ -3049,7 +3049,7 @@ function add_recuring_bill(req, res) {
                     advance_amount = 0
                 }
 
-                var total_amount_data = parseInt(total_am_amount) + parseInt(eb_amount) + advance_amount + room_rent;
+                var total_amount_data = parseInt(total_am_amount) + parseInt(eb_amount) + parseInt(advance_amount) + parseInt(room_rent);
 
                 var sql2 = "SELECT * FROM recuring_inv_details WHERE user_id=? AND status=1";
                 connection.query(sql2, [user_id], function (err, recure_data) {

@@ -180,7 +180,7 @@ function GetComplianceList(connection, response, request) {
         connection.query(sql1, [hostel_id], function (error, hostelData) {
             if (error) {
                 console.error(error);
-                response.status(403).json({ message: 'Error fetching hostel data' });
+                response.status(201).json({ message: 'Error fetching hostel data' });
                 return;
             } else {
                 response.status(200).json({ hostelData: hostelData });
