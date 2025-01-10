@@ -313,7 +313,7 @@ exports.all_announce = (req, res) => {
         return res.status(201).json({ statusCode: 201, message: "Missing User Details" })
     }
 
-    var sql = "SELECT a.*, (SELECT COUNT(*) FROM announcement_likes al WHERE al.an_id = a.id AND al.status = 1) AS like_count FROM announcements a WHERE a.status = 1 AND a.hostel_id = ?";
+    var sql = "SELECT a.*, (SELECT COUNT(*) FROM announcement_likes al WHERE al.an_id = a.id AND al.status = 1) AS like_count,(SELECT COUNT(*) FROM announcement_comments al WHERE al.an_id = a.id AND a.status = 1) AS comment_count FROM announcements a WHERE a.status = 1 AND a.hostel_id = ?";
     connection.query(sql, [hostel_id], function (err, data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Error Fetching User Details", reason: err.message })
