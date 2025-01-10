@@ -688,69 +688,140 @@ function DeleteExpenses(request, response) {
     }
 }
 
-function DeleteExpensesCategory(request, response) {
-    let reqBodyData = request.body
+// function DeleteExpensesCategory(request, response) {
+//     let reqBodyData = request.body
 
-    var role_permissions = request.role_permissions;
-    var is_admin = request.is_admin;
+//     var role_permissions = request.role_permissions;
+//     var is_admin = request.is_admin;
+
+//     if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_delete === 1)) {
+
+//         if (reqBodyData.id && reqBodyData.sub_Category_Id == undefined) {
+//             connection.query(`select * from Expense_Subcategory_Name where category_id=${reqBodyData.id} and status = true`, function (selectErr, selectData) {
+//                 if (selectErr) {
+//                     response.status(201).json({ message: 'Error while fetching Data' });
+//                 }
+//                 else {
+//                     let query = `Update Expense_Category_Name SET status = false WHERE id=${reqBodyData.id}`
+//                     if (selectData && selectData.length > 0) {
+//                         connection.query(query, function (err, data) {
+//                             if (err) {
+//                                 response.status(201).json({ message: 'Error Deleting category' });
+//                             }
+//                             else {
+//                                 connection.query(`Update Expense_Subcategory_Name SET status = false where category_id = ${reqBodyData.id}`, function (updateErr, updateData) {
+//                                     if (updateErr) {
+//                                         response.status(201).json({ message: 'Error Deleting Sub category' });
+//                                     }
+//                                     else {
+//                                         response.status(200).json({ message: 'Category Deleted Successfully' });
+//                                     }
+//                                 })
+//                                 // response.status(200).json({ message: 'Category Deleted Successfully' });
+//                             }
+//                         })
+//                     }
+//                     else {
+//                         connection.query(query, function (deleteErr, deleteData) {
+//                             if (deleteErr) {
+//                                 response.status(201).json({ message: 'Error While Deleting Category' });
+//                             }
+//                             else {
+//                                 response.status(200).json({ message: 'Category Deleted Successfully' });
+//                             }
+//                         })
+
+//                     }
+//                 }
+//             })
+
+//         }
+//         else if (reqBodyData && reqBodyData.sub_Category_Id) {
+//             connection.query(`Update Expense_Subcategory_Name SET status = false where id = ${reqBodyData.sub_Category_Id} and category_id =${reqBodyData.id}`, function (updateErr, updateData) {
+//                 if (updateErr) {
+//                     response.status(201).json({ message: 'Error Deleting Sub category' });
+//                 }
+//                 else {
+//                     response.status(200).json({ message: 'Sub Category Deleted Successfully' });
+//                 }
+//             })
+//         }
+//         else {
+//             response.status(201).json({ message: 'Missing Parameter' });
+//         }
+//     } else {
+//         response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+//     }
+// }
+
+function DeleteExpensesCategory(req, res) {
+
+    var role_permissions = req.role_permissions;
+    var is_admin = req.is_admin;
 
     if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_delete === 1)) {
 
-        if (reqBodyData.id && reqBodyData.sub_Category_Id == undefined) {
-            connection.query(`select * from Expense_Subcategory_Name where category_id=${reqBodyData.id} and status = true`, function (selectErr, selectData) {
-                if (selectErr) {
-                    response.status(201).json({ message: 'Error while fetching Data' });
-                }
-                else {
-                    let query = `Update Expense_Category_Name SET status = false WHERE id=${reqBodyData.id}`
-                    if (selectData && selectData.length > 0) {
-                        connection.query(query, function (err, data) {
-                            if (err) {
-                                response.status(201).json({ message: 'Error Deleting category' });
-                            }
-                            else {
-                                connection.query(`Update Expense_Subcategory_Name SET status = false where category_id = ${reqBodyData.id}`, function (updateErr, updateData) {
-                                    if (updateErr) {
-                                        response.status(201).json({ message: 'Error Deleting Sub category' });
-                                    }
-                                    else {
-                                        response.status(200).json({ message: 'Category Deleted Successfully' });
-                                    }
-                                })
-                                // response.status(200).json({ message: 'Category Deleted Successfully' });
-                            }
-                        })
-                    }
-                    else {
-                        connection.query(query, function (deleteErr, deleteData) {
-                            if (deleteErr) {
-                                response.status(201).json({ message: 'Error While Deleting Category' });
-                            }
-                            else {
-                                response.status(200).json({ message: 'Category Deleted Successfully' });
-                            }
-                        })
+        var { cat_id, subcat_id } = req.body;
 
-                    }
+        if (!cat_id) {
+            return res.status(201).json({ message: "Missing Category Id", statusCode: 201 });
+        }
+
+        if (subcat_id) {
+
+            var sql1 = "SELECT * FROM Expense_Subcategory_Name WHERE category_id=? AND id=? AND status=1";
+            connection.query(sql1, [cat_id, subcat_id], function (err, data) {
+                if (err) {
+                    return res.status(201).json({ message: "Error to Fetch Subcategory Details", statusCode: 201, reason: err.message });
                 }
+
+                if (data.length == 0) {
+                    return res.status(201).json({ message: "Invalid Subcategory Details", statusCode: 201 });
+                }
+
+                var sql2 = "UPDATE Expense_Subcategory_Name SET status=0 WHERE id=?";
+                connection.query(sql2, [subcat_id], function (err, data) {
+                    if (err) {
+                        return res.status(201).json({ message: "Error to Delete Subcategory Details", statusCode: 201, reason: err.message });
+                    }
+
+                    return res.status(200).json({ message: "Subcategory Deleted Successfully!", statusCode: 200 });
+                })
+
             })
 
-        }
-        else if (reqBodyData && reqBodyData.sub_Category_Id) {
-            connection.query(`Update Expense_Subcategory_Name SET status = false where id = ${reqBodyData.sub_Category_Id} and category_id =${reqBodyData.id}`, function (updateErr, updateData) {
-                if (updateErr) {
-                    response.status(201).json({ message: 'Error Deleting Sub category' });
+        } else {
+
+            var sql1 = "SELECT * FROM Expense_Category_Name WHERE id=? AND status=1";
+            connection.query(sql1, [cat_id], function (err, data) {
+                if (err) {
+                    return res.status(201).json({ message: "Error to Fetch Category Details", statusCode: 201, reason: err.message });
                 }
-                else {
-                    response.status(200).json({ message: 'Sub Category Deleted Successfully' });
+
+                if (data.length == 0) {
+                    return res.status(201).json({ message: "Invalid Category Details", statusCode: 201 });
                 }
+
+                var sql2 = "UPDATE Expense_Category_Name SET status=0 WHERE id=?";
+                connection.query(sql2, [cat_id], function (err, data) {
+                    if (err) {
+                        return res.status(201).json({ message: "Error to Delete Subcategory Details", statusCode: 201, reason: err.message });
+                    }
+
+                    var sql3 = "UPDATE Expense_Subcategory_Name SET status=0 WHERE category_id=?";
+                    connection.query(sql3, [cat_id], function (err, up_res) {
+                        if (err) {
+                            return res.status(201).json({ message: "Error to Delete Category Details", statusCode: 201, reason: err.message });
+                        }
+
+                        return res.status(200).json({ message: "Category Deleted Successfully!", statusCode: 200 });
+                    })
+                })
             })
         }
-        else {
-            response.status(201).json({ message: 'Missing Parameter' });
-        }
+
     } else {
-        response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+        return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
 }
 
