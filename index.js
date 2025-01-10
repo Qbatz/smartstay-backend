@@ -15,7 +15,7 @@ const roles = require('./roles');
 const exports_routes = require('./exports');
 const newBookings = require('./new_bookings');
 
-
+var user_announcements_routes = require('./2factor/user_announcements')
 
 const app = express()
 const userQueries = require('./UserQueries');
@@ -1195,11 +1195,14 @@ app.post('/delete/announcement', contacts_router.delete_announcement)
 
 app.post('/announcement/all_announcement', contacts_router.all_announce)
 
+app.post('/announcement/add_comment', user_announcements_routes.add_comment);
+
+app.post('/announcement/all_comments', user_announcements_routes.all_comments);
+
 // Mobile API
 
 var twofactor_routes = require('./2factor/otp')
 var user_list_routes = require('./2factor/user_details')
-var user_announcements_routes = require('./2factor/user_announcements')
 
 var user_middleware = require('./user_middleware')
 
@@ -1228,3 +1231,5 @@ app.post('/customers/announcement/add_like', user_middleware, user_announcements
 app.get('/customers/announcement/all_announcements', user_middleware, user_announcements_routes.all_announcements);
 
 app.post('/customers/announcement/add_comment', user_middleware, user_announcements_routes.add_comment);
+
+app.post('/customers/announcement/all_comments', user_middleware, user_announcements_routes.all_comments);

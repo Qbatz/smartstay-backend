@@ -91,3 +91,20 @@ exports.add_comment = (req, res) => {
     })
 
 }
+
+exports.all_comments = (req, res) => {
+
+    var an_id = req.body.an_id;
+
+    if (!an_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Announcement Details" })
+    }
+
+    var sql1 = "SELECT c.id AS comment_id, c.an_id, c.comment, c.user_id, c.user_type, c.created_at, CASE WHEN c.user_type = 'customers' THEN u.Name WHEN c.user_type != 'customers' THEN a.first_name END AS name, CASE WHEN c.user_type = 'customers' THEN u.Email WHEN c.user_type != 'customers' THEN a.email_Id END AS email FROM announcement_comments c LEFT JOIN hostel u ON c.user_id = u.id AND c.user_type = 'customers' LEFT JOIN createaccount a ON c.user_id = a.id AND c.user_type != 'customers' WHERE c.an_id = ? ORDER BY c.created_at DESC;";
+    connection.query(sql1, [an_id], function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Error to Get Comment Details", reason: err.message })
+        }
+        return res.status(200).json({ statusCode: 200, message: "Comments fetched successfully", comments: data });
+    })
+}
