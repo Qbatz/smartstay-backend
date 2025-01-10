@@ -221,7 +221,11 @@ const queries = [
 
     "ALTER TABLE `compliance` ADD COLUMN `isActive` INT(11) NULL DEFAULT '1' AFTER `updatedat`;",
 
-    "CREATE TABLE complaice_comments (id BIGINT AUTO_INCREMENT PRIMARY KEY,com_id BIGINT NOT NULL,comment TEXT NOT NULL,user_id BIGINT NOT NULL,user_type VARCHAR(255),created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"
+    "CREATE TABLE complaice_comments (id BIGINT AUTO_INCREMENT PRIMARY KEY,com_id BIGINT NOT NULL,comment TEXT NOT NULL,user_id BIGINT NOT NULL,user_type VARCHAR(255),created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
+
+    "CREATE TABLE `announcement_comment_likes` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`comment_id` BIGINT(20) NOT NULL,`user_id` BIGINT(20) NOT NULL,`user_type` VARCHAR(50) NOT NULL,`created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+
+    "ALTER TABLE `announcement_comment_likes` ADD COLUMN `status` INT(11) NULL DEFAULT '1' AFTER `user_type`;"
 ];
 
 queries.forEach(executeQuery);

@@ -1203,6 +1203,8 @@ app.post('/complaints/add_complaint_comment', user_announcements_routes.add_comp
 
 app.post('/complaints/all_complaint_comments', user_announcements_routes.all_complaint_comments);
 
+app.post('/announcement/comment_like', user_announcements_routes.announcment_comment_like);
+
 // Mobile API
 
 var twofactor_routes = require('./2factor/otp')

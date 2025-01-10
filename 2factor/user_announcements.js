@@ -100,7 +100,7 @@ exports.all_comments = (req, res) => {
         return res.status(201).json({ statusCode: 201, message: "Missing Announcement Details" })
     }
 
-    var sql1 = "SELECT c.id AS comment_id, c.an_id, c.comment, c.user_id, c.user_type, c.created_at,CASE WHEN c.user_type='customers' THEN u.profile ELSE a.profile END AS profile, CASE WHEN c.user_type = 'customers' THEN u.Name WHEN c.user_type != 'customers' THEN a.first_name END AS name, CASE WHEN c.user_type = 'customers' THEN u.Email WHEN c.user_type != 'customers' THEN a.email_Id END AS email FROM announcement_comments c LEFT JOIN hostel u ON c.user_id = u.id AND c.user_type = 'customers' LEFT JOIN createaccount a ON c.user_id = a.id AND c.user_type != 'customers' WHERE c.an_id = ? ORDER BY c.created_at DESC;";
+    var sql1 = "SELECT c.id AS comment_id, c.an_id, c.comment, c.user_id, c.user_type, c.created_at, CASE WHEN c.user_type='customers' THEN u.profile ELSE a.profile END AS profile, CASE WHEN c.user_type = 'customers' THEN u.Name ELSE a.first_name END AS name, CASE WHEN c.user_type = 'customers' THEN u.Email ELSE a.email_Id END AS email, COUNT(cl.id) AS like_count FROM announcement_comments c LEFT JOIN hostel u ON c.user_id = u.id AND c.user_type = 'customers' LEFT JOIN createaccount a ON c.user_id = a.id AND c.user_type != 'customers' LEFT JOIN announcement_comment_likes cl ON c.id = cl.comment_id WHERE c.an_id = ? GROUP BY c.id ORDER BY c.created_at DESC;";
     connection.query(sql1, [an_id], function (err, data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Error to Get Comment Details", reason: err.message })
@@ -155,6 +155,59 @@ exports.all_complaint_comments = (req, res) => {
             return res.status(201).json({ statusCode: 201, message: "Error to Get Comment Details", reason: err.message })
         }
         return res.status(200).json({ statusCode: 200, message: "Comments fetched successfully", comments: data });
+    })
+}
+
+exports.announcment_comment_like = (req, res) => {
+
+    var comment_id = req.body.comment_id;
+    var an_id = req.body.an_id;
+
+    var user_type = req.user_type;
+    var user_id = req.user_details.id;
+
+    if (!comment_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Like Details" });
+    }
+
+    var sql12 = "SELECT c.id AS comment_id, c.an_id, c.comment, c.user_id, c.user_type, c.created_at,CASE WHEN c.user_type='customers' THEN u.profile ELSE a.profile END AS profile, CASE WHEN c.user_type = 'customers' THEN u.Name WHEN c.user_type != 'customers' THEN a.first_name END AS name, CASE WHEN c.user_type = 'customers' THEN u.Email WHEN c.user_type != 'customers' THEN a.email_Id END AS email FROM announcement_comments c LEFT JOIN hostel u ON c.user_id = u.id AND c.user_type = 'customers' LEFT JOIN createaccount a ON c.user_id = a.id AND c.user_type != 'customers' WHERE c.an_id = ? AND c.id=? ORDER BY c.created_at DESC";
+    connection.query(sql12, [an_id, comment_id], function (err, sel_data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Error Announcement Comment Details", reason: err.message });
+        }
+
+        if (sel_data.length == 0) {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Announcement or Comment Details" });
+        }
+
+        var sql1 = "SELECT * FROM announcement_comment_likes WHERE comment_id=? AND user_id=? AND user_type=? AND status=1";
+        connection.query(sql1, [comment_id, user_id, user_type], function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Error Get Like Details", reason: err.message });
+            }
+
+            if (data.length == 0) {
+
+                var sql2 = "INSERT INTO announcement_comment_likes (comment_id, user_id, user_type) VALUES (?, ?, ?)";
+
+                connection.query(sql2, [comment_id, user_id, user_type], (err) => {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Error Adding Like", reason: err.message });
+                    }
+                    return res.status(200).json({ statusCode: 200, message: "Like Added Successfully" });
+                });
+            } else {
+
+                var sql2 = "UPDATE announcement_comment_likes SET status=0 WHERE comment_id=? AND user_id=? AND user_type=?";
+                connection.query(sql2, [comment_id, user_id, user_type], (err) => {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Error Remove Like", reason: err.message });
+                    }
+                    return res.status(200).json({ statusCode: 200, message: "Like Removed Successfully" });
+                });
+
+            }
+        })
     })
 }
 
