@@ -225,7 +225,9 @@ const queries = [
 
     "CREATE TABLE `announcement_comment_likes` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`comment_id` BIGINT(20) NOT NULL,`user_id` BIGINT(20) NOT NULL,`user_type` VARCHAR(50) NOT NULL,`created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 
-    "ALTER TABLE `announcement_comment_likes` ADD COLUMN `status` INT(11) NULL DEFAULT '1' AFTER `user_type`;"
+    "ALTER TABLE `announcement_comment_likes` ADD COLUMN `status` INT(11) NULL DEFAULT '1' AFTER `user_type`;",
+
+    "ALTER TABLE `hostel` ADD COLUMN `doc1` VARCHAR(255) NULL AFTER `reassign_date`,ADD COLUMN `doc2` VARCHAR(255) NULL AFTER `doc1`"
 ];
 
 queries.forEach(executeQuery);
