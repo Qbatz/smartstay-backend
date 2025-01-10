@@ -2024,7 +2024,7 @@ function get_bill_details(req, res) {
     }
 
     // var sql1 = "SELECT * FROM invoicedetails WHERE created_By IN (?) AND invoice_status=1 ORDER BY id DESC";
-    var sql1 = "SELECT inv.* FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id WHERE inv.Hostel_Id=? AND inv.invoice_status=1 ORDER BY id DESC";
+    var sql1 = "SELECT inv.*,hostel.Address AS user_address,ca.Address AS admin_address FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id LEFT JOIN hostel ON hostel.id=inv.hos_user_id LEFT JOIN createaccount AS ca ON ca.id=hostel.created_by WHERE inv.Hostel_Id=? AND inv.invoice_status=1 ORDER BY id DESC;";
     connection.query(sql1, [hostel_id], function (err, invoices) {
       if (err) {
         return res.status(201).json({ message: "Unable to Get Bill Details", statusCode: 201 });
