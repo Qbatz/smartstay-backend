@@ -1201,6 +1201,8 @@ app.post('/announcement/all_comments', user_announcements_routes.all_comments);
 
 app.post('/complaints/add_complaint_comment', user_announcements_routes.add_complaint_comment);
 
+app.post('/complaints/all_complaint_comments', user_announcements_routes.all_complaint_comments);
+
 // Mobile API
 
 var twofactor_routes = require('./2factor/otp')
@@ -1236,4 +1238,4 @@ app.post('/customers/announcement/add_comment', user_middleware, user_announceme
 
 app.post('/customers/announcement/all_comments', user_middleware, user_announcements_routes.all_comments);
 
-app.post('/customers/complaints/add_complaint', user_announcements_routes.add_complaint_comment);
+app.post('/customers/complaints/add_complaint_comment', user_middleware, user_announcements_routes.add_complaint_comment);
