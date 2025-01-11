@@ -387,7 +387,7 @@ function add_ebbilling_settings(req, res) {
         return res.status(201).json({ statusCode: 201, message: "Amount cannot be negative or invalid" });
     }
 
-    var sql1 = "SELECT * FROM eb_settings WHERE hostel_id='" + hostel_id + "' AND eb.status=1";
+    var sql1 = "SELECT * FROM eb_settings WHERE hostel_id='" + hostel_id + "' AND status=1";
     connection.query(sql1, (err, sel_res) => {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Unble to Get Eb Details" });
