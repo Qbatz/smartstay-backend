@@ -179,7 +179,7 @@ function add_room_reading(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
         }
 
-        var sql1 = "SELECT * FROM eb_settings WHERE hostel_id=?";
+        var sql1 = "SELECT * FROM eb_settings WHERE hostel_id=? AND status=1";
         connection.query(sql1, [hostel_id], function (err, amount_details) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: 'Database error' });
@@ -295,7 +295,7 @@ function add_hostel_reading(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
         }
 
-        var sql1 = "SELECT * FROM eb_settings WHERE hostel_id=?";
+        var sql1 = "SELECT * FROM eb_settings WHERE hostel_id=? AND status=1";
         connection.query(sql1, [hostel_id], function (err, amount_details) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: 'Database error' });
@@ -421,7 +421,7 @@ function edit_room_reading(req, res) {
         }
 
         // Fetch current EB amount details and validate input
-        const sql1 = "SELECT * FROM room_readings AS rr JOIN eb_settings AS eb ON eb.hostel_Id=rr.hostel_id WHERE rr.id=?";
+        const sql1 = "SELECT * FROM room_readings AS rr JOIN eb_settings AS eb ON eb.hostel_Id=rr.hostel_id WHERE rr.id=? AND eb.status=1";
         connection.query(sql1, [id], function (err, check_data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Amount Details', error: err });
@@ -626,7 +626,7 @@ function edit_hostel_reading(req, res) {
         }
 
         // Fetch current EB amount details and validate input
-        const sql1 = "SELECT * FROM hostel_readings AS rr JOIN eb_settings AS eb ON eb.hostel_Id=rr.hostel_id WHERE rr.id=?";
+        const sql1 = "SELECT * FROM hostel_readings AS rr JOIN eb_settings AS eb ON eb.hostel_Id=rr.hostel_id WHERE rr.id=? AND eb.status=1";
         connection.query(sql1, [id], function (err, check_data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Amount Details', error: err });
@@ -1411,7 +1411,7 @@ function delete_room_reading(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
         }
 
-        var sql1 = "SELECT * FROM room_readings AS rr JOIN eb_settings AS eb ON eb.hostel_Id=rr.hostel_id WHERE rr.id=? AND rr.status=1";
+        var sql1 = "SELECT * FROM room_readings AS rr JOIN eb_settings AS eb ON eb.hostel_Id=rr.hostel_id WHERE rr.id=? AND rr.status=1 AND eb.status=1";
         connection.query(sql1, [id], async function (err, read_data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Readings" });
@@ -1499,7 +1499,7 @@ function delete_hostel_reading(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
         }
 
-        var sql1 = "SELECT * FROM hostel_readings AS rr JOIN eb_settings AS eb ON eb.hostel_Id=rr.hostel_id WHERE rr.id=? AND rr.status=1";
+        var sql1 = "SELECT * FROM hostel_readings AS rr JOIN eb_settings AS eb ON eb.hostel_Id=rr.hostel_id WHERE rr.id=? AND rr.status=1 AND eb.status=1";
         connection.query(sql1, [id], async function (err, read_data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Readings" });

@@ -147,7 +147,7 @@ exports.all_general_user = (req, res) => {
     if (user_type == 'admin') {
 
         var sql1 = "SELECT id,first_name,last_name,mobileNo,email_Id,Address,profile,user_status,createdby FROM createaccount WHERE (createdby=? OR id=?) AND user_status=1";
-        connection.query(sql1, [created_by,created_by], function (err, data) {
+        connection.query(sql1, [created_by, created_by], function (err, data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
             } else {
@@ -270,5 +270,34 @@ exports.check_password = (req, res) => {
         } catch (bcryptError) {
             return res.status(201).json({ statusCode: 201, message: "Error Verifying Password", reason: bcryptError.message });
         }
+    })
+}
+
+exports.delete_eb_settings = (req, res) => {
+
+    var { settings_id, hostel_id } = req.body
+
+    if (!settings_id || !hostel_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    var sql1 = "SELECT * FROM eb_settings WHERE id=? AND hostel_id=? AND status=1";
+    connection.query(sql1, [settings_id, hostel_id], function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Error Fetching Eb Details", reason: err.message })
+        }
+
+        if (data.length == 0) {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Eb Details" })
+        }
+
+        var sql2 = "UPDATE eb_settings SET status=0 WHERE id=?";
+        connection.query(sql2, [settings_id], function (err, del_data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Error to Delete Eb Details", reason: err.message })
+            }
+
+            return res.status(200).json({ statusCode: 200, message: "Successfully Deleted Eb Details!" })
+        })
     })
 }

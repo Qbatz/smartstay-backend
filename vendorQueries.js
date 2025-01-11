@@ -387,7 +387,7 @@ function add_ebbilling_settings(req, res) {
         return res.status(201).json({ statusCode: 201, message: "Amount cannot be negative or invalid" });
     }
 
-    var sql1 = "SELECT * FROM eb_settings WHERE hostel_id='" + hostel_id + "'";
+    var sql1 = "SELECT * FROM eb_settings WHERE hostel_id='" + hostel_id + "' AND eb.status=1";
     connection.query(sql1, (err, sel_res) => {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Unble to Get Eb Details" });
@@ -444,7 +444,7 @@ function get_ebbilling_settings(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Missing Hostel Id" })
         }
 
-        var sql1 = "SELECT ebs.*,hos.Name FROM eb_settings AS ebs JOIN hosteldetails AS hos ON hos.id = ebs.hostel_id WHERE ebs.created_by IN (" + show_ids + ") AND ebs.hostel_id=" + hostel_id + "";
+        var sql1 = "SELECT ebs.*,hos.Name FROM eb_settings AS ebs JOIN hosteldetails AS hos ON hos.id = ebs.hostel_id WHERE ebs.created_by IN (" + show_ids + ") AND ebs.hostel_id=" + hostel_id + " AND ebs.status=1";
         connection.query(sql1, function (err, data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Eb Billing Settings" })

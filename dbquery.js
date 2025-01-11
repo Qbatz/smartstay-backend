@@ -229,7 +229,9 @@ const queries = [
 
     "ALTER TABLE `hostel` ADD COLUMN `doc1` VARCHAR(255) NULL AFTER `reassign_date`,ADD COLUMN `doc2` VARCHAR(255) NULL AFTER `doc1`",
 
-    "ALTER TABLE announcement_comments ADD parent_comment_id INT NULL;"
+    "ALTER TABLE announcement_comments ADD parent_comment_id INT NULL;",
+
+    "ALTER TABLE `eb_settings` ADD COLUMN `status` INT NULL DEFAULT '1' AFTER `duration`;"
 ];
 
 queries.forEach(executeQuery);

@@ -1021,7 +1021,7 @@ async function convertImage(imageBuffer) {
 function InvoicePDf(connection, request, response) {
     // console.log("reqBodyData", reqBodyData)
 
-    var reqBodyData=request.body;
+    var reqBodyData = request.body;
 
     var invocice_type = reqBodyData.invoice_type;
     var action_type = reqBodyData.action_type;
@@ -2086,7 +2086,7 @@ function EbAmount(connection, request, response) {
     }
     console.log(atten);
 
-    var sql2 = "SELECT * FROM eb_settings WHERE hostel_id=?";
+    var sql2 = "SELECT * FROM eb_settings WHERE hostel_id=? AND status=1";
     connection.query(sql2, [atten.Hostel_Id], function (err, amount_details) {
         if (err) {
             return response.status(201).json({ statusCode: 201, message: 'Database error' });
@@ -2950,7 +2950,7 @@ function customer_readings(req, res) {
 
     if (is_admin == 1 || (role_permissions[12] && role_permissions[12].per_view == 1)) {
 
-        var ch_query = "SELECT * FROM eb_settings WHERE hostel_id=?";
+        var ch_query = "SELECT * FROM eb_settings WHERE hostel_id=? AND status=1";
         connection.query(ch_query, [hostel_id], function (err, ch_res) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: err.message })
@@ -3286,7 +3286,7 @@ function edit_eb_readings(req, res) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
     }
 
-    var sql1 = "SELECT * FROM EbAmount JOIN eb_settings ON eb_settings.hostel_Id=EbAmount.hostel_Id WHERE EbAmount.id=?";
+    var sql1 = "SELECT * FROM EbAmount JOIN eb_settings ON eb_settings.hostel_Id=EbAmount.hostel_Id WHERE EbAmount.id=? AND eb_settings.status=1";
     connection.query(sql1, [id], function (err, eb_data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Unable to Get Eb Details" })

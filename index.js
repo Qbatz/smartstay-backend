@@ -1154,6 +1154,7 @@ app.post('/users/upload_doc', upload.fields([{ name: 'file1', maxCount: 1 }]), (
     newBookings.upload_doc(req, res)
 })
 
+
 // Settings Page API
 var settings_router = require('./settings/general')
 
@@ -1166,6 +1167,8 @@ app.post('/settings/check_password', settings_router.check_password)
 app.post('/settings/change_staff_password', settings_router.change_password)
 
 app.post('/settings/delete_general_user', settings_router.delete_general_user)
+
+app.post('/settings/delete_eb_settings', settings_router.delete_eb_settings)
 
 var recure_settings_router = require('./settings/recurings')
 
