@@ -1018,8 +1018,10 @@ async function convertImage(imageBuffer) {
     return convertedImageBuffer;
 }
 
-function InvoicePDf(connection, reqBodyData, response) {
+function InvoicePDf(connection, request, response) {
     // console.log("reqBodyData", reqBodyData)
+
+    var reqBodyData=request.body;
 
     var invocice_type = reqBodyData.invoice_type;
     var action_type = reqBodyData.action_type;

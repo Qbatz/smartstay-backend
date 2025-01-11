@@ -260,9 +260,7 @@ app.get('/list/eb_list', (request, response) => {
 
 app.post('/invoice/invoice-list-pdf', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
-    let reqBodyData = request.body;
-    // console.log("reqBodyData", reqBodyData)
-    invoiceQueries.InvoicePDf(connection, reqBodyData, response)
+    invoiceQueries.InvoicePDf(connection, request, response)
 })
 
 
