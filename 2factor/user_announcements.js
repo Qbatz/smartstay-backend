@@ -92,22 +92,77 @@ exports.add_comment = (req, res) => {
 
 }
 
-exports.all_comments = (req, res) => {
+// exports.all_comments = (req, res) => {
 
+//     var an_id = req.body.an_id;
+
+//     if (!an_id) {
+//         return res.status(201).json({ statusCode: 201, message: "Missing Announcement Details" })
+//     }
+
+//     var sql1 = "SELECT c.id AS comment_id, c.an_id, c.comment, c.user_id, c.user_type, c.created_at, CASE WHEN c.user_type='customers' THEN u.profile ELSE a.profile END AS profile, CASE WHEN c.user_type = 'customers' THEN u.Name ELSE a.first_name END AS name, CASE WHEN c.user_type = 'customers' THEN u.Email ELSE a.email_Id END AS email, COUNT(cl.id) AS like_count FROM announcement_comments c LEFT JOIN hostel u ON c.user_id = u.id AND c.user_type = 'customers' LEFT JOIN createaccount a ON c.user_id = a.id AND c.user_type != 'customers' LEFT JOIN announcement_comment_likes cl ON c.id = cl.comment_id WHERE c.an_id = ? GROUP BY c.id ORDER BY c.created_at DESC;";
+//     connection.query(sql1, [an_id], function (err, data) {
+//         if (err) {
+//             return res.status(201).json({ statusCode: 201, message: "Error to Get Comment Details", reason: err.message })
+//         }
+//         return res.status(200).json({ statusCode: 200, message: "Comments fetched successfully", comments: data });
+//     })
+// }
+
+exports.all_comments = (req, res) => {
     var an_id = req.body.an_id;
 
     if (!an_id) {
-        return res.status(201).json({ statusCode: 201, message: "Missing Announcement Details" })
+        return res.status(201).json({ statusCode: 201, message: "Missing Announcement Details" });
     }
 
-    var sql1 = "SELECT c.id AS comment_id, c.an_id, c.comment, c.user_id, c.user_type, c.created_at, CASE WHEN c.user_type='customers' THEN u.profile ELSE a.profile END AS profile, CASE WHEN c.user_type = 'customers' THEN u.Name ELSE a.first_name END AS name, CASE WHEN c.user_type = 'customers' THEN u.Email ELSE a.email_Id END AS email, COUNT(cl.id) AS like_count FROM announcement_comments c LEFT JOIN hostel u ON c.user_id = u.id AND c.user_type = 'customers' LEFT JOIN createaccount a ON c.user_id = a.id AND c.user_type != 'customers' LEFT JOIN announcement_comment_likes cl ON c.id = cl.comment_id WHERE c.an_id = ? GROUP BY c.id ORDER BY c.created_at DESC;";
-    connection.query(sql1, [an_id], function (err, data) {
+    // Query to fetch all comments and sub-comments
+    var sql = "SELECT c.id AS comment_id, c.an_id, c.comment, c.user_id, c.user_type, c.created_at, c.parent_comment_id, CASE WHEN c.user_type = 'customers' THEN u.profile ELSE a.profile END AS profile, CASE WHEN c.user_type = 'customers' THEN u.Name ELSE a.first_name END AS name, CASE WHEN c.user_type = 'customers' THEN u.Email ELSE a.email_Id END AS email, COUNT(cl.id) AS like_count FROM announcement_comments c LEFT JOIN hostel u ON c.user_id = u.id AND c.user_type = 'customers' LEFT JOIN createaccount a ON c.user_id = a.id AND c.user_type != 'customers' LEFT JOIN announcement_comment_likes cl ON c.id = cl.comment_id WHERE c.an_id = ? GROUP BY c.id ORDER BY c.parent_comment_id ASC, c.created_at DESC;";
+
+    connection.query(sql, [an_id], function (err, data) {
         if (err) {
-            return res.status(201).json({ statusCode: 201, message: "Error to Get Comment Details", reason: err.message })
+            return res.status(201).json({ statusCode: 201, message: "Error to Get Comment Details", reason: err.message });
         }
-        return res.status(200).json({ statusCode: 200, message: "Comments fetched successfully", comments: data });
-    })
-}
+
+        // Build hierarchical comment structure
+        const commentsMap = {};
+        const mainComments = [];
+
+        data.forEach(comment => {
+            const commentData = {
+                comment_id: comment.comment_id,
+                an_id: comment.an_id,
+                comment: comment.comment,
+                user_id: comment.user_id,
+                user_type: comment.user_type,
+                created_at: comment.created_at,
+                profile: comment.profile,
+                name: comment.name,
+                email: comment.email,
+                like_count: comment.like_count,
+                replies: []
+            };
+
+            commentsMap[comment.comment_id] = commentData;
+
+            if (comment.parent_comment_id === null) {
+                // Top-level comment
+                mainComments.push(commentData);
+            } else {
+                // Sub-comment (reply)
+                const parent = commentsMap[comment.parent_comment_id];
+                if (parent) {
+                    parent.replies.push(commentData);
+                }
+            }
+        });
+
+        return res.status(200).json({ statusCode: 200, message: "Comments fetched successfully", comments: mainComments });
+    });
+};
+
+
+
 
 exports.add_complaint_comment = (req, res) => {
 
@@ -210,4 +265,39 @@ exports.announcment_comment_like = (req, res) => {
         })
     })
 }
+
+exports.reply_to_comment = (req, res) => {
+
+    const { an_id, comment, parent_comment_id } = req.body;
+
+    const user_type = req.user_type;
+    const user_id = req.user_details.id;
+
+    // Validate required fields
+    if (!an_id || !comment || !parent_comment_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing required fields" });
+    }
+
+    // Validate that the parent comment exists
+    const validateParentSql = "SELECT id FROM announcement_comments WHERE id = ?";
+    connection.query(validateParentSql, [parent_comment_id], (err, parentComment) => {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Error validating parent comment", reason: err.message });
+        }
+
+        if (parentComment.length === 0) {
+            return res.status(201).json({ statusCode: 201, message: "Parent comment not found" });
+        }
+
+        // Insert the reply
+        const sql = `INSERT INTO announcement_comments (an_id, comment, user_id, user_type, parent_comment_id) VALUES (?, ?, ?, ?, ?)`;
+        connection.query(sql, [an_id, comment, user_id, user_type, parent_comment_id], (err, data) => {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Error adding reply", reason: err.message });
+            }
+
+            return res.status(200).json({ statusCode: 200, message: "Reply added successfully!" });
+        });
+    });
+};
 

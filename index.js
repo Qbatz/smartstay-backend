@@ -1201,6 +1201,8 @@ app.post('/announcement/all_announcement', contacts_router.all_announce)
 
 app.post('/announcement/add_comment', user_announcements_routes.add_comment);
 
+app.post('/announcement/reply_to_comment', user_announcements_routes.reply_to_comment);
+
 app.post('/announcement/all_comments', user_announcements_routes.all_comments);
 
 app.post('/complaints/add_complaint_comment', user_announcements_routes.add_complaint_comment);
