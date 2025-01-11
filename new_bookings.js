@@ -370,72 +370,150 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
     });
 }
 
+// function upload_doc(req, res) {
+
+//     const file1 = req.files && req.files['file1'] ? req.files['file1'][0].originalname : null;
+
+//     const bodyFile1 = req.body['file1'];
+
+//     var user_id = req.body.user_id;
+//     var type = req.body.type;
+
+//     if (!user_id || !type) {
+//         return res.status(201).json({ statusCode: 201, message: "Missing User Details" });
+//     }
+
+//     if (!file1 && !bodyFile1) {
+//         return res.status(201).json({ statusCode: 201, message: "No files or file URLs provided in the payload" });
+//     }
+
+//     // if (file1) {
+//     //     return res.status(201).json({ statusCode: 201, message: "Don't Upload Same Files" });
+//     // }
+
+
+//     var bucket_name = "smartstaydevs";
+//     var folderName = "customer/uploaded_docs/";
+//     var timestamp = Date.now();
+
+//     var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
+//     connection.query(sql1, [user_id], async function (err, data) {
+//         if (err) {
+//             return res.status(201).json({ statusCode: 201, message: "Error to Get User Details", reason: err.message });
+//         }
+
+//         if (data.length == 0) {
+//             return res.status(201).json({ statusCode: 201, message: "Invalid User Details" });
+//         }
+
+//         if (type == 'doc1') { // Aadhar
+//             var a_detail = data[0].doc2;
+//         } else {
+//             var a_detail = data[0].doc1;
+//         }
+
+//         console.log(a_detail);
+
+//         if (a_detail == file1) {
+//             return res.status(201).json({ statusCode: 201, message: "Don't Upload Same Files" });
+//         }
+
+//         var un_userid = data[0].User_Id;
+
+//         try {
+
+//             var file_url = await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${un_userid}_${timestamp}_${file1.originalname}`, file1);
+
+//             var sql2 = "UPDATE hostel SET " + type + "=? WHERE id=?";
+//             connection.query(sql2, [file_url, user_id], function (err, up_data) {
+//                 if (err) {
+//                     return res.status(201).json({ statusCode: 201, message: "Error to Update Documents Details", reason: err.message });
+//                 }
+
+//                 return res.status(200).json({ statusCode: 200, message: "Documents Successfully Updated!" });
+//             })
+
+//         } catch (error) {
+//             return res.status(201).json({ statusCode: 201, message: error.message })
+//         }
+//     })
+
+
+
+// }
+
 function upload_doc(req, res) {
 
-    const file1 = req.files && req.files['file1'] ? req.files['file1'][0].originalname : null;
-    const file2 = req.files && req.files['file2'] ? req.files['file2'][0].originalname : null;
-
+    const file1 = req.files && req.files['file1'] ? req.files['file1'][0] : null;
+    const file1Name = file1 ? file1.originalname : null;
     const bodyFile1 = req.body['file1'];
-    const bodyFile2 = req.body['file2'];
+    const user_id = req.body.user_id;
+    const type = req.body.type;
 
-    var user_id = req.body.user_id;
-
-    if (!user_id) {
+    // Validate required fields
+    if (!user_id || !type) {
         return res.status(201).json({ statusCode: 201, message: "Missing User Details" });
     }
 
-    if ((!file1 && !bodyFile1) && (!file2 && !bodyFile2)) {
+    if (!file1 && !bodyFile1) {
         return res.status(201).json({ statusCode: 201, message: "No files or file URLs provided in the payload" });
     }
 
-    if (file1 && file2 && file1 === file2) {
-        return res.status(201).json({ statusCode: 201, message: "Don't Upload Same Files" });
-    }
+    const bucket_name = "smartstaydevs";
+    const folderName = "customer/uploaded_docs/";
+    const timestamp = Date.now();
 
-
-    var bucket_name = "smartstaydevs";
-    var folderName = "customer/uploaded_docs/";
-    var timestamp = Date.now();
-
-    var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
+    // Fetch user details
+    const sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
     connection.query(sql1, [user_id], async function (err, data) {
         if (err) {
-            return res.status(201).json({ statusCode: 201, message: "Error to Get User Details", reason: err.message });
+            return res.status(201).json({ statusCode: 201, message: "Error fetching user details", reason: err.message });
         }
 
-        if (data.length == 0) {
+        if (data.length === 0) {
             return res.status(201).json({ statusCode: 201, message: "Invalid User Details" });
         }
 
-        var imageFields = ['file1', 'file2'];
-        var imageUrls = {};
+        const existingFile = type === 'doc1' ? data[0].doc1 : data[0].doc2;
 
-        var un_userid = data[0].User_Id;
+        // Extract the file name from the existing URL
+        const existingFileName = existingFile ? decodeURIComponent(existingFile.split('/').pop()) : null;
+
+        // Extract the base names for comparison
+        const existingBaseName = existingFileName ? existingFileName.split('_').pop() : null;
+        const currentBaseName = file1Name ? file1Name.split('_').pop() : null;
+
+        if (existingBaseName === currentBaseName) {
+            return res.status(201).json({ statusCode: 201, message: "Duplicate file: The same file is already uploaded." });
+        }
+
+        console.log("Existing File Name:", existingFileName);
+        console.log("Current File Name:", file1Name);
+
+        // if (existingFileName === file1Name) {
+        //     return res.status(201).json({ statusCode: 201, message: "Duplicate file: The same file is already uploaded." });
+        // }
+        const un_userid = data[0].User_Id;
 
         try {
-            for (const field of imageFields) {
-                const file = req.files[field]?.[0];
-                imageUrls[field] = file
-                    ? await uploadImage.uploadProfilePictureToS3Bucket(bucket_name, folderName, `${un_userid}_${timestamp}_${file.originalname}`, file)
-                    : req.body[field] || 0;
-            }
+            const file_url = await uploadImage.uploadProfilePictureToS3Bucket(
+                bucket_name,
+                folderName,
+                `${un_userid}_${timestamp}_${file1Name}`, file1);
 
-            var sql2 = "UPDATE hostel SET doc1=?,doc2=? WHERE id=?";
-            connection.query(sql2, [imageUrls.file1, imageUrls.file2, user_id], function (err, up_data) {
+            // Update the database with the new file URL
+            const sql2 = `UPDATE hostel SET ${type}=? WHERE id=?`;
+            connection.query(sql2, [file_url, user_id], function (err, up_data) {
                 if (err) {
-                    return res.status(201).json({ statusCode: 201, message: "Error to Update Documents Details", reason: err.message });
+                    return res.status(201).json({ statusCode: 201, message: "Error updating document details", reason: err.message });
                 }
-
-                return res.status(200).json({ statusCode: 200, message: "Documents Successfully Updated!"});
-            })
-
+                return res.status(200).json({ statusCode: 200, message: "Document successfully updated!" });
+            });
         } catch (error) {
-            return res.status(201).json({ statusCode: 201, message: error.message })
+            return res.status(201).json({ statusCode: 201, message: error.message });
         }
-    })
-
-
-
+    });
 }
+
 
 module.exports = { add_booking, assign_booking, add_confirm_checkout, upload_doc }
