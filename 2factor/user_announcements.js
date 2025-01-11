@@ -117,7 +117,7 @@ exports.all_comments = (req, res) => {
     }
 
     // Query to fetch all comments and sub-comments
-    var sql = "SELECT c.id AS comment_id, c.an_id, c.comment, c.user_id, c.user_type, c.created_at, c.parent_comment_id, CASE WHEN c.user_type = 'customers' THEN u.profile ELSE a.profile END AS profile, CASE WHEN c.user_type = 'customers' THEN u.Name ELSE a.first_name END AS name, CASE WHEN c.user_type = 'customers' THEN u.Email ELSE a.email_Id END AS email, COUNT(cl.id) AS like_count FROM announcement_comments c LEFT JOIN hostel u ON c.user_id = u.id AND c.user_type = 'customers' LEFT JOIN createaccount a ON c.user_id = a.id AND c.user_type != 'customers' LEFT JOIN announcement_comment_likes cl ON c.id = cl.comment_id WHERE c.an_id = ? GROUP BY c.id ORDER BY c.parent_comment_id ASC, c.created_at DESC;";
+    var sql = "SELECT c.id AS comment_id, c.an_id, c.comment, c.user_id, c.user_type, c.created_at, c.parent_comment_id, CASE WHEN c.user_type = 'customers' THEN u.profile ELSE a.profile END AS profile,CASE WHEN c.user_type='customers' THEN u.profile ELSE a.profile END AS profile, CASE WHEN c.user_type = 'customers' THEN u.Name ELSE a.first_name END AS name, CASE WHEN c.user_type = 'customers' THEN u.Email ELSE a.email_Id END AS email, COUNT(cl.id) AS like_count FROM announcement_comments c LEFT JOIN hostel u ON c.user_id = u.id AND c.user_type = 'customers' LEFT JOIN createaccount a ON c.user_id = a.id AND c.user_type != 'customers' LEFT JOIN announcement_comment_likes cl ON c.id = cl.comment_id WHERE c.an_id = ? GROUP BY c.id ORDER BY c.parent_comment_id ASC, c.created_at DESC;";
 
     connection.query(sql, [an_id], function (err, data) {
         if (err) {
