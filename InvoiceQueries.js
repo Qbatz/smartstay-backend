@@ -1509,10 +1509,8 @@ function InvoicePDf(connection, request, response) {
                         return
                     }
                     else {
-                        response.status(200).json({ message: 'Insert PDF successfully' });
-
+                        response.status(200).json({ message: 'Insert PDF successfully', pdf_url: data.Location });
                     }
-
                 })
 
                 return data.Location;
@@ -2752,7 +2750,7 @@ function AmenitiesPDF(hostelDetails, monthData, response) {
                         });
 
                         if (pdf_url.length > 0) {
-                            response.status(200).json({ message: 'Insert PDF successfully', filepath: pdf_url[0], amenity_details: monthData });
+                            response.status(200).json({ message: 'Insert PDF successfully', pdf_url: pdf_url[0], amenity_details: monthData });
                             deleteAmenityPDfs(res.filename);
                         } else {
                             response.status(201).json({ message: 'Cannot Insert PDF to Database' });
