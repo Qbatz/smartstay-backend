@@ -27,8 +27,8 @@ function getHostelList(request, response) {
     var hostel_id = request.body.hostel_id;
 
     if (is_admin == 1 || (role_permissions[3] && role_permissions[3].per_view == 1)) {
-
-        var queryHostelList = `SELECT hstl.*,eb.amount AS eb_amount FROM hosteldetails AS hstl LEFT JOIN eb_settings AS eb ON hstl.id=eb.hostel_id WHERE hstl.created_By IN (${show_ids}) AND hstl.isActive = true AND eb.status=1`;
+        var queryHostelList = `SELECT hstl.*,eb.amount AS eb_amount FROM hosteldetails AS hstl LEFT JOIN eb_settings AS eb ON hstl.id=eb.hostel_id AND eb.status=1 WHERE hstl.created_By IN (${show_ids}) AND hstl.isActive = true`;
+        // var queryHostelList = `SELECT hstl.*,eb.amount AS eb_amount FROM hosteldetails AS hstl LEFT JOIN eb_settings AS eb ON hstl.id=eb.hostel_id WHERE hstl.created_By IN (${show_ids}) AND hstl.isActive = true AND eb.status=1`;
         // Query to get the hostels
 
         if (hostel_id) {
