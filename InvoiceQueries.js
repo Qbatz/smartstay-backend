@@ -2001,7 +2001,7 @@ function uploadToS31(response, pdfDetailsArray, connection) { //filenames, respo
                     if (errorMessage) {
                         response.status(201).json({ message: 'Cannot Insert PDF to Database' });
                     } else {
-                        response.status(200).json({ message: 'Insert PDF successfully', pdf_url: pdf_url[0] });
+                        response.status(200).json({ message: 'Insert PDF successfully', pdf_url: uploadData.Location });
                     }
                 }
             }

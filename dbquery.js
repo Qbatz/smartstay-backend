@@ -231,7 +231,9 @@ const queries = [
 
     "ALTER TABLE announcement_comments ADD parent_comment_id INT NULL;",
 
-    "ALTER TABLE `eb_settings` ADD COLUMN `status` INT NULL DEFAULT '1' AFTER `duration`;"
+    "ALTER TABLE `eb_settings` ADD COLUMN `status` INT NULL DEFAULT '1' AFTER `duration`;",
+
+    "ALTER TABLE `customer_walk_in_details` ADD COLUMN `last_name` VARCHAR(255) NULL AFTER `first_name`,CHANGE COLUMN `customer_Name` `first_name` VARCHAR(65) NULL DEFAULT NULL ;"
 ];
 
 queries.forEach(executeQuery);
