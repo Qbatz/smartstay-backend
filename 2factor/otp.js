@@ -16,7 +16,7 @@ exports.user_login = (req, res) => {
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-    var sq1 = "SELECT * FROM hostel WHERE Phone='" + new_mob + "' AND isActive=1";
+    var sq1 = "SELECT * FROM hostel WHERE Phone='" + new_mob + "' AND isActive=1 AND Floor != 'undefined'";
     console.log(sq1);
     connection.query(sq1, function (err, data) {
         if (err) {
