@@ -175,8 +175,8 @@ function InvoiceSettings(connection, request, response) {
 
 
 function UpdateEB(connection, attenArray, response) {
-    console.log("attenArray",attenArray);
-    
+    console.log("attenArray", attenArray);
+
     if (attenArray && Array.isArray(attenArray)) {
         const numUpdates = attenArray.length;
         let numCompleted = 0;
@@ -398,39 +398,78 @@ function getEbReading(connection, response) {
     })
 }
 
-function UpdateAmnity(connection, request, response) {
+function UpdateAmnity(request, response) {
     // console.log(" attenArray", attenArray)
 
     var attenArray = request.body;
     var role_permissions = request.role_permissions;
     var is_admin = request.is_admin;
 
+    const amenitiesName = attenArray?.amenitiesName?.trim().replace(/\s+/g, '');
+    const capitalizedAmenitiesName = amenitiesName?.charAt(0).toUpperCase() + amenitiesName?.slice(1).toLowerCase();
+
+    var hostel_id = attenArray.Hostel_Id;
+    var id = attenArray.id;
+    var amount = attenArray.Amount;
+
+    if (!id || !amount) {
+        return response.status(201).json({ statusCode: 201, message: 'Missing Amount and Id Details' });
+    }
+
+    if (!hostel_id) {
+        return response.status(201).json({ statusCode: 201, message: 'Missing Hostel Details' });
+    }
+
+
     if (is_admin == 1 || (role_permissions[18] && role_permissions[18].per_view == 1)) {
 
-        connection.query(`SELECT * FROM Amenities WHERE Hostel_Id = ${attenArray.Hostel_Id}`, function (error, amenitiesData) {
-            // console.log("amenitiesData", amenitiesData)
-            if (attenArray.id) {
-                connection.query(`UPDATE Amenities SET Amount= ${attenArray.Amount},setAsDefault= ${attenArray.setAsDefault},Status= ${attenArray.Status} WHERE  Amnities_Id='${attenArray.id}' and Hostel_Id = '${attenArray.Hostel_Id}'`, function (error, data) {
-                    if (error) {
-                        console.error(error);
-                        response.status(201).json({ message: "doesn't update" });
+        var ch_query = "SELECT * FROM Amenities WHERE Amnities_Id=? AND Hostel_Id=? AND Status=1";
+        connection.query(ch_query, [id, hostel_id], function (err, ch_res) {
+            if (err) {
+                return response.status(201).json({ statusCode: 201, message: 'Error to Get All Amenities Details', reason: err.message });
+            }
+
+            if (ch_res.length == 0) {
+                return response.status(201).json({ statusCode: 201, message: 'Invalid Amenities Details' });
+            }
+
+            var sql1 = "SELECT * FROM AmnitiesName WHERE LOWER(Amnities_Name) = ?";
+            connection.query(sql1, [capitalizedAmenitiesName], function (err, data) {
+                if (err) {
+                    return response.status(201).json({ statusCode: 201, message: 'Error to Get Amenities Details', reason: err.message });
+                }
+
+                if (data.length != 0) {
+                    update_amenities(data[0].id)
+                } else {
+
+                    var sql2 = "INSERT INTO AmnitiesName (Amnities_Name) VALUES (?)";
+                    connection.query(sql2, [capitalizedAmenitiesName], function (err, ins_data) {
+                        if (err) {
+                            return response.status(201).json({ statusCode: 201, message: 'Error to Add Amenities Details', reason: err.message });
+                        } else {
+                            update_amenities(ins_data.insertId);
+                        }
+                    })
+
+                }
+            })
+
+            function update_amenities(am_id) {
+
+                var sql3 = "UPDATE Amenities SET Amount=?,Amnities_Id=? WHERE Amnities_Id=? AND Hostel_Id=?";
+                connection.query(sql3, [amount, am_id, id, hostel_id], function (err, up_res) {
+                    if (err) {
+                        return response.status(201).json({ statusCode: 201, message: 'Error to Update Amenities Details', reason: err.message });
                     } else {
-                        response.status(200).json({ message: "Update successful" });
+                        return response.status(200).json({ statusCode: 200, message: 'Successfully Updated Amenities Details!' });
                     }
-                });
-
-
+                })
             }
         })
     } else {
         response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
 }
-
-
-
-
-
-
 
 module.exports = { IsEnableCheck, getAccount, InvoiceSettings, AmenitiesSetting, UpdateEB, getAmenitiesList, getEbReading, UpdateAmnity };

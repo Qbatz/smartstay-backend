@@ -465,7 +465,7 @@ app.post('/list/Ebstartmeter', (request, response) => {
 })
 app.post('/amenities/amnityUpdate', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
-    profileQueries.UpdateAmnity(connection, request, response)
+    profileQueries.UpdateAmnity(request, response)
 
 })
 app.get('/list/AmnitiesName', (request, response) => {

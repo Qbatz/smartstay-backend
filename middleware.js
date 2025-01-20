@@ -8,7 +8,7 @@ module.exports = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
-    console.log("token",token)
+    // console.log("token",token)
 
     // Not Need to Token
     const openEndpoints = [
