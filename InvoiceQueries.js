@@ -1503,7 +1503,7 @@ function InvoicePDf(connection, request, response) {
                 console.log('PDF uploaded successfully:', data.Location);
 
                 var sql_query = "UPDATE invoicedetails SET invoicePDF='" + data.Location + "' WHERE id='" + inv_id + "';";
-                connection.query(sql_query, function (err, data) {
+                connection.query(sql_query, function (err, Data) {
                     if (err) {
                         console.log(err);
                         return
