@@ -57,7 +57,7 @@ function createAccountForLogin(connection, reqBodyData, response) {
             uploadProfilePictureToS3Bucket('smartstaydevs', 'Profile/', 'Profile' + reqBodyData.id + `${timestamp}` + '.jpg', reqBodyData.profile, (err, S3URL) => {
                 if (err) {
                     console.error('Error uploading profile picture:', err);
-                    response.status(500).json({ message: 'Error uploading profile picture' });
+                    response.status(201).json({ message: 'Error uploading profile picture' });
                 } else {
                     const query = `UPDATE createaccount SET profile='${S3URL}' WHERE id='${reqBodyData.id}'`;
                     connection.query(query, function (error, profileData) {
@@ -197,7 +197,7 @@ function update_account_details(request, response) {
 //             async function (error, data) {
 //                 if (error) {
 //                     console.error("Database error:", error);
-//                     response.status(500).json({ message: 'Database error' });
+//                     response.status(201).json({ message: 'Database error' });
 //                     return;
 //                 }
 
@@ -233,7 +233,7 @@ function update_account_details(request, response) {
 //                             function (error, result) {
 //                                 if (error) {
 //                                     console.error("Database error:", error);
-//                                     response.status(500).json({ message: 'Database error' });
+//                                     response.status(201).json({ message: 'Database error' });
 //                                     return;
 //                                 } else {
 //                                     response.status(200).json({ message: 'Created Successfully', statusCode: 200 });
@@ -283,7 +283,7 @@ function update_account_details(request, response) {
 //             async function (error, data) {
 //                 if (error) {
 //                     console.error("Database error:", error);
-//                     response.status(500).json({ message: 'Database error' });
+//                     response.status(201).json({ message: 'Database error' });
 //                     return;
 //                 }
 
@@ -383,86 +383,56 @@ function createnewAccount(request, response) {
     var reqBodyData = request.body;
     if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.first_name && reqBodyData.password && reqBodyData.confirm_password) {
 
-        connection.query(
-            `SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`,
-            [reqBodyData.mobileNo, reqBodyData.emailId],
-            async function (error, data) {
+        connection.query(`SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`,
+            [reqBodyData.mobileNo, reqBodyData.emailId], async function (error, data) {
                 if (error) {
                     console.error("Database error:", error);
-                    response.status(500).json({ message: 'Database error' });
-                    return;
+                    return response.status(201).json({ message: 'Database error' });
                 }
 
                 if (data.length === 0) {
 
                     var confirm_pass = reqBodyData.confirm_password;
-                    var currentDate = new Date().toISOString().split('T')[0];
+                    var currentDate = new Date();
+
+                    var futureDate = new Date(currentDate);
+                    futureDate.setDate(futureDate.getDate() + 30);
+                    var formattedFutureDate = futureDate.toISOString().split('T')[0];
+
+                    console.log('Current Date:', currentDate.toISOString().split('T')[0]);
+                    console.log('30 Days After:', formattedFutureDate);
+
 
                     if (reqBodyData.password === confirm_pass) {
 
                         const hash_password = await bcrypt.hash(reqBodyData.password, 10);
 
-                        var apiEndpoint = 'https://www.zohoapis.in/billing/v1/subscriptions';
-                        var method = "POST";
+                        var customer_id = 0;
+                        var subscription_id = 0;
+                        var plan_code = 'free_plan';
 
-                        var inbut_body = {
-                            plan: {
-                                plan_code: 'one_day'
-                            },
-                            customer: {
-                                display_name: reqBodyData.first_name + ' ' + reqBodyData.last_name,
-                                first_name: reqBodyData.first_name,
-                                last_name: reqBodyData.last_name,
-                                email: reqBodyData.emailId,
-                                mobile: reqBodyData.mobileNo
-                            },
-                            start_date: currentDate,
-                            notes: "New User Subscribtion"
-                        };
-
-                        apiResponse(apiEndpoint, method, inbut_body).then(api_data => {
-                            console.log('API Response:', api_data);
-
-                            if (api_data.code == 0) {
-
-                                var subscription_response = api_data.subscription;
-                                var plan_code = reqBodyData.plan_code;
-                                var customer_id = subscription_response.customer.customer_id;
-                                var subscription_id = subscription_response.subscription_id;
-                                var plan_duration = subscription_response.trial_remaining_days;
-                                // var customer_id = 0;
-                                // var subscription_id = 0;
-                                // var plan_code = 0;
-
-                                var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status) VALUES (?,?,?,?,?,?,?,?,1)"
-                                connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, plan_code], function (error, result) {
-                                    if (error) {
-                                        console.log(error);
-                                        return response.status(201).json({ message: 'Database error' });
-                                    } else {
-                                        var user_id = result.insertId;
-
-                                        // return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
-
-                                        var sql2 = "INSERT INTO trial_plan_details (plan_code,user_id,customer_id,subscription_id,plan_status,plan_duration) VALUES (?,?,?,?,?,?)";
-                                        connection.query(sql2, [plan_code, user_id, customer_id, subscription_id, 1, plan_duration], (err, ins_data) => {
-                                            if (err) {
-                                                console.log(err);
-                                                return response.status(201).json({ message: "Unable to Add Subscribtion History", statusCode: 201 })
-                                            } else {
-                                                return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
-                                            }
-                                        })
-                                    }
-                                });
+                        var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status) VALUES (?,?,?,?,?,?,?,?,1)"
+                        connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, plan_code], function (error, result) {
+                            if (error) {
+                                console.log(error);
+                                return response.status(201).json({ message: 'Database error' });
                             } else {
-                                response.status(201).json({ message: api_data.message, statusCode: 201 });
+                                var user_id = result.insertId;
+
+                                // return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
+
+                                var sql2 = "INSERT INTO trial_plan_details (plan_code,user_id,customer_id,subscription_id,plan_status,plan_duration,startdate,end_date) VALUES (?,?,?,?,?,?,?,?)";
+                                connection.query(sql2, [plan_code, user_id, customer_id, subscription_id, 1, 30, currentDate, formattedFutureDate], (err, ins_data) => {
+                                    if (err) {
+                                        console.log(err);
+                                        return response.status(201).json({ message: "Unable to Add Subscribtion History", statusCode: 201 })
+                                    } else {
+                                        return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
+                                    }
+                                })
                             }
-                        })
-                            .catch(error => {
-                                console.error('Error:', error)
-                                response.status(201).json({ message: error, statusCode: 201 });
-                            })
+                        });
+
                     } else {
                         response.status(210).json({ message: 'Password and Confirm Password Not Matched', statusCode: 210 });
                     }
@@ -501,7 +471,7 @@ function loginAccount(connection, response, email_Id, password) {
         connection.query(`SELECT * FROM createaccount WHERE email_Id='${email_Id}'`, async function (error, data) {
             if (error) {
                 console.error(error);
-                response.status(500).json({ message: "Internal Server Error", statusCode: 500 });
+                response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
             } else {
                 if (data.length > 0) {
                     if (await bcrypt.compare(password, data[0].password) || password == data[0].password) {
@@ -1016,7 +986,7 @@ where trans.status = true and trans.created_by = ${createdBy}
                             s3.upload(params, function (err, uploadData) {
                                 if (err) {
                                     console.error("Error uploading PDF", err);
-                                    response.status(500).json({ message: 'Error uploading PDF to S3' });
+                                    response.status(201).json({ message: 'Error uploading PDF to S3' });
                                 } else {
                                     // console.log("PDF uploaded successfully", uploadData.Location);
                                     uploadedPDFs++;

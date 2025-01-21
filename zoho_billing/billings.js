@@ -95,6 +95,7 @@ async function checkAllSubscriptions() {
 }
 
 async function check_trail_end() {
+
     var sql1 = "SELECT ca.*,tpc.*,tpc.createdat AS start_date,tpc.updatedat AS end_date FROM createaccount AS ca JOIN trial_plan_details as tpc ON ca.id=tpc.user_id WHERE tpc.plan_status =1;";
     connection.query(sql1, function (err, data1) {
         if (err) {
