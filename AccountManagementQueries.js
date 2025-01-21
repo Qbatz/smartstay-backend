@@ -461,8 +461,8 @@ function createnewAccount(request, response) {
 }
 
 // Generate JWT Token
-const generateToken = (user) => {
-    return jwt.sign({ id: user.id, sub: user.id, user_type: user.user_type, username: user.Name, role_id: user.role_id, }, process.env.JWT_SECRET, { expiresIn: '30m' });
+const generateToken = (user,plan_details) => {
+    return jwt.sign({ id: user.id, sub: user.id, user_type: user.user_type, username: user.Name, role_id: user.role_id, plan_code: user.plan_code, plan_status: user.plan_status, start_date: plan_details.startdate, end_date: plan_details.end_date }, process.env.JWT_SECRET, { expiresIn: '30m' });
 };
 
 // Login API
@@ -481,12 +481,38 @@ function loginAccount(connection, response, email_Id, password) {
                             sendOtpForMail(connection, response, email_Id, LoginId);
                             response.status(203).json({ message: "OTP sent successfully", statusCode: 203 });
                         } else {
-                            const token = generateToken(data[0]); // token is generated
+
+                            var plan_code = data[0].plan_code;
+                            var user_id = data[0].id;
+
+                            if (plan_code == 'free_plan') {
+                                var sql2 = "SELECT * FROM trial_plan_details WHERE user_id=?";
+                            } else {
+                                var sql2 = "SELECT * FROM subscribtion_history WHERE customer_id=?";
+                            }
+                            connection.query(sql2, [user_id], function (err, Data) {
+                                if (err) {
+                                    response.status(201).json({ message: "Error to Get Plan Details", statusCode: 201 });
+                                } else if (Data.length != 0) {
+                                    var plan_details = Data[0]
+                                    const token = generateToken(data[0], plan_details); // token is generated
+                                    response.status(200).json({ message: "Login successful", statusCode: 200, token: token });
+                                } else {
+                                    var plan_details = {
+                                        startdate: 0,
+                                        end_date: 0
+                                    }
+                                    const token = generateToken(data[0], plan_details); // token is generated
+                                    response.status(200).json({ message: "Login successful", statusCode: 200, token: token });
+                                }
+                            })
+
+                            // const token = generateToken(data[0]); // token is generated
 
                             // var temp = data[0];
                             // temp['token'] = token;
                             // data[0] = temp;
-                            response.status(200).json({ message: "Login successful", statusCode: 200, token: token });
+                            // response.status(200).json({ message: "Login successful", statusCode: 200, token: token });
                         }
                     } else {
                         response.status(202).json({ message: "Enter Valid Password", statusCode: 202 });
@@ -701,9 +727,35 @@ function sendOtpForMail(connection, response, Email_Id, LoginId) {
 function sendResponseOtp(connection, response, requestData) {
     connection.query(`SELECT * FROM createaccount WHERE email_id= \'${requestData.Email_Id}\' `, function (error, resData) {
         if (resData.length > 0 && resData[0].Otp == requestData.OTP) {
-            const token = generateToken(resData[0]); // token is generated
+
+            var plan_code = resData[0].plan_code;
+            var user_id = resData[0].id;
+
+            if (plan_code == 'free_plan') {
+                var sql2 = "SELECT * FROM trial_plan_details WHERE user_id=?";
+            } else {
+                var sql2 = "SELECT * FROM subscribtion_history WHERE customer_id=?";
+            }
+            connection.query(sql2, [user_id], function (err, Data) {
+                if (err) {
+                    response.status(201).json({ message: "Error to Get Plan Details", statusCode: 201 });
+                } else if (Data.length != 0) {
+                    var plan_details = Data[0]
+                    const token = generateToken(resData[0], plan_details); // token is generated
+                    response.status(200).json({ message: "OTP Verified Success", statusCode: 200, token: token })
+                } else {
+                    var plan_details = {
+                        startdate: 0,
+                        end_date: 0
+                    }
+                    const token = generateToken(resData[0], plan_details); // token is generated
+                    response.status(200).json({ message: "OTP Verified Success", statusCode: 200, token: token })
+                }
+            })
+
+            // const token = generateToken(resData[0]); // token is generated
             // console.log(`token`, token);
-            response.status(200).json({ message: "OTP Verified Success", statusCode: 200, token: token })
+            // response.status(200).json({ message: "OTP Verified Success", statusCode: 200, token: token })
         } else {
             response.status(201).json({ message: "Enter Valid Otp", statusCode: 201 })
         }
