@@ -176,7 +176,7 @@ function GetComplianceList(connection, response, request) {
     if (is_admin == 1 || (role_permissions[13] && role_permissions[13].per_view == 1)) {
 
         // const query1 = `SELECT comp.*,ct.complaint_name,hf.floor_name AS floor_name,hr.Room_Id AS room_name FROM hosteldetails hstlDetails inner join compliance comp on comp.Hostel_id=hstlDetails.id JOIN complaint_type AS ct ON ct.id=comp.Complainttype JOIN Hostel_Floor AS hf ON hf.floor_id=comp.Floor_id AND hf.hostel_id=comp.Hostel_id JOIN hostelrooms AS hr ON hr.id=comp.Room WHERE hstlDetails.created_By IN (${show_ids}) ORDER BY comp.ID DESC`;
-        var sql1 = "SELECT comp.*,ct.complaint_name,hf.floor_name AS floor_name,hr.Room_Id AS room_name,cr.first_name AS assigner_name FROM hosteldetails hstlDetails inner join compliance comp on comp.Hostel_id=hstlDetails.id JOIN complaint_type AS ct ON ct.id=comp.Complainttype LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=comp.Floor_id AND hf.hostel_id=comp.Hostel_id LEFT JOIN hostelrooms AS hr ON hr.id=comp.Room LEFT JOIN createaccount AS cr ON cr.id=comp.Assign  WHERE hstlDetails.ID =? AND comp.isActive=1 ORDER BY comp.ID DESC;"
+        var sql1 = "SELECT comp.*,hostel.profile,ct.complaint_name,hf.floor_name AS floor_name,hr.Room_Id AS room_name,cr.first_name AS assigner_name FROM hosteldetails hstlDetails inner join compliance comp on comp.Hostel_id=hstlDetails.id JOIN complaint_type AS ct ON ct.id=comp.Complainttype LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=comp.Floor_id AND hf.hostel_id=comp.Hostel_id JOIN hostel ON hostel.User_Id=comp.User_id LEFT JOIN hostelrooms AS hr ON hr.id=comp.Room LEFT JOIN createaccount AS cr ON cr.id=comp.Assign WHERE hstlDetails.ID =? AND comp.isActive=1 ORDER BY comp.ID DESC;"
         connection.query(sql1, [hostel_id], function (error, hostelData) {
             if (error) {
                 console.error(error);
@@ -414,7 +414,7 @@ function edit_complaint_type(req, res) {
 }
 
 
-function delete_compliant (req, res)  {
+function delete_compliant(req, res) {
 
     var id = req.body.id;
 
@@ -448,4 +448,4 @@ function delete_compliant (req, res)  {
 
 
 
-module.exports = { AddCompliance, GetComplianceList, add_complainttypes, all_complaint_types, remove_complaint_types, change_details, edit_complaint_type,delete_compliant };
+module.exports = { AddCompliance, GetComplianceList, add_complainttypes, all_complaint_types, remove_complaint_types, change_details, edit_complaint_type, delete_compliant };
