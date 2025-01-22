@@ -1212,6 +1212,20 @@ app.post('/complaints/all_complaint_comments', user_announcements_routes.all_com
 
 app.post('/announcement/comment_like', user_announcements_routes.announcment_comment_like);
 
+
+// **************************** Start Cashfree Subscription ****************************
+
+// Add Subscription
+
+var subsc_route = require('./cashfree/subscription');
+
+app.post('/add_new_subscription', subsc_route.add_new_subscription);
+
+
+
+// **************************** End Cashfree Subscription  *****************************
+
+
 // Mobile API
 
 var twofactor_routes = require('./2factor/otp')
