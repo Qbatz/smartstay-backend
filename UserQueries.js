@@ -1201,51 +1201,79 @@ function customer_details(req, res) {
             if (eb_err) {
               return res.status(201).json({ message: "Unable to Eb Details", statusCode: 201 });
             } else {
-              // Get Invoice Details
-              var sql4 = "SELECT * FROM invoicedetails WHERE User_id=? ORDER BY id DESC";
-              connection.query(sql4, [amenn_user_id], (inv_err, inv_res) => {
-                if (inv_err) {
-                  return res.status(201).json({ message: "Unable to  Get Invoice Details", statusCode: 201 });
+
+              // Get Transactions Details
+              var sql5 = "SELECT 'advance' AS type, id, user_id, advance_amount AS amount,payment_status AS status,payment_type,payment_date, createdAt AS created_at FROM advance_amount_transactions WHERE user_id =? UNION ALL SELECT 'rent' AS type, id, user_id, amount,status,payment_type,payment_date, createdAt AS created_at FROM transactions WHERE user_id =? ORDER BY created_at DESC";
+              connection.query(sql5, [user_id, user_id], (trans_err, trans_res) => {
+                if (trans_err) {
+                  return res.status(201).json({ message: "Unable to Get Transactions Details", statusCode: 201 });
                 } else {
-                  // Get Transactions Details
-                  var sql5 = "SELECT 'advance' AS type, id, user_id, advance_amount AS amount,payment_status AS status,payment_type,payment_date, createdAt AS created_at FROM advance_amount_transactions WHERE user_id =? UNION ALL SELECT 'rent' AS type, id, user_id, amount,status,payment_type,payment_date, createdAt AS created_at FROM transactions WHERE user_id =? ORDER BY created_at DESC";
-                  connection.query(sql5, [user_id, user_id], (trans_err, trans_res) => {
-                    if (trans_err) {
-                      return res.status(201).json({ message: "Unable to Get Transactions Details", statusCode: 201 });
+                  // Get Hostel Amenities
+                  var sql6 = "SELECT amname.Amnities_Name,am.Amount,am.Amnities_Id FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id LEFT JOIN AmenitiesHistory AS amhis ON amhis.amenity_Id=am.Amnities_Id AND amhis.user_Id='" + amenn_user_id + "' WHERE am.Hostel_Id='" + hostel_id + "' AND am.setAsDefault=0 AND am.Status=1 AND am.createdBy='" + created_by + "' GROUP BY amname.Amnities_Name;";
+                  connection.query(sql6, [hostel_id], (am_err, am_res) => {
+                    if (am_err) {
+                      console.log(am_err);
+                      return res.status(201).json({ message: "Unable to Get All Amenities", statusCode: 201 });
                     } else {
-                      // Get Hostel Amenities
-                      var sql6 = "SELECT amname.Amnities_Name,am.Amount,am.Amnities_Id FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id LEFT JOIN AmenitiesHistory AS amhis ON amhis.amenity_Id=am.Amnities_Id AND amhis.user_Id='" + amenn_user_id + "' WHERE am.Hostel_Id='" + hostel_id + "' AND am.setAsDefault=0 AND am.Status=1 AND am.createdBy='" + created_by + "' GROUP BY amname.Amnities_Name;";
-                      connection.query(sql6, [hostel_id], (am_err, am_res) => {
-                        if (am_err) {
-                          console.log(am_err);
-                          return res.status(201).json({ message: "Unable to Get All Amenities", statusCode: 201 });
-                        } else {
 
-                          // Complaints
-                          var sql7 = "SELECT cm.Requestid,cm.Assign,DATE_FORMAT(cm.date, '%Y-%m-%d') AS complaint_date,cm.Status,ct.complaint_name FROM compliance AS cm JOIN complaint_type AS ct ON cm.Complainttype=ct.id WHERE User_id=?";
-                          connection.query(sql7, [amenn_user_id], function (err, comp_data) {
-                            if (err) {
-                              return res.status(201).json({ message: "Unable to Get Eb Details", statusCode: 201 });
-                            }
-
-                            // Contact Details
-
-                            var sql8 = "SELECT * FROM contacts WHERE user_id=? AND status=1";
-                            connection.query(sql8, [user_id], function (err, Data) {
-                              if (err) {
-                                return res.status(201).json({ message: "Unable to Get Contact Details", statusCode: 201 });
-                              } else {
-                                res.status(200).json({ statusCode: 200, message: "View Customer Details", data: user_data, eb_data: eb_data, invoice_details: inv_res, transactions: trans_res, all_amenities: am_res, comp_data: comp_data, contact_details: Data });
-                              }
-                            })
-                          })
+                      // Complaints
+                      var sql7 = "SELECT cm.Requestid,cm.Assign,DATE_FORMAT(cm.date, '%Y-%m-%d') AS complaint_date,cm.Status,ct.complaint_name FROM compliance AS cm JOIN complaint_type AS ct ON cm.Complainttype=ct.id WHERE User_id=?";
+                      connection.query(sql7, [amenn_user_id], function (err, comp_data) {
+                        if (err) {
+                          return res.status(201).json({ message: "Unable to Get Eb Details", statusCode: 201 });
                         }
-                      });
+
+                        // Contact Details
+
+                        var sql8 = "SELECT * FROM contacts WHERE user_id=? AND status=1";
+                        connection.query(sql8, [user_id], function (err, Data) {
+                          if (err) {
+                            return res.status(201).json({ message: "Unable to Get Contact Details", statusCode: 201 });
+                          } else {
+
+                            // Get Invoice Details
+                            var sql4 = "SELECT * FROM invoicedetails WHERE hos_user_id=? AND invoice_status=1 ORDER BY id DESC";
+                            connection.query(sql4, [user_id], (inv_err, inv_res) => {
+                              if (inv_err) {
+                                return res.status(201).json({ message: "Unable to  Get Invoice Details", statusCode: 201 });
+                              } else {
+
+
+                                if (inv_res.length != 0) {
+
+                                  let completed = 0;
+
+                                  inv_res.forEach((invoice, index) => {
+                                    var sql2 = "SELECT * FROM manual_invoice_amenities WHERE invoice_id=?";
+                                    connection.query(sql2, [invoice.id], function (err, amenities) {
+                                      if (err) {
+                                        console.log(err);
+                                        inv_res[index]['amenity'] = [];
+                                      } else {
+                                        inv_res[index]['amenity'] = amenities || [];
+                                      }
+
+                                      completed++;
+                                      if (completed === inv_res.length) {
+                                        res.status(200).json({ statusCode: 200, message: "View Customer Details", data: user_data, eb_data: eb_data, invoice_details: inv_res, transactions: trans_res, all_amenities: am_res, comp_data: comp_data, contact_details: Data });
+                                        // return res.status(200).json({ message: "All Bill Details", statusCode: 200, bill_details: invoices });
+                                      }
+                                    });
+                                  });
+                                } else {
+                                  res.status(200).json({ statusCode: 200, message: "View Customer Details", data: user_data, eb_data: eb_data, invoice_details: inv_res, transactions: trans_res, all_amenities: am_res, comp_data: comp_data, contact_details: Data });
+                                }
+                              }
+                            });
+                          }
+                        })
+                      })
                     }
-                  }
-                  );
+                  });
                 }
-              });
+              }
+              );
+
             }
           });
         });
