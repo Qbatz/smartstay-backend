@@ -95,139 +95,139 @@ const queries = [
     // "ALTER TABLE `Vendor` ADD COLUMN `Country` INT NULL AFTER `Business_Name`,ADD COLUMN `Pincode` INT NULL AFTER `Country`;",
 
 
-    "ALTER TABLE `hostel` ADD COLUMN `checkout_comment` VARCHAR(255) NULL AFTER `joining_Date`;",
+    // "ALTER TABLE `hostel` ADD COLUMN `checkout_comment` VARCHAR(255) NULL AFTER `joining_Date`;",
 
-    "ALTER TABLE `hosteldetails` CHANGE COLUMN `email_id` `email_id` VARCHAR(255) NULL ;",
+    // "ALTER TABLE `hosteldetails` CHANGE COLUMN `email_id` `email_id` VARCHAR(255) NULL ;",
 
-    "ALTER TABLE `customer_walk_in_details` CHANGE COLUMN `walk_in_Date` `walk_In_Date` DATE NULL DEFAULT NULL ;",
+    // "ALTER TABLE `customer_walk_in_details` CHANGE COLUMN `walk_in_Date` `walk_In_Date` DATE NULL DEFAULT NULL ;",
 
-    "ALTER TABLE `bookings` ADD COLUMN `phone_number` VARCHAR(45) NULL AFTER `createdat`, ADD COLUMN `email_id` VARCHAR(100) NULL AFTER `phone_number`, ADD COLUMN `room_rent` BIGINT NULL AFTER `email_id`, ADD COLUMN `address` VARCHAR(200) NULL AFTER `room_rent`;",
+    // "ALTER TABLE `bookings` ADD COLUMN `phone_number` VARCHAR(45) NULL AFTER `createdat`, ADD COLUMN `email_id` VARCHAR(100) NULL AFTER `phone_number`, ADD COLUMN `room_rent` BIGINT NULL AFTER `email_id`, ADD COLUMN `address` VARCHAR(200) NULL AFTER `room_rent`;",
 
-    "ALTER TABLE `Vendor` CHANGE COLUMN `Country` `Country` VARCHAR(100) NULL DEFAULT NULL ;",
+    // "ALTER TABLE `Vendor` CHANGE COLUMN `Country` `Country` VARCHAR(100) NULL DEFAULT NULL ;",
 
-    "ALTER TABLE `invoicedetails` ADD COLUMN `advance_amount` BIGINT(20) NULL DEFAULT 0 AFTER `EbAmount`;",
+    // "ALTER TABLE `invoicedetails` ADD COLUMN `advance_amount` BIGINT(20) NULL DEFAULT 0 AFTER `EbAmount`;",
 
-    "ALTER TABLE `bed_details` ADD COLUMN `booking_id` BIGINT(20) NULL DEFAULT '0' AFTER `isfilled`,ADD COLUMN `isbooked` INT(11) NULL DEFAULT '0' AFTER `booking_id`;",
+    // "ALTER TABLE `bed_details` ADD COLUMN `booking_id` BIGINT(20) NULL DEFAULT '0' AFTER `isfilled`,ADD COLUMN `isbooked` INT(11) NULL DEFAULT '0' AFTER `booking_id`;",
 
-    "CREATE TABLE `bankings` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`acc_name` VARCHAR(255) NULL,`acc_num` BIGINT(20) NULL DEFAULT 0,`bank_name` VARCHAR(255) NULL,`ifsc_code` VARCHAR(45) NULL,`description` VARCHAR(255) NULL,`setus_default` INT(11) NULL,`balance` BIGINT(20) NULL,`status` INT(11) NULL DEFAULT 1,`createdby` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+    // "CREATE TABLE `bankings` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`acc_name` VARCHAR(255) NULL,`acc_num` BIGINT(20) NULL DEFAULT 0,`bank_name` VARCHAR(255) NULL,`ifsc_code` VARCHAR(45) NULL,`description` VARCHAR(255) NULL,`setus_default` INT(11) NULL,`balance` BIGINT(20) NULL,`status` INT(11) NULL DEFAULT 1,`createdby` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 
-    "CREATE TABLE `bank_transactions` (`id` INT NOT NULL AUTO_INCREMENT,`bank_id` BIGINT(20) NULL,`date` DATE NULL,`amount` BIGINT(20) NULL DEFAULT 0,`desc` VARCHAR(255) NULL,`type` INT(11) NULL,`status` INT(11) NULL,`createdby` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+    // "CREATE TABLE `bank_transactions` (`id` INT NOT NULL AUTO_INCREMENT,`bank_id` BIGINT(20) NULL,`date` DATE NULL,`amount` BIGINT(20) NULL DEFAULT 0,`desc` VARCHAR(255) NULL,`type` INT(11) NULL,`status` INT(11) NULL,`createdby` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 
-    "ALTER TABLE `bank_transactions` ADD COLUMN `edit_id` BIGINT(20) NULL DEFAULT 0 AFTER `bank_id`;",
+    // "ALTER TABLE `bank_transactions` ADD COLUMN `edit_id` BIGINT(20) NULL DEFAULT 0 AFTER `bank_id`;",
 
-    "ALTER TABLE `transactions` ADD COLUMN `description` VARCHAR(255) NULL AFTER `action`,CHANGE COLUMN `action` `action` INT(11) NULL DEFAULT '1' AFTER `status`;",
+    // "ALTER TABLE `transactions` ADD COLUMN `description` VARCHAR(255) NULL AFTER `action`,CHANGE COLUMN `action` `action` INT(11) NULL DEFAULT '1' AFTER `status`;",
 
-    "ALTER TABLE `bank_transactions` ADD COLUMN `description` VARCHAR(255) NULL AFTER `desc`;",
+    // "ALTER TABLE `bank_transactions` ADD COLUMN `description` VARCHAR(255) NULL AFTER `desc`;",
 
-    "CREATE TABLE `roles` (`id` BIGINT(20) NOT NULL,`role_name` VARCHAR(255) NULL,`status` INT(11) NULL DEFAULT 1,`createdby` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+    // "CREATE TABLE `roles` (`id` BIGINT(20) NOT NULL,`role_name` VARCHAR(255) NULL,`status` INT(11) NULL DEFAULT 1,`createdby` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 
-    "CREATE TABLE `role_permissions` (`id` BIGINT(20) NOT NULL,`role_id` BIGINT(20) NULL,`per_view` INT(11) NULL,`per_create` INT(11) NULL,`per_edit` INT(11) NULL,`per_delete` INT(11) NULL,PRIMARY KEY (`id`));",
+    // "CREATE TABLE `role_permissions` (`id` BIGINT(20) NOT NULL,`role_id` BIGINT(20) NULL,`per_view` INT(11) NULL,`per_create` INT(11) NULL,`per_edit` INT(11) NULL,`per_delete` INT(11) NULL,PRIMARY KEY (`id`));",
 
-    "ALTER TABLE `role_permissions` ADD COLUMN `permission_id` INT(11) NULL AFTER `role_id`;",
+    // "ALTER TABLE `role_permissions` ADD COLUMN `permission_id` INT(11) NULL AFTER `role_id`;",
 
-    "ALTER TABLE `createaccount` ADD COLUMN `user_type` VARCHAR(45) NULL DEFAULT 'admin' AFTER `plan_type`;",
+    // "ALTER TABLE `createaccount` ADD COLUMN `user_type` VARCHAR(45) NULL DEFAULT 'admin' AFTER `plan_type`;",
 
-    "CREATE TABLE `permissions` (`id` BIGINT(11) NOT NULL AUTO_INCREMENT,`permission_name` VARCHAR(255) NULL,PRIMARY KEY (`id`));",
+    // "CREATE TABLE `permissions` (`id` BIGINT(11) NOT NULL AUTO_INCREMENT,`permission_name` VARCHAR(255) NULL,PRIMARY KEY (`id`));",
 
-    "INSERT INTO `permissions` (`id`, `permission_name`) VALUES ('1', 'Dashboard'),('2', 'Announcement'),('3', 'Updates'),('4', 'Paying Guest'),('5', 'Customers'),('6', 'Bookings'),('7', 'Check out'),('8', 'Walk In'),('9', 'Assets'),('10', 'Vendor'),('11', 'Bills'),('12', 'Recuring Bills'),('13', 'Electricity'),('14', 'Complaints'),('15', 'Expenses'),('16', 'Reports'),('17', 'Bankings'),('18', 'Profile'),('19', 'Amenities');",
+    // "INSERT INTO `permissions` (`id`, `permission_name`) VALUES ('1', 'Dashboard'),('2', 'Announcement'),('3', 'Updates'),('4', 'Paying Guest'),('5', 'Customers'),('6', 'Bookings'),('7', 'Check out'),('8', 'Walk In'),('9', 'Assets'),('10', 'Vendor'),('11', 'Bills'),('12', 'Recuring Bills'),('13', 'Electricity'),('14', 'Complaints'),('15', 'Expenses'),('16', 'Reports'),('17', 'Bankings'),('18', 'Profile'),('19', 'Amenities');",
 
-    "ALTER TABLE `roles` CHANGE COLUMN `id` `id` BIGINT(20) NOT NULL AUTO_INCREMENT ;",
+    // "ALTER TABLE `roles` CHANGE COLUMN `id` `id` BIGINT(20) NOT NULL AUTO_INCREMENT ;",
 
-    "ALTER TABLE `role_permissions` CHANGE COLUMN `id` `id` BIGINT(20) NOT NULL AUTO_INCREMENT ;",
+    // "ALTER TABLE `role_permissions` CHANGE COLUMN `id` `id` BIGINT(20) NOT NULL AUTO_INCREMENT ;",
 
-    "ALTER TABLE `createaccount` ADD COLUMN `role_id` BIGINT(20) NULL DEFAULT 0 AFTER `user_type`;",
+    // "ALTER TABLE `createaccount` ADD COLUMN `role_id` BIGINT(20) NULL DEFAULT 0 AFTER `user_type`;",
 
-    "ALTER TABLE `createaccount` ADD COLUMN `description` VARCHAR(255) NULL DEFAULT 0 AFTER `user_type`;",
+    // "ALTER TABLE `createaccount` ADD COLUMN `description` VARCHAR(255) NULL DEFAULT 0 AFTER `user_type`;",
 
-    "ALTER TABLE `expenses` ADD COLUMN `bank_id` BIGINT(20) NULL DEFAULT 0 AFTER `room_id`;",
+    // "ALTER TABLE `expenses` ADD COLUMN `bank_id` BIGINT(20) NULL DEFAULT 0 AFTER `room_id`;",
 
-    "ALTER TABLE `createaccount` ADD COLUMN `createdby` BIGINT(20) NULL DEFAULT 0 AFTER `role_id`;",
+    // "ALTER TABLE `createaccount` ADD COLUMN `createdby` BIGINT(20) NULL DEFAULT 0 AFTER `role_id`;",
 
-    "ALTER TABLE `assets` ADD COLUMN `payment_mode` VARCHAR(255) NULL AFTER `purchase_date`,ADD COLUMN `bank_id` BIGINT(20) NULL DEFAULT 0 AFTER `payment_mode`;",
+    // "ALTER TABLE `assets` ADD COLUMN `payment_mode` VARCHAR(255) NULL AFTER `purchase_date`,ADD COLUMN `bank_id` BIGINT(20) NULL DEFAULT 0 AFTER `payment_mode`;",
 
-    "ALTER TABLE `customer_eb_amount` ADD COLUMN `eb_id` BIGINT(20) NULL DEFAULT 0 AFTER `user_id`;",
+    // "ALTER TABLE `customer_eb_amount` ADD COLUMN `eb_id` BIGINT(20) NULL DEFAULT 0 AFTER `user_id`;",
 
-    "ALTER TABLE `EbAmount` ADD COLUMN`status` INT(11) NULL DEFAULT '1' AFTER`Eb_Unit`;",
+    // "ALTER TABLE `EbAmount` ADD COLUMN`status` INT(11) NULL DEFAULT '1' AFTER`Eb_Unit`;",
 
-    "CREATE TABLE `room_readings` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`hostel_id` BIGINT(20) NULL,`floor_id` BIGINT(20) NULL,`room_id` BIGINT(20) NULL,`date` DATE NULL,`reading` BIGINT(20) NULL,`total_amount` BIGINT(20) NULL,`total_reading` BIGINT(20) NULL,`status` INT NULL DEFAULT 1,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+    // "CREATE TABLE `room_readings` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`hostel_id` BIGINT(20) NULL,`floor_id` BIGINT(20) NULL,`room_id` BIGINT(20) NULL,`date` DATE NULL,`reading` BIGINT(20) NULL,`total_amount` BIGINT(20) NULL,`total_reading` BIGINT(20) NULL,`status` INT NULL DEFAULT 1,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 
-    "ALTER TABLE customer_eb_amount MODIFY COLUMN amount DECIMAL(10, 2);",
+    // "ALTER TABLE customer_eb_amount MODIFY COLUMN amount DECIMAL(10, 2);",
 
-    "ALTER TABLE `invoicedetails` ADD COLUMN `invoice_status` INT(11) NULL DEFAULT 1 AFTER `hos_user_id`;",
+    // "ALTER TABLE `invoicedetails` ADD COLUMN `invoice_status` INT(11) NULL DEFAULT 1 AFTER `hos_user_id`;",
 
-    "ALTER TABLE `subscribtion_history` ADD COLUMN `event_id` VARCHAR(255) NULL AFTER `updateat`;",
+    // "ALTER TABLE `subscribtion_history` ADD COLUMN `event_id` VARCHAR(255) NULL AFTER `updateat`;",
 
-    "ALTER TABLE `eb_settings` ADD COLUMN `room_based` INT(11) NULL DEFAULT 0 AFTER `amount`,ADD COLUMN `hostel_based` INT(11) NUL DEFAULT 0L AFTER `room_based`,ADD COLUMN `recuring` INT(11) NULL AFTER `hostel_based`,ADD COLUMN `start_date` DATE NULL AFTER `recuring`,ADD COLUMN `end_date` DATE NULL AFTER `start_date`,ADD COLUMN `duration` VARCHAR(45) NULL AFTER `end_date`;",
+    // "ALTER TABLE `eb_settings` ADD COLUMN `room_based` INT(11) NULL DEFAULT 0 AFTER `amount`,ADD COLUMN `hostel_based` INT(11) NUL DEFAULT 0L AFTER `room_based`,ADD COLUMN `recuring` INT(11) NULL AFTER `hostel_based`,ADD COLUMN `start_date` DATE NULL AFTER `recuring`,ADD COLUMN `end_date` DATE NULL AFTER `start_date`,ADD COLUMN `duration` VARCHAR(45) NULL AFTER `end_date`;",
 
-    "ALTER TABLE `hosteldetails` ADD COLUMN `recure` INT(11) NULL DEFAULT 0 AFTER `image4`,ADD COLUMN `inv_startdate` DATE NULL AFTER `recure`,ADD COLUMN `inv_enddate` DATE NULL AFTER `inv_startdate`,ADD COLUMN `duration` VARCHAR(45) NULL AFTER `inv_enddate`,CHANGE COLUMN `created_By` `created_By` INT(11) NOT NULL AFTER `duration`,CHANGE COLUMN `create_At` `create_At` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `created_By`;",
+    // "ALTER TABLE `hosteldetails` ADD COLUMN `recure` INT(11) NULL DEFAULT 0 AFTER `image4`,ADD COLUMN `inv_startdate` DATE NULL AFTER `recure`,ADD COLUMN `inv_enddate` DATE NULL AFTER `inv_startdate`,ADD COLUMN `duration` VARCHAR(45) NULL AFTER `inv_enddate`,CHANGE COLUMN `created_By` `created_By` INT(11) NOT NULL AFTER `duration`,CHANGE COLUMN `create_At` `create_At` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `created_By`;",
 
-    "ALTER TABLE `Amenities` ADD COLUMN`recuring` INT(11) NULL DEFAULT 0 AFTER`Amnities_Id`,ADD COLUMN`startdate` DATE NULL AFTER`recuring`,ADD COLUMN`enddate` DATE NULL AFTER`startdate`,ADD COLUMN`duration` VARCHAR(45) NULL AFTER`enddate`,ADD COLUMN`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP AFTER`createdBy`; ",
+    // "ALTER TABLE `Amenities` ADD COLUMN`recuring` INT(11) NULL DEFAULT 0 AFTER`Amnities_Id`,ADD COLUMN`startdate` DATE NULL AFTER`recuring`,ADD COLUMN`enddate` DATE NULL AFTER`startdate`,ADD COLUMN`duration` VARCHAR(45) NULL AFTER`enddate`,ADD COLUMN`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP AFTER`createdBy`; ",
 
-    "ALTER TABLE `Expense_Category_Name` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `category_Name`;",
+    // "ALTER TABLE `Expense_Category_Name` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `category_Name`;",
 
-    "ALTER TABLE `Expense_Subcategory_Name` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `subcategory`;",
+    // "ALTER TABLE `Expense_Subcategory_Name` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `subcategory`;",
 
-    "ALTER TABLE `complaint_type` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `complaint_name`;",
+    // "ALTER TABLE `complaint_type` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `complaint_name`;",
 
-    "ALTER TABLE `hosteldetails` ADD COLUMN `inv_date` DATE NULL AFTER `duration`,ADD COLUMN `due_date` DATE NULL AFTER `inv_date`;",
+    // "ALTER TABLE `hosteldetails` ADD COLUMN `inv_date` DATE NULL AFTER `duration`,ADD COLUMN `due_date` DATE NULL AFTER `inv_date`;",
 
-    "ALTER TABLE `hosteldetails` CHANGE COLUMN `inv_startdate` `inv_startdate` INT(11) NULL DEFAULT NULL ,CHANGE COLUMN `inv_enddate` `inv_enddate` INT(11) NULL ;",
+    // "ALTER TABLE `hosteldetails` CHANGE COLUMN `inv_startdate` `inv_startdate` INT(11) NULL DEFAULT NULL ,CHANGE COLUMN `inv_enddate` `inv_enddate` INT(11) NULL ;",
 
-    "ALTER TABLE `eb_settings` CHANGE COLUMN `start_date` `start_date` INT(11) NULL DEFAULT NULL ,CHANGE COLUMN `end_date` `end_date` INT(11) NULL DEFAULT NULL ;",
+    // "ALTER TABLE `eb_settings` CHANGE COLUMN `start_date` `start_date` INT(11) NULL DEFAULT NULL ,CHANGE COLUMN `end_date` `end_date` INT(11) NULL DEFAULT NULL ;",
 
-    "ALTER TABLE `Amenities` CHANGE COLUMN `startdate` `startdate` INT(11) NULL DEFAULT NULL ,CHANGE COLUMN `enddate` `enddate` INT(11) NULL DEFAULT NULL ;",
+    // "ALTER TABLE `Amenities` CHANGE COLUMN `startdate` `startdate` INT(11) NULL DEFAULT NULL ,CHANGE COLUMN `enddate` `enddate` INT(11) NULL DEFAULT NULL ;",
 
-    "ALTER TABLE `hosteldetails` ADD COLUMN `inv_date` DATE NULL AFTER `duration`,ADD COLUMN `due_date` DATE NULL AFTER `inv_date`;",
+    // "ALTER TABLE `hosteldetails` ADD COLUMN `inv_date` DATE NULL AFTER `duration`,ADD COLUMN `due_date` DATE NULL AFTER `inv_date`;",
 
-    "ALTER TABLE `roles` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `role_name`;",
+    // "ALTER TABLE `roles` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `role_name`;",
 
-    "ALTER TABLE `customer_eb_amount` ADD COLUMN `type` VARCHAR(45) NULL DEFAULT 'room' AFTER `date`;",
+    // "ALTER TABLE `customer_eb_amount` ADD COLUMN `type` VARCHAR(45) NULL DEFAULT 'room' AFTER `date`;",
 
-    "CREATE TABLE `hostel_readings` (`id` BIGINT(20) NOT NULL,`hostel_id` BIGINT(20) NULL,`date` DATE NULL,`reading` VARCHAR(45) NULL,`total_amount` BIGINT(20) NULL,`total_reading` BIGINT(20) NULL,`status` INT(11) NULL DEFAULT 1,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+    // "CREATE TABLE `hostel_readings` (`id` BIGINT(20) NOT NULL,`hostel_id` BIGINT(20) NULL,`date` DATE NULL,`reading` VARCHAR(45) NULL,`total_amount` BIGINT(20) NULL,`total_reading` BIGINT(20) NULL,`status` INT(11) NULL DEFAULT 1,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 
-    "ALTER TABLE `hostel_readings` CHANGE COLUMN `id` `id` BIGINT(20) NOT NULL AUTO_INCREMENT ;",
+    // "ALTER TABLE `hostel_readings` CHANGE COLUMN `id` `id` BIGINT(20) NOT NULL AUTO_INCREMENT ;",
 
-    "ALTER TABLE `bookings` ADD COLUMN `profile` VARCHAR(255) NULL DEFAULT 0 AFTER `address`;",
+    // "ALTER TABLE `bookings` ADD COLUMN `profile` VARCHAR(255) NULL DEFAULT 0 AFTER `address`;",
 
-    "ALTER TABLE `hostel` ADD COLUMN `req_date` DATE NULL AFTER `checkout_comment`;",
+    // "ALTER TABLE `hostel` ADD COLUMN `req_date` DATE NULL AFTER `checkout_comment`;",
 
-    "ALTER TABLE `hostel` ADD COLUMN `return_advance` BIGINT(20) NULL DEFAULT 0 AFTER `req_date`;",
+    // "ALTER TABLE `hostel` ADD COLUMN `return_advance` BIGINT(20) NULL DEFAULT 0 AFTER `req_date`;",
 
-    "CREATE TABLE `contacts` (`id` INT NOT NULL AUTO_INCREMENT,`user_name` VARCHAR(255) NULL,`guardian` VARCHAR(255) NULL,`mob_no` BIGINT(20) NULL,`address` VARCHAR(255) NULL,`user_id` BIGINT(20) NULL,`status` INT NULL DEFAULT 1,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+    // "CREATE TABLE `contacts` (`id` INT NOT NULL AUTO_INCREMENT,`user_name` VARCHAR(255) NULL,`guardian` VARCHAR(255) NULL,`mob_no` BIGINT(20) NULL,`address` VARCHAR(255) NULL,`user_id` BIGINT(20) NULL,`status` INT NULL DEFAULT 1,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 
-    "CREATE TABLE `reassign_userdetails` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`user_id` BIGINT(20) NULL,`hostel_id` BIGINT(20) NULL,`old_floor` BIGINT(20) NULL,`old_room` BIGINT(20) NULL,`new_floor` BIGINT(20) NULL,`new_room` BIGINT(20) NULL,`new_bed` BIGINT(20) NULL,`reassign_date` DATE NULL,`status` INT NULL,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+    // "CREATE TABLE `reassign_userdetails` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`user_id` BIGINT(20) NULL,`hostel_id` BIGINT(20) NULL,`old_floor` BIGINT(20) NULL,`old_room` BIGINT(20) NULL,`new_floor` BIGINT(20) NULL,`new_room` BIGINT(20) NULL,`new_bed` BIGINT(20) NULL,`reassign_date` DATE NULL,`status` INT NULL,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 
-    "ALTER TABLE `hostel` ADD COLUMN `reassign_date` DATE NULL AFTER `return_advance`;",
+    // "ALTER TABLE `hostel` ADD COLUMN `reassign_date` DATE NULL AFTER `return_advance`;",
 
-    "ALTER TABLE `reassign_userdetails` ADD COLUMN `old_bed` BIGINT(20) NULL AFTER `old_room`;",
+    // "ALTER TABLE `reassign_userdetails` ADD COLUMN `old_bed` BIGINT(20) NULL AFTER `old_room`;",
 
-    "ALTER TABLE `bank_transactions` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `description`;",
+    // "ALTER TABLE `bank_transactions` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `description`;",
 
-    "ALTER TABLE `customer_walk_in_details` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `joining_Date`,CHANGE COLUMN `created_By` `created_By` INT(11) NULL DEFAULT NULL AFTER `isActive`,CHANGE COLUMN `created_At` `created_At` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER `created_By`;",
+    // "ALTER TABLE `customer_walk_in_details` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `joining_Date`,CHANGE COLUMN `created_By` `created_By` INT(11) NULL DEFAULT NULL AFTER `isActive`,CHANGE COLUMN `created_At` `created_At` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER `created_By`;",
 
-    "ALTER TABLE `bankings` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `balance`;",
+    // "ALTER TABLE `bankings` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `balance`;",
 
-    "CREATE TABLE otp_verification (id INT AUTO_INCREMENT PRIMARY KEY,phone_number VARCHAR(15) NOT NULL,otp VARCHAR(6) NOT NULL,expires_at DATETIME NOT NULL,verified BOOLEAN DEFAULT FALSE,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); ",
+    // "CREATE TABLE otp_verification (id INT AUTO_INCREMENT PRIMARY KEY,phone_number VARCHAR(15) NOT NULL,otp VARCHAR(6) NOT NULL,expires_at DATETIME NOT NULL,verified BOOLEAN DEFAULT FALSE,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); ",
 
-    "CREATE TABLE `announcements` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`title` VARCHAR(45) NULL,`description` LONGTEXT NULL,`status` INT NULL DEFAULT 1,`hostel_id` BIGINT(20) NULL,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+    // "CREATE TABLE `announcements` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`title` VARCHAR(45) NULL,`description` LONGTEXT NULL,`status` INT NULL DEFAULT 1,`hostel_id` BIGINT(20) NULL,`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 
-    "ALTER TABLE `assets` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `total_price`;",
+    // "ALTER TABLE `assets` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `total_price`;",
 
-    "CREATE TABLE `announcement_likes` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`user_id` BIGINT(20) NULL,`status` INT NULL DEFAULT 1,`an_id` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+    // "CREATE TABLE `announcement_likes` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`user_id` BIGINT(20) NULL,`status` INT NULL DEFAULT 1,`an_id` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 
-    "CREATE TABLE announcement_comments (id BIGINT AUTO_INCREMENT PRIMARY KEY,an_id BIGINT NOT NULL,comment TEXT NOT NULL,user_id BIGINT NOT NULL,user_type VARCHAR(255),created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
+    // "CREATE TABLE announcement_comments (id BIGINT AUTO_INCREMENT PRIMARY KEY,an_id BIGINT NOT NULL,comment TEXT NOT NULL,user_id BIGINT NOT NULL,user_type VARCHAR(255),created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
 
-    "CREATE TABLE `recuring_inv_details` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`user_id` VARCHAR(45) NULL,`invoice_date` VARCHAR(45) NULL,`due_date` VARCHAR(45) NULL,`advance` VARCHAR(45) NULL,`rent` VARCHAR(45) NULL,`aminity` VARCHAR(45) NULL,`eb` VARCHAR(45) NULL,`status` INT(11) NULL DEFAULT '1',`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+    // "CREATE TABLE `recuring_inv_details` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`user_id` VARCHAR(45) NULL,`invoice_date` VARCHAR(45) NULL,`due_date` VARCHAR(45) NULL,`advance` VARCHAR(45) NULL,`rent` VARCHAR(45) NULL,`aminity` VARCHAR(45) NULL,`eb` VARCHAR(45) NULL,`status` INT(11) NULL DEFAULT '1',`created_by` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 
-    "ALTER TABLE `compliance` ADD COLUMN `isActive` INT(11) NULL DEFAULT '1' AFTER `updatedat`;",
+    // "ALTER TABLE `compliance` ADD COLUMN `isActive` INT(11) NULL DEFAULT '1' AFTER `updatedat`;",
 
-    "CREATE TABLE complaice_comments (id BIGINT AUTO_INCREMENT PRIMARY KEY,com_id BIGINT NOT NULL,comment TEXT NOT NULL,user_id BIGINT NOT NULL,user_type VARCHAR(255),created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
+    // "CREATE TABLE complaice_comments (id BIGINT AUTO_INCREMENT PRIMARY KEY,com_id BIGINT NOT NULL,comment TEXT NOT NULL,user_id BIGINT NOT NULL,user_type VARCHAR(255),created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
 
-    "CREATE TABLE `announcement_comment_likes` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`comment_id` BIGINT(20) NOT NULL,`user_id` BIGINT(20) NOT NULL,`user_type` VARCHAR(50) NOT NULL,`created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+    // "CREATE TABLE `announcement_comment_likes` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`comment_id` BIGINT(20) NOT NULL,`user_id` BIGINT(20) NOT NULL,`user_type` VARCHAR(50) NOT NULL,`created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 
-    "ALTER TABLE `announcement_comment_likes` ADD COLUMN `status` INT(11) NULL DEFAULT '1' AFTER `user_type`;",
+    // "ALTER TABLE `announcement_comment_likes` ADD COLUMN `status` INT(11) NULL DEFAULT '1' AFTER `user_type`;",
 
-    "ALTER TABLE `hostel` ADD COLUMN `doc1` VARCHAR(255) NULL AFTER `reassign_date`,ADD COLUMN `doc2` VARCHAR(255) NULL AFTER `doc1`",
+    // "ALTER TABLE `hostel` ADD COLUMN `doc1` VARCHAR(255) NULL AFTER `reassign_date`,ADD COLUMN `doc2` VARCHAR(255) NULL AFTER `doc1`",
 
     "ALTER TABLE announcement_comments ADD parent_comment_id INT NULL;",
 
@@ -235,7 +235,11 @@ const queries = [
 
     "ALTER TABLE `customer_walk_in_details` ADD COLUMN `last_name` VARCHAR(255) NULL AFTER `first_name`,CHANGE COLUMN `customer_Name` `first_name` VARCHAR(65) NULL DEFAULT NULL ;",
 
-    "ALTER TABLE `invoicedetails` ADD COLUMN `start_date` DATE NULL AFTER `invoice_status`,ADD COLUMN `end_date` DATE NULL AFTER `start_date`;"
+    "ALTER TABLE `invoicedetails` ADD COLUMN `start_date` DATE NULL AFTER `invoice_status`,ADD COLUMN `end_date` DATE NULL AFTER `start_date`;",
+
+    "CREATE TABLE receipts (id INT AUTO_INCREMENT PRIMARY KEY,user_id INT NOT NULL,reference_id VARCHAR(255) NOT NULL,invoice_number VARCHAR(255) NOT NULL,amount_received DECIMAL(10, 2) NOT NULL,payment_date DATE NOT NULL,payment_mode VARCHAR(50) NOT NULL,notes TEXT,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
+
+    "ALTER TABLE `receipts` ADD COLUMN `status` INT NULL DEFAULT 1 AFTER `payment_mode`,ADD COLUMN `created_by` BIGINT(20) NULL AFTER `notes`;"
 ];
 
 queries.forEach(executeQuery);

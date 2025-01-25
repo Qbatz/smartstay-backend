@@ -1,0 +1,210 @@
+const connection = require('./config/connection')
+const crypto = require('crypto');
+
+exports.add_receipt = (req, res) => {
+
+    var { user_id, reference_id, invoice_number, amount, payment_date, payment_mode, notes, bank_id } = req.body;
+
+    var created_by = req.user_details.id;
+    var role_permissions = req.role_permissions;
+    var is_admin = req.is_admin;
+
+    if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_create == 1)) {
+
+        if (!user_id) {
+            return res.status(201).json({ message: "Missing User Id", statusCode: 201 });
+        }
+
+        if (!reference_id) {
+            return res.status(201).json({ message: "Missing Reference Id", statusCode: 201 });
+        }
+
+        if (!invoice_number) {
+            return res.status(201).json({ message: "Missing Invoice Number", statusCode: 201 });
+        }
+
+        if (!amount) {
+            return res.status(201).json({ message: "Missing Amount", statusCode: 201 });
+        }
+
+        if (!payment_date) {
+            return res.status(201).json({ message: "Missing Payment Date", statusCode: 201 });
+        }
+
+        if (!payment_mode) {
+            return res.status(201).json({ message: "Missing Payment Mode", statusCode: 201 });
+        }
+
+        var sql1 = "INSERT INTO receipts (user_id,reference_id,invoice_number,amount_received,payment_date,payment_mode,notes,created_by) VALUES (?)";
+        var params = [user_id, reference_id, invoice_number, amount, payment_date, payment_mode, notes, created_by]
+        connection.query(sql1, [params], function (err, ins_data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Error to Add Receipt Details", reason: err.message });
+            }
+
+            var id = ins_data.insertId;
+
+            if (payment_mode == "Net Banking" && bank_id) {
+
+                var sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
+                connection.query(sql5, [bank_id], function (err, sel_res) {
+                    if (err) {
+                        console.log(err);
+                    } else if (sel_res.length != 0) {
+
+                        const balance_amount = parseInt(sel_res[0].balance);
+
+                        var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,`desc`,type,status,createdby,edit_id) VALUES (?,?,?,?,?,?,?,?)";
+                        connection.query(sql4, [bank_id, payment_date, amount, 'receipt', 1, 1, created_by, id], function (err, ins_data) {
+                            if (err) {
+                                console.log(err, "Insert Transactions Error");
+                            } else {
+                                var new_amount = parseInt(balance_amount) + parseInt(amount);
+
+                                var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
+                                connection.query(sql5, [new_amount, bank_id], function (err, up_date) {
+                                    if (err) {
+                                        console.log(err, "Update Amount Error");
+                                    }
+                                })
+                            }
+                        })
+                    } else {
+                        console.log("Invalid Bank Id");
+                    }
+                })
+            }
+            return res.status(200).json({ statusCode: 200, message: "Receipt generated Successfully" });
+        })
+    } else {
+        return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
+}
+
+exports.gen_reference = (req, res) => {
+    try {
+        const receipt_number = crypto.randomBytes(5).toString("hex").toUpperCase(); // 10 characters unique value
+        return res.status(200).json({ statusCode: 200, message: "Reference ID generated successfully.", reference_id: receipt_number, });
+    } catch (error) {
+        console.error("Error generating reference ID:", error);
+        return res.status(201).json({ statusCode: 201, message: "Failed to generate reference ID. Please try again later.", });
+    }
+};
+
+exports.get_all_receipts = (req, res) => {
+
+    var hostel_id = req.body.hostel_id;
+    var role_permissions = req.role_permissions;
+    var is_admin = req.is_admin;
+
+    if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_edit == 1)) {
+
+        if (!hostel_id) {
+            return res.status(201).json({ message: "Missing Hostel Id", statusCode: 201 });
+        }
+
+        var sql1 = "SELECT re.*,hos.Name,hos.profile FROM receipts AS re JOIN hostel AS hos ON hos.id=re.user_id WHERE hos.Hostel_Id=? AND re.status=1 AND hos.isActive=1";
+        connection.query(sql1, [hostel_id], function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Error to Get Receipt Details", reason: err.message });
+            }
+
+            return res.status(200).json({ statusCode: 200, message: "All Receipt", all_receipts: data });
+        })
+    } else {
+        return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
+}
+
+exports.edit_receipt = (req, res) => {
+
+    var role_permissions = req.role_permissions;
+    var is_admin = req.is_admin;
+
+    var { id, user_id, invoice_number, amount, payment_date, payment_mode, notes } = req.body;
+
+    if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_edit == 1)) {
+
+        if (!user_id) {
+            return res.status(201).json({ message: "Missing User Id", statusCode: 201 });
+        }
+
+        if (!amount) {
+            return res.status(201).json({ message: "Missing Amount", statusCode: 201 });
+        }
+
+        if (!invoice_number) {
+            return res.status(201).json({ message: "Missing Invoice Number", statusCode: 201 });
+        }
+
+        if (!payment_date) {
+            return res.status(201).json({ message: "Missing Payment Date", statusCode: 201 });
+        }
+
+        if (!payment_mode) {
+            return res.status(201).json({ message: "Missing Payment Type", statusCode: 201 });
+        }
+
+        var sql1 = "SELECT * FROM receipts WHERE id=? AND status=1";
+        connection.query(sql1, [id], function (err, data) {
+            if (err) {
+                return res.status(201).json({ message: "Error to Get Receipts Details", reason: err.message, statusCode: 201 });
+            }
+
+            if (data.length == 0) {
+                return res.status(201).json({ message: "Invalid Receipts Details", statusCode: 201 });
+            }
+
+            var sql2 = "UPDATE receipts SET invoice_number=?,amount_received=?,payment_date=?,notes=? WHERE id=?";
+            connection.query(sql2, [invoice_number, amount, payment_date, notes, id], function (err, up_res) {
+                if (err) {
+                    return res.status(201).json({ message: "Error to Update Receipts Details", reason: err.message, statusCode: 201 });
+                }
+
+                return res.status(200).json({ message: "Receipts Details Updated", statusCode: 200 });
+            })
+        })
+    } else {
+        return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
+}
+
+exports.delete_receipt = (req, res) => {
+
+    var id = req.body.id;
+
+    var role_permissions = req.role_permissions;
+    var is_admin = req.is_admin;
+
+    var { id, user_id, invoice_number, amount, payment_date, payment_mode, notes } = req.body;
+
+    if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_delete == 1)) {
+
+        if (!id) {
+            return res.status(201).json({ message: "Missing Receipt Id", statusCode: 201 });
+        }
+
+        var sql1 = "SELECT * FROM receipts WHERE id=? AND status=1";
+        connection.query(sql1, [id], function (err, data) {
+            if (err) {
+                return res.status(201).json({ message: "Error to Get Receipts Details", reason: err.message, statusCode: 201 });
+            }
+
+            if (data.length == 0) {
+                return res.status(201).json({ message: "Invalid Receipts Details", statusCode: 201 });
+            }
+
+            var sql2 = "UPDATE receipts SET status=0 WHERE id=?";
+            connection.query(sql2, [id], function (err, up_res) {
+                if (err) {
+                    return res.status(201).json({ message: "Error to Delete Receipts Details", reason: err.message, statusCode: 201 });
+                }
+
+                return res.status(200).json({ message: "Receipts Deleted Successfully!", statusCode: 200 });
+            })
+        })
+    } else {
+        return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
+
+}

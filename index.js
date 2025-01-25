@@ -16,6 +16,8 @@ const exports_routes = require('./exports');
 const newBookings = require('./new_bookings');
 
 var user_announcements_routes = require('./2factor/user_announcements')
+const receipts = require('./receipts');
+
 
 const app = express()
 const userQueries = require('./UserQueries');
@@ -113,7 +115,7 @@ app.post('/users/user-list', (request, response) => {
 });
 
 app.post('/users/delete', (req, res) => {
-    newBookings.delete_user( req, res);
+    newBookings.delete_user(req, res);
 });
 
 app.post('/add/adduser-list', upload.single('profile'), (request, response) => {
@@ -1214,6 +1216,15 @@ app.post('/complaints/all_complaint_comments', user_announcements_routes.all_com
 
 app.post('/announcement/comment_like', user_announcements_routes.announcment_comment_like);
 
+app.post('/receipts/add', receipts.add_receipt);
+
+app.get('/receipts/gen_reference', receipts.gen_reference)
+
+app.post('/receipts/all_receipts', receipts.get_all_receipts)
+
+app.post('/receipts/edit', receipts.edit_receipt)
+
+app.post('/receipts/delete', receipts.delete_receipt)
 
 // **************************** Start Cashfree Subscription ****************************
 

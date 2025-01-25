@@ -14,9 +14,9 @@ function add_booking(req, res) {
 
     const profile = req.files?.profile || 0;
 
-    console.log(profile);
+    var l_name = req.body.l_name || ""
 
-    var { f_name, l_name, mob_no, email_id, address, joining_date, amount, hostel_id, id } = req.body;
+    var { f_name, mob_no, email_id, address, joining_date, amount, hostel_id, id } = req.body;
 
     if (!f_name || !mob_no || !joining_date || !amount || !hostel_id) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });

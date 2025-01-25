@@ -3,6 +3,8 @@ const request = require("request");
 const CryptoJS = require("crypto-js");
 
 require("dotenv").config();
+const crypto = require("crypto");
+
 
 const connection = require("./config/connection");
 const addNotification = require("./components/add_notification");
@@ -994,6 +996,8 @@ function transitionlist(request, response) {
       var invoice_type = 1;
     }
 
+    var reference_id = crypto.randomBytes(5).toString("hex").toUpperCase(); // 10 characters unique value
+
     if (invoice_type == 1) {
 
       if (!amount && amount == undefined && (!balance_due || balance_due == undefined)) {
@@ -1004,7 +1008,9 @@ function transitionlist(request, response) {
           if (check_err) {
             response.status(201).json({ message: "Unable to Get User Details" });
           } else if (check_res.length != 0) {
+
             var new_user_id = check_res[0].User_Id;
+            var invoice_number = check_res[0].Invoices;
 
             var sql3 = "SELECT * FROM hostel WHERE User_Id=?";
             connection.query(sql3, new_user_id, function (sel1_err, sel1_res) {
@@ -1070,6 +1076,16 @@ function transitionlist(request, response) {
                             })
                           }
 
+                          var sql10 = "INSERT INTO receipts (user_id,reference_id,invoice_number,amount_received,payment_date,payment_mode,created_by) VALUES (?)";
+                          var params = [user_id, reference_id, invoice_number, amount, payment_date, payment_by, created_by]
+                          connection.query(sql10, [params], function (err, ins_data) {
+                            if (err) {
+                              console.log(err);
+                              console.log("Error to Add Receipt Details");
+                              // return res.status(201).json({ statusCode: 201, message: "Error to Add Receipt Details", reason: err.message });
+                            }
+                          })
+
                           response.status(200).json({ message: "Update Successfully" });
                         }
                       });
@@ -1094,6 +1110,7 @@ function transitionlist(request, response) {
             response.status(201).json({ message: "Unable to Get User Details" });
           } else if (check_res.length != 0) {
             var new_user_id = check_res[0].User_Id;
+            var invoice_number = check_res[0].Invoices;
 
             var sql3 = "SELECT * FROM hostel WHERE User_Id=?";
             connection.query(sql3, new_user_id, function (sel1_err, sel1_res) {
@@ -1132,6 +1149,16 @@ function transitionlist(request, response) {
                               if (ins_err) {
                                 response.status(201).json({ message: "Unable to Add Transactions Details", });
                               } else {
+
+                                var sql1 = "INSERT INTO receipts (user_id,reference_id,invoice_number,amount_received,payment_date,payment_mode,created_by) VALUES (?)";
+                                var params = [ID, reference_id, invoice_number, amount, payment_date, payment_by, created_by]
+                                connection.query(sql1, [params], function (err, ins_data) {
+                                  if (err) {
+                                    console.log(err);
+                                    console.log("Error to Add Receipt Details");
+                                    // return res.status(201).json({ statusCode: 201, message: "Error to Add Receipt Details", reason: err.message });
+                                  }
+                                })
                                 response.status(200).json({ message: "Update Successfully" });
                               }
                             }
