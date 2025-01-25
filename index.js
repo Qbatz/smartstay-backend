@@ -110,9 +110,11 @@ app.post('/pdf/expense-pdf', (request, response) => {
 app.post('/users/user-list', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
     userQueries.getUsers(connection, response, request);
-
 });
 
+app.post('/users/delete', (req, res) => {
+    newBookings.delete_user( req, res);
+});
 
 app.post('/add/adduser-list', upload.single('profile'), (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');

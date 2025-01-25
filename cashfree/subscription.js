@@ -44,6 +44,12 @@ exports.add_new_subscription = (req, res) => {
 
             console.log(linkId);
 
+            const date = new Date();
+            date.setDate(date.getDate() + 1); // Add one day
+            const isoString = date.toISOString(); // Get the ISO string in UTC
+            console.log(isoString);
+
+
             const options = {
                 method: 'POST',
                 url: 'https://sandbox.cashfree.com/pg/links',
@@ -62,7 +68,7 @@ exports.add_new_subscription = (req, res) => {
                     link_amount: amount,
                     link_auto_reminders: true,
                     link_currency: 'INR',
-                    link_expiry_time: '2025-01-23T15:04:05+05:30',
+                    link_expiry_time: isoString,
                     link_id: linkId,                    // A unique link ID
                     link_meta: {
                         notify_url: 'https://ee08e626ecd88c61c85f5c69c0418cb5.m.pipedream.net',

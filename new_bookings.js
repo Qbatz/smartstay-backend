@@ -515,5 +515,46 @@ function upload_doc(req, res) {
     });
 }
 
+function delete_user(req, res) {
 
-module.exports = { add_booking, assign_booking, add_confirm_checkout, upload_doc }
+    var user_id = req.body.id;
+    var role_permissions = req.role_permissions;
+    var is_admin = req.is_admin;
+
+    if (is_admin == 1 || (role_permissions[4] && role_permissions[4].per_delete == 1)) {
+
+        if (!user_id) {
+            return res.status(201).json({ statusCode: 201, message: "Missing User Id" })
+        }
+
+        var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1;";
+        connection.query(sql1, [user_id], function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Error to Get User Details", reason: err.message })
+            }
+
+            if (data.length == 0) {
+                return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+            }
+
+            var floor_id = data[0].Floor;
+
+            if (floor_id == "undefined") {
+
+                var sql2 = "UPDATE hostel SET isActive=0 WHERE ID=?";
+                connection.query(sql2, [user_id], function (err, data) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Error to Delete User Details", reason: err.message })
+                    }
+                    return res.status(200).json({ statusCode: 200, message: "User Deleted Successfully!" })
+                })
+            } else {
+                return res.status(201).json({ statusCode: 201, message: "In this User Not Delete Option, Use Checkout Option" })
+            }
+        })
+    } else {
+        res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
+}
+
+module.exports = { add_booking, assign_booking, add_confirm_checkout, upload_doc, delete_user }
