@@ -13,8 +13,11 @@ function add_booking(req, res) {
     var timestamp = Date.now();
 
     const profile = req.files?.profile || 0;
+    var l_name = req.body.l_name;
 
-    var l_name = req.body.l_name || ""
+    if (!l_name) {
+        l_name = " "
+    }
 
     var { f_name, mob_no, email_id, address, joining_date, amount, hostel_id, id } = req.body;
 
@@ -219,7 +222,12 @@ function assign_booking(req, res) {
                             var circle = FirstNameInitial + LastNameInitial2;
                         }
 
-                        var name = f_name + l_name;
+                        if(!l_name){
+                            var name = f_name ;
+                        }else{
+                            var name = f_name + l_name;
+                        }
+
                         var address = booking_details.address;
                         var hostel_name = booking_details.hostel_name;
                         var profile = booking_details.profile || 0;
