@@ -1143,7 +1143,7 @@ function transitionlist(request, response) {
                         if (up_err) {
                           response.status(201).json({ message: "Unable to Update Payemnt Details", });
                         } else {
-                          var sql3 = "INSERT INTO advance_amount_transactions (user_id,inv_id,advance_amount,payment_status,user_status,created_by,payment_type,payment_date) VALUES (?,?,?,1,1,?,?,?)";
+                          var sql3 = "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by,payment_type,payment_date,description,action) VALUES (?,?,?,1,?,?,?,'Invoice',1)";
                           connection.query(sql3, [ID, invoice_id, amount, created_by, payment_by, payment_date,],
                             function (ins_err, ins_res) {
                               if (ins_err) {

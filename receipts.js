@@ -161,6 +161,8 @@ exports.edit_receipt = (req, res) => {
                     return res.status(201).json({ message: "Error to Update Receipts Details", reason: err.message, statusCode: 201 });
                 }
 
+
+
                 return res.status(200).json({ message: "Receipts Details Updated", statusCode: 200 });
             })
         })
@@ -168,6 +170,133 @@ exports.edit_receipt = (req, res) => {
         return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
 }
+
+// exports.edit_receipt = (req, res) => {
+//     var role_permissions = req.role_permissions;
+//     var is_admin = req.is_admin;
+
+//     var { id, user_id, invoice_number, amount, payment_date, payment_mode, notes, bank_id } = req.body;
+
+//     if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_edit == 1)) {
+
+//         if (!id) {
+//             return res.status(201).json({ message: "Missing Receipt Id", statusCode: 201 });
+//         }
+
+//         if (!user_id) {
+//             return res.status(201).json({ message: "Missing User Id", statusCode: 201 });
+//         }
+
+//         if (!amount) {
+//             return res.status(201).json({ message: "Missing Amount", statusCode: 201 });
+//         }
+
+//         if (!invoice_number) {
+//             return res.status(201).json({ message: "Missing Invoice Number", statusCode: 201 });
+//         }
+
+//         if (!payment_date) {
+//             return res.status(201).json({ message: "Missing Payment Date", statusCode: 201 });
+//         }
+
+//         if (!payment_mode) {
+//             return res.status(201).json({ message: "Missing Payment Mode", statusCode: 201 });
+//         }
+
+//         // Fetch the original receipt
+//         var sql1 = "SELECT * FROM receipts WHERE id=? AND status=1";
+//         connection.query(sql1, [id], function (err, receiptData) {
+//             if (err) {
+//                 return res.status(201).json({ message: "Error to Get Receipts Details", reason: err.message, statusCode: 201 });
+//             }
+
+//             if (receiptData.length === 0) {
+//                 return res.status(201).json({ message: "Invalid Receipts Details", statusCode: 201 });
+//             }
+
+//             const originalReceipt = receiptData[0];
+//             const originalAmount = parseInt(originalReceipt.amount_received);
+//             const originalPaymentMode = originalReceipt.payment_mode;
+//             const originalBankId = originalReceipt.bank_id;
+
+//             // Update the receipt details
+//             var sql2 = "UPDATE receipts SET invoice_number=?,amount_received=?,payment_date=?,payment_mode=?,notes=?,bank_id=? WHERE id=?";
+//             connection.query(sql2, [invoice_number, amount, payment_date, payment_mode, notes, bank_id, id], function (err, up_res) {
+//                 if (err) {
+//                     return res.status(201).json({ message: "Error to Update Receipts Details", reason: err.message, statusCode: 201 });
+//                 }
+
+//                 // If payment mode is Net Banking, update the bank transaction and balance
+//                 if (payment_mode === "Net Banking" && bank_id) {
+//                     var sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
+//                     connection.query(sql5, [bank_id], function (err, bankData) {
+//                         if (err) {
+//                             console.error("Error fetching bank details:", err);
+//                         } else if (bankData.length !== 0) {
+//                             const balance = parseInt(bankData[0].balance);
+
+//                             // Adjust the bank balance based on the updated amount
+//                             const newBalance = balance - originalAmount + parseInt(amount);
+
+//                             var sql6 = "UPDATE bankings SET balance=? WHERE id=?";
+//                             connection.query(sql6, [newBalance, bank_id], function (err) {
+//                                 if (err) {
+//                                     console.error("Error updating bank balance:", err);
+//                                 }
+//                             });
+
+//                             // Update or insert the bank transaction
+//                             var sql7 = "UPDATE bank_transactions SET date=?, amount=?, type=?, status=?, edit_id=? WHERE edit_id=?";
+//                             connection.query(sql7, [payment_date, amount, 'receipt', 1, id, id], function (err, txnUpdateRes) {
+//                                 if (err || txnUpdateRes.affectedRows === 0) {
+//                                     // If no transaction exists, insert a new one
+//                                     var sql8 = "INSERT INTO bank_transactions (bank_id, date, amount, `desc`, type, status, createdby, edit_id) VALUES (?,?,?,?,?,?,?,?)";
+//                                     connection.query(sql8, [bank_id, payment_date, amount, 'receipt', 1, 1, req.user_details.id, id], function (err) {
+//                                         if (err) {
+//                                             console.error("Error inserting new bank transaction:", err);
+//                                         }
+//                                     });
+//                                 }
+//                             });
+//                         } else {
+//                             console.error("Invalid Bank ID");
+//                         }
+//                     });
+//                 }
+
+//                 // Handle changes in payment mode (e.g., switching from Net Banking to Cash)
+//                 if (originalPaymentMode === "Net Banking" && payment_mode !== "Net Banking") {
+//                     var sql9 = "SELECT * FROM bankings WHERE id=? AND status=1";
+//                     connection.query(sql9, [originalBankId], function (err, bankData) {
+//                         if (!err && bankData.length !== 0) {
+//                             const originalBalance = parseInt(bankData[0].balance);
+//                             const updatedBalance = originalBalance - originalAmount;
+
+//                             var sql10 = "UPDATE bankings SET balance=? WHERE id=?";
+//                             connection.query(sql10, [updatedBalance, originalBankId], function (err) {
+//                                 if (err) {
+//                                     console.error("Error updating original bank balance:", err);
+//                                 }
+//                             });
+
+//                             var sql11 = "DELETE FROM bank_transactions WHERE edit_id=?";
+//                             connection.query(sql11, [id], function (err) {
+//                                 if (err) {
+//                                     console.error("Error deleting bank transaction:", err);
+//                                 }
+//                             });
+//                         }
+//                     });
+//                 }
+
+//                 return res.status(200).json({ message: "Receipt Details Updated Successfully", statusCode: 200 });
+//             });
+//         });
+//     } else {
+//         return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+//     }
+// };
+
 
 exports.delete_receipt = (req, res) => {
 
