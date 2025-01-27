@@ -147,23 +147,52 @@ exports.get_all_receipts = (req, res) => {
     var is_admin = req.is_admin;
 
     if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_edit == 1)) {
-
         if (!hostel_id) {
             return res.status(201).json({ message: "Missing Hostel Id", statusCode: 201 });
         }
 
-        var sql1 = "SELECT re.*,hos.Name,hos.profile FROM receipts AS re JOIN hostel AS hos ON hos.id=re.user_id WHERE hos.Hostel_Id=? AND re.status=1 AND hos.isActive=1";
-        connection.query(sql1, [hostel_id], function (err, data) {
+        var sql1 = `SELECT re.*,hos.Name AS user_name,hos.profile AS user_profile,inv.*,inv.id AS inv_id,hos.Address AS user_address,ca.Address AS admin_address FROM receipts AS re JOIN hostel AS hos ON hos.id = re.user_id JOIN invoicedetails AS inv ON inv.Invoices=re.invoice_number JOIN createaccount AS ca ON ca.id=re.created_by WHERE hos.Hostel_Id = ? AND re.status = 1 AND hos.isActive = 1 AND inv.invoice_status=1`;
+        connection.query(sql1, [hostel_id], function (err, receipts) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Error to Get Receipt Details", reason: err.message });
             }
 
-            return res.status(200).json({ statusCode: 200, message: "All Receipt", all_receipts: data });
-        })
+            if (receipts.length === 0) {
+                return res.status(200).json({ statusCode: 200, message: "No Receipts Found", all_receipts: [] });
+            }
+
+            let completed = 0;
+
+            // Iterate through receipts to fetch amenities for each receipt
+            receipts.forEach((receipt, index) => {
+
+                var sql2 = "SELECT * FROM manual_invoice_amenities WHERE invoice_id = ?";
+                connection.query(sql2, [receipt.inv_id], function (err, amenities) {
+                    if (err) {
+                        receipts[index]['amenity'] = [];
+                    } else {
+                        receipts[index]['amenity'] = amenities || [];
+                    }
+
+                    completed++;
+                    if (completed === receipts.length) {
+                        return res.status(200).json({
+                            statusCode: 200,
+                            message: "All Receipts with Amenities",
+                            all_receipts: receipts,
+                        });
+                    }
+                });
+            });
+        });
     } else {
-        return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+        return res.status(208).json({
+            message: "Permission Denied. Please contact your administrator for access.",
+            statusCode: 208,
+        });
     }
-}
+};
+
 
 exports.edit_receipt = (req, res) => {
 
