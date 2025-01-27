@@ -35,46 +35,95 @@ exports.add_receipt = (req, res) => {
             return res.status(201).json({ message: "Missing Payment Mode", statusCode: 201 });
         }
 
-        var sql1 = "INSERT INTO receipts (user_id,reference_id,invoice_number,amount_received,payment_date,payment_mode,notes,created_by) VALUES (?)";
-        var params = [user_id, reference_id, invoice_number, amount, payment_date, payment_mode, notes, created_by]
-        connection.query(sql1, [params], function (err, ins_data) {
+        var ch_query = "SELECT * FROM invoicedetails WHERE Invoices=? AND invoice_status=1";
+        connection.query(ch_query, [invoice_number], function (err, ch_res) {
             if (err) {
-                return res.status(201).json({ statusCode: 201, message: "Error to Add Receipt Details", reason: err.message });
+                return res.status(201).json({ statusCode: 201, message: "Error to Get Invoice Details", reason: err.message });
             }
 
-            var id = ins_data.insertId;
+            if (ch_res.length == 0) {
+                return res.status(201).json({ statusCode: 201, message: "Invalid Invoice Details" });
+            }
 
-            if (payment_mode == "Net Banking" && bank_id) {
+            var inv_id = ch_res[0].id;
+            var due_amount = ch_res[0].BalanceDue;
 
-                var sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
-                connection.query(sql5, [bank_id], function (err, sel_res) {
-                    if (err) {
-                        console.log(err);
-                    } else if (sel_res.length != 0) {
+            if (amount > due_amount) {
+                return res.status(201).json({ message: "Pay Amount More than Due Amount, Kindly Check Due Amount", due_amount: due_amount });
+            }
 
-                        const balance_amount = parseInt(sel_res[0].balance);
+            var sql1 = "INSERT INTO receipts (user_id,reference_id,invoice_number,amount_received,payment_date,payment_mode,notes,created_by) VALUES (?)";
+            var params = [user_id, reference_id, invoice_number, amount, payment_date, payment_mode, notes, created_by]
+            connection.query(sql1, [params], function (err, ins_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Error to Add Receipt Details", reason: err.message });
+                }
 
-                        var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,`desc`,type,status,createdby,edit_id) VALUES (?,?,?,?,?,?,?,?)";
-                        connection.query(sql4, [bank_id, payment_date, amount, 'receipt', 1, 1, created_by, id], function (err, ins_data) {
-                            if (err) {
-                                console.log(err, "Insert Transactions Error");
-                            } else {
-                                var new_amount = parseInt(balance_amount) + parseInt(amount);
+                var id = ins_data.insertId;
 
-                                var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
-                                connection.query(sql5, [new_amount, bank_id], function (err, up_date) {
-                                    if (err) {
-                                        console.log(err, "Update Amount Error");
-                                    }
-                                })
-                            }
-                        })
+                var total_amount = ch_res[0].Amount;
+
+                var already_paid_amount = ch_res[0].PaidAmount;
+
+                var new_amount = already_paid_amount + amount;
+
+                if (new_amount == total_amount) {
+                    var Status = "Success";
+                } else {
+                    var Status = "Pending";
+                }
+
+                var bal_amount = due_amount - amount;
+
+                var sql2 = "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=?,Status=? WHERE id=?";
+                connection.query(sql2, [bal_amount, new_amount, Status, inv_id], function (up_err, up_res) {
+                    if (up_err) {
+                        response.status(201).json({ message: "Unable to Update User Details" });
                     } else {
-                        console.log("Invalid Bank Id");
+
+                        var sql3 = "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by,payment_type,payment_date,description,action) VALUES (?,?,?,1,?,?,?,'Invoice',1)";
+                        connection.query(sql3, [user_id, invoice_number, amount, created_by, payment_mode, payment_date,],
+                            function (ins_err, ins_res) {
+                                if (ins_err) {
+                                    response.status(201).json({ message: "Unable to Add Transactions Details", });
+                                } else {
+
+                                    if (payment_mode == "Net Banking" && bank_id) {
+
+                                        var sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
+                                        connection.query(sql5, [bank_id], function (err, sel_res) {
+                                            if (err) {
+                                                console.log(err);
+                                            } else if (sel_res.length != 0) {
+
+                                                const balance_amount = parseInt(sel_res[0].balance);
+
+                                                var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,`desc`,type,status,createdby,edit_id) VALUES (?,?,?,?,?,?,?,?)";
+                                                connection.query(sql4, [bank_id, payment_date, amount, 'receipt', 1, 1, created_by, id], function (err, ins_data) {
+                                                    if (err) {
+                                                        console.log(err, "Insert Transactions Error");
+                                                    } else {
+                                                        var new_amount = parseInt(balance_amount) + parseInt(amount);
+
+                                                        var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
+                                                        connection.query(sql5, [new_amount, bank_id], function (err, up_date) {
+                                                            if (err) {
+                                                                console.log(err, "Update Amount Error");
+                                                            }
+                                                        })
+                                                    }
+                                                })
+                                            } else {
+                                                console.log("Invalid Bank Id");
+                                            }
+                                        })
+                                    }
+                                    return res.status(200).json({ statusCode: 200, message: "Receipt generated Successfully" });
+                                }
+                            })
                     }
                 })
-            }
-            return res.status(200).json({ statusCode: 200, message: "Receipt generated Successfully" });
+            })
         })
     } else {
         return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
@@ -160,7 +209,6 @@ exports.edit_receipt = (req, res) => {
                 if (err) {
                     return res.status(201).json({ message: "Error to Update Receipts Details", reason: err.message, statusCode: 201 });
                 }
-
 
 
                 return res.status(200).json({ message: "Receipts Details Updated", statusCode: 200 });
