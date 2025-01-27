@@ -1044,11 +1044,12 @@ function InvoicePDf(connection, request, response) {
                 // console.log(logoPathimage);
                 const invdate = moment(inv_data.Date).format('DD/MM/YYYY');
 
-                const tableData = [
-                    { description: 'Room Rent', amount: inv_data.RoomRent },
-                    { description: 'Eb Amount', amount: inv_data.EbAmount }
-                ];
+                // const tableData = [
+                //     { description: 'Room Rent', amount: inv_data.RoomRent },
+                //     { description: 'Eb Amount', amount: inv_data.EbAmount }
+                // ];
 
+                var tableData = [];
                 data.forEach((row) => {
                     if (row.am_name && row.amount) {
                         tableData.push({ description: row.am_name, amount: row.amount });
@@ -1066,6 +1067,16 @@ function InvoicePDf(connection, request, response) {
     `;
                 });
 
+                if (inv_data.PaidAmount > 0) {
+                    tableRows += `
+                        <tr>
+                            <td>${tableData.length + 1}</td>
+                            <td>Paid Amount</td>
+                            <td>${inv_data.PaidAmount}</td>
+                        </tr>
+                    `;
+                }
+
                 htmlContent = htmlContent
                     .replace('{{hostal_name}}', inv_data.Hostel_Name)
                     .replace('{{city}}', inv_data.hostel_address)
@@ -1076,7 +1087,7 @@ function InvoicePDf(connection, request, response) {
                     .replace('{{amount_in_words}}', amountInWords)
                     .replace('{{current_time}}', currentTimeFormatted)
                     .replace('{{logo}}', logoPathimage)
-                    .replace('{{paid_amount}}', inv_data.PaidAmount)
+                    // .replace('{{paid_amount}}', inv_data.PaidAmount)
                     .replace('{{total_amount}}', inv_data.Amount)
                     .replace('{{balance_amount}}', inv_data.BalanceDue)
                     .replace('{{tableRows}}', tableRows);
@@ -1129,6 +1140,10 @@ function InvoicePDf(connection, request, response) {
                 console.error('Error:', error);
             }
         };
+
+        if (!action_type) {
+            var action_type = "manual";
+        }
 
         if (action_type == 'manual') {
 
