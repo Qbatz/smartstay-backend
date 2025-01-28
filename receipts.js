@@ -9,6 +9,8 @@ exports.add_receipt = (req, res) => {
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
+    var bank_id = req.body.bank_id || 0;
+
     if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_create == 1)) {
 
         if (!user_id) {
@@ -52,8 +54,8 @@ exports.add_receipt = (req, res) => {
                 return res.status(201).json({ message: "Pay Amount More than Due Amount, Kindly Check Due Amount", due_amount: due_amount });
             }
 
-            var sql1 = "INSERT INTO receipts (user_id,reference_id,invoice_number,amount_received,payment_date,payment_mode,notes,created_by) VALUES (?)";
-            var params = [user_id, reference_id, invoice_number, amount, payment_date, payment_mode, notes, created_by]
+            var sql1 = "INSERT INTO receipts (user_id,reference_id,invoice_number,amount_received,payment_date,payment_mode,notes,created_by,bank_id) VALUES (?)";
+            var params = [user_id, reference_id, invoice_number, amount, payment_date, payment_mode, notes, created_by, bank_id]
             connection.query(sql1, [params], function (err, ins_data) {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Error to Add Receipt Details", reason: err.message });
@@ -151,7 +153,7 @@ exports.get_all_receipts = (req, res) => {
             return res.status(201).json({ message: "Missing Hostel Id", statusCode: 201 });
         }
 
-        var sql1 = `SELECT re.*,hos.Name AS user_name,hos.profile AS user_profile,inv.*,inv.id AS inv_id,hos.Address AS user_address,ca.Address AS admin_address FROM receipts AS re JOIN hostel AS hos ON hos.id = re.user_id JOIN invoicedetails AS inv ON inv.Invoices=re.invoice_number JOIN createaccount AS ca ON ca.id=re.created_by WHERE hos.Hostel_Id = ? AND re.status = 1 AND hos.isActive = 1 AND inv.invoice_status=1`;
+        var sql1 = `SELECT re.*,hos.Name AS user_name,hos.profile AS user_profile,inv.*,inv.id AS inv_id,re.id AS id,hos.Address AS user_address,ca.Address AS admin_address FROM receipts AS re JOIN hostel AS hos ON hos.id = re.user_id JOIN invoicedetails AS inv ON inv.Invoices=re.invoice_number JOIN createaccount AS ca ON ca.id=re.created_by WHERE hos.Hostel_Id = ? AND re.status = 1 AND hos.isActive = 1 AND inv.invoice_status=1`;
         connection.query(sql1, [hostel_id], function (err, receipts) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Error to Get Receipt Details", reason: err.message });
@@ -249,6 +251,7 @@ exports.edit_receipt = (req, res) => {
 }
 
 // exports.edit_receipt = (req, res) => {
+
 //     var role_permissions = req.role_permissions;
 //     var is_admin = req.is_admin;
 
@@ -281,7 +284,7 @@ exports.edit_receipt = (req, res) => {
 //         }
 
 //         // Fetch the original receipt
-//         var sql1 = "SELECT * FROM receipts WHERE id=? AND status=1";
+//         var sql1 = "SELECT * FROM receipts AS re JOIN invoicedetails AS inv ON inv.Invoices=re.invoice_number WHERE re.id=? AND re.status=1";
 //         connection.query(sql1, [id], function (err, receiptData) {
 //             if (err) {
 //                 return res.status(201).json({ message: "Error to Get Receipts Details", reason: err.message, statusCode: 201 });
@@ -291,10 +294,29 @@ exports.edit_receipt = (req, res) => {
 //                 return res.status(201).json({ message: "Invalid Receipts Details", statusCode: 201 });
 //             }
 
+//             var bal_amount = receiptData[0].BalanceDue;
+
 //             const originalReceipt = receiptData[0];
 //             const originalAmount = parseInt(originalReceipt.amount_received);
 //             const originalPaymentMode = originalReceipt.payment_mode;
 //             const originalBankId = originalReceipt.bank_id;
+
+//             // var sql2 = "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=?,Status=? WHERE id=?";
+//             // connection.query(sql2, [bal_amount, new_amount, Status, inv_id], function (up_err, up_res) {
+//             //     if (up_err) {
+//             //         response.status(201).json({ message: "Unable to Update User Details" });
+//             //     } else {
+
+//             //         var sql3 = "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by,payment_type,payment_date,description,action) VALUES (?,?,?,1,?,?,?,'Invoice',1)";
+//             //         connection.query(sql3, [user_id, invoice_number, amount, created_by, payment_mode, payment_date,],
+//             //             function (ins_err, ins_res) {
+//             //                 if (ins_err) {
+//             //                     response.status(201).json({ message: "Unable to Add Transactions Details", });
+//             //                 } else {
+//             //                 }
+//             //             })
+//             //     }
+//             // })
 
 //             // Update the receipt details
 //             var sql2 = "UPDATE receipts SET invoice_number=?,amount_received=?,payment_date=?,payment_mode=?,notes=?,bank_id=? WHERE id=?";
@@ -382,7 +404,7 @@ exports.delete_receipt = (req, res) => {
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
-    var { id, user_id, invoice_number, amount, payment_date, payment_mode, notes } = req.body;
+    var { id } = req.body;
 
     if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_delete == 1)) {
 
@@ -390,7 +412,7 @@ exports.delete_receipt = (req, res) => {
             return res.status(201).json({ message: "Missing Receipt Id", statusCode: 201 });
         }
 
-        var sql1 = "SELECT * FROM receipts WHERE id=? AND status=1";
+        var sql1 = "SELECT *,inv.id AS inv_id,re.id AS id FROM receipts AS re JOIN invoicedetails AS inv ON inv.Invoices=re.invoice_number WHERE re.id=? AND re.status=1";
         connection.query(sql1, [id], function (err, data) {
             if (err) {
                 return res.status(201).json({ message: "Error to Get Receipts Details", reason: err.message, statusCode: 201 });
@@ -400,13 +422,75 @@ exports.delete_receipt = (req, res) => {
                 return res.status(201).json({ message: "Invalid Receipts Details", statusCode: 201 });
             }
 
+            var bal_amount = data[0].BalanceDue;
+            var paid_amount = data[0].PaidAmount;
+            var inv_id = data[0].inv_id;
+            var bank_id = data[0].bank_id;
+            var invoice_number = data[0].invoice_number;
+            var amount = data[0].amount_received;
+            var balance_due = bal_amount + amount;
+            var new_paidamount = paid_amount - amount;
+            var payment_date = data[0].payment_date;
+            var payment_by = data[0].payment_mode;
+
             var sql2 = "UPDATE receipts SET status=0 WHERE id=?";
             connection.query(sql2, [id], function (err, up_res) {
                 if (err) {
                     return res.status(201).json({ message: "Error to Delete Receipts Details", reason: err.message, statusCode: 201 });
                 }
 
-                return res.status(200).json({ message: "Receipts Deleted Successfully!", statusCode: 200 });
+                var sql2 = "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=?,Status=? WHERE id=?";
+                connection.query(sql2, [balance_due, new_paidamount, "Pending", inv_id], function (up_err, up_res) {
+                    if (up_err) {
+                        return res.status(201).json({ message: "Unable to Update User Details", reason: err.message, statusCode: 201 });
+                    } else {
+
+                        var sql3 = "UPDATE transactions SET status=0 WHERE payment_date=? AND payment_type=? AND invoice_id=? AND amount=?";
+                        connection.query(sql3, [payment_date, payment_by, invoice_number, amount], function (ins_err, ins_res) {
+                            if (ins_err) {
+                                return res.status(201).json({ message: "Unable to Remove Transactions Details", reason: err.message, statusCode: 201 });
+                            } else {
+
+                                console.log(ins_res);
+
+                                if (payment_by == 'Net Banking') {
+
+                                    var sql5 = "SELECT * FROM bankings WHERE id=?";
+                                    connection.query(sql5, [bank_id], function (err, bank_data) {
+                                        if (err) {
+                                            console.log("error to Get Bank Details");
+                                        } else if (bank_data.length != 0) {
+
+                                            var bank_amount = bank_data[0].balance;
+
+                                            var new_bal = bank_amount + amount;
+
+                                            var sql4 = "UPDATE bank_transactions SET status=0 WHERE 'desc'='Invoice' AND edit_id=? AND date=? AND bank_id=?";
+                                            connection.query(sql4, [inv_id, bank_id], function (err, data) {
+                                                if (err) {
+                                                    console.log("Not Remove Bank Transactions");
+                                                }
+
+                                                var sql10 = "UPDATE bankings SET balance=? WHERE id=?";
+                                                connection.query(sql10, [new_bal, bank_id], function (err) {
+                                                    if (err) {
+                                                        console.error("Error updating original bank balance:", err);
+                                                    }
+                                                });
+                                            })
+
+                                        } else {
+                                            console.log("Invalid Bank Details");
+
+                                        }
+                                    })
+                                }
+                                return res.status(200).json({ message: "Receipts Deleted Successfully!", statusCode: 200 });
+                            }
+                        })
+                    }
+                })
+
             })
         })
     } else {
