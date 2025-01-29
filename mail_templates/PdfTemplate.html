@@ -5,7 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/iconsax/dist/iconsax.css" rel="stylesheet">
-
+    <script>
+        var logo = "../Asset/lOGO.png"; 
+        var fallbackLogo = "../Asset/default-logo.png"; 
+      
+        var imgElement = document.getElementById("logo");
+        imgElement.src = logo;
+      
+        imgElement.onerror = function () {
+          this.src = fallbackLogo; 
+        };
+      </script>
     <style>
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, sans-serif;
@@ -110,16 +120,16 @@
             <div class="header">
                 <div class="logo_style">
                     <div>
-                        <img src='{{logo}}' alt="Logo" class="logo" style="width: 100px; height: auto; ;">
+                        <img id="logo" alt="Logo" class="logo" style="width: 100px; height: auto;">
                     </div>
                     <div>
                         <h1 class="company-name">{{hostal_name}}</h1>
-                        <!-- <p style="margin-top: 2px;">Meet All Your Needs</p> -->
+                        <p style="margin-top: 2px;">Meet All Your Needs</p>
                     </div>
                 </div>
 
                 <div>
-                    <p style="font-size: 24px;margin-bottom: 0px;font-weight: bold;">Invoice</p>
+                    <p style="font-size: 24px;margin-bottom: 0px;font-weight: bold;">INVOICE</p>
                     <p>Invoice No.: <strong>{{invoice_number}}</strong></p>
                     <p>Date: {{invoice_date}}</p>
                 </div>
@@ -175,11 +185,11 @@
         <div
             style="background-color: #dbaa16; padding: 15px; text-align: center; color: white; margin-top: 20px; border-bottom-left-radius:10px ; border-bottom-right-radius: 10px;">
             <div style="display: flex; justify-content: center;">
-                <i class="iconsax iconsax-linear-call" style="font-size: 24px; margin-right: 10px;"></i>
+                <img src="../Asset/contact.png" style="height:25px; width: 25px; filter: invert(1);" />
                 <p style="margin: 0px;">{{hostel_phone}}</p>
             </div>
             <div style="display: flex; justify-content: center;">
-                <i class="iconsax iconsax-linear-location" style="font-size: 24px; margin-right: 10px;"></i>
+                <img src="../Asset/app.png" style="height:25px; width: 25px; filter: invert(1);" /> 
                 <p style="margin: 0px;">{{admin_details}}</p>
             </div>
         </div>
