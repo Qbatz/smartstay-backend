@@ -296,13 +296,13 @@ exports.edit_receipt = (req, res) => {
 
             var receipt = data[0];
             var inv_id = receipt.inv_id;
-            var old_amount = receipt.old_amount;
+            var old_amount = parseInt(receipt.old_amount);
             var old_payment_mode = receipt.old_payment_mode;
             var old_bank_id = receipt.old_bank_id;
 
             // Recalculate the BalanceDue and PaidAmount
-            var bal_amount = receipt.BalanceDue + old_amount - amount;
-            var new_paidamount = receipt.PaidAmount - old_amount + amount;
+            var bal_amount = parseInt(receipt.BalanceDue) + parseInt(old_amount) - parseInt(amount);
+            var new_paidamount = parseInt(receipt.PaidAmount) - old_amount + parseInt(amount);
 
             // Update the receipts table
             var sql2 = "UPDATE receipts SET invoice_number = ?, amount_received = ?, payment_date = ?, payment_mode = ?, notes = ?, bank_id = ? WHERE id = ?";
@@ -387,12 +387,12 @@ exports.delete_receipt = (req, res) => {
                 return res.status(201).json({ message: "Invalid Receipts Details", statusCode: 201 });
             }
 
-            var bal_amount = data[0].BalanceDue;
-            var paid_amount = data[0].PaidAmount;
+            var bal_amount = parseInt(data[0].BalanceDue);
+            var paid_amount = parseInt(data[0].PaidAmount);
             var inv_id = data[0].inv_id;
             var bank_id = data[0].bank_id;
             var invoice_number = data[0].invoice_number;
-            var amount = data[0].amount_received;
+            var amount = parseInt(data[0].amount_received);
             var balance_due = bal_amount + amount;
             var new_paidamount = paid_amount - amount;
             var payment_date = data[0].payment_date;
@@ -426,7 +426,7 @@ exports.delete_receipt = (req, res) => {
                                             console.log("error to Get Bank Details");
                                         } else if (bank_data.length != 0) {
 
-                                            var bank_amount = bank_data[0].balance;
+                                            var bank_amount = parseInt(bank_data[0].balance);
 
                                             var new_bal = bank_amount + amount;
 
