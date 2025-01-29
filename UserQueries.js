@@ -1738,7 +1738,7 @@ function get_invoice_id(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
           } else if (hos_details.length != 0) {
 
-            var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? ORDER BY id DESC;";
+            var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? AND action !='advance' ORDER BY id DESC;";
             connection.query(sql2, [hostel_id], function (err, inv_data) {
               if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" })
@@ -2079,7 +2079,7 @@ function get_bill_details(req, res) {
     }
 
     // var sql1 = "SELECT * FROM invoicedetails WHERE created_By IN (?) AND invoice_status=1 ORDER BY id DESC";
-    var sql1 = "SELECT inv.*,hostel.Address AS user_address,ca.Address AS admin_address FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id LEFT JOIN hostel ON hostel.id=inv.hos_user_id LEFT JOIN createaccount AS ca ON ca.id=hostel.created_by WHERE inv.Hostel_Id=? AND inv.invoice_status=1 ORDER BY id DESC;";
+    var sql1 = "SELECT inv.*,hostel.Address AS user_address,ca.Address AS admin_address,eb.start_date AS eb_start_date,eb.end_date AS eb_end_date,eb.amount AS eb_unit_amount FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id LEFT JOIN hostel ON hostel.id=inv.hos_user_id LEFT JOIN createaccount AS ca ON ca.id=hostel.created_by LEFT JOIN eb_settings AS eb ON inv.Hostel_Id=eb.hostel_id AND eb.status=1 WHERE inv.Hostel_Id=? AND inv.invoice_status=1 ORDER BY id DESC;";
     connection.query(sql1, [hostel_id], function (err, invoices) {
       if (err) {
         return res.status(201).json({ message: "Unable to Get Bill Details", statusCode: 201 });
