@@ -1,5 +1,27 @@
 const connection = require('./config/connection')
 const crypto = require('crypto');
+const moment = require('moment');
+const AWS = require('aws-sdk');
+require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+const puppeteer = require('puppeteer');
+const converter = require('number-to-words');
+
+const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
+const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
+const AWS_REGION = process.env.AWS_REGION;
+const sharp = require('sharp');
+const util = require('util');
+
+const pdf = require('html-pdf');
+
+AWS.config.update({
+    accessKeyId: AWS_ACCESS_KEY_ID,
+    secretAccessKey: AWS_SECRET_ACCESS_KEY,
+    region: AWS_REGION
+});
+const s3 = new AWS.S3();
 
 exports.add_receipt = (req, res) => {
 
@@ -440,4 +462,168 @@ exports.delete_receipt = (req, res) => {
         return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
 
+}
+
+exports.pdf_generate = (req, res) => {
+
+    var id = req.body.id;
+
+    if (!id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Receipt Details" })
+    }
+
+    var sql1 = "SELECT rs.*,inv.*,man.*,hs.Address AS user_address,hsv.Address AS hostel_address,hsv.profile AS hostel_profile,hsv.hostel_PhoneNo AS hostel_phone FROM receipts AS rs JOIN invoicedetails AS inv ON rs.invoice_number=inv.Invoices JOIN hostel AS hs ON hs.ID=inv.hos_user_id LEFT JOIN manual_invoice_amenities AS man ON man.invoice_id=inv.id JOIN hosteldetails AS hsv ON hsv.id=inv.Hostel_Id WHERE rs.id=? AND rs.status=1;";
+    connection.query(sql1, [id], function (err, data) {
+        if (err) {
+            console.log(err);
+            return res.status(201).json({ message: "Unable to Get Receipt Details", statusCode: 201 })
+        }
+
+        if (data.length == 0) {
+            return res.status(201).json({ message: "Invalid Receipt Details", statusCode: 201 })
+        }
+
+        generatemanualPDF(data)
+
+    })
+
+    const generatemanualPDF = async (data) => {
+        try {
+            var inv_data = data[0];
+            const htmlFilePath = path.join(__dirname, 'mail_templates', 'PdfTemplate.html');
+            let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
+
+            const amountInWords = converter.toWords(inv_data.PaidAmount);
+            const currentTimeFormatted = moment().format('hh:mm A');
+            const defaultLogoPath = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg';
+            var logoPathimage = inv_data.hostel_profile ? inv_data.hostel_profile : defaultLogoPath;
+            const invdate = moment(inv_data.Date).format('DD/MM/YYYY');
+
+            var tableData = [];
+            data.forEach((row) => {
+                if (row.am_name && row.amount) {
+                    tableData.push({ description: row.am_name, amount: row.amount });
+                }
+            });
+
+            let tableRows = '';
+            tableData.forEach((item, index) => {
+                tableRows += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${item.description}</td>
+                        <td>${item.amount}</td>
+                    </tr>
+                    `;
+            });
+
+            // if (inv_data.PaidAmount > 0) {
+            //     tableRows += `
+            //         <tr>
+            //             <td>${tableData.length + 1}</td>
+            //             <td>Paid Amount</td>
+            //             <td>${inv_data.PaidAmount}</td>
+            //         </tr>
+            //     `;
+            // }
+
+            htmlContent = htmlContent
+                .replace('{{hostal_name}}', inv_data.Hostel_Name)
+                .replace('{{admin_details}}', inv_data.hostel_address)
+                .replace('{{user_name}}', inv_data.Name)
+                .replace('{{user_address}}', inv_data.user_address)
+                .replace('{{invoice_number}}', inv_data.Invoices)
+                .replace('{{invoice_date}}', invdate)
+                .replace('{{amount_in_words}}', amountInWords)
+                .replace('{{current_time}}', currentTimeFormatted)
+                .replace('{{logo}}', logoPathimage)
+                .replace('{{paid_amount}}', inv_data.PaidAmount)
+                .replace('{{total_amount}}', inv_data.Amount)
+                .replace('{{balance_amount}}', inv_data.BalanceDue)
+                .replace('{{tableRows}}', tableRows)
+                .replace('{{hostel_phone}}', inv_data.hostel_phone)
+
+            // Determine payment status based on amounts
+            let paymentStatusClass = '';
+            let paymentStatusText = '';
+
+            if (inv_data.Amount === inv_data.BalanceDue) {
+                paymentStatusClass = 'pending';
+                paymentStatusText = 'Pending';
+            } else if (inv_data.BalanceDue === 0) {
+                paymentStatusClass = 'success';
+                paymentStatusText = 'Success';
+            } else {
+                paymentStatusClass = 'partial';
+                paymentStatusText = 'Partial Paid';
+            }
+
+            // const amountName = (inv_data.invoice_type === 1) ? 'Rent Amount' : 'Advance Amount';
+
+            // Replace all placeholders in the HTML content
+            htmlContent = htmlContent
+                .replace('{{payment_status_class}}', paymentStatusClass)
+                .replace('{{payment_status_text}}', paymentStatusText)
+            // .replace('{{Amount_name}}', amountName);
+
+            const currentDate = moment().format('YYYY-MM-DD');
+            const currentMonth = moment(currentDate).month() + 1;
+            const currentYear = moment(currentDate).year();
+            const currentTime = moment().format('HHmmss');
+
+            const filename = `INV${currentMonth}${currentYear}${currentTime}${inv_data.reference_id}.pdf`;
+            const outputPath = path.join(__dirname, filename);
+
+            const browser = await puppeteer.launch();
+            const page = await browser.newPage();
+
+            await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
+
+            // Generate PDF
+            await page.pdf({ path: outputPath, format: 'A4' });
+
+            await browser.close();
+            console.log('PDF created successfully!');
+            var inv_id = inv_data.id;
+            await uploadToS3(outputPath, filename, inv_id);
+            fs.unlinkSync(outputPath);
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    };
+
+
+    const uploadToS3 = async (filePath, filename, inv_id) => {
+        try {
+            const fileContent = fs.readFileSync(filePath);
+
+            const key = `Invoice/${filename}`;
+            const bucketName = 'smartstaydevs';
+
+            const params = {
+                Bucket: bucketName,
+                Key: key,
+                Body: fileContent,
+                ContentType: 'application/pdf',
+            };
+
+            const data = await s3.upload(params).promise();
+            console.log('PDF uploaded successfully:', data.Location);
+
+            var sql_query = "UPDATE invoicedetails SET invoicePDF='" + data.Location + "' WHERE id='" + inv_id + "';";
+            connection.query(sql_query, function (err, Data) {
+                if (err) {
+                    console.log(err);
+                    return
+                }
+                else {
+                    res.status(200).json({ message: 'Insert PDF successfully', pdf_url: data.Location });
+                }
+            })
+
+            return data.Location;
+        } catch (err) {
+            console.error('Error uploading PDF:', err);
+        }
+    };
 }

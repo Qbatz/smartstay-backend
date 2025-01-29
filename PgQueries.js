@@ -507,7 +507,7 @@ function RoomCount(connection, request, response) {
                     return response.status(201).json({ message: "Error occurred while fetching data" });
                 }
 
-                console.log("RoomsData",RoomsData)
+                console.log("RoomsData", RoomsData)
 
                 if (RoomsData.length > 0) {
 
@@ -1110,8 +1110,9 @@ function listDashBoard(connection, response, request) {
                                                     response.status(201).json({ message: "Error fetching Bill Data" });
                                                 } else {
 
-                                                    var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue,COALESCE(SUM(COALESCE(expen.purchase_amount, 0)), 0) AS expense FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) AS numbers) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.id=?) AS invo ON m.month = invo.month LEFT JOIN (SELECT DATE_FORMAT(expen.createdate, '%Y-%m') AS month, expen.purchase_amount FROM expenses AS expen WHERE expen.hostel_id=?) AS expen ON m.month = expen.month GROUP BY m.month ORDER BY  m.month;"
+                                                    // var query1 = "SELECT m.month,COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue,COALESCE(SUM(COALESCE(expen.purchase_amount, 0)), 0) AS expense FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) AS numbers) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month,invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.id=?) AS invo ON m.month = invo.month LEFT JOIN (SELECT DATE_FORMAT(expen.createdate, '%Y-%m') AS month, expen.purchase_amount FROM expenses AS expen WHERE expen.hostel_id=?) AS expen ON m.month = expen.month GROUP BY m.month ORDER BY  m.month;"
                                                     // Execute the query
+                                                    var query1 = "SELECT m.month, COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue, COALESCE(SUM(COALESCE(expen.purchase_amount, 0)), 0) AS expense FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) AS numbers) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month, invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.id = ? AND invo.action != 'advance') AS invo ON m.month = invo.month LEFT JOIN (SELECT DATE_FORMAT(expen.createdate, '%Y-%m') AS month, expen.purchase_amount FROM expenses AS expen WHERE expen.hostel_id = ?) AS expen ON m.month = expen.month GROUP BY m.month ORDER BY m.month;"
                                                     connection.query(query1, [hostel_id, hostel_id], (error, results, fields) => {
                                                         if (error) {
                                                             console.error('Error executing query:', error);

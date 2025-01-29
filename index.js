@@ -1226,6 +1226,8 @@ app.post('/receipts/edit', receipts.edit_receipt)
 
 app.post('/receipts/delete', receipts.delete_receipt)
 
+app.post('/receipts/pdf_generate', receipts.pdf_generate)
+
 // **************************** Start Cashfree Subscription ****************************
 
 // Add Subscription

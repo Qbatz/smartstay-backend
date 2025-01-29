@@ -1145,6 +1145,10 @@ function InvoicePDf(connection, request, response) {
             var action_type = "manual";
         }
 
+        if (!invocice_type || invocice_type == undefined) {
+            var invocice_type = 1
+        }
+
         if (action_type == 'manual') {
 
             var sql1 = "SELECT inv.*,man.*,hs.Address AS user_address,hsv.Address AS hostel_address,hsv.profile AS hostel_profile FROM invoicedetails AS inv JOIN hostel AS hs ON hs.ID=inv.hos_user_id LEFT JOIN manual_invoice_amenities AS man ON man.invoice_id=inv.id JOIN hosteldetails AS hsv ON hsv.id=inv.Hostel_Id WHERE inv.id=?;";
@@ -1162,9 +1166,6 @@ function InvoicePDf(connection, request, response) {
 
 
         } else {
-            if (!invocice_type || invocice_type == undefined) {
-                var invocice_type = 1
-            }
 
             // Assuming required libraries are imported at the beginning of the script
 
