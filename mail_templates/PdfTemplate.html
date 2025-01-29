@@ -101,6 +101,28 @@
         i.iconsax {
             color: #fff;
         }
+        .footer-section {
+    background-color: #dbaa16 !important; 
+    padding: 15px; 
+    text-align: center; 
+    color: white; 
+    margin-top: 20px;
+    border-bottom-left-radius:10px; 
+    border-bottom-right-radius: 10px;
+}
+@media print {
+    .footer-section {
+        background-color: #dbaa16 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+@media print {
+    img {
+        display: block !important;
+        visibility: visible !important;
+    }
+}
     </style>
 </head>
 
@@ -119,9 +141,10 @@
                 </div>
 
                 <div>
-                    <p style="font-size: 24px;margin-bottom: 0px;font-weight: bold;">INVOICE</p>
+                    <!-- <p style="font-size: 24px;margin-bottom: 0px;font-weight: bold;">INVOICE</p> -->
                     <p>Invoice No.: <strong>{{invoice_number}}</strong></p>
                     <p>Date: {{invoice_date}}</p>
+                    <p>Due Date: {{invoice_date}}</p>
                 </div>
             </div>
             <div class="details">
@@ -172,19 +195,22 @@
 
 
         </div>
-        <div
-            style="background-color: #dbaa16; padding: 15px; text-align: center; color: white; margin-top: 20px; border-bottom-left-radius:10px ; border-bottom-right-radius: 10px;">
+       
+        <div class="footer-section">
             <div style="display: flex; justify-content: center;">
-                <img src="../Asset/contact.png" style="height:25px; width: 25px; filter: invert(1);" />
-                <p style="margin: 0px;">{{hostel_phone}}</p>
+                
+
+                <img src="../Asset/contact.png" style="height:25px; width: 25px;"  alt="Image not found" />
+                <p style="margin: 1px;">{{hostel_phone}}</p>
             </div>
             <div style="display: flex; justify-content: center;">
-                <img src="../Asset/app.png" style="height:25px; width: 25px; filter: invert(1);" /> 
-                <p style="margin: 0px;">{{admin_details}}</p>
+                <img src="../Asset/app.png" style="height:25px; width: 25px; "   alt="Image not found"/> 
+                <p style="margin: 1px;">{{admin_details}}</p>
             </div>
         </div>
-
-
+        
+      
+        
     </div>
 
 
