@@ -183,89 +183,193 @@ function add_asset(req, res) {
 
             if (is_admin == 1 || (role_permissions[8] && role_permissions[8].per_create == 1)) {
 
+                let new_bank_id = data.bank_id ? data.bank_id : 0;
+
+                var purchase_amount = data.price;
+
+                if (data.payment_type == "Net Banking" && data.bank_id) {
+
+                    let sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
+                    connection.query(sql5, [data.bank_id], function (err, sel_res) {
+                        if (err) {
+                            console.log(err);
+                            return res.status(201).json({ message: "Database Error" });
+                        }
+                        if (sel_res.length === 0) {
+                            return res.status(201).json({ message: "Invalid Bank Id" });
+                        }
+
+                        const balance_amount = parseInt(sel_res[0].balance);
+
+                        if (!balance_amount || purchase_amount > balance_amount) {
+                            return res.status(201).json({ statusCode: 201, message: "Insufficient Bank Balance" });
+                        }
+
+                        insertasset(new_bank_id, sel_res);
+                    });
+                } else {
+                    insertasset(new_bank_id, []);
+                }
+
                 // Add Process
                 // Check Serial Number
-                var sql5 = "SELECT * FROM assets WHERE serial_number=? AND status=1 AND hostel_id=?";
-                connection.query(sql5, [data.serial_number, hostel_id], function (err, ass_res) {
-                    if (err) {
-                        return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
-                    } else if (ass_res.length != 0) {
-                        return res.status(201).json({ message: "Serial Number Already Exists", statusCode: 201 })
-                    } else {
-                        var sql3 = "SELECT * FROM assets WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "' AND status=1 AND hostel_id=?";
-                        connection.query(sql3, [hostel_id], (err, asss_data) => {
-                            if (err) {
-                                return res.status(201).json({ message: "Unable to Get Asset Name Details", statusCode: 201 })
-                            } else if (asss_data.length == 0) {
+                // var sql5 = "SELECT * FROM assets WHERE serial_number=? AND status=1 AND hostel_id=?";
+                // connection.query(sql5, [data.serial_number, hostel_id], function (err, ass_res) {
+                //     if (err) {
+                //         return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
+                //     } else if (ass_res.length != 0) {
+                //         return res.status(201).json({ message: "Serial Number Already Exists", statusCode: 201 })
+                //     } else {
+                //         var sql3 = "SELECT * FROM assets WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "' AND status=1 AND hostel_id=?";
+                //         connection.query(sql3, [hostel_id], (err, asss_data) => {
+                //             if (err) {
+                //                 return res.status(201).json({ message: "Unable to Get Asset Name Details", statusCode: 201 })
+                //             } else if (asss_data.length == 0) {
 
-                                var sql2 = "INSERT INTO assets (asset_name,vendor_id,product_name,brand_name,serial_number,product_count,purchase_date,price,total_price,status,created_by,payment_mode,bank_id,hostel_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-                                connection.query(sql2, [data.asset_name, data.vendor_id, data.product_name, data.brand_name, data.serial_number, 1, data.purchase_date, data.price, data.price, 1, user_id, data.payment_type, new_bank_id, hostel_id], (ins_err, ins_res) => {
-                                    if (ins_err) {
-                                        console.log(ins_err);
-                                        return res.status(201).json({ message: "Unable to Add Asset Details", statusCode: 201 })
-                                    } else {
+                //                 var sql2 = "INSERT INTO assets (asset_name,vendor_id,product_name,brand_name,serial_number,product_count,purchase_date,price,total_price,status,created_by,payment_mode,bank_id,hostel_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                //                 connection.query(sql2, [data.asset_name, data.vendor_id, data.product_name, data.brand_name, data.serial_number, 1, data.purchase_date, data.price, data.price, 1, user_id, data.payment_type, new_bank_id, hostel_id], (ins_err, ins_res) => {
+                //                     if (ins_err) {
+                //                         console.log(ins_err);
+                //                         return res.status(201).json({ message: "Unable to Add Asset Details", statusCode: 201 })
+                //                     } else {
 
-                                        var edit_id = ins_res.insertId;
+                //                         var edit_id = ins_res.insertId;
 
-                                        var sql1 = "INSERT INTO transactions (invoice_id,amount,payment_type,payment_date,status,action,created_by,description) VALUES (?,?,?,?,?,?,?,?)";
-                                        connection.query(sql1, [edit_id, data.price, data.payment_type, data.purchase_date, 1, 2, user_id, "Asset"], function (err, ins_trans) {
-                                            if (err) {
-                                                console.log(err, "Ins Trans Error");
-                                            } else {
+                //                         var sql1 = "INSERT INTO transactions (invoice_id,amount,payment_type,payment_date,status,action,created_by,description) VALUES (?,?,?,?,?,?,?,?)";
+                //                         connection.query(sql1, [edit_id, data.price, data.payment_type, data.purchase_date, 1, 2, user_id, "Asset"], function (err, ins_trans) {
+                //                             if (err) {
+                //                                 console.log(err, "Ins Trans Error");
+                //                             } else {
 
-                                                console.log(data.payment_type);
+                //                                 console.log(data.payment_type);
 
-                                                if (data.payment_type == "Net Banking" && data.bank_id) {
+                //                                 if (data.payment_type == "Net Banking" && data.bank_id) {
 
-                                                    var sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
-                                                    connection.query(sql5, [data.bank_id], function (err, sel_res) {
-                                                        if (err) {
-                                                            console.log(err);
-                                                        } else if (sel_res.length != 0) {
+                //                                     var sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
+                //                                     connection.query(sql5, [data.bank_id], function (err, sel_res) {
+                //                                         if (err) {
+                //                                             console.log(err);
+                //                                         } else if (sel_res.length != 0) {
 
-                                                            const balance_amount = parseInt(sel_res[0].balance);
+                //                                             const balance_amount = parseInt(sel_res[0].balance);
 
-                                                            if (balance_amount && balance_amount != 0) {
+                //                                             if (balance_amount && balance_amount != 0) {
 
-                                                                if (data.price > balance_amount) {
-                                                                    console.log("Purchase Amont is Greater than Balance Amount");
+                //                                                 if (data.price > balance_amount) {
+                //                                                     console.log("Purchase Amont is Greater than Balance Amount");
 
-                                                                } else {
-                                                                    var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,`desc`,type,status,createdby,edit_id) VALUES (?,?,?,?,?,?,?,?)";
-                                                                    connection.query(sql4, [data.bank_id, data.purchase_date, data.price, 'Asset', 2, 1, user_id, edit_id], function (err, ins_data) {
-                                                                        if (err) {
-                                                                            console.log(err, "Insert Transactions Error");
-                                                                        } else {
-                                                                            var new_amount = parseInt(balance_amount) - parseInt(data.price);
+                //                                                 } else {
+                //                                                     var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,`desc`,type,status,createdby,edit_id) VALUES (?,?,?,?,?,?,?,?)";
+                //                                                     connection.query(sql4, [data.bank_id, data.purchase_date, data.price, 'Asset', 2, 1, user_id, edit_id], function (err, ins_data) {
+                //                                                         if (err) {
+                //                                                             console.log(err, "Insert Transactions Error");
+                //                                                         } else {
+                //                                                             var new_amount = parseInt(balance_amount) - parseInt(data.price);
 
-                                                                            var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
-                                                                            connection.query(sql5, [new_amount, data.bank_id], function (err, up_date) {
-                                                                                if (err) {
-                                                                                    console.log(err, "Update Amount Error");
-                                                                                }
-                                                                            })
-                                                                        }
-                                                                    })
+                //                                                             var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
+                //                                                             connection.query(sql5, [new_amount, data.bank_id], function (err, up_date) {
+                //                                                                 if (err) {
+                //                                                                     console.log(err, "Update Amount Error");
+                //                                                                 }
+                //                                                             })
+                //                                                         }
+                //                                                     })
 
-                                                                }
+                //                                                 }
+                //                                             }
+                //                                         } else {
+                //                                             console.log("Invalid Bank Id");
+                //                                         }
+                //                                     })
+                //                                 }
+                //                             }
+                //                         })
+
+                //                         return res.status(200).json({ message: "Asset Added Successfully", statusCode: 200 })
+                //                     }
+                //                 })
+                //             } else {
+                //                 return res.status(202).json({ message: "Asset Name Already Exists", statusCode: 201 })
+                //             }
+                //         })
+                //     }
+                // })
+
+                function insertasset(new_bank_id, sel_res) {
+
+                    var sql5 = "SELECT * FROM assets WHERE serial_number=? AND status=1 AND hostel_id=?";
+                    connection.query(sql5, [data.serial_number, hostel_id], function (err, ass_res) {
+                        if (err) {
+                            return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
+                        } else if (ass_res.length != 0) {
+                            return res.status(201).json({ message: "Serial Number Already Exists", statusCode: 201 })
+                        } else {
+                            var sql3 = "SELECT * FROM assets WHERE asset_name COLLATE latin1_general_ci = '" + data.asset_name + "' AND status=1 AND hostel_id=?";
+                            connection.query(sql3, [hostel_id], (err, asss_data) => {
+                                if (err) {
+                                    return res.status(201).json({ message: "Unable to Get Asset Name Details", statusCode: 201 })
+                                } else if (asss_data.length == 0) {
+
+                                    var sql2 = "INSERT INTO assets (asset_name,vendor_id,product_name,brand_name,serial_number,product_count,purchase_date,price,total_price,status,created_by,payment_mode,bank_id,hostel_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                                    connection.query(sql2, [data.asset_name, data.vendor_id, data.product_name, data.brand_name, data.serial_number, 1, data.purchase_date, data.price, data.price, 1, user_id, data.payment_type, new_bank_id, hostel_id], (ins_err, ins_res) => {
+                                        if (ins_err) {
+                                            console.log(ins_err);
+                                            return res.status(201).json({ message: "Unable to Add Asset Details", statusCode: 201 })
+                                        } else {
+
+                                            var edit_id = ins_res.insertId;
+
+                                            var sql1 = "INSERT INTO transactions (invoice_id,amount,payment_type,payment_date,status,action,created_by,description) VALUES (?,?,?,?,?,?,?,?)";
+                                            connection.query(sql1, [edit_id, data.price, data.payment_type, data.purchase_date, 1, 2, user_id, "Asset"], function (err, ins_trans) {
+                                                if (err) {
+                                                    console.log(err, "Ins Trans Error");
+                                                } else {
+
+                                                    if (data.payment_type == "Net Banking" && data.bank_id) {
+
+                                                        // var sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
+                                                        // connection.query(sql5, [data.bank_id], function (err, sel_res) {
+                                                        //     if (err) {
+                                                        //         console.log(err);
+                                                        //     } else if (sel_res.length != 0) {
+
+                                                        //         const balance_amount = parseInt(sel_res[0].balance);
+
+                                                        //         if (balance_amount && balance_amount != 0) {
+
+                                                        var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,`desc`,type,status,createdby,edit_id) VALUES (?,?,?,?,?,?,?,?)";
+                                                        connection.query(sql4, [data.bank_id, data.purchase_date, data.price, 'Asset', 2, 1, user_id, edit_id], function (err, ins_data) {
+                                                            if (err) {
+                                                                console.log(err, "Insert Transactions Error");
+                                                            } else {
+                                                                let new_amount = parseInt(sel_res[0].balance) - parseInt(data.price);
+
+                                                                var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
+                                                                connection.query(sql5, [new_amount, data.bank_id], function (err, up_date) {
+                                                                    if (err) {
+                                                                        console.log(err, "Update Amount Error");
+                                                                    }
+                                                                })
                                                             }
-                                                        } else {
-                                                            console.log("Invalid Bank Id");
-                                                        }
-                                                    })
+                                                        })
+                                                        //         }
+                                                        //     } else {
+                                                        //         console.log("Invalid Bank Id");
+                                                        //     }
+                                                        // })
+                                                    }
+                                                    return res.status(200).json({ message: "Asset Added Successfully", statusCode: 200 })
                                                 }
-                                            }
-                                        })
+                                            })
 
-                                        return res.status(200).json({ message: "Asset Added Successfully", statusCode: 200 })
-                                    }
-                                })
-                            } else {
-                                return res.status(202).json({ message: "Asset Name Already Exists", statusCode: 201 })
-                            }
-                        })
-                    }
-                })
+                                        }
+                                    })
+
+                                }
+                            })
+                        }
+                    })
+                }
             } else {
                 res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
             }

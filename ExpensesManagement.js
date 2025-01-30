@@ -210,16 +210,16 @@ function AddExpense(request, response) {
                     connection.query(sql5, [reqData.bank_id], function (err, sel_res) {
                         if (err) {
                             console.log(err);
-                            return response.status(201).json({ message: "Database Error" });
+                            return response.status(201).json({ statusCode: 201, message: "Database Error" });
                         }
                         if (sel_res.length === 0) {
-                            return response.status(201).json({ message: "Invalid Bank Id" });
+                            return response.status(201).json({ statusCode: 201, message: "Invalid Bank Id" });
                         }
 
                         const balance_amount = parseInt(sel_res[0].balance);
 
                         if (!balance_amount || purchase_amount > balance_amount) {
-                            return response.status(201).json({ message: "Insufficient Bank Balance" });
+                            return response.status(201).json({ statusCode: 201, message: "Insufficient Bank Balance" });
                         }
 
                         insertExpense(new_bank_id, createdate, sel_res);
@@ -238,20 +238,20 @@ function AddExpense(request, response) {
                 connection.query(query, function (insertErr, insertData) {
                     if (insertErr) {
                         console.log("Insert Error", insertErr);
-                        return response.status(201).json({ message: "Internal Server Error" });
+                        return response.status(201).json({ statusCode: 201, message: "Internal Server Error" });
                     }
 
                     let query1 = `SELECT * FROM expenses ORDER BY id DESC`;
                     connection.query(query1, function (select_Err, select_Data) {
                         if (select_Err || select_Data.length === 0) {
-                            return response.status(201).json({ message: "Error while fetching Data" });
+                            return response.status(201).json({ statusCode: 201, message: "Error while fetching Data" });
                         }
 
                         let sql3 = `INSERT INTO transactions (user_id, invoice_id, amount, created_by, payment_type, payment_date, action, status, description) VALUES (0, ${select_Data[0].id}, ${purchase_amount}, ${createdBy}, '${reqData.payment_mode}', '${purchase_date}', 2, 1, 'Expenses')`;
                         connection.query(sql3, function (ins_err) {
                             if (ins_err) {
                                 console.log("Transaction Error", ins_err);
-                                return response.status(201).json({ message: "Unable to Add Transactions Details" });
+                                return response.status(201).json({ statusCode: 201, message: "Unable to Add Transactions Details" });
                             }
 
                             if (reqData.payment_mode === "Net Banking" && reqData.bank_id) {
@@ -262,7 +262,7 @@ function AddExpense(request, response) {
                                 connection.query(sql4, [reqData.bank_id, purchase_date, purchase_amount, 'Expenses', 2, 1, createdBy, edit_id, hostel_id], function (err) {
                                     if (err) {
                                         console.log("Insert Transactions Error", err);
-                                        return response.status(201).json({ message: "Error processing bank transaction" });
+                                        return response.status(201).json({ statusCode: 201, message: "Error processing bank transaction" });
                                     }
                                     let new_amount = parseInt(sel_res[0].balance) - parseInt(purchase_amount);
                                     let sql5 = "UPDATE bankings SET balance=? WHERE id=?";
@@ -270,11 +270,11 @@ function AddExpense(request, response) {
                                         if (err) {
                                             console.log("Update Amount Error", err);
                                         }
-                                        response.status(200).json({ message: "Added Successfully" });
+                                        response.status(200).json({ statusCode: 200, message: "Added Successfully" });
                                     });
                                 });
                             } else {
-                                response.status(200).json({ message: "Added Successfully" });
+                                response.status(200).json({ statusCode: 200, message: "Added Successfully" });
                             }
                         });
                     });
