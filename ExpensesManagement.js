@@ -201,96 +201,84 @@ function AddExpense(request, response) {
         else {
 
             if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_create == 1)) {
+                let createdate = moment(new Date()).format('yyyy-MM-DD HH:mm:ss');
+                let new_bank_id = reqData.bank_id ? reqData.bank_id : 0;
 
-                let createdate = moment(new Date()).format('yyyy-MM-DD HH:mm:ss')
-                // console.log("createdate", createdate);
+                if (reqData.payment_mode === "Net Banking" && reqData.bank_id) {
 
-                if (!reqData.bank_id) {
-                    var new_bank_id = 0
+                    let sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
+                    connection.query(sql5, [reqData.bank_id], function (err, sel_res) {
+                        if (err) {
+                            console.log(err);
+                            return response.status(201).json({ message: "Database Error" });
+                        }
+                        if (sel_res.length === 0) {
+                            return response.status(201).json({ message: "Invalid Bank Id" });
+                        }
+
+                        const balance_amount = parseInt(sel_res[0].balance);
+
+                        if (!balance_amount || purchase_amount > balance_amount) {
+                            return response.status(201).json({ message: "Insufficient Bank Balance" });
+                        }
+
+                        insertExpense(new_bank_id, createdate, sel_res);
+                    });
                 } else {
-                    var new_bank_id = reqData.bank_id;
+                    insertExpense(new_bank_id, createdate, []);
                 }
-
-                let query = `INSERT INTO expenses ( vendor_id, asset_id, category_id, purchase_date, unit_count, unit_amount, purchase_amount, description, created_by,createdate,payment_mode,hostel_id,bank_id) VALUES ('${reqData.vendor_id}', '${reqData.asset_id}', '${reqData.category_id}', '${purchase_date}', '${reqData.unit_count}', '${reqData.unit_amount}','${purchase_amount}', '${reqData.description}', ${createdBy}, '${createdate}','${reqData.payment_mode}','${hostel_id}','${new_bank_id}');`
-                // console.log("query", query);
-                connection.query(query, function (insertErr, insertData) {
-                    if (insertErr) {
-                        console.log("insertErr", insertErr);
-                        response.status(201).json({ message: "Internal Server Error" });
-                    }
-                    else {
-                        let query1 = `SELECT * FROM expenses order by id desc`;
-                        connection.query(query1, function (select_Err, select_Data) {
-
-                            if (select_Data && select_Data.length > 0) {
-                                var sql3 = `INSERT INTO transactions (user_id,invoice_id,amount,created_by,payment_type,payment_date,action,status,description) VALUES (0,${select_Data[0].id},${purchase_amount},${createdBy},'${reqData.payment_mode}','${purchase_date}',2,1,'Expenses')`;
-                                // [0, reqData.asset_id, purchase_amount, createdBy, reqData.payment_mode, purchase_date,2]
-                                connection.query(sql3, function (ins_err, ins_res) {
-                                    if (ins_err) {
-                                        console.log("ADD transaction error", ins_err);
-                                        response.status(201).json({ message: 'Unable to Add Transactions Details' });
-                                    } else {
-
-                                        // Add Banking Transactions
-                                        if (reqData.payment_mode == "Net Banking" && reqData.bank_id) {
-
-                                            var edit_id = insertData.insertId;
-
-                                            var sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
-                                            connection.query(sql5, [reqData.bank_id], function (err, sel_res) {
-                                                if (err) {
-                                                    console.log(err);
-                                                } else if (sel_res.length != 0) {
-
-                                                    const balance_amount = parseInt(sel_res[0].balance);
-
-                                                    if (balance_amount && balance_amount != 0) {
-
-                                                        if (purchase_amount > balance_amount) {
-                                                            console.log("Purchase Amont is Greater than Balance Amount");
-
-                                                        } else {
-                                                            var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,`desc`,type,status,createdby,edit_id,hostel_id) VALUES (?,?,?,?,?,?,?,?,?)";
-                                                            connection.query(sql4, [reqData.bank_id, purchase_date, purchase_amount, 'Expenses', 2, 1, createdBy, edit_id, hostel_id], function (err, ins_data) {
-                                                                if (err) {
-                                                                    console.log(err, "Insert Transactions Error");
-                                                                } else {
-                                                                    var new_amount = parseInt(balance_amount) - parseInt(purchase_amount);
-
-                                                                    var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
-                                                                    connection.query(sql5, [new_amount, reqData.bank_id], function (err, up_date) {
-                                                                        if (err) {
-                                                                            console.log(err, "Update Amount Error");
-                                                                        }
-                                                                    })
-                                                                }
-                                                            })
-                                                        }
-                                                    }
-                                                } else {
-                                                    console.log("Invalid Bank Id");
-                                                }
-                                            })
-                                        }
-                                        response.status(200).json({ message: "Added Successfully" });
-                                    }
-                                })
-
-                            }
-                            else {
-                                if (select_Err) {
-                                    response.status(201).json({ message: "Error while fetching Data", statusCode: 201 });
-                                }
-                            }
-                        })
-
-
-
-                        // response.status(200).json({ message: "Data Saved successfully" });
-                    }
-                })
             } else {
                 response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+            }
+
+            function insertExpense(new_bank_id, createdate, sel_res) {
+
+                let query = `INSERT INTO expenses (vendor_id, asset_id, category_id, purchase_date, unit_count, unit_amount, purchase_amount, description, created_by, createdate, payment_mode, hostel_id, bank_id) VALUES ('${reqData.vendor_id}', '${reqData.asset_id}', '${reqData.category_id}', '${purchase_date}', '${reqData.unit_count}', '${reqData.unit_amount}', '${purchase_amount}', '${reqData.description}', ${createdBy}, '${createdate}', '${reqData.payment_mode}', '${hostel_id}', '${new_bank_id}');`;
+
+                connection.query(query, function (insertErr, insertData) {
+                    if (insertErr) {
+                        console.log("Insert Error", insertErr);
+                        return response.status(201).json({ message: "Internal Server Error" });
+                    }
+
+                    let query1 = `SELECT * FROM expenses ORDER BY id DESC`;
+                    connection.query(query1, function (select_Err, select_Data) {
+                        if (select_Err || select_Data.length === 0) {
+                            return response.status(201).json({ message: "Error while fetching Data" });
+                        }
+
+                        let sql3 = `INSERT INTO transactions (user_id, invoice_id, amount, created_by, payment_type, payment_date, action, status, description) VALUES (0, ${select_Data[0].id}, ${purchase_amount}, ${createdBy}, '${reqData.payment_mode}', '${purchase_date}', 2, 1, 'Expenses')`;
+                        connection.query(sql3, function (ins_err) {
+                            if (ins_err) {
+                                console.log("Transaction Error", ins_err);
+                                return response.status(201).json({ message: "Unable to Add Transactions Details" });
+                            }
+
+                            if (reqData.payment_mode === "Net Banking" && reqData.bank_id) {
+
+                                var edit_id = insertData.insertId
+
+                                let sql4 = "INSERT INTO bank_transactions (bank_id, date, amount, `desc`, type, status, createdby, edit_id, hostel_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                                connection.query(sql4, [reqData.bank_id, purchase_date, purchase_amount, 'Expenses', 2, 1, createdBy, edit_id, hostel_id], function (err) {
+                                    if (err) {
+                                        console.log("Insert Transactions Error", err);
+                                        return response.status(201).json({ message: "Error processing bank transaction" });
+                                    }
+                                    let new_amount = parseInt(sel_res[0].balance) - parseInt(purchase_amount);
+                                    let sql5 = "UPDATE bankings SET balance=? WHERE id=?";
+                                    connection.query(sql5, [new_amount, reqData.bank_id], function (err) {
+                                        if (err) {
+                                            console.log("Update Amount Error", err);
+                                        }
+                                        response.status(200).json({ message: "Added Successfully" });
+                                    });
+                                });
+                            } else {
+                                response.status(200).json({ message: "Added Successfully" });
+                            }
+                        });
+                    });
+                });
             }
         }
     }
@@ -961,7 +949,7 @@ WHERE expen.status = true AND expen.created_by = ${createdBy}`;
                     s3.upload(params, function (err, uploadData) {
                         if (err) {
                             console.error("Error uploading PDF", err);
-                            response.status(500).json({ message: 'Error uploading PDF to S3' });
+                            response.status(201).json({ message: 'Error uploading PDF to S3' });
                         } else {
                             // console.log("PDF uploaded successfully", uploadData.Location);
                             uploadedPDFs++;

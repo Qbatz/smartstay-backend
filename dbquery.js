@@ -2,7 +2,7 @@ const connection = require('./config/connection')
 
 // Usage
 const queries = [
-   
+
     "ALTER TABLE announcement_comments ADD parent_comment_id INT NULL;",
 
     "ALTER TABLE `eb_settings` ADD COLUMN `status` INT NULL DEFAULT '1' AFTER `duration`;",
@@ -17,7 +17,12 @@ const queries = [
 
     "ALTER TABLE `receipts` ADD COLUMN `bank_id` VARCHAR(45) NULL DEFAULT 0 AFTER `notes`;",
 
-    "ALTER TABLE invoicedetails MODIFY COLUMN PaidAmount DECIMAL(10,2);"
+    "ALTER TABLE invoicedetails MODIFY COLUMN PaidAmount DECIMAL(10,2);",
+
+    "ALTER TABLE expenses MODIFY COLUMN unit_amount DECIMAL(10,2);",
+
+    "ALTER TABLE expenses MODIFY COLUMN purchase_amount DECIMAL(10,2);"
+
 ];
 
 queries.forEach(executeQuery);
