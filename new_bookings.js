@@ -595,4 +595,34 @@ function edit_customer_reading(req, res) {
 
 }
 
-module.exports = { add_booking, assign_booking, add_confirm_checkout, upload_doc, delete_user, edit_customer_reading }
+function delete_reading(req, res) {
+
+    var id = req.body.id;
+
+    if (!id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+    var sql1 = "SELECT * FROM customer_eb_amount WHERE id=? AND status=1";
+    connection.query(sql1, [id], function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Error to Get User Details" })
+        }
+
+        if (data.length == 0) {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Reading Details" })
+        }
+
+        var sql2 = "UPDATE customer_eb_amount SET status=0 WHERE id=?";
+        connection.query(sql2, [id], function (err, up_res) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Error to Delete Reading Details" })
+            }
+
+            return res.status(200).json({ statusCode: 200, message: "Successfully Deleted Customer Readings" })
+        })
+
+    })
+
+}
+
+module.exports = { add_booking, assign_booking, add_confirm_checkout, upload_doc, delete_user, edit_customer_reading, delete_reading }
