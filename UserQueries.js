@@ -1223,7 +1223,7 @@ function customer_details(req, res) {
             user_data[0] = temp;
           }
           // Get Eb Details
-          var sql3 = "SELECT cb.start_meter,cb.end_meter,cb.unit,cb.amount,hos.Name,hos.profile,hos.HostelName,hf.floor_name,hr.Room_Id, DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id JOIN Hostel_Floor AS hf ON hf.floor_id=hos.Floor AND hf.hostel_id=hos.Hostel_Id JOIN hostelrooms AS hr ON hr.id=hos.Rooms WHERE cb.user_id=?";
+          var sql3 = "SELECT cb.id,cb.start_meter,cb.end_meter,cb.unit,cb.amount,hos.Name,hos.profile,hos.HostelName,hf.floor_name,hr.Room_Id, DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=hos.Floor AND hf.hostel_id=hos.Hostel_Id LEFT JOIN hostelrooms AS hr ON hr.id=hos.Rooms WHERE cb.user_id=?";
           connection.query(sql3, [user_id], (eb_err, eb_data) => {
             if (eb_err) {
               return res.status(201).json({ message: "Unable to Eb Details", statusCode: 201 });

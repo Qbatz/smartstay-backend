@@ -1158,6 +1158,10 @@ app.post('/users/upload_doc', upload.fields([{ name: 'file1', maxCount: 1 }]), (
     newBookings.upload_doc(req, res)
 })
 
+app.post('/users/edit_reading', (req, res) => {
+    newBookings.edit_customer_reading(req, res)
+})
+
 
 // Settings Page API
 var settings_router = require('./settings/general')
