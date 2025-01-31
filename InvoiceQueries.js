@@ -2853,7 +2853,7 @@ function edit_manual_invoice(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
         }
 
-        var total_amount = amenity && amenity.length > 0 ? amenity.reduce((sum, user) => sum + user.amount, 0) : 0;
+        var total_amount = amenity && amenity.length > 0 ? amenity.reduce((sum, user) => sum + parseInt(user.amount), 0) : 0;
 
         var sql1 = "SELECT * FROM invoicedetails WHERE id=? AND invoice_status=1";
         connection.query(sql1, [id], function (err, inv_data) {
@@ -2865,13 +2865,13 @@ function edit_manual_invoice(req, res) {
                 return res.status(201).json({ statusCode: 201, message: "Invalid Invoice Details" })
             }
 
-            var paid_amount = inv_data[0].PaidAmount;
+            var paid_amount = parseInt(inv_data[0].PaidAmount);
 
             if (paid_amount > total_amount) {
                 return res.status(201).json({ statusCode: 201, message: "Paid Amount Greater Than Total Amount" })
             }
 
-            var balance_due = total_amount - paid_amount;
+            var balance_due = parseInt(total_amount) - parseInt(paid_amount);
 
             var sql2 = "UPDATE invoicedetails SET Date=?,DueDate=?,Amount=?,BalanceDue=?,start_date=?,end_date=? WHERE id=?";
             connection.query(sql2, [date, due_date, total_amount, balance_due, start_date, end_date, id], function (err, up_res) {

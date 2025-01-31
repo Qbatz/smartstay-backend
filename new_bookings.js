@@ -188,8 +188,8 @@ function assign_booking(req, res) {
 
             if (email_id != 'NA') {
 
-                var sql3 = "SELECT * FROM hostel WHERE Email=? AND isActive=1";
-                connection.query(sql3, [email_id], function (err, em_data) {
+                var sql3 = "SELECT * FROM hostel WHERE Email=? AND isActive=1 AND Hostel_Id=?";
+                connection.query(sql3, [email_id, hostel_id], function (err, em_data) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Get Email Details", reason: err.message });
                     } else if (em_data.length != 0) {
@@ -204,8 +204,8 @@ function assign_booking(req, res) {
 
             function next_function() {
 
-                var sql3 = "SELECT * FROM hostel WHERE Phone=? AND isActive=1";
-                connection.query(sql3, [mob_no], function (err, ph_data) {
+                var sql3 = "SELECT * FROM hostel WHERE Phone=? AND isActive=1 AND Hostel_Id=?";
+                connection.query(sql3, [mob_no, hostel_id], function (err, ph_data) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Get Phone Details", reason: err.message });
                     } else if (ph_data.length == 0) {
@@ -222,9 +222,9 @@ function assign_booking(req, res) {
                             var circle = FirstNameInitial + LastNameInitial2;
                         }
 
-                        if(!l_name){
-                            var name = f_name ;
-                        }else{
+                        if (!l_name) {
+                            var name = f_name;
+                        } else {
                             var name = f_name + l_name;
                         }
 
