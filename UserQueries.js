@@ -1808,11 +1808,10 @@ function get_invoice_id(req, res) {
         let newInvoiceNumber = invoicePrefix + newNumber.toString().padStart(3, '0');
 
         check_inv_validation(newInvoiceNumber, hostel_id, res);
+      } else {
+        console.log("Success");
+        return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: invoice_number, hostel_id: hostel_id, });
       }
-
-      console.log("Success");
-      return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: invoice_number, hostel_id: hostel_id, });
-
     })
   }
 
