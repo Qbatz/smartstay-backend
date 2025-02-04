@@ -337,7 +337,7 @@ function AddExpenseCategory(request, response) {
                                         console.log(ins_err);
                                         return response.status(201).json({ statusCode: 201, message: "Unble to Add Subcategory Details" });
                                     } else {
-                                        response.status(200).json({ statusCode: 200, message: "Successfully Added Sub Category" });
+                                        response.status(200).json({ statusCode: 200, message: "Successfully Added Sub Category"  , type : 2});
                                     }
                                 })
                             }
@@ -352,7 +352,7 @@ function AddExpenseCategory(request, response) {
                         if (insertErr) {
                             response.status(201).json({ statusCode: 201, message: "Does not Save" });
                         } else {
-                            response.status(200).json({ statusCode: 200, message: "New Category Added successfully" });
+                            response.status(200).json({ statusCode: 200, message: "New Category Added successfully", type: 1 });
                         }
                     })
                 }
