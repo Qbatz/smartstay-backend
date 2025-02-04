@@ -280,7 +280,27 @@ async function webhook_status(req, res) {
     }
 }
 
-module.exports = { subscipition, invoice_details, invoice_payments, check_trail_end, checkAllSubscriptions, new_subscription, webhook_status }
+async function plans_list(req, res) {
+
+    var apiEndpoint = " https://www.zohoapis.in/billing/v1/plans";
+    var method = 'GET'
+
+    var input_body = 0;
+
+    try {
+        const response = await apiResponse(apiEndpoint, method, input_body);
+        console.log("Invoice Details", response);
+
+        var plan_details = response.plans;
+        return res.status(200).json({ message: "Plan Details", statusCode: 200, plan_details: plan_details })
+
+    } catch (error) {
+        console.error('Error subscribing user:', error);
+        return res.status(201).json({ message: "Unable to update Plan Details", statusCode: 201, error: error })
+    }
+}
+
+module.exports = { subscipition, invoice_details, invoice_payments, check_trail_end, checkAllSubscriptions, new_subscription, webhook_status, plans_list }
 
 
 // async function new_subscription(req, res) {
