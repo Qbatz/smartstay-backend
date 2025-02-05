@@ -221,15 +221,21 @@ exports.delete_general_user = (req, res) => {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
             } else if (check_user_data.length != 0) {
 
-                var sql2 = "UPDATE createaccount SET user_status=0 WHERE id=?";
-                connection.query(sql2, [id], function (err, up_res) {
-                    if (err) {
-                        return res.status(201).json({ statusCode: 201, message: "Unable to Delete User Details" })
-                    } else {
-                        return res.status(200).json({ statusCode: 200, message: "User Deleted Successfully !" })
-                    }
-                })
+                var user_type = check_user_data.user_type;
 
+                if (user_type == 'admin') {
+                    return res.status(201).json({ statusCode: 201, message: "Admin Data Not Deleted Options" })
+                } else {
+
+                    var sql2 = "UPDATE createaccount SET user_status=0 WHERE id=?";
+                    connection.query(sql2, [id], function (err, up_res) {
+                        if (err) {
+                            return res.status(201).json({ statusCode: 201, message: "Unable to Delete User Details" })
+                        } else {
+                            return res.status(200).json({ statusCode: 200, message: "User Deleted Successfully !" })
+                        }
+                    })
+                }
             } else {
                 return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
             }
