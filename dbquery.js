@@ -21,8 +21,9 @@ const queries = [
 
     "ALTER TABLE expenses MODIFY COLUMN unit_amount DECIMAL(10,2);",
 
-    "ALTER TABLE expenses MODIFY COLUMN purchase_amount DECIMAL(10,2);"
+    "ALTER TABLE expenses MODIFY COLUMN purchase_amount DECIMAL(10,2);",
 
+    "CREATE TABLE subscription_hostels (id INT AUTO_INCREMENT PRIMARY KEY,subscription_id VARCHAR(255) NOT NULL,customer_id VARCHAR(255) NOT NULL,hostel_id INT NOT NULL,hostel_name VARCHAR(255) NOT NULL,status INT(11) DEFAULT 1,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); "
 ];
 
 queries.forEach(executeQuery);

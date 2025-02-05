@@ -187,40 +187,123 @@ async function invoice_payments(req, res) {
     }
 }
 
+// async function new_subscription(req, res) {
+
+//     var { customer_id, plan_code } = req.body;
+
+//     if (!customer_id || !plan_code) {
+//         return res.status(201).json({ message: "Missing Parameter ", statusCode: 201 })
+//     }
+
+//     var currentDate = new Date().toISOString().split('T')[0];
+
+//     var apiEndpoint = "https://www.zohoapis.in/billing/v1/hostedpages/newsubscription";
+//     var method = "POST";
+
+//     var inbut_body = {
+//         plan: {
+//             plan_code: plan_code
+//         },
+//         customer_id: customer_id,
+//         addons: [],
+//         custom_fields: [],
+//         redirect_url: req.body.redirect_url,
+//         start_date: currentDate,
+//         notes: "New User Subscribtion"
+//     };
+//     apiResponse(apiEndpoint, method, inbut_body).then(api_data => {
+//         console.log('API Response:', api_data);
+
+//         if (api_data.code == 0) {
+//             return res.status(200).json({ message: api_data.message, data: api_data.hostedpage })
+//         } else {
+//             return res.status(201).json({ message: api_data.message, statusCode: 201, error: error })
+//         }
+//     })
+// }
+
 async function new_subscription(req, res) {
+    try {
+        var { customer_id, plan_code, hostel_ids } = req.body;
 
-    var { customer_id, plan_code } = req.body;
-
-    if (!customer_id || !plan_code) {
-        return res.status(201).json({ message: "Missing Parameter ", statusCode: 201 })
-    }
-
-    var currentDate = new Date().toISOString().split('T')[0];
-
-    var apiEndpoint = "https://www.zohoapis.in/billing/v1/hostedpages/newsubscription";
-    var method = "POST";
-
-    var inbut_body = {
-        plan: {
-            plan_code: plan_code
-        },
-        customer_id: customer_id,
-        addons: [],
-        custom_fields: [],
-        redirect_url: req.body.redirect_url,
-        start_date: currentDate,
-        notes: "New User Subscribtion"
-    };
-    apiResponse(apiEndpoint, method, inbut_body).then(api_data => {
-        console.log('API Response:', api_data);
-
-        if (api_data.code == 0) {
-            return res.status(200).json({ message: api_data.message, data: api_data.hostedpage })
-        } else {
-            return res.status(201).json({ message: api_data.message, statusCode: 201, error: error })
+        if (!customer_id || !plan_code || !Array.isArray(hostel_ids) || hostel_ids.length === 0) {
+            return res.status(201).json({ message: "Missing or Invalid Parameters" });
         }
-    })
+
+        var currentDate = new Date().toISOString().split('T')[0];
+
+        // Fetch hostel details from the database
+        var sql = `SELECT hs.id, hs.Name,hs.subscription_id FROM hosteldetails AS hs JOIN createaccount AS ca ON ca.id=hs.createdby WHERE hs.id IN (?) AND hs.isActive=1`;
+        connection.query(sql, [hostel_ids], async (err, hostels) => {
+            if (err) {
+                return res.status(201).json({ message: "Database Error", error: err });
+            }
+
+            if (hostels.length === 0) {
+                return res.status(201).json({ message: "No valid hostels found" });
+            }
+
+            // var addons = hostels.map(hostel => ({
+            //     addon_code: "hostel_addon",
+            //     name: `Hostel - ${hostel.Name}`,
+            //     price: 1,
+            //     quantity: 1,
+            //     type: "one_time"
+            // }));
+
+            var subscription_id = hostels[0].subscription_id;
+
+            var addons = [
+                {
+                    addon_code: "hostel_addon", // Single add-on entry
+                    name: "Hostel Subscription Addon",
+                    price: 1, // Assuming 1 unit price
+                    quantity: hostels.length, // Set quantity based on number of hostels
+                    type: "one_time"
+                }
+            ];
+
+            var apiEndpoint = "https://www.zohoapis.in/billing/v1/hostedpages/newsubscription";
+            var method = "POST";
+
+            var input_body = {
+                plan: { plan_code: plan_code },
+                customer_id: customer_id,
+                addons: addons,
+                custom_fields: [],
+                redirect_url: "https://smartstay.qbatz.com/",
+                start_date: currentDate,
+                notes: "New User Subscription with multiple hostels"
+            };
+
+            let api_data = await apiResponse(apiEndpoint, method, input_body);
+
+            if (api_data.code == 0) {
+
+                let insertQuery = `INSERT INTO subscription_hostels (subscription_id, customer_id, hostel_id, hostel_name,status) VALUES ?`;
+                let values = hostels.map(hostel => [subscription_id, customer_id, hostel.id, hostel.Name, 0]);
+                connection.query(insertQuery, [values], (err, result) => {
+                    if (err) {
+                        console.error("Error saving hostels:", err);
+                    }
+                });
+
+                return res.status(200).json({
+                    message: api_data.message,
+                    data: api_data.hostedpage,
+                    selected_hostels: hostels
+                });
+            } else {
+                return res.status(201).json({ message: api_data.message });
+            }
+        });
+
+    } catch (error) {
+        return res.status(201).json({ message: "Internal Server Error", error: error.message });
+    }
 }
+
+
 
 async function webhook_status(req, res) {
 
@@ -314,7 +397,7 @@ module.exports = { subscipition, invoice_details, invoice_payments, check_trail_
 //             async function (error, data) {
 //                 if (error) {
 //                     console.error("Database error:", error);
-//                     response.status(500).json({ message: 'Database error' });
+//                     response.status(201).json({ message: 'Database error' });
 //                     return;
 //                 }
 
@@ -402,6 +485,6 @@ module.exports = { subscipition, invoice_details, invoice_payments, check_trail_
 //             }
 //         );
 //     } else {
-//         res.status(400).json({ message: 'Missing Parameter' });
+//         res.status(201).json({ message: 'Missing Parameter' });
 //     }
 // }
