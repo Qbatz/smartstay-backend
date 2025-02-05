@@ -461,14 +461,14 @@ function createnewAccount(request, response) {
 }
 
 // Generate JWT Token
-const generateToken = (user,plan_details) => {
+const generateToken = (user, plan_details) => {
     return jwt.sign({ id: user.id, sub: user.id, user_type: user.user_type, username: user.Name, role_id: user.role_id, plan_code: user.plan_code, plan_status: user.plan_status, start_date: plan_details.startdate, end_date: plan_details.end_date }, process.env.JWT_SECRET, { expiresIn: '30m' });
 };
 
 // Login API
 function loginAccount(connection, response, email_Id, password) {
     if (email_Id && password) {
-        connection.query(`SELECT * FROM createaccount WHERE email_Id='${email_Id}'`, async function (error, data) {
+        connection.query(`SELECT * FROM createaccount WHERE email_Id='${email_Id}' AND user_status=1`, async function (error, data) {
             if (error) {
                 console.error(error);
                 response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
