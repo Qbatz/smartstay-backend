@@ -221,7 +221,7 @@ exports.delete_general_user = (req, res) => {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
             } else if (check_user_data.length != 0) {
 
-                var user_type = check_user_data.user_type;
+                var user_type = check_user_data[0].user_type;
 
                 if (user_type == 'admin') {
                     return res.status(201).json({ statusCode: 201, message: "Admin Data Not Deleted Options" })

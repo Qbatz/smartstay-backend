@@ -1724,11 +1724,20 @@ function delete_hostel_image(req, res) {
     }
 }
 
+function hosteldetails(req, res) {
 
+    var created_by = req.user_details.id;
 
+    var sql1 = "SELECT id,Name,profile FROM hosteldetails WHERE isActive=1 AND created_By=?";
+    connection.query(sql1, [created_by], function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
+        } else if (data.length == 0) {
+            return res.status(201).json({ statusCode: 201, message: 'No Data Found' });
+        } else {
+            return res.status(200).json({ statusCode: 200, message: 'Hostel Details', data: data });
+        }
+    })
+}
 
-
-
-
-
-module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, update_floor, RoomFull, UpdateEB, listDashBoard, deleteHostel, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details, delete_hostel_image }
+module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, update_floor, RoomFull, UpdateEB, listDashBoard, deleteHostel, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details, delete_hostel_image, hosteldetails }

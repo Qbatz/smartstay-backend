@@ -311,6 +311,10 @@ app.post('/list/hostel-list', (request, response) => {
     pgQueries.getHostelList(request, response)
 })
 
+app.get('/list/hosteldetails', (req, res) => {
+    pgQueries.hosteldetails(req, res)
+})
+
 app.get('/room-id/check-room-id', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     pgQueries.checkRoom(connection, request, response)
