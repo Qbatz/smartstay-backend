@@ -337,14 +337,14 @@ function AddExpenseCategory(request, response) {
                                         console.log(ins_err);
                                         return response.status(201).json({ statusCode: 201, message: "Unble to Add Subcategory Details" });
                                     } else {
-                                        response.status(200).json({ statusCode: 200, message: "Successfully Added Sub Category"  , type : 2});
+                                        response.status(200).json({ statusCode: 200, message: "Successfully Added Sub Category", type: 2 });
                                     }
                                 })
                             }
                         })
 
                     } else {
-                        return response.status(201).json({ statusCode: 201, message: "Missing Subcategory Name" });
+                        return response.status(201).json({ statusCode: 201, message: "Category Name Already Exist!" });
                     }
                 } else {
                     var sql2 = `INSERT INTO Expense_Category_Name(category_Name,hostel_id,created_by) VALUES('${reqData.category_Name}',${hostel_id},'${created_by}');`;
