@@ -1123,7 +1123,15 @@ function InvoicePDf(connection, request, response) {
                 const filename = `INV${currentMonth}${currentYear}${currentTime}${inv_data.User_Id}.pdf`;
                 const outputPath = path.join(__dirname, filename);
 
-                const browser = await puppeteer.launch();
+                // const browser = await puppeteer.launch();
+
+                const browser = await puppeteer.launch({
+                    executablePath: '/path/to/chromium-or-chrome',
+                    headless: true,
+                    args: ['--no-sandbox', '--disable-setuid-sandbox']
+                });
+
+
                 const page = await browser.newPage();
 
                 await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
