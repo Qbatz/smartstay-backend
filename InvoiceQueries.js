@@ -18,9 +18,6 @@ const request = require('request');
 const sharp = require('sharp');
 const util = require('util');
 
-const pdf = require('html-pdf');
-
-
 AWS.config.update({
     accessKeyId: AWS_ACCESS_KEY_ID,
     secretAccessKey: AWS_SECRET_ACCESS_KEY,
@@ -1125,25 +1122,29 @@ function InvoicePDf(connection, request, response) {
 
                 // const browser = await puppeteer.launch();
 
-                const browser = await puppeteer.launch({
-                    executablePath: '/path/to/chromium-or-chrome',
-                    headless: true,
-                    args: ['--no-sandbox', '--disable-setuid-sandbox']
-                });
+                try {
+                    const browser = await puppeteer.launch({
+                        headless: true,
+                        executablePath: '/usr/bin/chromium',
+                        args: ['--no-sandbox', '--disable-setuid-sandbox']
+                    });
 
+                    const page = await browser.newPage();
+                    await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
-                const page = await browser.newPage();
+                    // Generate PDF
+                    await page.pdf({ path: outputPath, format: 'A4' });
 
-                await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
+                    await browser.close();
+                    console.log('PDF created successfully!');
 
-                // Generate PDF
-                await page.pdf({ path: outputPath, format: 'A4' });
+                    var inv_id = inv_data.id;
+                    await uploadToS3(outputPath, filename, inv_id);
+                    fs.unlinkSync(outputPath);
+                } catch (error) {
+                    console.error('Error during PDF creation or upload:', error);
+                }
 
-                await browser.close();
-                console.log('PDF created successfully!');
-                var inv_id = inv_data.id;
-                await uploadToS3(outputPath, filename, inv_id);
-                fs.unlinkSync(outputPath);
             } catch (error) {
                 console.error('Error:', error);
             }
