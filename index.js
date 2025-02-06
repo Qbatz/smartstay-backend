@@ -311,6 +311,10 @@ app.post('/list/hostel-list', (request, response) => {
     pgQueries.getHostelList(request, response)
 })
 
+app.get('/list/hosteldetails', (req, res) => {
+    pgQueries.hosteldetails(req, res)
+})
+
 app.get('/room-id/check-room-id', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*')
     pgQueries.checkRoom(connection, request, response)
@@ -1160,6 +1164,14 @@ app.post('/dash_filter', (req, res) => {
 
 app.post('/users/upload_doc', upload.fields([{ name: 'file1', maxCount: 1 }]), (req, res) => {
     newBookings.upload_doc(req, res)
+})
+
+app.post('/users/edit_reading', (req, res) => {
+    newBookings.edit_customer_reading(req, res)
+})
+
+app.post('/users/delete_reading', (req, res) => {
+    newBookings.delete_reading(req, res)
 })
 
 

@@ -1201,7 +1201,7 @@ function customer_details(req, res) {
       return res.status(201).json({ message: "Missing User Details", statusCode: 201 });
     }
 
-    var sql1 = 'SELECT hs.*,hosroom.id as Room_Id,hosroom.Room_Id as Room_Name,hf.floor_name,inv.id AS inv_id,inv.Status FROM hostel AS hs LEFT JOIN hostelrooms hosroom ON hosroom.id = hs.Rooms LEFT JOIN Hostel_Floor AS hf ON hs.Floor=hf.floor_id AND hs.Hostel_Id=hf.hostel_id LEFT JOIN invoicedetails AS inv ON inv.hos_user_id=hs.ID AND inv.action="advance" WHERE hs.ID=? AND hs.isActive=1';
+    var sql1 = "SELECT hs.*,hosroom.id as Room_Id,hosroom.Room_Id as Room_Name,hf.floor_name,inv.id AS inv_id,CASE WHEN inv.BalanceDue IS NULL THEN 'Not Generate' WHEN inv.BalanceDue > 0 OR inv.BalanceDue IS NULL THEN 'Unpaid' ELSE 'Paid' END AS status FROM hostel AS hs LEFT JOIN hostelrooms hosroom ON hosroom.id = hs.Rooms LEFT JOIN Hostel_Floor AS hf ON hs.Floor=hf.floor_id AND hs.Hostel_Id=hf.hostel_id LEFT JOIN invoicedetails AS inv ON inv.hos_user_id=hs.ID AND inv.action='advance' AND inv.invoice_status=1 WHERE hs.ID=? AND hs.isActive=1;";
     connection.query(sql1, [user_id], (user_err, user_data) => {
       if (user_err) {
         console.log("user_err", user_err);
@@ -1223,7 +1223,7 @@ function customer_details(req, res) {
             user_data[0] = temp;
           }
           // Get Eb Details
-          var sql3 = "SELECT cb.start_meter,cb.end_meter,cb.unit,cb.amount,hos.Name,hos.profile,hos.HostelName,hf.floor_name,hr.Room_Id, DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id JOIN Hostel_Floor AS hf ON hf.floor_id=hos.Floor AND hf.hostel_id=hos.Hostel_Id JOIN hostelrooms AS hr ON hr.id=hos.Rooms WHERE cb.user_id=?";
+          var sql3 = "SELECT hf.floor_id ,hr.id as Room_Id,  cb.id,cb.start_meter,cb.end_meter,cb.unit,cb.amount,hos.Name,hos.profile,hos.HostelName,hf.floor_name,hr.Room_Id as Room_Name, DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=hos.Floor AND hf.hostel_id=hos.Hostel_Id LEFT JOIN hostelrooms AS hr ON hr.id=hos.Rooms WHERE cb.user_id=? AND cb.status=1";
           connection.query(sql3, [user_id], (eb_err, eb_data) => {
             if (eb_err) {
               return res.status(201).json({ message: "Unable to Eb Details", statusCode: 201 });
@@ -1716,7 +1716,6 @@ function get_invoice_id(req, res) {
 
   if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_view == 1)) {
 
-
     if (!user_id) {
       return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
     }
@@ -1756,12 +1755,10 @@ function get_invoice_id(req, res) {
                   newInvoiceNumber = invoice_number.slice(0, -1) + (parseInt(invoice_number.slice(-1)) + 1);
                 }
 
-                return res.status(200).json({
-                  statusCode: 200,
-                  message: "Get Invoice Number",
-                  invoice_number: newInvoiceNumber,
-                  hostel_id: hostel_id,
-                });
+                check_inv_validation(invoice_number, hostel_id, res);
+
+                // return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: newInvoiceNumber, hostel_id: hostel_id, });
+
               } else {
                 var prefix = hos_details[0].prefix;
                 var suffix = hos_details[0].suffix;
@@ -1776,12 +1773,9 @@ function get_invoice_id(req, res) {
                   newInvoiceNumber = `${hos_details[0].Name}${month}${year}001`;
                 }
 
-                return res.status(200).json({
-                  statusCode: 200,
-                  message: "Get Invoice Number",
-                  invoice_number: newInvoiceNumber,
-                  hostel_id: hostel_id,
-                });
+                check_inv_validation(newInvoiceNumber, hostel_id, res);
+
+                // return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: newInvoiceNumber, hostel_id: hostel_id, });
               }
             });
           } else {
@@ -1796,6 +1790,31 @@ function get_invoice_id(req, res) {
   } else {
     res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
   }
+
+  function check_inv_validation(invoice_number, hostel_id, res) {
+
+    var ch_query = "SELECT * FROM invoicedetails WHERE Invoices=? AND invoice_status=1";
+    connection.query(ch_query, [invoice_number], function (err, data) {
+      if (err) {
+        console.log("Invoice Error");
+        return res.status(201).json({ statusCode: 201, message: "Check Invoice Query Error" });
+      }
+
+      if (data.length != 0) {
+        console.log("Invoice Number Already Exits"); // Generate New Invoice Function
+        let lastThreeChars = invoice_number.slice(-3);
+        let invoicePrefix = invoice_number.slice(0, -3);
+        let newNumber = isNaN(lastThreeChars) ? 1 : parseInt(lastThreeChars) + 1;
+        let newInvoiceNumber = invoicePrefix + newNumber.toString().padStart(3, '0');
+
+        check_inv_validation(newInvoiceNumber, hostel_id, res);
+      } else {
+        console.log("Success");
+        return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: invoice_number, hostel_id: hostel_id, });
+      }
+    })
+  }
+
 }
 
 function get_user_amounts(req, res) {

@@ -202,7 +202,7 @@ function add_asset(req, res) {
                         const balance_amount = parseInt(sel_res[0].balance);
 
                         if (!balance_amount || purchase_amount > balance_amount) {
-                            return res.status(201).json({ statusCode: 201, message: "Insufficient Bank Balance" });
+                            return res.status(203).json({ statusCode: 203, message: "Insufficient Bank Balance" });
                         }
 
                         insertasset(new_bank_id, sel_res);

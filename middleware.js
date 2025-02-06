@@ -50,7 +50,7 @@ module.exports = (req, res, next) => {
                 let is_admin;
 
                 // Query to get user details to determine createdby
-                const sqlGetUser = "SELECT * FROM createaccount WHERE id=?";
+                const sqlGetUser = "SELECT * FROM createaccount WHERE id=? AND user_status=1";
                 connection.query(sqlGetUser, [created_by], async function (err, data) {
                     if (err) {
                         return res.status(206).json({ message: "Unable to Get User Details", statusCode: 206 });

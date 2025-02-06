@@ -526,7 +526,7 @@ const generateToken = (user, plan_details) => {
 // Login API
 function loginAccount(connection, response, email_Id, password) {
     if (email_Id && password) {
-        connection.query(`SELECT * FROM createaccount WHERE email_Id='${email_Id}'`, async function (error, data) {
+        connection.query(`SELECT * FROM createaccount WHERE email_Id='${email_Id}' AND user_status=1`, async function (error, data) {
             if (error) {
                 console.error(error);
                 response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
