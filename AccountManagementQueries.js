@@ -381,6 +381,7 @@ function update_account_details(request, response) {
 function createnewAccount(request, response) {
 
     var reqBodyData = request.body;
+
     if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.first_name && reqBodyData.password && reqBodyData.confirm_password) {
 
         connection.query(`SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`,
@@ -402,6 +403,8 @@ function createnewAccount(request, response) {
                     console.log('Current Date:', currentDate.toISOString().split('T')[0]);
                     console.log('30 Days After:', formattedFutureDate);
 
+                    var plan_code = 'one_day'
+
                     if (reqBodyData.password === confirm_pass) {
 
                         const hash_password = await bcrypt.hash(reqBodyData.password, 10);
@@ -413,7 +416,7 @@ function createnewAccount(request, response) {
 
                         var inbut_body = {
                             plan: {
-                                plan_code: 'one_day'
+                                plan_code: plan_code
                             },
                             customer: {
                                 display_name: reqBodyData.first_name + ' ' + reqBodyData.last_name,
@@ -520,7 +523,7 @@ function createnewAccount(request, response) {
 
 // Generate JWT Token
 const generateToken = (user, plan_details) => {
-    return jwt.sign({ id: user.id, sub: user.id, user_type: user.user_type, username: user.Name, role_id: user.role_id, plan_code: user.plan_code, plan_status: user.plan_status, start_date: plan_details.startdate, end_date: plan_details.end_date }, process.env.JWT_SECRET, { expiresIn: '30m' });
+    return jwt.sign({ id: user.id, sub: user.id, user_type: user.user_type, username: user.Name, role_id: user.role_id, plan_code: plan_details.plan_code, plan_status: user.plan_status, start_date: plan_details.startdate, end_date: plan_details.end_date }, process.env.JWT_SECRET, { expiresIn: '30m' });
 };
 
 // Login API
