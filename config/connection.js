@@ -10,7 +10,7 @@ function handleDisconnect() {
         database: process.env.DATABASE,
         multipleStatements: true
     }); 
-    // console.log('Database Details:', process.env.HOST, process.env.HOST_USER, process.env.PASSWORD, process.env.DATABASE);
+    console.log('Database Details:', process.env.HOST, process.env.HOST_USER, process.env.PASSWORD, process.env.DATABASE);
 
     conn.connect((err) => {
         if (err) {

@@ -28,13 +28,12 @@ nodeCron.schedule('0 0 * * *', () => {
 
             data.forEach(inv_data => {
 
-                var start_inv_date = inv_data.inv_startdate;
-                var end_inv_date = inv_data.inv_enddate;
-
                 const invoiceDate = parseInt(inv_data.invoice_date, 10); // Convert stored invoice date to a number
-
                 if (invoiceDate === today) {
-                    generateInvoiceForDate(inv_data);
+
+                    var inv_startdate = inv_data.inv_startdate;
+                    var inv_enddate = inv_data.inv_enddate;
+
                 }
             });
 
@@ -42,8 +41,10 @@ nodeCron.schedule('0 0 * * *', () => {
             console.log("No need to Check in this Cron");
         }
     })
-
 });
+
+// generateInvoiceForDate(inv_data);
+
 
 async function generateInvoiceForDate(inv_data) {
 
