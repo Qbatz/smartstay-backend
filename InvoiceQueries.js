@@ -3134,7 +3134,7 @@ function get_recuring_amount(req, res) {
                 var array_data = [{
                     id: 1,
                     name: "Room Rent",
-                    amount: 0
+                    amount: roundedRent
                 }, {
                     id: 2,
                     name: "Advance Amount",

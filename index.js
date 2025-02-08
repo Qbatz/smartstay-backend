@@ -1172,6 +1172,9 @@ app.post('/users/delete_reading', (req, res) => {
     newBookings.delete_reading(req, res)
 })
 
+app.post('/users/recuring_bill_users', (req, res) => {
+    newBookings.recuring_bill_users(req, res)
+})
 
 // Settings Page API
 var settings_router = require('./settings/general')

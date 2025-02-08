@@ -452,7 +452,7 @@ function calculateRentAndAmenityCharges(start_date, end_date, room_rent, unique_
                         if (err) {
                             console.log("Error Fetching Eb Details", err.message);
                         } else {
-                            const total_ebamount = eb_data[0].eb_amount || 0;
+                            const total_ebamount = parseInt(eb_data[0].eb_amount) || 0;
 
                             const sql4 = `
                         SELECT DATEDIFF(?, ?) AS days_difference;
@@ -475,9 +475,9 @@ function calculateRentAndAmenityCharges(start_date, end_date, room_rent, unique_
                                     console.log(`EB Amount: ${total_ebamount}`);
                                     console.log("Amenity Days and Amounts:", result);
 
-                                    const totalAmenityAmount = result.reduce((sum, amenity) => sum + amenity.totalAmount, 0);
+                                    const totalAmenityAmount = result.reduce((sum, amenity) => sum + parseInt(amenity.totalAmount), 0);
 
-                                    const grandTotal = rounded_rent + total_ebamount + totalAmenityAmount;
+                                    const grandTotal = parseInt(rounded_rent) + parseInt(total_ebamount) + parseInt(totalAmenityAmount);
 
                                     var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? ORDER BY id DESC;";
                                     connection.query(sql2, [user_data.Hostel_Id], function (err, inv_data) {
