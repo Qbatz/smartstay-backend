@@ -148,6 +148,8 @@ function InvoiceSettings(connection, request, response) {
 
             } else if (Prefix && Suffix) {
 
+                var hostel_id=reqInvoice.hostel_Id;
+
                 const query = `UPDATE hosteldetails SET  prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}',inv_date='${inv_date}',due_date='${due_date}' WHERE id='${reqInvoice.hostel_Id}'`;
                 connection.query(query, function (error, invoiceData) {
                     if (error) {
