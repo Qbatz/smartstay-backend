@@ -18,6 +18,9 @@ const request = require('request');
 const sharp = require('sharp');
 const util = require('util');
 
+const html_to_pdf = require('html-pdf-node');
+
+
 AWS.config.update({
     accessKeyId: AWS_ACCESS_KEY_ID,
     secretAccessKey: AWS_SECRET_ACCESS_KEY,
@@ -1034,17 +1037,13 @@ function InvoicePDf(connection, request, response) {
                 const htmlFilePath = path.join(__dirname, 'mail_templates', 'manual_invoice.html');
                 let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
 
-                const amountInWords = converter.toWords(inv_data.PaidAmount);
+                const paidAmount = inv_data.PaidAmount ?? 0; // Set default value to 0 if null or undefined
+                const amountInWords = converter.toWords(paidAmount);
+
                 const currentTimeFormatted = moment().format('hh:mm A');
                 const defaultLogoPath = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg';
                 var logoPathimage = inv_data.hostel_profile ? inv_data.hostel_profile : defaultLogoPath;
-                // console.log(logoPathimage);
                 const invdate = moment(inv_data.Date).format('DD/MM/YYYY');
-
-                // const tableData = [
-                //     { description: 'Room Rent', amount: inv_data.RoomRent },
-                //     { description: 'Eb Amount', amount: inv_data.EbAmount }
-                // ];
 
                 var tableData = [];
                 data.forEach((row) => {
@@ -1056,12 +1055,12 @@ function InvoicePDf(connection, request, response) {
                 let tableRows = '';
                 tableData.forEach((item, index) => {
                     tableRows += `
-        <tr>
-            <td>${index + 1}</td>
-            <td>${item.description}</td>
-            <td>${item.amount}</td>
-        </tr>
-    `;
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${item.description}</td>
+                            <td>${item.amount}</td>
+                        </tr>
+                    `;
                 });
 
                 if (inv_data.PaidAmount > 0) {
@@ -1084,12 +1083,10 @@ function InvoicePDf(connection, request, response) {
                     .replace('{{amount_in_words}}', amountInWords)
                     .replace('{{current_time}}', currentTimeFormatted)
                     .replace('{{logo}}', logoPathimage)
-                    // .replace('{{paid_amount}}', inv_data.PaidAmount)
                     .replace('{{total_amount}}', inv_data.Amount)
                     .replace('{{balance_amount}}', inv_data.BalanceDue)
                     .replace('{{tableRows}}', tableRows);
 
-                // Determine payment status based on amounts
                 let paymentStatusClass = '';
                 let paymentStatusText = '';
 
@@ -1104,13 +1101,9 @@ function InvoicePDf(connection, request, response) {
                     paymentStatusText = 'Partial Paid';
                 }
 
-                // const amountName = (inv_data.invoice_type === 1) ? 'Rent Amount' : 'Advance Amount';
-
-                // Replace all placeholders in the HTML content
                 htmlContent = htmlContent
                     .replace('{{payment_status_class}}', paymentStatusClass)
-                    .replace('{{payment_status_text}}', paymentStatusText)
-                // .replace('{{Amount_name}}', amountName);
+                    .replace('{{payment_status_text}}', paymentStatusText);
 
                 const currentDate = moment().format('YYYY-MM-DD');
                 const currentMonth = moment(currentDate).month() + 1;
@@ -1120,33 +1113,23 @@ function InvoicePDf(connection, request, response) {
                 const filename = `INV${currentMonth}${currentYear}${currentTime}${inv_data.User_Id}.pdf`;
                 const outputPath = path.join(__dirname, filename);
 
-                // const browser = await puppeteer.launch();
+                // Convert HTML to PDF using `html-pdf-node`
+                let options = { format: 'A4' };
+                let file = { content: htmlContent };
 
-                try {
-                    const browser = await puppeteer.launch({
-                        headless: true,
-                        executablePath: '/usr/bin/chromium',
-                        args: ['--no-sandbox', '--disable-setuid-sandbox']
-                    });
-
-                    const page = await browser.newPage();
-                    await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
-
-                    // Generate PDF
-                    await page.pdf({ path: outputPath, format: 'A4' });
-
-                    await browser.close();
-                    console.log('PDF created successfully!');
+                html_to_pdf.generatePdf(file, options).then(async (pdfBuffer) => {
+                    fs.writeFileSync(outputPath, pdfBuffer);
+                    console.log('✅ PDF created successfully:', outputPath);
 
                     var inv_id = inv_data.id;
                     await uploadToS3(outputPath, filename, inv_id);
                     fs.unlinkSync(outputPath);
-                } catch (error) {
-                    console.error('Error during PDF creation or upload:', error);
-                }
+                }).catch(err => {
+                    console.error('❌ Error generating PDF:', err);
+                });
 
             } catch (error) {
-                console.error('Error:', error);
+                console.error('❌ Error:', error);
             }
         };
 
@@ -3151,7 +3134,7 @@ function get_recuring_amount(req, res) {
                 var array_data = [{
                     id: 1,
                     name: "Room Rent",
-                    amount: roundedRent
+                    amount: 0
                 }, {
                     id: 2,
                     name: "Advance Amount",
