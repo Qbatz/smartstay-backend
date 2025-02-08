@@ -3022,24 +3022,6 @@ function add_recuring_bill(req, res) {
 
                 let today = moment(); // Current date
 
-                // let dueDay = parseInt(user_data.due_date); // Convert due_date to integer
-
-                // let dueDate = moment().set('date', dueDay);
-
-                // if (today.date() > dueDay) {
-                //     dueDate.add(1, 'month');
-                // }
-
-                // var due_day = dueDate.format('YYYY-MM-DD')
-
-                // let inv_date = parseInt(user_data.inv_date); // e.g., 10
-                // let invoicedate = moment().set('date', inv_date);
-
-                // if (today.date() > inv_date) {
-                //     invoicedate.add(1, 'month');
-                // }
-
-                // let inv_day = invoicedate.format('YYYY-MM-DD');
 
                 let inv_date = user_data.inv_date ? parseInt(user_data.inv_date) : 1;
                 let invoicedate = moment().set({ year: today.year(), month: today.month(), date: inv_date });
@@ -3050,11 +3032,9 @@ function add_recuring_bill(req, res) {
 
                 let inv_day = invoicedate.format('YYYY-MM-DD');
 
-                // Set due date (If null, set to 5th of the same month as invoice)
                 let dueDay = user_data.due_date ? parseInt(user_data.due_date) : 5;
                 let dueDate = moment(invoicedate).set('date', dueDay);
 
-                // If due date is before invoice date, move due date to the 5th of next month
                 if (dueDate.isBefore(invoicedate)) {
                     dueDate.add(1, 'month').set('date', 5);
                 }
@@ -3074,13 +3054,22 @@ function add_recuring_bill(req, res) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Get Invoice Details" })
                     } else if (recure_data.length == 0) {
 
-                        var sql4 = "INSERT INTO recuring_inv_details (user_id,invoice_date,due_date,advance,rent,aminity,eb,status,created_by) VALUES (?,?,?,?,?,?,?,?,?)"
-                        connection.query(sql4, [user_id, inv_date, dueDay, advance, rent, amen, eb, 1, created_by], function (err, ins_data) {
+                        var sql3 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id,invoice_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,2)";
+                        connection.query(sql3, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, total_am_amount, due_date, date, invoice_id, 'pending', user_data.User_Id, 0, user_data.Bed, total_am_amount, 'recuring', 2, user_id], function (err, ins_data) {
                             if (err) {
                                 console.log(err);
                                 return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
                             } else {
-                                return res.status(200).json({ statusCode: 200, message: "Recuring Bill Setup Added Successfully!" });
+
+                                var sql4 = "INSERT INTO recuring_inv_details (user_id,invoice_date,due_date,advance,rent,aminity,eb,status,created_by) VALUES (?,?,?,?,?,?,?,?,?)"
+                                connection.query(sql4, [user_id, inv_date, dueDay, advance, rent, amen, eb, 1, created_by], function (err, ins_data) {
+                                    if (err) {
+                                        console.log(err);
+                                        return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
+                                    } else {
+                                        return res.status(200).json({ statusCode: 200, message: "Recuring Bill Setup Added Successfully!" });
+                                    }
+                                })
                             }
 
                         })
