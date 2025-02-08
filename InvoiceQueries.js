@@ -1114,7 +1114,14 @@ function InvoicePDf(connection, request, response) {
                 const outputPath = path.join(__dirname, filename);
 
                 // Convert HTML to PDF using `html-pdf`
-                const options = { format: 'A4' };
+                // const options = { format: 'A4' };
+                const options = {
+                    format: 'A4',
+                    timeout: 30000, // 30 seconds timeout
+                    phantomArgs: ['--web-security=no', '--ignore-ssl-errors=yes'], // Optional: Helps with external assets
+                    renderDelay: 5000 // 5-second delay before rendering
+                };
+
                 pdf.create(htmlContent, options).toFile(outputPath, async (err, res) => {
                     if (err) {
                         console.error('❌ Error generating PDF:', err);
@@ -3400,10 +3407,17 @@ function delete_recuring_bill(req, res) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Delete Recuring Bill Details" })
                     } else {
-                        return res.status(200).json({ statusCode: 200, message: "Recuring Bill Deleted Successfully!" })
+
+                        var sql3 = "UPDATE invoicedetails SET invoice_status=0 WHERE id=? AND action='recuring'";
+                        connection.query(sql3, [user_id], function (err, data) {
+                            if (err) {
+                                return res.status(201).json({ statusCode: 201, message: "Unable to Delete Recuring Bill Details" })
+                            } else {
+                                return res.status(200).json({ statusCode: 200, message: "Recuring Bill Deleted Successfully!" })
+                            }
+                        })
                     }
                 })
-
             } else {
                 return res.status(201).json({ statusCode: 201, message: "Invalid Bill Details" })
             }
