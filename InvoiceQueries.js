@@ -3054,8 +3054,8 @@ function add_recuring_bill(req, res) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Get Invoice Details" })
                     } else if (recure_data.length == 0) {
 
-                        var sql3 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id,invoice_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,2)";
-                        connection.query(sql3, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, total_am_amount, due_date, date, invoice_id, 'pending', user_data.User_Id, 0, user_data.Bed, total_am_amount, 'recuring', 2, user_id], function (err, ins_data) {
+                        var sql3 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id,invoice_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,2)";
+                        connection.query(sql3, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, total_am_amount, due_day, inv_day, invoice_id, 'pending', user_data.User_Id, 0, user_data.Bed, total_am_amount, 'recuring', 2, user_id], function (err, ins_data) {
                             if (err) {
                                 console.log(err);
                                 return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
