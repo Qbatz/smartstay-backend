@@ -4,6 +4,9 @@ require('dotenv').config();
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
+
+const pdf = require('html-pdf');
+
 var connection = require('./config/connection');
 const converter = require('number-to-words');
 const phantomjs = require('phantomjs-prebuilt');
@@ -17,9 +20,6 @@ const AWS_REGION = process.env.AWS_REGION;
 const request = require('request');
 const sharp = require('sharp');
 const util = require('util');
-
-const html_to_pdf = require('html-pdf-node');
-
 
 AWS.config.update({
     accessKeyId: AWS_ACCESS_KEY_ID,
@@ -1037,7 +1037,7 @@ function InvoicePDf(connection, request, response) {
                 const htmlFilePath = path.join(__dirname, 'mail_templates', 'manual_invoice.html');
                 let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
 
-                const paidAmount = inv_data.PaidAmount ?? 0; // Set default value to 0 if null or undefined
+                const paidAmount = inv_data.PaidAmount ?? 0; // Default to 0 if null/undefined
                 const amountInWords = converter.toWords(paidAmount);
 
                 const currentTimeFormatted = moment().format('hh:mm A');
@@ -1113,19 +1113,18 @@ function InvoicePDf(connection, request, response) {
                 const filename = `INV${currentMonth}${currentYear}${currentTime}${inv_data.User_Id}.pdf`;
                 const outputPath = path.join(__dirname, filename);
 
-                // Convert HTML to PDF using `html-pdf-node`
-                let options = { format: 'A4' };
-                let file = { content: htmlContent };
-
-                html_to_pdf.generatePdf(file, options).then(async (pdfBuffer) => {
-                    fs.writeFileSync(outputPath, pdfBuffer);
-                    console.log('✅ PDF created successfully:', outputPath);
+                // Convert HTML to PDF using `html-pdf`
+                const options = { format: 'A4' };
+                pdf.create(htmlContent, options).toFile(outputPath, async (err, res) => {
+                    if (err) {
+                        console.error('❌ Error generating PDF:', err);
+                        return;
+                    }
+                    console.log('✅ PDF created successfully:', res.filename);
 
                     var inv_id = inv_data.id;
-                    await uploadToS3(outputPath, filename, inv_id);
-                    fs.unlinkSync(outputPath);
-                }).catch(err => {
-                    console.error('❌ Error generating PDF:', err);
+                    await uploadToS3(res.filename, filename, inv_id);
+                    fs.unlinkSync(res.filename);
                 });
 
             } catch (error) {
