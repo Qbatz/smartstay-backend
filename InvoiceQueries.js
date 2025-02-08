@@ -3075,7 +3075,7 @@ function add_recuring_bill(req, res) {
                     } else if (recure_data.length == 0) {
 
                         var sql4 = "INSERT INTO recuring_inv_details (user_id,invoice_date,due_date,advance,rent,aminity,eb,status,created_by) VALUES (?,?,?,?,?,?,?,?,?)"
-                        connection.query(sql4, [user_id, inv_day, due_day, advance, rent, amen, eb, 1, created_by], function (err, ins_data) {
+                        connection.query(sql4, [user_id, inv_date, dueDay, advance, rent, amen, eb, 1, created_by], function (err, ins_data) {
                             if (err) {
                                 console.log(err);
                                 return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
