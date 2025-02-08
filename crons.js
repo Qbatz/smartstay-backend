@@ -273,7 +273,7 @@ function generateInvoiceForDate(inv_data, inv_startdate, inv_enddate) {
                     const currentDate = moment().format('YYYY-MM-DD');
 
                     let today = moment();
-                    let dueDay = parseInt(10); // Convert due_date to integer
+                    let dueDay = parseInt(inv_data.due_date); // Convert due_date to integer
 
                     let dueDate = moment().set('date', dueDay);
 

@@ -3004,7 +3004,7 @@ function add_recuring_bill(req, res) {
 
         var created_by = req.user_details.id;
 
-        var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
+        var sql1 = "SELECT * FROM hosteldetails AS hstl JOIN hostel AS hos ON hos.Hostel_Id=hstl.id WHERE hos.id=? AND hos.isActive=1 AND hstl.isActive=1;";
         connection.query(sql1, [user_id], function (err, user_details) {
             if (err) {
                 console.log(err);
@@ -3015,49 +3015,59 @@ function add_recuring_bill(req, res) {
 
                 var total_am_amount = amenity && amenity.length > 0 ? amenity.reduce((sum, user) => sum + user.amount, 0) : 0;
 
-                console.log(total_am_amount);
-
                 if (total_am_amount) {
                     total_am_amount = total_am_amount;
                 } else {
                     total_am_amount = 0
                 }
 
-                let dateObj = new Date(date);  // Format: YYYY-MM-DD
-                let inv_day = dateObj.getDate();
-                console.log(inv_day);
+                let today = moment(); // Current date
 
-                let duedateObj = new Date(due_date);  // Format: YYYY-MM-DD
-                let due_day = duedateObj.getDate();
-                console.log(due_day);
+                // let dueDay = parseInt(user_data.due_date); // Convert due_date to integer
 
-                var eb = 0;
-                if (eb_amount) {
-                    eb = 1
+                // let dueDate = moment().set('date', dueDay);
+
+                // if (today.date() > dueDay) {
+                //     dueDate.add(1, 'month');
+                // }
+
+                // var due_day = dueDate.format('YYYY-MM-DD')
+
+                // let inv_date = parseInt(user_data.inv_date); // e.g., 10
+                // let invoicedate = moment().set('date', inv_date);
+
+                // if (today.date() > inv_date) {
+                //     invoicedate.add(1, 'month');
+                // }
+
+                // let inv_day = invoicedate.format('YYYY-MM-DD');
+
+                let inv_date = user_data.inv_date ? parseInt(user_data.inv_date) : 1;
+                let invoicedate = moment().set({ year: today.year(), month: today.month(), date: inv_date });
+
+                if (today.date() > inv_date || !user_data.inv_date) {
+                    invoicedate.add(1, 'month').set('date', 1); // Move to next month, set 1st day
                 }
 
-                var advance = 0;
-                if (advance_amount) {
-                    advance = 1
+                let inv_day = invoicedate.format('YYYY-MM-DD');
+
+                // Set due date (If null, set to 5th of the same month as invoice)
+                let dueDay = user_data.due_date ? parseInt(user_data.due_date) : 5;
+                let dueDate = moment(invoicedate).set('date', dueDay);
+
+                // If due date is before invoice date, move due date to the 5th of next month
+                if (dueDate.isBefore(invoicedate)) {
+                    dueDate.add(1, 'month').set('date', 5);
                 }
 
-                var rent = 0;
-                if (room_rent) {
-                    rent = 1
-                }
+                let due_day = dueDate.format('YYYY-MM-DD');
 
-                var amen = 0;
-                if (amenity && amenity.length > 0) {
-                    amen = 1
-                }
-                if (!eb_amount) {
-                    eb_amount = 0
-                }
-                if (!advance_amount) {
-                    advance_amount = 0
-                }
-
-                var total_amount_data = parseInt(total_am_amount) + parseInt(eb_amount) + parseInt(advance_amount) + parseInt(room_rent);
+                console.log("Upcoming Invoice Date:", inv_day);
+                console.log("Upcoming Due Date:", due_day);
+                var eb = 1;
+                var advance = 1;
+                var rent = 1;
+                var amen = 1;
 
                 var sql2 = "SELECT * FROM recuring_inv_details WHERE user_id=? AND status=1";
                 connection.query(sql2, [user_id], function (err, recure_data) {
@@ -3065,22 +3075,15 @@ function add_recuring_bill(req, res) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Get Invoice Details" })
                     } else if (recure_data.length == 0) {
 
-                        var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,RoomRent,EbAmount,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-                        connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, total_amount_data, due_date, date, invoice_id, 'pending', user_data.User_Id, room_rent, eb_amount, total_am_amount, user_data.Bed, total_amount_data, 'recuring', 2, user_id], function (err, ins_data) {
+                        var sql4 = "INSERT INTO recuring_inv_details (user_id,invoice_date,due_date,advance,rent,aminity,eb,status,created_by) VALUES (?,?,?,?,?,?,?,?,?)"
+                        connection.query(sql4, [user_id, inv_day, due_day, advance, rent, amen, eb, 1, created_by], function (err, ins_data) {
                             if (err) {
                                 console.log(err);
                                 return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
                             } else {
-                                var sql4 = "INSERT INTO recuring_inv_details (user_id,invoice_date,due_date,advance,rent,aminity,eb,status,created_by) VALUES (?,?,?,?,?,?,?,?,?)"
-                                connection.query(sql4, [user_id, inv_day, due_day, advance, rent, amen, eb, 1, created_by], function (err, ins_data) {
-                                    if (err) {
-                                        console.log(err);
-                                        return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
-                                    } else {
-                                        return res.status(200).json({ statusCode: 200, message: "Recuring Bill Created Successfully!" });
-                                    }
-                                })
+                                return res.status(200).json({ statusCode: 200, message: "Recuring Bill Setup Added Successfully!" });
                             }
+
                         })
                     } else {
                         return res.status(201).json({ statusCode: 201, message: "Already Added in this User!" })
@@ -3360,9 +3363,6 @@ function get_recuring_amount(req, res) {
 
 function all_recuring_bills(req, res) {
 
-    var created_by = req.user_details.id;
-
-    var show_ids = req.show_ids;
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
