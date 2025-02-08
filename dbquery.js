@@ -21,7 +21,9 @@ const queries = [
 
     "ALTER TABLE expenses MODIFY COLUMN unit_amount DECIMAL(10,2);",
 
-    "ALTER TABLE expenses MODIFY COLUMN purchase_amount DECIMAL(10,2);"
+    "ALTER TABLE expenses MODIFY COLUMN purchase_amount DECIMAL(10,2);",
+
+    "ALTER TABLE `invoicedetails` ADD COLUMN `rec_invstartdate` DATE NULL AFTER `end_date`,ADD COLUMN `rec_invenddate` DATE NULL AFTER `rec_invstartdate`,ADD COLUMN `rec_ebstartdate` DATE NULL AFTER `rec_invenddate`,ADD COLUMN `rec_ebenddate` DATE NULL AFTER `rec_ebstartdate`,ADD COLUMN `rec_ebunit` DECIMAL(10,2) NULL AFTER `rec_ebenddate`;"
 
 ];
 
