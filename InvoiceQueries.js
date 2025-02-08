@@ -3097,65 +3097,262 @@ function add_recuring_bill(req, res) {
 
 function get_recuring_amount(req, res) {
 
-    var { user_id } = req.body;
+    var { user_id, hostel_id } = req.body;
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
     if (is_admin == 1 || (role_permissions[11] && role_permissions[11].per_view == 1)) {
 
         if (!user_id) {
-            return res.status(201).json({ message: "Missing Mandatory Fields", statusCode: 201 });
+            return res.status(201).json({ message: "Missing User Details", statusCode: 201 });
         }
 
-        // Rent Amount
-        var sql1 = "SELECT *, CASE WHEN checkoutDate IS NULL THEN DATEDIFF(LAST_DAY(CURDATE()), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 ELSE DATEDIFF(LEAST(checkoutDate, LAST_DAY(CURDATE())), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 END AS days_stayed FROM hostel WHERE Rooms != 'undefined' AND Floor != 'undefined' AND joining_date <= LAST_DAY(CURDATE()) AND (checkoutDate >= DATE_FORMAT(CURDATE(), '%Y-%m-01') OR checkoutDate IS NULL) AND isActive = 1 AND ID = ?";
-        connection.query(sql1, [user_id], (err, data) => {
+        if (!hostel_id) {
+            return res.status(201).json({ message: "Missing Hostel Details", statusCode: 201 });
+        }
+
+        var sql1 = "SELECT * FROM hosteldetails AS hstl JOIN hostel AS hos ON hos.Hostel_Id=hstl.id WHERE hstl.id=? AND hos.id=? AND hos.isActive=1 AND hstl.isActive=1;";
+        connection.query(sql1, [hostel_id, user_id], async function (err, hos_res) {
             if (err) {
-                return res.status(201).json({ message: "Unable to Get User Details", statusCode: 201 });
-            } else if (data.length != 0) {
+                return res.status(201).json({ message: "Error to Get Hostel Details", statusCode: 201 });
+            } else if (hos_res.length != 0) {
 
-                var total_days = data[0].days_stayed;
+                var recure_option = hos_res[0].recure;
 
-                const currentDate = new Date(); // Current date
-                const currentYear = currentDate.getFullYear(); // Get current year
-                const currentMonth = currentDate.getMonth(); // Get current month (0-11)
+                if (recure_option == 1) {
 
-                // Calculate total days in the current month
-                const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                    var total_array = []
 
-                const oneDayAmount = data[0].RoomRent / daysInCurrentMonth;
+                    var inv_data = hos_res[0]
+                    var string_userid = inv_data.User_Id;
 
-                const totalRent = parseFloat((oneDayAmount * total_days).toFixed(2)); // Total rent rounded to 2 decimal places
+                    const today = moment(); // Current Date
 
-                var roundedRent = Math.round(totalRent);
+                    let start_day = parseInt(inv_data.inv_startdate, 10) || 1; // Default to 1 if NULL
+                    let end_day = parseInt(inv_data.inv_enddate, 10) || moment().subtract(1, 'months').endOf('month').date(); // Last month's last day if NULL
 
-                var advance_amount = data[0].AdvanceAmount;
+                    if (inv_data.inv_enddate && end_day < today.date()) {
+                        end_day = parseInt(inv_data.inv_enddate, 10);
+                        start_day = parseInt(inv_data.inv_startdate, 10) || 1; // Get start date if provided, else default to 1
+                    }
 
-                var array_data = [{
-                    id: 1,
-                    name: "Room Rent",
-                    amount: roundedRent
-                }, {
-                    id: 2,
-                    name: "Advance Amount",
-                    amount: advance_amount
-                }, {
-                    id: 3,
-                    name: "Eb Rent",
-                    amount: 0
-                }, {
-                    id: 4,
-                    name: "Amenities",
-                    amount: 0
+                    const lastMonth = moment().subtract(1, 'months');
+                    const inv_startdate = lastMonth.date(start_day).format("YYYY-MM-DD");
+                    const inv_enddate = lastMonth.date(end_day).format("YYYY-MM-DD");
+                    const room_rent = inv_data.RoomRent;
+                    const startDate = new Date(inv_startdate);
+                    const endDate = new Date(inv_enddate);
+                    const joiningDate = new Date(inv_data.joining_Date); // Get user's joining date
+
+                    // Ensure valid dates
+                    if (isNaN(startDate) || isNaN(endDate) || isNaN(joiningDate)) {
+                        console.log("Invalid date provided.");
+                    }
+
+                    const effectiveStartDate = startDate < joiningDate ? joiningDate : startDate;
+
+                    if (effectiveStartDate > endDate) {
+                        // total_array.push({ key: "room_rent", amount: 0 });
+                        console.log("Amount is 0");
+                    }
+
+                    const total_days = Math.max((endDate - effectiveStartDate) / (1000 * 60 * 60 * 24) + 1, 0);
+
+                    // Calculate per-day room rent
+                    const daysInMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
+                    const oneDayAmount = room_rent / daysInMonth;
+
+                    const totalRent = Math.round(oneDayAmount * total_days);
+
+                    total_array.push({ key: "Room Rent", amount: totalRent });
+
+                    const ebAmount = await new Promise((resolve, reject) => {
+                        var sql2 = "SELECT * FROM eb_settings WHERE hostel_id=? AND status=1";
+                        connection.query(sql2, [hostel_id], function (err, sql2_res) {
+                            if (err) {
+                                console.log("EB Settings Query Error:", err);
+                                return reject(err);
+                            }
+
+                            const today = moment();
+                            const lastMonth = moment().subtract(1, "months");
+
+                            let start_day = parseInt(sql2_res[0]?.start_date, 10) || 1; // Default to 1 if NULL
+                            let end_day = parseInt(sql2_res[0]?.end_date, 10) || lastMonth.endOf("month").date(); // Last month's last day if NULL
+
+                            if (sql2_res[0]?.end_date && end_day < today.date()) {
+                                end_day = parseInt(sql2_res[0]?.end_date, 10);
+                                start_day = parseInt(sql2_res[0]?.start_date, 10) || 1; // Get start date if provided, else default to 1
+                            }
+
+                            var eb_start_date = lastMonth.date(start_day).format("YYYY-MM-DD");
+                            var eb_end_date = lastMonth.date(end_day).format("YYYY-MM-DD");
+
+                            eb_unit_amount = sql2_res[0]?.amount || 0
+
+                            if (sql2_res[0]?.recuring == 0) {
+                                resolve(0);
+                            } else {
+                                var sql1 = `SELECT COALESCE(SUM(amount), 0) AS eb_amount FROM customer_eb_amount WHERE user_id = ? AND status = 1 AND date BETWEEN ? AND ?;`;
+                                connection.query(sql1, [inv_data.user_id, eb_start_date, eb_end_date], function (err, eb_data) {
+                                    if (err) {
+                                        return reject(err);
+                                    }
+                                    resolve(eb_data[0].eb_amount || 0);
+                                });
+                            }
+                        });
+                    });
+
+                    total_array.push({ key: "Eb Amount", amount: ebAmount });
+
+                    var am_amounts = await new Promise((resolve, reject) => {
+
+                        var sql3 = "SELECT * FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id WHERE am.Status=1 AND am.Hostel_Id=?;";
+                        connection.query(sql3, [hostel_id], function (err, sql3_res) {
+                            if (err) {
+                                console.log("EB Settings Query Error:", err);
+                                return reject(err);
+                            }
+
+                            let amenityPromises = sql3_res.map((amenity) => {
+                                return new Promise((resolveAmenity, rejectAmenity) => {
+                                    if (amenity.recuring == 0) {
+                                        return resolveAmenity(null); // Skip non-recurring amenities
+                                    }
+
+                                    const lastMonth = moment().subtract(1, "months"); // Last month (e.g., Jan 2025)
+                                    const nextMonth = moment(); // Current month (Feb 2025)
+
+                                    let start_day = parseInt(amenity.startdate, 10) || 1;
+                                    let end_day = parseInt(amenity.enddate, 10) || lastMonth.endOf("month").date();
+
+                                    const lastMonthDays = lastMonth.daysInMonth();
+                                    start_day = Math.min(Math.max(start_day, 1), lastMonthDays);
+                                    end_day = Math.min(Math.max(end_day, start_day), lastMonthDays);
+
+                                    let am_start_date, am_end_date;
+
+                                    if (amenity.startdate && amenity.startdate === amenity.enddate) {
+                                        am_start_date = lastMonth.date(start_day).format("YYYY-MM-DD");
+                                        am_end_date = nextMonth.date(end_day).format("YYYY-MM-DD"); // Moves end date to next month
+                                    } else {
+                                        am_start_date = lastMonth.date(start_day).format("YYYY-MM-DD");
+                                        am_end_date = lastMonth.date(end_day).format("YYYY-MM-DD");
+                                    }
+
+                                    const sql1 = `
+                                        SELECT am.Amount, amname.Amnities_Name 
+                                        FROM Amenities AS am 
+                                        JOIN AmnitiesName AS amname ON amname.id = am.Amnities_Id 
+                                        JOIN AmenitiesHistory AS ahis ON ahis.amenity_Id = am.id 
+                                        WHERE ahis.user_Id = ? 
+                                        AND ahis.status = 1 
+                                        AND ahis.created_At BETWEEN ? AND ? 
+                                        AND am.Status = 1
+                                        AND NOT EXISTS (
+                                            SELECT 1 FROM AmenitiesHistory ahis2 
+                                            WHERE ahis2.amenity_Id = am.id 
+                                            AND ahis2.status = 0 
+                                            AND ahis2.created_At < ?
+                                        );
+                                    `;
+
+                                    // Execute query
+                                    connection.query(sql1, [string_userid, am_start_date, am_end_date, am_end_date], function (err, sql1_res) {
+                                        if (err) {
+                                            return rejectAmenity(err);
+                                        }
+                                        console.log("SQL Result:", sql1_res);
+                                        resolveAmenity(sql1_res);
+                                    });
+                                });
+                            });
+
+                            Promise.all(amenityPromises)
+                                .then((results) => {
+                                    const filteredResults = results.flat().filter(result => result !== null);
+
+                                    console.log("All Amenity Queries Completed:", filteredResults);
+
+                                    filteredResults.forEach(item => {
+                                        total_array.push({ key: item.Amnities_Name, amount: item.Amount });
+                                    });
+
+                                    resolve(filteredResults);
+                                })
+                                .catch((error) => {
+                                    console.error("Error in Amenity Processing:", error);
+                                    reject(error);
+                                });
+                            // });
+                        });
+                    });
+
+                    console.log(`User: ${inv_data.ID}, Hostel: ${inv_data.Hostel_Id}, Start Date: ${inv_startdate}, End Date: ${inv_enddate}`);
+
+                    console.log(total_array);
+
+                    return res.status(200).json({ statusCode: 200, message: "Bill Amounts", data: total_array })
+
+                } else {
+                    return res.status(201).json({ message: "Kindly Enable Recuring Details", statusCode: 201 });
                 }
-                ]
-
-                return res.status(200).json({ statusCode: 200, message: "Bill Amounts", data: array_data })
-
             } else {
-                return res.status(201).json({ message: "Invalid User Details", statusCode: 201 });
+                return res.status(201).json({ message: "Invalid Hostel Details", statusCode: 201 });
             }
-        });
+        })
+        // Rent Amount
+        // var sql1 = "SELECT *, CASE WHEN checkoutDate IS NULL THEN DATEDIFF(LAST_DAY(CURDATE()), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 ELSE DATEDIFF(LEAST(checkoutDate, LAST_DAY(CURDATE())), GREATEST(joining_date, DATE_FORMAT(CURDATE(), '%Y-%m-01'))) + 1 END AS days_stayed FROM hostel WHERE Rooms != 'undefined' AND Floor != 'undefined' AND joining_date <= LAST_DAY(CURDATE()) AND (checkoutDate >= DATE_FORMAT(CURDATE(), '%Y-%m-01') OR checkoutDate IS NULL) AND isActive = 1 AND ID = ?";
+        // connection.query(sql1, [user_id], (err, data) => {
+        //     if (err) {
+        //         return res.status(201).json({ message: "Unable to Get User Details", statusCode: 201 });
+        //     } else if (data.length != 0) {
+
+        //         var total_days = data[0].days_stayed;
+
+        //         const currentDate = new Date(); // Current date
+        //         const currentYear = currentDate.getFullYear(); // Get current year
+        //         const currentMonth = currentDate.getMonth(); // Get current month (0-11)
+
+        //         // Calculate total days in the current month
+        //         const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+        //         const oneDayAmount = data[0].RoomRent / daysInCurrentMonth;
+
+        //         const totalRent = parseFloat((oneDayAmount * total_days).toFixed(2)); // Total rent rounded to 2 decimal places
+
+        //         var roundedRent = Math.round(totalRent);
+
+        //         var advance_amount = data[0].AdvanceAmount;
+
+        //         var array_data = [{
+        //             id: 1,
+        //             name: "Room Rent",
+        //             amount: roundedRent
+        //         }, {
+        //             id: 2,
+        //             name: "Advance Amount",
+        //             amount: advance_amount
+        //         }, {
+        //             id: 3,
+        //             name: "Eb Rent",
+        //             amount: 0
+        //         }, {
+        //             id: 4,
+        //             name: "Amenities",
+        //             amount: 0
+        //         }
+        //         ]
+
+        //         return res.status(200).json({ statusCode: 200, message: "Bill Amounts", data: array_data })
+
+        //     } else {
+        //         return res.status(201).json({ message: "Invalid User Details", statusCode: 201 });
+        //     }
+        // });
+
+
     } else {
         res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
