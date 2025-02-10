@@ -23,7 +23,9 @@ const queries = [
 
     "ALTER TABLE expenses MODIFY COLUMN purchase_amount DECIMAL(10,2);",
 
-    "CREATE TABLE subscription_hostels (id INT AUTO_INCREMENT PRIMARY KEY,subscription_id VARCHAR(255) NOT NULL,customer_id VARCHAR(255) NOT NULL,hostel_id INT NOT NULL,hostel_name VARCHAR(255) NOT NULL,status INT(11) DEFAULT 1,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); "
+    "CREATE TABLE subscription_hostels (id INT AUTO_INCREMENT PRIMARY KEY,subscription_id VARCHAR(255) NOT NULL,customer_id VARCHAR(255) NOT NULL,hostel_id INT NOT NULL,hostel_name VARCHAR(255) NOT NULL,status INT(11) DEFAULT 1,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); ",
+
+    "ALTER TABLE `trial_plan_details` ADD COLUMN `startdate` DATE NULL AFTER `plan_duration`,ADD COLUMN `end_date` DATE NULL AFTER `startdate`;"
 ];
 
 queries.forEach(executeQuery);
