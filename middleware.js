@@ -28,6 +28,7 @@ module.exports = (req, res, next) => {
         '/user_amenities_history',
         '/customers/login',
         '/customers/verify_otp',
+        '/get_invoice_id'
     ];
 
 

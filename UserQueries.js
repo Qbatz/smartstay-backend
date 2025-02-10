@@ -1707,115 +1707,199 @@ function conutry_list(req, res) {
   });
 }
 
+// function get_invoice_id(req, res) {
+
+//   var user_id = req.body.user_id;
+//   // var created_by = req.user_details.id;
+
+//   // var role_permissions = req.role_permissions;
+//   // var is_admin = req.is_admin;
+
+//   // if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_view == 1)) {
+
+//   if (!user_id) {
+//     return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
+//   }
+
+//   var sql_1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
+//   connection.query(sql_1, [user_id], function (err, user_data) {
+//     if (err) {
+//       return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
+//     } else if (user_data.length != 0) {
+//       var hostel_id = user_data[0].Hostel_Id;
+
+//       var sql1 = "SELECT * FROM hosteldetails WHERE id=? AND isActive=1";
+//       connection.query(sql1, [hostel_id], function (err, hos_details) {
+//         if (err) {
+//           return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
+//         } else if (hos_details.length != 0) {
+
+//           var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? AND action !='advance' ORDER BY id DESC;";
+//           connection.query(sql2, [hostel_id], function (err, inv_data) {
+//             if (err) {
+//               return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
+//             } else if (inv_data.length != 0) {
+
+//               var invoice_number = inv_data[0].Invoices;
+//               console.log(invoice_number);
+
+//               let lastThreeChars = invoice_number.slice(-3);
+//               let result = invoice_number.slice(0, -3);
+
+//               console.log("lastThreeChars", lastThreeChars);
+
+//               let newInvoiceNumber;
+
+//               if (lastThreeChars === 'NaN' || isNaN(lastThreeChars)) {
+//                 newInvoiceNumber = result + '001';
+//               } else {
+//                 newInvoiceNumber = invoice_number.slice(0, -1) + (parseInt(invoice_number.slice(-1)) + 1);
+//               }
+
+//               check_inv_validation(invoice_number, hostel_id, res);
+
+//               // return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: newInvoiceNumber, hostel_id: hostel_id, });
+
+//             } else {
+//               var prefix = hos_details[0].prefix;
+//               var suffix = hos_details[0].suffix;
+
+//               const month = moment(new Date()).month() + 1;
+//               const year = moment(new Date()).year();
+
+//               let newInvoiceNumber;
+//               if (prefix || suffix) {
+//                 newInvoiceNumber = `${prefix}${suffix}`;
+//               } else {
+//                 newInvoiceNumber = `${hos_details[0].Name}${month}${year}001`;
+//               }
+
+//               check_inv_validation(newInvoiceNumber, hostel_id, res);
+
+//               // return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: newInvoiceNumber, hostel_id: hostel_id, });
+//             }
+//           });
+//         } else {
+//           return res.status(201).json({ statusCode: 201, message: "Invalid Hostel Details" });
+//         }
+//       });
+//     } else {
+//       return res.status(201).json({ statusCode: 201, message: "Invalid User Details" });
+//     }
+//   });
+
+//   // } else {
+//   //   res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+//   // }
+
+//   function check_inv_validation(invoice_number, hostel_id, res) {
+
+//     var ch_query = "SELECT * FROM invoicedetails WHERE Invoices=? AND invoice_status=1";
+//     connection.query(ch_query, [invoice_number], function (err, data) {
+//       if (err) {
+//         console.log("Invoice Error");
+//         return res.status(201).json({ statusCode: 201, message: "Check Invoice Query Error" });
+//       }
+
+//       if (data.length != 0) {
+//         console.log("Invoice Number Already Exits"); // Generate New Invoice Function
+//         let lastThreeChars = invoice_number.slice(-3);
+//         let invoicePrefix = invoice_number.slice(0, -3);
+//         let newNumber = isNaN(lastThreeChars) ? 1 : parseInt(lastThreeChars) + 1;
+//         let newInvoiceNumber = invoicePrefix + newNumber.toString().padStart(3, '0');
+
+//         check_inv_validation(newInvoiceNumber, hostel_id, res);
+//       } else {
+//         console.log("Success");
+//         return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: invoice_number, hostel_id: hostel_id, });
+//       }
+//     })
+//   }
+
+// }
+
 function get_invoice_id(req, res) {
   var user_id = req.body.user_id;
-  var created_by = req.user_details.id;
 
-  var role_permissions = req.role_permissions;
-  var is_admin = req.is_admin;
-
-  if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_view == 1)) {
-
-    if (!user_id) {
-      return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
-    }
-
-    var sql_1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
-    connection.query(sql_1, [user_id], function (err, user_data) {
-      if (err) {
-        return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
-      } else if (user_data.length != 0) {
-        var hostel_id = user_data[0].Hostel_Id;
-
-        var sql1 = "SELECT * FROM hosteldetails WHERE id=? AND isActive=1 AND created_by=?";
-        connection.query(sql1, [hostel_id, created_by], function (err, hos_details) {
-          if (err) {
-            return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
-          } else if (hos_details.length != 0) {
-
-            var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? AND action !='advance' ORDER BY id DESC;";
-            connection.query(sql2, [hostel_id], function (err, inv_data) {
-              if (err) {
-                return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
-              } else if (inv_data.length != 0) {
-
-                var invoice_number = inv_data[0].Invoices;
-                console.log(invoice_number);
-
-                let lastThreeChars = invoice_number.slice(-3);
-                let result = invoice_number.slice(0, -3);
-
-                console.log("lastThreeChars", lastThreeChars);
-
-                let newInvoiceNumber;
-
-                if (lastThreeChars === 'NaN' || isNaN(lastThreeChars)) {
-                  newInvoiceNumber = result + '001';
-                } else {
-                  newInvoiceNumber = invoice_number.slice(0, -1) + (parseInt(invoice_number.slice(-1)) + 1);
-                }
-
-                check_inv_validation(invoice_number, hostel_id, res);
-
-                // return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: newInvoiceNumber, hostel_id: hostel_id, });
-
-              } else {
-                var prefix = hos_details[0].prefix;
-                var suffix = hos_details[0].suffix;
-
-                const month = moment(new Date()).month() + 1;
-                const year = moment(new Date()).year();
-
-                let newInvoiceNumber;
-                if (prefix || suffix) {
-                  newInvoiceNumber = `${prefix}${suffix}`;
-                } else {
-                  newInvoiceNumber = `${hos_details[0].Name}${month}${year}001`;
-                }
-
-                check_inv_validation(newInvoiceNumber, hostel_id, res);
-
-                // return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: newInvoiceNumber, hostel_id: hostel_id, });
-              }
-            });
-          } else {
-            return res.status(201).json({ statusCode: 201, message: "Invalid Hostel Details" });
-          }
-        });
-      } else {
-        return res.status(201).json({ statusCode: 201, message: "Invalid User Details" });
-      }
-    });
-
-  } else {
-    res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+  if (!user_id) {
+    return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
   }
 
-  function check_inv_validation(invoice_number, hostel_id, res) {
+  var sql_1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
+  connection.query(sql_1, [user_id], function (err, user_data) {
+    if (err) {
+      return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
+    } else if (user_data.length != 0) {
+      var hostel_id = user_data[0].Hostel_Id;
 
+      var sql1 = "SELECT * FROM hosteldetails WHERE id=? AND isActive=1";
+      connection.query(sql1, [hostel_id], function (err, hos_details) {
+        if (err) {
+          return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
+        } else if (hos_details.length != 0) {
+          var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? AND action != 'advance' ORDER BY id DESC LIMIT 1;";
+          connection.query(sql2, [hostel_id], function (err, inv_data) {
+            if (err) {
+              return res.status(201).json({ statusCode: 201, message: "Unable to Get Invoice Details" });
+            } else {
+              let prefix = hos_details[0].prefix; // New Prefix
+              let suffix = hos_details[0].suffix || "001"; // Default suffix
+              let newInvoiceNumber;
+
+              if (inv_data.length > 0) {
+                let lastInvoice = inv_data[0].Invoices;
+
+                // Extract previous prefix and suffix
+                let lastPrefix = lastInvoice.replace(/\d+$/, ''); // Remove numbers
+                let lastSuffix = lastInvoice.replace(/^\D+/, ''); // Keep only numbers
+
+                // If the prefix has changed, reset suffix to 001
+                if (prefix !== lastPrefix) {
+                  newInvoiceNumber = `${prefix}${suffix}`;
+                } else {
+                  let newSuffix = (parseInt(lastSuffix) + 1).toString().padStart(3, '0');
+                  newInvoiceNumber = `${prefix}${newSuffix}`;
+                }
+              } else {
+                // First Invoice Case
+                newInvoiceNumber = `${prefix}${suffix}`;
+              }
+
+              check_inv_validation(newInvoiceNumber, hostel_id, res);
+            }
+          });
+        } else {
+          return res.status(201).json({ statusCode: 201, message: "Invalid Hostel Details" });
+        }
+      });
+    } else {
+      return res.status(201).json({ statusCode: 201, message: "Invalid User Details" });
+    }
+  });
+
+  function check_inv_validation(invoice_number, hostel_id, res) {
     var ch_query = "SELECT * FROM invoicedetails WHERE Invoices=? AND invoice_status=1";
     connection.query(ch_query, [invoice_number], function (err, data) {
       if (err) {
-        console.log("Invoice Error");
         return res.status(201).json({ statusCode: 201, message: "Check Invoice Query Error" });
       }
 
-      if (data.length != 0) {
-        console.log("Invoice Number Already Exits"); // Generate New Invoice Function
-        let lastThreeChars = invoice_number.slice(-3);
-        let invoicePrefix = invoice_number.slice(0, -3);
-        let newNumber = isNaN(lastThreeChars) ? 1 : parseInt(lastThreeChars) + 1;
-        let newInvoiceNumber = invoicePrefix + newNumber.toString().padStart(3, '0');
+      if (data.length > 0) {
+        console.log("Invoice Number Already Exists");
+        let invoicePrefix = invoice_number.replace(/\d+$/, '');
+        let lastNumber = invoice_number.replace(/^\D+/, '');
+        let newNumber = (parseInt(lastNumber) + 1).toString().padStart(3, '0');
 
+        let newInvoiceNumber = `${invoicePrefix}${newNumber}`;
         check_inv_validation(newInvoiceNumber, hostel_id, res);
       } else {
         console.log("Success");
-        return res.status(200).json({ statusCode: 200, message: "Get Invoice Number", invoice_number: invoice_number, hostel_id: hostel_id, });
+        return res.status(200).json({ statusCode: 200, message: "Generated Invoice Number", invoice_number, hostel_id });
       }
-    })
+    });
   }
-
 }
+
 
 function get_user_amounts(req, res) {
 
@@ -2096,7 +2180,7 @@ function get_bill_details(req, res) {
     }
 
     // var sql1 = "SELECT * FROM invoicedetails WHERE created_By IN (?) AND invoice_status=1 ORDER BY id DESC";
-    var sql1 = "SELECT inv.*,hostel.Address AS user_address,ca.Address AS admin_address,eb.start_date AS eb_start_date,eb.end_date AS eb_end_date,eb.amount AS eb_unit_amount FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id LEFT JOIN hostel ON hostel.id=inv.hos_user_id LEFT JOIN createaccount AS ca ON ca.id=hostel.created_by LEFT JOIN eb_settings AS eb ON inv.Hostel_Id=eb.hostel_id AND eb.status=1 WHERE inv.Hostel_Id=? AND inv.invoice_status=1 ORDER BY id DESC;";
+    var sql1 = "SELECT inv.*,hostel.Address AS user_address,ca.Address AS admin_address,eb.start_date AS eb_start_date,eb.end_date AS eb_end_date,eb.amount AS eb_unit_amount,hostel.ID AS ID,CASE WHEN inv.BalanceDue > 0 OR inv.BalanceDue IS NULL THEN 'Unpaid' ELSE 'Paid' END AS status FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id LEFT JOIN hostel ON hostel.id=inv.hos_user_id LEFT JOIN createaccount AS ca ON ca.id=hostel.created_by LEFT JOIN eb_settings AS eb ON inv.Hostel_Id=eb.hostel_id AND eb.status=1 WHERE inv.Hostel_Id=? AND inv.invoice_status=1 ORDER BY inv.id DESC;";
     connection.query(sql1, [hostel_id], function (err, invoices) {
       if (err) {
         return res.status(201).json({ message: "Unable to Get Bill Details", statusCode: 201 });

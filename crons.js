@@ -15,183 +15,316 @@ nodeCron.schedule('0 2 * * *', () => {
 
 // -------------- Recuring Invoice Cron
 
-// nodeCron.schedule('0 0 * * *', () => {
-//     const today = moment().date();
+nodeCron.schedule('0 0 * * *', () => {
+    // nodeCron.schedule('*/15 * * * * *', () => {
 
-//     console.log("---------------------------------------------------");
+    const today = moment().date();
 
-//     var sql1 = "SELECT * FROM recuring_inv_details AS rec JOIN hostel AS hs ON hs.ID=rec.user_id WHERE rec.status=1 AND isActive=1";
-//     connection.query(sql1, function (err, data) {
-//         if (err) {
-//             console.log(err);
-//         } else if (data.length != 0) {
+    console.log("---------------------------------------------------");
 
-//             data.forEach(inv_data => {
+    var sql1 = "SELECT rec.*,hs.*,hos.Name AS hostel_name,hos.inv_startdate,hos.inv_enddate FROM recuring_inv_details AS rec JOIN hostel AS hs ON hs.ID=rec.user_id JOIN hosteldetails AS hos ON hos.id=hs.Hostel_Id WHERE rec.status=1 AND hs.isActive=1;";
+    connection.query(sql1, function (err, data) {
+        if (err) {
+            console.log(err);
+        } else if (data.length != 0) {
 
-//                 const invoiceDate = parseInt(inv_data.invoice_date, 10); // Convert stored invoice date to a number
+            data.forEach(inv_data => {
 
-//                 if (invoiceDate === today) {
-//                     generateInvoiceForDate(inv_data);
-//                 }
-//             });
+                const invoiceDate = parseInt(inv_data.invoice_date, 10);
+                const today = moment(); // Current Date
 
-//         } else {
-//             console.log("No need to Check in this Cron");
-//         }
-//     })
+                let start_day = parseInt(inv_data.inv_startdate, 10) || 1; // Default to 1 if NULL
+                let end_day = parseInt(inv_data.inv_enddate, 10) || moment().subtract(1, 'months').endOf('month').date(); // Last month's last day if NULL
 
-// });
+                if (inv_data.inv_enddate && end_day < today.date()) {
+                    const lastMonth = moment().subtract(1, 'months');
+                    end_day = parseInt(inv_data.inv_enddate, 10);
+                    start_day = parseInt(inv_data.inv_startdate, 10) || 1; // Get start date if provided, else default to 1
+                }
 
-// async function generateInvoiceForDate(inv_data) {
-//     var total_array = [];
-//     console.log(inv_data);
+                const lastMonth = moment().subtract(1, 'months');
 
-//     try {
-//         const currentDate = new Date();
-//         const currentYear = currentDate.getFullYear();
-//         const currentMonth = currentDate.getMonth();
-//         const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-//         var room_rent = inv_data.RoomRent;
-//         const oneDayAmount = room_rent / daysInCurrentMonth;
+                // Calculate start and end dates
+                const inv_startdate = lastMonth.date(start_day).format("YYYY-MM-DD");
+                const inv_enddate = lastMonth.date(end_day).format("YYYY-MM-DD");
 
-//         if (inv_data.CheckoutDate != null) {
-//             const checkoutDate = new Date(inv_data.CheckoutDate);
-//             if (checkoutDate.getFullYear() === currentYear && checkoutDate.getMonth() === currentMonth) {
-//                 const total_days = checkoutDate.getDate();
-//                 const totalRent = parseFloat((oneDayAmount * total_days).toFixed(2));
-//                 var roundedRent = Math.round(totalRent);
-//                 total_array.push({ key: "room_rent", amount: roundedRent });
-//             } else {
-//                 total_array.push({ key: "room_rent", amount: room_rent });
-//             }
-//         } else {
-//             total_array.push({ key: "room_rent", amount: room_rent });
-//         }
+                console.log(`User: ${inv_data.user_id}, Hostel: ${inv_data.Hostel_Id}, Start Date: ${inv_startdate}, End Date: ${inv_enddate}`);
 
-//         const ebAmount = await new Promise((resolve, reject) => {
-//             var sql1 = "SELECT COALESCE(SUM(amount),0) AS eb_amount FROM customer_eb_amount WHERE user_id = '" + inv_data.user_id + "' AND status = 1 AND date BETWEEN DATE_SUB(LAST_DAY(CURDATE()), INTERVAL 1 MONTH) + INTERVAL 1 DAY AND LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 1 MONTH));";
-//             connection.query(sql1, function (err, eb_data) {
-//                 if (err) {
-//                     return reject(err);
-//                 }
-//                 resolve(eb_data[0].eb_amount);
-//             });
-//         });
-//         total_array.push({ key: "eb_amount", amount: ebAmount });
+                if (invoiceDate === today.date()) {
+                    generateInvoiceForDate(inv_data, inv_startdate, inv_enddate);
+                }
+            });
+        } else {
+            console.log("No need to Check in this Cron");
+        }
+    })
+});
 
-//         const amenitiesData = await new Promise((resolve, reject) => {
-//             var sql2 = "SELECT * FROM AmenitiesHistory WHERE user_Id = '" + inv_data.User_Id + "'";
-//             connection.query(sql2, function (err, am_data) {
-//                 if (err) {
-//                     return reject(err);
-//                 }
-//                 if (am_data.length != 0) {
-//                     var amenity_ids = am_data.map(element => element.amenity_Id);
-//                     var port = process.env.PORT;
-//                     var url = (port == 2001) ? "http://localhost:2001/user_amenities_history" :
-//                         (port == 1010) ? "http://13.126.102.54:1010/user_amenities_history" :
-//                             "http://smartstaydev.s3remotica.com/user_amenities_history";
 
-//                     const options = {
-//                         url: url,
-//                         method: "POST",
-//                         headers: { "Content-Type": "application/json" },
-//                         body: JSON.stringify({ user_id: inv_data.user_id, amenities_id: amenity_ids })
-//                     };
 
-//                     request(options, (error, response, body) => {
-//                         if (error) {
-//                             return reject(error);
-//                         } else {
-//                             const result = JSON.parse(body);
-//                             if (result.statusCode == 200) {
-//                                 resolve(result.data);
-//                             } else {
-//                                 resolve([]);
-//                             }
-//                         }
-//                     });
-//                 } else {
-//                     resolve([]);
-//                 }
-//             });
-//         });
+function generateInvoiceForDate(inv_data, inv_startdate, inv_enddate) {
 
-//         const lastMonthIndex = currentMonth - 1;
-//         const monthNames = [
-//             'January', 'February', 'March', 'April', 'May', 'June',
-//             'July', 'August', 'September', 'October', 'November', 'December'
-//         ];
-//         const lastMonthName = monthNames[lastMonthIndex];
-//         const lastMonthData = amenitiesData.filter(item => item.month_name === lastMonthName);
+    var total_array = [];
 
-//         const amenitiesDetails = lastMonthData.map(item => ({
-//             key: item.Amnities_Name,   // Structuring the key-value pairs properly
-//             Amount: item.Amount
-//         }));
+    var currentdate = moment().format('YYYY-MM-DD');
 
-//         total_array.push({ key: "amenities", details: amenitiesDetails });
+    var sql1 = "SELECT * FROM invoicedetails WHERE hos_user_id=? AND action='recuring' AND invoice_status=1 AND Date=?";
+    connection.query(sql1, [inv_data.user_id, currentdate], async function (err, data) {
+        if (err) {
+            console.log(err);
+        } else if (data.length != 0) {
+            console.log("Invoice Already Generated");
+        } else {
+            try {
+                const room_rent = inv_data.RoomRent;
+                var hostel_id = inv_data.Hostel_Id;
+                var string_userid = inv_data.User_Id;
 
-//     } catch (error) {
-//         console.error("Error occurred:", error);
-//     } finally {
-//         console.log("Final total_array:", JSON.stringify(total_array, null, 2));
+                // Convert dates to Date objects
+                const startDate = new Date(inv_startdate);
+                const endDate = new Date(inv_enddate);
+                const joiningDate = new Date(inv_data.joining_Date); // Get user's joining date
 
-//         const roomRentAmount = total_array.find(item => item.key === "room_rent").amount;
-//         const ebAmount = total_array.find(item => item.key === "eb_amount") ? total_array.find(item => item.key === "eb_amount").amount : 0;
-//         const amenitiesDetails = total_array.find(item => item.key === "amenities").details;
+                // Ensure valid dates
+                if (isNaN(startDate) || isNaN(endDate) || isNaN(joiningDate)) {
+                    console.log("Invalid date provided.");
+                }
 
-//         const totalAmenitiesAmount = amenitiesDetails.reduce((total, item) => total + item.Amount, 0);
+                const effectiveStartDate = startDate < joiningDate ? joiningDate : startDate;
 
-//         var total_amount = roomRentAmount + ebAmount + totalAmenitiesAmount;
-//         console.log(amenitiesDetails);
-//         console.log(total_amount);
+                if (effectiveStartDate > endDate) {
+                    // total_array.push({ key: "room_rent", amount: 0 });
+                    console.log("Amount is 0");
+                }
 
-//         let dueDay = inv_data.due_date;
-//         let currentDate = new Date();
-//         let nextDueDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + (currentDate.getDate() > dueDay ? 1 : 0), dueDay);
+                const total_days = Math.max((endDate - effectiveStartDate) / (1000 * 60 * 60 * 24) + 1, 0);
 
-//         let date = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+                // Calculate per-day room rent
+                const daysInMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
+                const oneDayAmount = room_rent / daysInMonth;
 
-//         var sql3 = "SELECT COALESCE(max(Invoices),0) AS inv_id FROM invoicedetails WHERE Hostel_Id='" + inv_data.Hostel_Id + "';";
-//         connection.query(sql3, function (err, inv_id_de) {
-//             if (err) {
-//                 console.log(err, "Invoice Id error");
-//             } else {
-//                 var lastInvoice = inv_id_de[0].inv_id;
-//                 var prefix = lastInvoice.match(/^\D+/) || '';
-//                 var numberPart = lastInvoice.match(/\d+$/);
-//                 var invoice_id = numberPart ? prefix + (parseInt(numberPart[0]) + 1) : lastInvoice + '1';
+                const totalRent = Math.round(oneDayAmount * total_days);
 
-//                 var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,RoomRent,EbAmount,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id,advance_amount) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-//                 connection.query(sql2, [inv_data.Name, inv_data.Phone, inv_data.Email, inv_data.HostelName, inv_data.Hostel_Id, inv_data.Floor, inv_data.Rooms, total_amount, nextDueDate, date, invoice_id, 'pending', inv_data.User_Id, roomRentAmount, ebAmount, totalAmenitiesAmount, inv_data.Bed, total_amount, 'auto_recuring', 2, inv_data.user_id, 0], function (err, ins_data) {
-//                     if (err) {
-//                         console.log(err);
-//                     } else {
-//                         var inv_id = ins_data.insertId;
-//                         if (amenitiesDetails && amenitiesDetails.length > 0) {
-//                             var remaining = amenitiesDetails.length;
-//                             amenitiesDetails.forEach(item => {
-//                                 var sql3 = "INSERT INTO manual_invoice_amenities (am_name, user_id, amount,invoice_id) VALUES (?, ?, ?,?)";
-//                                 connection.query(sql3, [item.key, inv_data.user_id, item.Amount, inv_id], function (err) {
-//                                     if (err) {
-//                                         console.log("Error inserting amenity details:", err);
-//                                     }
-//                                     remaining -= 1;
-//                                     if (remaining === 0) {
-//                                         console.log("Invoice Added Successfully");
-//                                     }
-//                                 });
-//                             });
-//                         } else {
-//                             console.log("Invoice Added Successfully");
-//                         }
-//                     }
-//                 });
-//             }
-//         });
-//     }
-// }
+                total_array.push({ key: "room_rent", amount: totalRent });
+
+                let eb_start_date
+                let eb_end_date
+                let eb_unit_amount
+
+                const ebAmount = await new Promise((resolve, reject) => {
+                    var sql2 = "SELECT * FROM eb_settings WHERE hostel_id=? AND status=1";
+                    connection.query(sql2, [hostel_id], function (err, sql2_res) {
+                        if (err) {
+                            console.log("EB Settings Query Error:", err);
+                            return reject(err);
+                        }
+
+                        const today = moment();
+                        const lastMonth = moment().subtract(1, "months");
+
+                        let start_day = parseInt(sql2_res[0]?.start_date, 10) || 1; // Default to 1 if NULL
+                        let end_day = parseInt(sql2_res[0]?.end_date, 10) || lastMonth.endOf("month").date(); // Last month's last day if NULL
+
+                        if (sql2_res[0]?.end_date && end_day < today.date()) {
+                            end_day = parseInt(sql2_res[0]?.end_date, 10);
+                            start_day = parseInt(sql2_res[0]?.start_date, 10) || 1; // Get start date if provided, else default to 1
+                        }
+
+                        eb_start_date = lastMonth.date(start_day).format("YYYY-MM-DD");
+                        eb_end_date = lastMonth.date(end_day).format("YYYY-MM-DD");
+
+                        eb_unit_amount = sql2_res[0]?.amount || 0
+
+                        if (sql2_res[0]?.recuring == 0) {
+                            resolve(0);
+                        } else {
+                            var sql1 = `SELECT COALESCE(SUM(amount), 0) AS eb_amount FROM customer_eb_amount WHERE user_id = ? AND status = 1 AND date BETWEEN ? AND ?;`;
+                            connection.query(sql1, [inv_data.user_id, eb_start_date, eb_end_date], function (err, eb_data) {
+                                if (err) {
+                                    return reject(err);
+                                }
+                                resolve(eb_data[0].eb_amount || 0);
+                            });
+                        }
+                    });
+                });
+
+                total_array.push({ key: "eb_amount", amount: ebAmount });
+                console.log("Total EB Amount:", ebAmount);
+                console.log("eb_start_date:", eb_start_date);
+                console.log("eb_end_date :", eb_end_date);
+
+                var am_amounts = await new Promise((resolve, reject) => {
+
+                    var sql3 = "SELECT * FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id WHERE am.Status=1 AND am.Hostel_Id=?;";
+                    connection.query(sql3, [hostel_id], function (err, sql3_res) {
+                        if (err) {
+                            console.log("EB Settings Query Error:", err);
+                            return reject(err);
+                        }
+
+                        let amenityPromises = sql3_res.map((amenity) => {
+                            return new Promise((resolveAmenity, rejectAmenity) => {
+                                if (amenity.recuring == 0) {
+                                    return resolveAmenity(null); // Skip non-recurring amenities
+                                }
+
+                                const lastMonth = moment().subtract(1, "months"); // Last month (e.g., Jan 2025)
+                                const nextMonth = moment(); // Current month (Feb 2025)
+
+                                let start_day = parseInt(amenity.startdate, 10) || 1;
+                                let end_day = parseInt(amenity.enddate, 10) || lastMonth.endOf("month").date();
+
+                                const lastMonthDays = lastMonth.daysInMonth();
+                                start_day = Math.min(Math.max(start_day, 1), lastMonthDays);
+                                end_day = Math.min(Math.max(end_day, start_day), lastMonthDays);
+
+                                let am_start_date, am_end_date;
+
+                                if (amenity.startdate && amenity.startdate === amenity.enddate) {
+                                    am_start_date = lastMonth.date(start_day).format("YYYY-MM-DD");
+                                    am_end_date = nextMonth.date(end_day).format("YYYY-MM-DD"); // Moves end date to next month
+                                } else {
+                                    am_start_date = lastMonth.date(start_day).format("YYYY-MM-DD");
+                                    am_end_date = lastMonth.date(end_day).format("YYYY-MM-DD");
+                                }
+
+                                const sql1 = `
+                                    SELECT am.Amount, amname.Amnities_Name 
+                                    FROM Amenities AS am 
+                                    JOIN AmnitiesName AS amname ON amname.id = am.Amnities_Id 
+                                    JOIN AmenitiesHistory AS ahis ON ahis.amenity_Id = am.id 
+                                    WHERE ahis.user_Id = ? 
+                                    AND ahis.status = 1 
+                                    AND ahis.created_At BETWEEN ? AND ? 
+                                    AND am.Status = 1
+                                    AND NOT EXISTS (
+                                        SELECT 1 FROM AmenitiesHistory ahis2 
+                                        WHERE ahis2.amenity_Id = am.id 
+                                        AND ahis2.status = 0 
+                                        AND ahis2.created_At < ?
+                                    );
+                                `;
+
+                                // Execute query
+                                connection.query(sql1, [string_userid, am_start_date, am_end_date, am_end_date], function (err, sql1_res) {
+                                    if (err) {
+                                        return rejectAmenity(err);
+                                    }
+                                    console.log("SQL Result:", sql1_res);
+                                    resolveAmenity(sql1_res);
+                                });
+                            });
+                        });
+
+                        Promise.all(amenityPromises)
+                            .then((results) => {
+                                const filteredResults = results.flat().filter(result => result !== null);
+
+                                console.log("All Amenity Queries Completed:", filteredResults);
+
+                                filteredResults.forEach(item => {
+                                    total_array.push({ key: item.Amnities_Name, amount: item.Amount });
+                                });
+
+                                resolve(filteredResults);
+                            })
+                            .catch((error) => {
+                                console.error("Error in Amenity Processing:", error);
+                                reject(error);
+                            });
+                        // });
+                    });
+                });
+
+                const totalAmount = total_array.reduce((sum, item) => sum + item.amount, 0);
+
+                console.log("Total Amount:", totalAmount);
+
+                if (totalAmount > 0) {
+                    // Generate Invoice Number
+                    const invoice_id = await new Promise((resolve, reject) => {
+
+                        const options = {
+                            url: process.env.BASEURL + '/get_invoice_id',
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ user_id: inv_data.user_id })
+                        };
+
+                        request(options, (error, response, body) => {
+                            if (error) {
+                                return reject(error);
+                            } else {
+                                const result = JSON.parse(body);
+                                console.log(result);
+
+                                if (result.statusCode == 200) {
+                                    resolve(result.invoice_number);
+                                } else {
+                                    resolve([]);
+                                }
+                            }
+                        });
+                    })
+
+                    console.log("invoice_id:", invoice_id);
+
+                    const currentDate = moment().format('YYYY-MM-DD');
+
+                    let today = moment();
+                    let dueDay = parseInt(inv_data.due_date); // Convert due_date to integer
+
+                    let dueDate = moment().set('date', dueDay);
+
+                    if (today.date() > dueDay) {
+                        dueDate.add(1, 'month');
+                    }
+
+                    var due_date = dueDate.format('YYYY-MM-DD')
+                    console.log("dueDate:", due_date);
+                    console.log(total_array);
+                    // return;
+
+                    var sql2 = "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id,rec_invstartdate,rec_invenddate,rec_ebstartdate,rec_ebenddate,rec_ebunit) VALUES (?)";
+                    var params = [inv_data.Name, inv_data.Phone, inv_data.Email, inv_data.HostelName, inv_data.Hostel_Id, inv_data.Floor, inv_data.Rooms, totalAmount, inv_data.Address, due_date, currentDate, invoice_id,
+                        'Pending', string_userid, inv_data.Bed, totalAmount, 0, 'recuring', 1, inv_data.user_id, inv_startdate, inv_enddate, eb_start_date, eb_end_date, eb_unit_amount
+                    ]
+                    connection.query(sql2, [params], function (err, ins_data) {
+                        if (err) {
+                            console.log("Add Invoice Error", err);
+                        } else {
+
+                            var inv_id = ins_data.insertId;
+
+                            if (total_array && total_array.length > 0) {
+                                // Prepare bulk insert values
+                                var amenityValues = total_array.map(item => [item.key, inv_data.user_id, item.amount, inv_id]);
+
+                                var sql3 = "INSERT INTO manual_invoice_amenities (am_name, user_id, amount, invoice_id) VALUES ?";
+                                connection.query(sql3, [amenityValues], function (err) {
+                                    if (err) {
+                                        console.log("Error inserting amenity details:", err);
+                                    } else {
+                                        console.log("Invoice and Amenities Added Successfully");
+                                    }
+                                });
+                            } else {
+                                console.log("Invoice Added Successfully (No Amenities)");
+                            }
+
+                            console.log("Recuring Invoice created");
+                        }
+                    })
+
+                }
+            } catch (error) {
+                console.error("Error occurred:", error);
+            }
+        }
+    })
+
+}
 
 // nodeCron.schedule('0 0 * * *', () => {
 
@@ -319,7 +452,7 @@ function calculateRentAndAmenityCharges(start_date, end_date, room_rent, unique_
                         if (err) {
                             console.log("Error Fetching Eb Details", err.message);
                         } else {
-                            const total_ebamount = eb_data[0].eb_amount || 0;
+                            const total_ebamount = parseInt(eb_data[0].eb_amount) || 0;
 
                             const sql4 = `
                         SELECT DATEDIFF(?, ?) AS days_difference;
@@ -342,9 +475,9 @@ function calculateRentAndAmenityCharges(start_date, end_date, room_rent, unique_
                                     console.log(`EB Amount: ${total_ebamount}`);
                                     console.log("Amenity Days and Amounts:", result);
 
-                                    const totalAmenityAmount = result.reduce((sum, amenity) => sum + amenity.totalAmount, 0);
+                                    const totalAmenityAmount = result.reduce((sum, amenity) => sum + parseInt(amenity.totalAmount), 0);
 
-                                    const grandTotal = rounded_rent + total_ebamount + totalAmenityAmount;
+                                    const grandTotal = parseInt(rounded_rent) + parseInt(total_ebamount) + parseInt(totalAmenityAmount);
 
                                     var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? ORDER BY id DESC;";
                                     connection.query(sql2, [user_data.Hostel_Id], function (err, inv_data) {

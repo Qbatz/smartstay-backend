@@ -13,94 +13,6 @@ AWS.config.update({
 });
 const s3 = new AWS.S3();
 
-
-// function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
-//     if (reqInvoice) {
-
-//         const timestamp = Date.now();
-//         const firstName = reqInvoice.firstName;
-//         const lastName = reqInvoice.LastName
-//         const Vendor_Name = firstName + ' ' + lastName;
-//         const created_by = request.user_details.id;
-//         const checkQuery = `select * from Vendor where Vendor_Id = '${reqInvoice.Vendor_Id}'`
-//         connection.query(checkQuery, function (error, getData) {
-
-//             if (getData && getData.length > 0) {
-//                 uploadProfilePictureToS3Bucket('smartstaydevs', 'Vendor_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqInvoice.profile, (err, vendor_profile) => {
-//                     if (err) {
-//                         response.status(202).json({ message: 'Database error' });
-//                     } else {
-
-//     const updateVendor = `
-//     UPDATE Vendor SET
-//     Vendor_Name = '${Vendor_Name}',
-//     Vendor_Mobile = '${reqInvoice.Vendor_Mobile}',
-//     Vendor_Email = '${reqInvoice.Vendor_Email}',
-//     Vendor_Address = '${reqInvoice.Vendor_Address}',
-//     Vendor_profile = '${vendor_profile}',
-//     UpdatedAt = NOW(), 
-//     Status  = '${reqInvoice.Status}'
-//     WHERE Vendor_Id = '${reqInvoice.Vendor_Id}' AND ID = '${reqInvoice.id}'`; 
-//     connection.query(updateVendor, function (error, updateResult) {
-//                             if (error) {
-//                                 response.status(201).json({ message: "Internal Server Error", statusCode: 201, updateError: error });
-//                             } else {
-//                                 response.status(200).json({ message: "Update Successfully", statusCode: 200 });
-//                             }
-//                         });
-//                     }
-//                 })
-//             } else {
-//                 uploadProfilePictureToS3Bucket('smartstaydevs', 'Vendor_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqInvoice.profile, (err, vendor_profile) => {
-//                     if (err) {
-//                         response.status(202).json({ message: 'Database error' });
-//                     } else {
-
-//                         const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, Vendor_profile, CreatedBy) 
-//                         VALUES ('${Vendor_Name}', '${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}', '${vendor_profile}','${created_by}')`
-
-//                         connection.query(insertVendor, function (error, insertVendorData) {
-//                             if (error) {
-//                                 response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
-//                             } else {
-//                                 var Row_id = insertVendorData.insertId;
-//                                 const Create_Vendor_Id = GeneratedVendorId(firstName, Row_id)
-//                                 console.log(" Create_Vendor_Id", Create_Vendor_Id)
-//                                 console.log("Row_id",Row_id)
-//                                 if(Create_Vendor_Id){
-//                                                              const UpdateVendor_Id = `UPDATE Vendor SET  Vendor_Id = '${Create_Vendor_Id}' WHERE id = '${Row_id}'`
-//                                                              console.log("UpdateVendor_Id",UpdateVendor_Id)
-//                                 connection.query(UpdateVendor_Id, function (error, updateQuery) {
-//                                     if (error) {
-//                                         response.status(201).json({ message: "Internal Server Error", statusCode: 201, InsertError: error });
-//                                     } else {
-//                                         response.status(200).json({ message: "Save Successfully", statusCode: 200 });
-//                                     }
-//                                 })
-//                             }else{
-//                                 console.log("vendor id not generated")
-//                             }
-//                             }
-//                         })
-
-
-//                     }
-//                 })
-
-//             }
-
-//         })
-//     } else {
-//         response.status(201).json({ message: 'No Data Found' })
-//     }
-
-
-
-// }
-
-
-
-
 function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
 
     var role_permissions = request.role_permissions;
@@ -120,61 +32,90 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
         const Vendor_Name = firstName + (lastName ? ' ' + lastName : '');
         const created_by = request.user_details.id;
 
-        console.log("firstName", firstName, lastName)
-
         const checkQuery = `SELECT * FROM Vendor WHERE id = '${reqInvoice.id}'`;
         connection.query(checkQuery, function (error, getData) {
             if (getData && getData.length > 0) {
 
                 if (is_admin == 1 || (role_permissions[9] && role_permissions[9].per_edit == 1)) {
 
-                    if (reqInvoice.profile) {
-                        uploadProfilePictureToS3Bucket('smartstaydevs', 'Vendor_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqInvoice.profile, (err, vendor_profile) => {
-                            if (err) {
-                                response.status(202).json({ message: 'Database error' });
-                            } else {
-                                const updateVendor = `
-                                UPDATE Vendor SET
-                                Vendor_Name = '${Vendor_Name}',
-                                Vendor_Mobile = '${reqInvoice.Vendor_Mobile}',
-                                Vendor_Email = '${reqInvoice.Vendor_Email}',
-                                Vendor_Address = '${reqInvoice.Vendor_Address}',
-                                Vendor_profile = '${vendor_profile}',
-                                Country = '${reqInvoice.Country}',
-                                Pincode = ${reqInvoice.Pincode},
-                                UpdatedAt = NOW(), 
-                             Business_Name = '${reqInvoice.Business_Name}'
-                                WHERE  id = '${reqInvoice.id}'`;
-                                connection.query(updateVendor, function (error, updateResult) {
-                                    if (error) {
-                                        response.status(201).json({ message: "Internal Server Error", statusCode: 201, updateError: error });
-                                    } else {
-                                        response.status(200).json({ message: "Vendor has been successfully updated!", statusCode: 200 });
-                                    }
-                                });
-                            }
-                        });
-                    } else {
-                        const updateVendor = `
-                        UPDATE Vendor SET
-                        Vendor_Name = '${Vendor_Name}',
-                        Vendor_Mobile = '${reqInvoice.Vendor_Mobile}',
-                        Vendor_Email = '${reqInvoice.Vendor_Email}',
-                        Vendor_Address = '${reqInvoice.Vendor_Address}',
-                        Country = '${reqInvoice.Country}',
-                        Pincode = ${reqInvoice.Pincode},
-                        UpdatedAt = NOW(), 
-                        Business_Name = '${reqInvoice.Business_Name}'
-                        WHERE  id = '${reqInvoice.id}'`;
-                        connection.query(updateVendor, function (error, updateResult) {
-                            if (error) {
-                                response.status(201).json({ message: "Internal Server Error", statusCode: 201, updateError: error });
-                            } else {
-                                response.status(200).json({ message: "Vendor has been successfully updated!", statusCode: 200 });
-                            }
-                        });
-                    }
+                    const sq11 = `SELECT * FROM Vendor WHERE createdBy = '${created_by}' AND Vendor_Mobile = '${reqInvoice.Vendor_Mobile}' AND Status = true AND id !=?`;
+                    connection.query(sq11, [reqInvoice.id], function (err, mob_data) {
+                        if (err) {
+                            return response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
+                        } else if (mob_data.length != 0) {
+                            return response.status(202).json({ message: "Vendor with this mobile number already exists", statusCode: 202 });
+                        } else {
 
+                            if (reqInvoice.Vendor_Email) {
+
+                                var sql2 = "SELECT * FROM Vendor WHERE Vendor_Email=? AND Status=1 AND hostel_id=? AND id !=?";
+                                connection.query(sql2, [reqInvoice.Vendor_Email, hostel_id, reqInvoice.id], async function (err, em_res) {
+                                    if (err) {
+                                        return response.status(201).json({ statusCode: 201, message: "Unable to Get Email Details", reason: err.message });
+                                    } else if (em_res.length == 0) {
+
+                                        updatevendor()
+
+                                    } else {
+                                        return response.status(203).json({ statusCode: 203, message: "Email Id Already Exists" });
+                                    }
+                                })
+                            } else {
+                                updatevendor();
+                            }
+
+                        }
+                    })
+
+                    function updatevendor() {
+
+                        if (reqInvoice.profile) {
+                            uploadProfilePictureToS3Bucket('smartstaydevs', 'Vendor_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqInvoice.profile, (err, vendor_profile) => {
+                                if (err) {
+                                    response.status(202).json({ message: 'Database error' });
+                                } else {
+                                    const updateVendor = `
+                                    UPDATE Vendor SET
+                                    Vendor_Name = '${Vendor_Name}',
+                                    Vendor_Mobile = '${reqInvoice.Vendor_Mobile}',
+                                    Vendor_Email = '${reqInvoice.Vendor_Email}',
+                                    Vendor_Address = '${reqInvoice.Vendor_Address}',
+                                    Vendor_profile = '${vendor_profile}',
+                                    Country = '${reqInvoice.Country}',
+                                    Pincode = ${reqInvoice.Pincode},
+                                    UpdatedAt = NOW(), 
+                                 Business_Name = '${reqInvoice.Business_Name}'
+                                    WHERE  id = '${reqInvoice.id}'`;
+                                    connection.query(updateVendor, function (error, updateResult) {
+                                        if (error) {
+                                            response.status(201).json({ message: "Internal Server Error", statusCode: 201, updateError: error });
+                                        } else {
+                                            response.status(200).json({ message: "Vendor has been successfully updated!", statusCode: 200 });
+                                        }
+                                    });
+                                }
+                            });
+                        } else {
+                            const updateVendor = `
+                            UPDATE Vendor SET
+                            Vendor_Name = '${Vendor_Name}',
+                            Vendor_Mobile = '${reqInvoice.Vendor_Mobile}',
+                            Vendor_Email = '${reqInvoice.Vendor_Email}',
+                            Vendor_Address = '${reqInvoice.Vendor_Address}',
+                            Country = '${reqInvoice.Country}',
+                            Pincode = ${reqInvoice.Pincode},
+                            UpdatedAt = NOW(), 
+                            Business_Name = '${reqInvoice.Business_Name}'
+                            WHERE  id = '${reqInvoice.id}'`;
+                            connection.query(updateVendor, function (error, updateResult) {
+                                if (error) {
+                                    response.status(201).json({ message: "Internal Server Error", statusCode: 201, updateError: error });
+                                } else {
+                                    response.status(200).json({ message: "Vendor has been successfully updated!", statusCode: 200 });
+                                }
+                            });
+                        }
+                    }
                 } else {
                     response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
                 }
@@ -185,78 +126,84 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                     const checkVendorQuery = `SELECT * FROM Vendor WHERE createdBy = '${created_by}' AND Vendor_Mobile = '${reqInvoice.Vendor_Mobile}' AND Status = true`;
                     connection.query(checkVendorQuery, function (error, results) {
                         if (error) {
-                            return response.status(201).json({ message: "Internal Server Error", statusCode: 500 });
+                            return response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
                         }
 
-                        console.log("results", results)
-                        console.log("err88888888", error)
                         if (results.length > 0) {
 
                             const existingVendor = results[0];
-
 
                             if (Number(existingVendor.Vendor_Mobile) === Number(reqInvoice.Vendor_Mobile)) {
                                 return response.status(202).json({ message: "Vendor with this mobile number already exists", statusCode: 202 });
                             }
                         }
                         else {
-                            if (reqInvoice.profile) {
-                                uploadProfilePictureToS3Bucket('smartstaydevs', 'Vendor_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqInvoice.profile, (err, vendor_profile) => {
+
+                            if (reqInvoice.Vendor_Email) {
+
+                                var sql2 = "SELECT * FROM Vendor WHERE Vendor_Email=? AND Status=1 AND hostel_id=?";
+                                connection.query(sql2, [reqInvoice.Vendor_Email, hostel_id], async function (err, em_res) {
                                     if (err) {
-                                        response.status(201).json({ message: 'Database error' });
+                                        return response.status(201).json({ statusCode: 201, message: "Unable to Get Email Details", reason: err.message });
+                                    } else if (em_res.length == 0) {
+
+                                        insertVendor()
+
                                     } else {
-                                        const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, Vendor_profile, CreatedBy,  Business_Name, Country, Pincode,hostel_id) 
-                            VALUES ('${Vendor_Name}', '${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}', '${vendor_profile}','${created_by}' ,'${reqInvoice.Business_Name}', '${reqInvoice.Country}',${reqInvoice.Pincode},${hostel_id})`;
-
-                                        connection.query(insertVendor, function (error, insertVendorData) {
-                                            if (error) {
-                                                response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
-                                            } else {
-                                                response.status(200).json({ message: "Succsessfully added  a new vendor", statusCode: 200 });
-
-                                                // var Row_id = insertVendorData.insertId;
-                                                // const Create_Vendor_Id = GeneratedVendorId(firstName, Row_id);
-                                                // if (Create_Vendor_Id) {
-                                                //     const UpdateVendor_Id = `UPDATE Vendor SET Vendor_Id = '${Create_Vendor_Id}' WHERE id = '${Row_id}'`;
-                                                //     connection.query(UpdateVendor_Id, function (error, updateQuery) {
-                                                //         if (error) {
-                                                //             response.status(201).json({ message: "Internal Server Error", statusCode: 201, InsertError: error });
-                                                //         } else {
-                                                //         }
-                                                //     });
-                                                // } else {
-                                                //     console.log("vendor id not generated");
-                                                // }
-                                            }
-                                        });
+                                        return response.status(203).json({ statusCode: 203, message: "Email Id Already Exists" });
                                     }
-                                });
+                                })
                             } else {
-                                const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, CreatedBy,  Business_Name, Country, Pincode,hostel_id ) 
-                                VALUES ('${Vendor_Name}','${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}','${created_by}','${reqInvoice.Business_Name}', '${reqInvoice.Country}', ${reqInvoice.Pincode},${hostel_id})`;
+                                insertVendor();
+                            }
 
-                                connection.query(insertVendor, function (error, insertVendorData) {
-                                    if (error) {
-                                        console.log("err", error);
-                                        response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
-                                    } else {
-                                        response.status(200).json({ message: "Succsessfully added  a new vendor", statusCode: 200 });
 
-                                        // var Row_id = insertVendorData.insertId;
-                                        // const Create_Vendor_Id = GeneratedVendorId(firstName, Row_id);
-                                        // if (Create_Vendor_Id) {
-                                        // const UpdateVendor_Id = `UPDATE Vendor SET Vendor_Id = '${Create_Vendor_Id}' WHERE id = '${Row_id}'`;
-                                        // connection.query(UpdateVendor_Id, function (error, updateQuery) {
-                                        //     if (error) {
-                                        //         response.status(201).json({ message: "Internal Server Error", statusCode: 201, InsertError: error });
-                                        //     } else {
-                                        //     }
-                                        // });
-                                        // } else {
-                                        //     console.log("vendor id not generated");
-                                        // }
-                                    }
-                                });
+                            function insertVendor() {
+                                if (reqInvoice.profile) {
+                                    uploadProfilePictureToS3Bucket('smartstaydevs', 'Vendor_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqInvoice.profile, (err, vendor_profile) => {
+                                        if (err) {
+                                            response.status(201).json({ message: 'Database error' });
+                                        } else {
+                                            const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, Vendor_profile, CreatedBy,  Business_Name, Country, Pincode,hostel_id) 
+                                VALUES ('${Vendor_Name}', '${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}', '${vendor_profile}','${created_by}' ,'${reqInvoice.Business_Name}', '${reqInvoice.Country}',${reqInvoice.Pincode},${hostel_id})`;
+
+                                            connection.query(insertVendor, function (error, insertVendorData) {
+                                                if (error) {
+                                                    response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
+                                                } else {
+                                                    response.status(200).json({ message: "Succsessfully added  a new vendor", statusCode: 200 });
+
+                                                    // var Row_id = insertVendorData.insertId;
+                                                    // const Create_Vendor_Id = GeneratedVendorId(firstName, Row_id);
+                                                    // if (Create_Vendor_Id) {
+                                                    //     const UpdateVendor_Id = `UPDATE Vendor SET Vendor_Id = '${Create_Vendor_Id}' WHERE id = '${Row_id}'`;
+                                                    //     connection.query(UpdateVendor_Id, function (error, updateQuery) {
+                                                    //         if (error) {
+                                                    //             response.status(201).json({ message: "Internal Server Error", statusCode: 201, InsertError: error });
+                                                    //         } else {
+                                                    //         }
+                                                    //     });
+                                                    // } else {
+                                                    //     console.log("vendor id not generated");
+                                                    // }
+                                                }
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    const insertVendor = `INSERT INTO Vendor(Vendor_Name, Vendor_Mobile, Vendor_Email, Vendor_Address, CreatedBy,  Business_Name, Country, Pincode,hostel_id ) 
+                                    VALUES ('${Vendor_Name}','${reqInvoice.Vendor_Mobile}','${reqInvoice.Vendor_Email}','${reqInvoice.Vendor_Address}','${created_by}','${reqInvoice.Business_Name}', '${reqInvoice.Country}', ${reqInvoice.Pincode},${hostel_id})`;
+
+                                    connection.query(insertVendor, function (error, insertVendorData) {
+                                        if (error) {
+                                            console.log("err", error);
+                                            response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
+                                        } else {
+                                            response.status(200).json({ message: "Succsessfully added  a new vendor", statusCode: 200 });
+
+                                        }
+                                    });
+                                }
                             }
                         }
                     })
@@ -269,12 +216,6 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
         response.status(201).json({ message: 'No Data Found' });
     }
 }
-
-
-
-
-
-
 
 function GeneratedVendorId(firstName, Row_id) {
 

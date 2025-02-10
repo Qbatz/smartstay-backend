@@ -43,7 +43,9 @@ var corsOptions = {
 
 app.use(cors(corsOptions));
 app.options('*', cors());
+
 app.use(express.json())
+
 app.use(function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "X-Requested-With,Content-Type,Accept");
@@ -1174,6 +1176,9 @@ app.post('/users/delete_reading', (req, res) => {
     newBookings.delete_reading(req, res)
 })
 
+app.post('/users/recuring_bill_users', (req, res) => {
+    newBookings.recuring_bill_users(req, res)
+})
 
 // Settings Page API
 var settings_router = require('./settings/general')

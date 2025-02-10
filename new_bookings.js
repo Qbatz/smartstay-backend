@@ -625,4 +625,23 @@ function delete_reading(req, res) {
 
 }
 
-module.exports = { add_booking, assign_booking, add_confirm_checkout, upload_doc, delete_user, edit_customer_reading, delete_reading }
+function recuring_bill_users(req, res) {
+
+    var { hostel_id } = req.body;
+
+    if (!hostel_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+    }
+
+    var sql1 = "SELECT h.id,h.Name FROM hostel h WHERE h.Rooms != 'undefined' AND h.Floor != 'undefined' AND h.joining_date <= LAST_DAY(CURDATE()) AND (h.checkoutDate >= DATE_FORMAT(CURDATE(), '%Y-%m-01') OR h.checkoutDate IS NULL) AND h.isActive = 1 AND h.Hostel_Id = ? AND h.id NOT IN (SELECT user_id FROM recuring_inv_details WHERE status=1)"
+    connection.query(sql1, hostel_id, function (err, data) {
+        if (err) {
+            console.log(err);
+            return res.status(201).json({ statusCode: 201, message: "Error to Get User Details" })
+        }
+
+        return res.status(200).json({ statusCode: 200, message: "User Details", user_data: data })
+    })
+}
+
+module.exports = { add_booking, assign_booking, add_confirm_checkout, upload_doc, delete_user, edit_customer_reading, delete_reading, recuring_bill_users }

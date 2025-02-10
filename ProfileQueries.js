@@ -124,10 +124,7 @@ function InvoiceSettings(connection, request, response) {
                         });
                     }
                 });
-            }
-
-
-            else if (Profile) {
+            } else if (Profile) {
                 const timestamp = Date.now();
                 console.log("timestamp", timestamp)
                 uploadProfilePictureToS3('smartstaydevs', 'Logo/', 'Logo' + reqInvoice.hostel_Id + `${timestamp}` + '.jpg', reqInvoice.profile, (err, s3Url) => {
@@ -150,29 +147,47 @@ function InvoiceSettings(connection, request, response) {
                 });
 
             } else if (Prefix && Suffix) {
+
+                var hostel_id=reqInvoice.hostel_Id;
+
                 const query = `UPDATE hosteldetails SET  prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}',inv_date='${inv_date}',due_date='${due_date}' WHERE id='${reqInvoice.hostel_Id}'`;
                 connection.query(query, function (error, invoiceData) {
-                    console.log("invoiceData", invoiceData);
-                    console.log("error invoice", error);
                     if (error) {
                         response.status(202).json({ message: 'Database error' });
                     } else {
-                        response.status(200).json({ message: 'prefix and suffix Updated successfully', statusCode: 200 });
+
+                        var sql4 = "SELECT * FROM hostel WHERE Hostel_Id=? AND isActive=1";
+                        connection.query(sql4, [hostel_id], function (err, Data) {
+                            if (err) {
+                                return response.status(201).json({ statusCode: 201, message: "Error to Get User Details" });
+                            } else if (Data.length == 0) {
+                                return response.status(200).json({ message: 'prefix and suffix Updated successfully', statusCode: 200 });
+                            } else {
+
+                                var user_id = Data.map(x => x.ID)
+
+                                var sql3 = "UPDATE recuring_inv_details SET invoice_date=?,due_date=? WHERE user_id IN (?) AND status=1";
+                                connection.query(sql3, [inv_date, due_date, user_id], function (err, data) {
+                                    if (err) {
+                                        return response.status(201).json({ statusCode: 201, message: "Unable to Update Recure Details" });
+                                    } else {
+                                        return response.status(200).json({ message: 'prefix and suffix Updated successfully', statusCode: 200 });
+                                    }
+                                })
+
+                            }
+                        })
+
                     }
                 });
             }
-
-
         } else {
-            response.status(400).json({ message: 'Missing parameter' });
+            response.status(201).json({ message: 'Missing parameter' });
         }
     } else {
         response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
 }
-
-
-
 
 function UpdateEB(connection, attenArray, response) {
     console.log("attenArray", attenArray);
