@@ -135,7 +135,7 @@ exports.eb_list = (req, res) => {
 
     var user_id = req.user_details.id;
 
-    var sql1 = "SELECT * FROM customer_eb_amount WHERE user_id=? AND status=1";
+    var sql1 = "SELECT * FROM customer_eb_amount WHERE user_id=? AND status=1 ORDER BY id DESC";
     connection.query(sql1, [user_id], function (err, eb_data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Error to Get Eb Details", reason: err.message })
@@ -293,7 +293,7 @@ exports.complaint_types = (req, res) => {
 
         var hostel_id = data[0].Hostel_Id;
 
-        var sql2 = "SELECT * FROM complaint_type WHERE hostel_id=? AND status=1";
+        var sql2 = "SELECT * FROM complaint_type WHERE hostel_id=? AND status=1 ORDER BY id DESC";
         connection.query(sql2, [hostel_id], function (err, comp_data) {
             if (err) {
                 return res.status(201).json({ message: "Unable to Get Complaint Details", statusCode: 201 });
@@ -323,7 +323,7 @@ exports.all_complaints = (req, res) => {
 
         var un_userid = user_details.User_Id;
 
-        var sql2 = "SELECT com.id,com.date,com.Requestid AS comp_id,ct.complaint_name,com.Status,com.User_id,com.Description,com.hostelname FROM compliance AS com LEFT JOIN complaint_type AS ct ON ct.id=com.Complainttype WHERE User_id=?;";
+        var sql2 = "SELECT com.id,com.date,com.Requestid AS comp_id,ct.complaint_name,com.Status,com.User_id,com.Description,com.hostelname FROM compliance AS com LEFT JOIN complaint_type AS ct ON ct.id=com.Complainttype WHERE User_id=? ORDER BY com.id DESC";
         connection.query(sql2, [un_userid], function (err, com_data) {
             if (err) {
                 return res.status(201).json({ message: "Unable to Get Complaints Details", statusCode: 201 });
