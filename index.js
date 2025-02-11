@@ -1294,3 +1294,5 @@ app.post('/customers/announcement/add_comment', user_middleware, user_announceme
 app.post('/customers/announcement/all_comments', user_middleware, user_announcements_routes.all_comments);
 
 app.post('/customers/complaints/add_complaint_comment', user_middleware, user_announcements_routes.add_complaint_comment);
+
+app.post('/customers/download_bill', user_middleware, user_list_routes.download_bill);
