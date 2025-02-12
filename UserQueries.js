@@ -1837,8 +1837,8 @@ function get_invoice_id(req, res) {
         if (err) {
           return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
         } else if (hos_details.length > 0) {
-          let prefix = hos_details[0].prefix || hos_details[0].Name || "INV"; // Use hostel name or "INV" as default
-          let suffix = hos_details[0].suffix || "001"; // Default suffix
+          let prefix = (hos_details[0].prefix || hos_details[0].Name || "INV").replace(/\s+/g, '-'); // Remove spaces
+          let suffix = hos_details[0].suffix || "001"; // Default suffix is 26
 
           var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? AND action != 'advance' ORDER BY id DESC LIMIT 1;";
           connection.query(sql2, [hostel_id], function (err, inv_data) {
@@ -1852,18 +1852,18 @@ function get_invoice_id(req, res) {
 
                 // Extract previous prefix and suffix
                 let lastPrefix = lastInvoice.replace(/\d+$/, ''); // Remove numbers
-                let lastSuffix = lastInvoice.replace(/^\D+/, ''); // Keep only numbers
+                let lastSuffix = lastInvoice.replace(/^\D+/, '') || "26"; // Keep only numbers, default is 26
 
-                // If the prefix has changed, reset suffix to 001
+                // If the prefix has changed, reset suffix to 26
                 if (prefix !== lastPrefix) {
                   newInvoiceNumber = `${prefix}-${suffix}`;
                 } else {
-                  let newSuffix = (parseInt(lastSuffix || "0") + 1).toString().padStart(3, '0');
+                  let newSuffix = (parseInt(lastSuffix) + 1).toString(); // Increment without leading zeros
                   newInvoiceNumber = `${prefix}-${newSuffix}`;
                 }
               } else {
                 // First Invoice Case
-                newInvoiceNumber = `${prefix}-001`;
+                newInvoiceNumber = `${prefix}-${suffix}`;
               }
 
               check_inv_validation(newInvoiceNumber, hostel_id, res);
@@ -1889,7 +1889,7 @@ function get_invoice_id(req, res) {
         console.log("Invoice Number Already Exists");
         let invoicePrefix = invoice_number.replace(/\d+$/, '');
         let lastNumber = invoice_number.replace(/^\D+/, '');
-        let newNumber = (parseInt(lastNumber) + 1).toString().padStart(3, '0');
+        let newNumber = (parseInt(lastNumber) + 1).toString();
 
         let newInvoiceNumber = `${invoicePrefix}${newNumber}`;
         check_inv_validation(newInvoiceNumber, hostel_id, res);
@@ -1900,6 +1900,8 @@ function get_invoice_id(req, res) {
     });
   }
 }
+
+
 
 
 function get_user_amounts(req, res) {
