@@ -1837,9 +1837,8 @@ function get_invoice_id(req, res) {
         if (err) {
           return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
         } else if (hos_details.length > 0) {
-
           let prefix = (hos_details[0].prefix || hos_details[0].Name || "INV").replace(/\s+/g, '-');
-          let suffix = hos_details[0].suffix || "001";
+          let suffix = "001"; // Default suffix is 001
 
           var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? AND action != 'advance' ORDER BY id DESC LIMIT 1;";
           connection.query(sql2, [hostel_id], function (err, inv_data) {
@@ -1852,19 +1851,20 @@ function get_invoice_id(req, res) {
                 let lastInvoice = inv_data[0].Invoices || "";
 
                 // Extract previous prefix and suffix
-                let lastPrefix = lastInvoice.replace(/\d+$/, ''); // Remove numbers
-                let lastSuffix = lastInvoice.replace(/^\D+/, '') || "26"; // Keep only numbers, default is 26
+                let lastPrefix = lastInvoice.replace(/-\d+$/, ''); // Remove suffix
+                let lastSuffix = lastInvoice.match(/-(\d+)$/); // Extract numbers
+                lastSuffix = lastSuffix ? lastSuffix[1] : "001";
 
-                // If the prefix has changed, reset suffix to 26
+                // If the prefix has changed, reset suffix to 001
                 if (prefix !== lastPrefix) {
-                  newInvoiceNumber = `${prefix}-${suffix}`;
+                  newInvoiceNumber = `${prefix}-001`;
                 } else {
-                  let newSuffix = (parseInt(lastSuffix) + 1).toString(); // Increment without leading zeros
+                  let newSuffix = (parseInt(lastSuffix) + 1).toString().padStart(3, '0'); // Ensure 3 digits
                   newInvoiceNumber = `${prefix}-${newSuffix}`;
                 }
               } else {
                 // First Invoice Case
-                newInvoiceNumber = `${prefix}-${suffix}`;
+                newInvoiceNumber = `${prefix}-001`;
               }
 
               check_inv_validation(newInvoiceNumber, hostel_id, res);
@@ -1888,11 +1888,12 @@ function get_invoice_id(req, res) {
 
       if (data.length > 0) {
         console.log("Invoice Number Already Exists");
-        let invoicePrefix = invoice_number.replace(/\d+$/, '');
-        let lastNumber = invoice_number.replace(/^\D+/, '');
-        let newNumber = (parseInt(lastNumber) + 1).toString();
+        let invoicePrefix = invoice_number.replace(/-\d+$/, '');
+        let lastNumber = invoice_number.match(/-(\d+)$/);
+        lastNumber = lastNumber ? lastNumber[1] : "001";
+        let newNumber = (parseInt(lastNumber) + 1).toString().padStart(3, '0'); // Ensure 3 digits
 
-        let newInvoiceNumber = `${invoicePrefix}${newNumber}`;
+        let newInvoiceNumber = `${invoicePrefix}-${newNumber}`;
         check_inv_validation(newInvoiceNumber, hostel_id, res);
       } else {
         console.log("Success");
@@ -1901,6 +1902,7 @@ function get_invoice_id(req, res) {
     });
   }
 }
+
 
 function get_user_amounts(req, res) {
 
