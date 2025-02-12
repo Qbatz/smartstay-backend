@@ -1837,8 +1837,9 @@ function get_invoice_id(req, res) {
         if (err) {
           return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
         } else if (hos_details.length > 0) {
-          let prefix = (hos_details[0].prefix || hos_details[0].Name || "INV").replace(/\s+/g, '-'); // Remove spaces
-          let suffix = hos_details[0].suffix || "001"; // Default suffix is 26
+
+          let prefix = (hos_details[0].prefix || hos_details[0].Name || "INV").replace(/\s+/g, '-');
+          let suffix = hos_details[0].suffix || "001";
 
           var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? AND action != 'advance' ORDER BY id DESC LIMIT 1;";
           connection.query(sql2, [hostel_id], function (err, inv_data) {
@@ -1900,9 +1901,6 @@ function get_invoice_id(req, res) {
     });
   }
 }
-
-
-
 
 function get_user_amounts(req, res) {
 

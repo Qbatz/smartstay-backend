@@ -126,8 +126,8 @@ const generateManualPDF = async (data, outputPath, filename) => {
             doc.fontSize(10)
                 .text(serialNumber.toString(), startX + 15, dataY + 7)
                 .text(row.am_name, startX + columnWidth + 15, dataY + 7)
-                .text(row.amount.toFixed(2), startX + 2 * columnWidth + 15, dataY + 7);
-            serialNumber++;
+                .text((row.amount ?? 0).toFixed(2), startX + 2 * columnWidth + 15, dataY + 7);
+                serialNumber++;
             dataY += 25;
         });
 
