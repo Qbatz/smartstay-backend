@@ -71,7 +71,6 @@ function createUser(connection, request, response) {
   }else{
     var FirstNameInitial="S";
   }
-  atten.firstname = "";
 
   if (atten.lastname) {
     var LastNameInitial = atten.lastname.charAt(0).toUpperCase();
