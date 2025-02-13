@@ -3742,6 +3742,9 @@ function advance_invoice(req, res) {
             } else if (sel_res.length != 0) {
 
                 var inv_data = sel_res[0];
+
+                var ad_amount = sel_res[0]
+
                 var currentDate = moment().format("YYYY-MM-DD");
                 var dueDate = moment(currentDate).endOf("month").format("YYYY-MM-DD");
 
@@ -3787,6 +3790,7 @@ function advance_invoice(req, res) {
                 });
             } else {
                 console.log("Invalid Advance User Details");
+                return res.status(201).json({ statusCode: 201, message: "In this User Not Assigned" })
             }
         });
     })
