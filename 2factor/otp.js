@@ -139,9 +139,9 @@ exports.dashborad = (req, res) => {
     var sql2 = "SELECT ID.user_id, COALESCE((SELECT MIA.amount FROM manual_invoice_amenities MIA WHERE MIA.invoice_id = ID.id AND LOWER(MIA.am_name) IN ('roomrent', 'room rent', 'rent', 'room') ORDER BY MIA.id DESC LIMIT 1), ID.RoomRent, 0) AS last_month_room_rent FROM invoicedetails ID WHERE ID.Date = (SELECT MAX(Date) FROM invoicedetails WHERE Date >= DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL -1 MONTH), '%Y-%m-01') AND Date < DATE_FORMAT(CURDATE(), '%Y-%m-01') AND hos_user_id = ID.hos_user_id) AND ID.hos_user_id = " + id + " GROUP BY ID.user_id;";
 
     var sql3 = "SELECT * FROM compliance WHERE created_by=? AND user_type=2 ORDER BY id DESC"; // Complaints Query
-    var sql4 = "SELECT * FROM customer_eb_amount WHERE user_id=? AND status=1"; // Eb Details
+    var sql4 = "SELECT * FROM customer_eb_amount WHERE user_id=? AND status=1 ORDER BY id DESC"; // Eb Details
 
-    var sql5 = "SELECT ahs.*, amname.Amnities_Name FROM AmenitiesHistory AS ahs JOIN hostel AS hos ON hos.User_Id = ahs.user_Id JOIN AmnitiesName AS amname ON amname.id = ahs.amenity_Id WHERE ahs.status = 1 AND ahs.id = (SELECT MAX(sub_ahs.id) FROM AmenitiesHistory AS sub_ahs WHERE sub_ahs.amenity_Id = ahs.amenity_Id AND sub_ahs.user_Id = ahs.user_Id) AND hos.id = ?;" // Amenities Details
+    var sql5 = "SELECT ahs.*, amname.Amnities_Name FROM AmenitiesHistory AS ahs JOIN hostel AS hos ON hos.User_Id = ahs.user_Id JOIN AmnitiesName AS amname ON amname.id = ahs.amenity_Id WHERE ahs.status = 1 AND ahs.id = (SELECT MAX(sub_ahs.id) FROM AmenitiesHistory AS sub_ahs WHERE sub_ahs.amenity_Id = ahs.amenity_Id AND sub_ahs.user_Id = ahs.user_Id) AND hos.id = ? ORDER BY ahs.id DESC;" // Amenities Details
 
     var sql6 = "SELECT inv.* FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id WHERE inv.hos_user_id=? AND inv.invoice_status=1 ORDER BY id DESC"; // Invoice Query
 

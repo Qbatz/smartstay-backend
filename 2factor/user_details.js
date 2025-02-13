@@ -1,5 +1,9 @@
+const path = require('path');
+
 const connection = require('../config/connection')
 const moment = require('moment');
+const { generateManualPDF } = require('../components/gen_pdf');
+
 
 exports.amenities_list = (req, res) => {
 
@@ -135,7 +139,7 @@ exports.eb_list = (req, res) => {
 
     var user_id = req.user_details.id;
 
-    var sql1 = "SELECT * FROM customer_eb_amount WHERE user_id=? AND status=1";
+    var sql1 = "SELECT * FROM customer_eb_amount WHERE user_id=? AND status=1 ORDER BY id DESC";
     connection.query(sql1, [user_id], function (err, eb_data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Error to Get Eb Details", reason: err.message })
@@ -293,7 +297,7 @@ exports.complaint_types = (req, res) => {
 
         var hostel_id = data[0].Hostel_Id;
 
-        var sql2 = "SELECT * FROM complaint_type WHERE hostel_id=? AND status=1";
+        var sql2 = "SELECT * FROM complaint_type WHERE hostel_id=? AND status=1 ORDER BY id DESC";
         connection.query(sql2, [hostel_id], function (err, comp_data) {
             if (err) {
                 return res.status(201).json({ message: "Unable to Get Complaint Details", statusCode: 201 });
@@ -323,7 +327,7 @@ exports.all_complaints = (req, res) => {
 
         var un_userid = user_details.User_Id;
 
-        var sql2 = "SELECT com.id,com.date,com.Requestid AS comp_id,ct.complaint_name,com.Status,com.User_id,com.Description,com.hostelname FROM compliance AS com LEFT JOIN complaint_type AS ct ON ct.id=com.Complainttype WHERE User_id=?;";
+        var sql2 = "SELECT com.id,com.date,com.Requestid AS comp_id,ct.complaint_name,com.Status,com.User_id,com.Description,com.hostelname FROM compliance AS com LEFT JOIN complaint_type AS ct ON ct.id=com.Complainttype WHERE User_id=? ORDER BY com.id DESC";
         connection.query(sql2, [un_userid], function (err, com_data) {
             if (err) {
                 return res.status(201).json({ message: "Unable to Get Complaints Details", statusCode: 201 });
@@ -332,5 +336,36 @@ exports.all_complaints = (req, res) => {
             return res.status(200).json({ statusCode: 200, message: "Complaint Details", comp_data: com_data })
         })
     })
+}
 
+exports.download_bill = (req, res) => {
+
+    var invoice_id = req.body.invoice_id;
+
+    if (!invoice_id) {
+        return res.status(201).json({ message: "Missing Invoice Id", statusCode: 201 });
+    }
+
+    var sql1 = "SELECT inv.*,man.*,hsv.email_id AS hostel_email,hsv.hostel_PhoneNo AS hostel_phone,hs.Address AS user_address,hsv.Address AS hostel_address,hsv.profile AS hostel_profile FROM invoicedetails AS inv JOIN hostel AS hs ON hs.ID=inv.hos_user_id LEFT JOIN manual_invoice_amenities AS man ON man.invoice_id=inv.id JOIN hosteldetails AS hsv ON hsv.id=inv.Hostel_Id WHERE inv.id=?;";
+    connection.query(sql1, [invoice_id], async function (err, inv_data) {
+        if (err) {
+            return res.status(201).json({ message: "Unable to Get Invoice Details", statusCode: 201 })
+        } else if (inv_data.length != 0) {
+
+            const currentDate = moment().format('YYYY-MM-DD');
+            const currentMonth = moment(currentDate).month() + 1;
+            const currentYear = moment(currentDate).year();
+            const currentTime = moment().format('HHmmss');
+
+            const filename = `INV${currentMonth}${currentYear}${currentTime}${inv_data[0].User_Id}.pdf`;
+            const outputPath = path.join(__dirname, filename);
+
+            const pdfPath = await generateManualPDF(inv_data, outputPath, filename);
+
+            return res.status(200).json({ message: 'Insert PDF successfully', pdf_url: pdfPath, statusCode: 200 });
+
+        } else {
+            return res.status(201).json({ message: "Invalid Invoice Details", statusCode: 201 })
+        }
+    })
 }

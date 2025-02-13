@@ -1,18 +1,13 @@
 const moment = require('moment');
 const AWS = require('aws-sdk');
 require('dotenv').config();
-const PDFDocument = require('pdfkit');
-const fs = require('fs');
 const path = require('path');
 
-const pdf = require('html-pdf');
-
 var connection = require('./config/connection');
-const converter = require('number-to-words');
 const phantomjs = require('phantomjs-prebuilt');
 const addNotification = require('./components/add_notification');
 
-const puppeteer = require('puppeteer');
+const { generateManualPDF } = require('./components/gen_pdf');
 
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
@@ -678,13 +673,7 @@ function insertCheckOutInvoices(finalArray, user, connection) {
     }
 }
 
-
-
 //  Manual Invoice
-
-
-
-
 
 function InsertManualInvoice(connection, users, reqData, ParticularUser) {
 
@@ -1031,113 +1020,171 @@ function InvoicePDf(connection, request, response) {
 
     if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_view === 1)) {
 
-        const generatemanualPDF = async (data) => {
-            try {
-                var inv_data = data[0];
-                const htmlFilePath = path.join(__dirname, 'mail_templates', 'manual_invoice.html');
-                let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
+        // const downloadImage = (imageUrl, localPath) => {
+        //     return new Promise((resolve, reject) => {
+        //         const file = fs.createWriteStream(localPath);
+        //         https.get(imageUrl, (response) => {
+        //             if (response.statusCode !== 200) {
+        //                 reject(new Error(`Failed to download image. Status Code: ${response.statusCode}`));
+        //                 return;
+        //             }
+        //             response.pipe(file);
+        //             file.on('finish', () => file.close(() => resolve(localPath)));
+        //         }).on('error', (err) => {
+        //             fs.unlinkSync(localPath);
+        //             reject(err);
+        //         });
+        //     });
+        // };
 
-                const paidAmount = inv_data.PaidAmount ?? 0; // Default to 0 if null/undefined
-                const amountInWords = converter.toWords(paidAmount);
+        // const generateManualPDF = async (data, outputPath, filename) => {
+        //     try {
+        //         const doc = new PDFDocument({ margin: 50 });
+        //         const stream = fs.createWriteStream(outputPath);
+        //         doc.pipe(stream);
 
-                const currentTimeFormatted = moment().format('hh:mm A');
-                const defaultLogoPath = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg';
-                var logoPathimage = inv_data.hostel_profile ? inv_data.hostel_profile : defaultLogoPath;
-                const invdate = moment(inv_data.Date).format('DD/MM/YYYY');
+        //         const inv_data = data[0];
+        //         const formattedDate = moment(inv_data.Date).format('DD/MM/YYYY');
+        //         // Validate and Set Logo URL
+        //         let logoUrl = inv_data.hostel_profile ? inv_data.hostel_profile.trim() : null;
+        //         const defaultLogo = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg';
 
-                var tableData = [];
-                data.forEach((row) => {
-                    if (row.am_name && row.amount) {
-                        tableData.push({ description: row.am_name, amount: row.amount });
-                    }
-                });
+        //         // Check if logoUrl is valid, otherwise use the default logo
+        //         if (!logoUrl || !/^https?:\/\//.test(logoUrl)) {
+        //             logoUrl = defaultLogo;
+        //         }
 
-                let tableRows = '';
-                tableData.forEach((item, index) => {
-                    tableRows += `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${item.description}</td>
-                            <td>${item.amount}</td>
-                        </tr>
-                    `;
-                });
+        //         const localLogoPath = path.join(__dirname, 'temp_logo.jpg');
 
-                if (inv_data.PaidAmount > 0) {
-                    tableRows += `
-                        <tr>
-                            <td>${tableData.length + 1}</td>
-                            <td>Paid Amount</td>
-                            <td>${inv_data.PaidAmount}</td>
-                        </tr>
-                    `;
-                }
+        //         await downloadImage(logoUrl, localLogoPath);
 
-                htmlContent = htmlContent
-                    .replace('{{hostal_name}}', inv_data.Hostel_Name)
-                    .replace('{{city}}', inv_data.hostel_address)
-                    .replace('{{user_name}}', inv_data.Name)
-                    .replace('{{user_address}}', inv_data.user_address)
-                    .replace('{{invoice_number}}', inv_data.Invoices)
-                    .replace('{{invoice_date}}', invdate)
-                    .replace('{{amount_in_words}}', amountInWords)
-                    .replace('{{current_time}}', currentTimeFormatted)
-                    .replace('{{logo}}', logoPathimage)
-                    .replace('{{total_amount}}', inv_data.Amount)
-                    .replace('{{balance_amount}}', inv_data.BalanceDue)
-                    .replace('{{tableRows}}', tableRows);
+        //         const logoX = 50, logoY = 30, logoWidth = 80, logoHeight = 40;
+        //         const textX = logoX + logoWidth + 15;
 
-                let paymentStatusClass = '';
-                let paymentStatusText = '';
+        //         doc.image(localLogoPath, logoX, logoY, { width: logoWidth, height: logoHeight });
 
-                if (inv_data.Amount === inv_data.BalanceDue) {
-                    paymentStatusClass = 'pending';
-                    paymentStatusText = 'Pending';
-                } else if (inv_data.BalanceDue === 0) {
-                    paymentStatusClass = 'success';
-                    paymentStatusText = 'Success';
-                } else {
-                    paymentStatusClass = 'partial';
-                    paymentStatusText = 'Partial Paid';
-                }
+        //         const rightColumnX = 400; // Adjusted for proper alignment
 
-                htmlContent = htmlContent
-                    .replace('{{payment_status_class}}', paymentStatusClass)
-                    .replace('{{payment_status_text}}', paymentStatusText);
+        //         doc.font('Helvetica-Bold').fontSize(12)
+        //             .text(`Hostel Name: ${inv_data.Hostel_Name.toUpperCase()}`, rightColumnX, logoY, { align: 'right' });
 
-                const currentDate = moment().format('YYYY-MM-DD');
-                const currentMonth = moment(currentDate).month() + 1;
-                const currentYear = moment(currentDate).year();
-                const currentTime = moment().format('HHmmss');
+        //         // Phone & Email (Right Side, One Below the Other)
+        //         doc.font('Helvetica').fontSize(10)
+        //             .text(`Phone: ${inv_data.phoneNo || '-'}`, rightColumnX, logoY + 15, { align: 'right' })
+        //             .text(`Email: ${inv_data.EmailID || '-'}`, rightColumnX, logoY + 30, { align: 'right' });
 
-                const filename = `INV${currentMonth}${currentYear}${currentTime}${inv_data.User_Id}.pdf`;
-                const outputPath = path.join(__dirname, filename);
+        //         doc.moveDown(1);
 
-                // Convert HTML to PDF using `html-pdf`
-                // const options = { format: 'A4' };
-                const options = {
-                    format: 'A4',
-                    timeout: 30000, // 30 seconds timeout
-                    phantomArgs: ['--web-security=no', '--ignore-ssl-errors=yes'], // Optional: Helps with external assets
-                    renderDelay: 5000 // 5-second delay before rendering
-                };
 
-                pdf.create(htmlContent, options).toFile(outputPath, async (err, res) => {
-                    if (err) {
-                        console.error('❌ Error generating PDF:', err);
-                        return;
-                    }
-                    console.log('✅ PDF created successfully:', res.filename);
+        //         // Invoice Title
+        //         doc.font('Helvetica-Bold').fontSize(16)
+        //             .text('Invoice Receipt', 50, doc.y + 10, { align: 'center' });
 
-                    var inv_id = inv_data.id;
-                    await uploadToS3(res.filename, filename, inv_id);
-                    fs.unlinkSync(res.filename);
-                });
+        //         doc.moveDown(1);
 
-            } catch (error) {
-                console.error('❌ Error:', error);
-            }
-        };
+        //         // Define positions for Customer and Invoice Details
+        //         const leftColumnX = 50;
+        //         const rightColumnX1 = 400;
+        //         var lineSpacing = 4; // Reduced spacing for better alignment
+
+        //         // Customer Details (Left Side - Reduced Spacing)
+        //         doc.font('Helvetica').fontSize(10)
+        //             .text(`Customer Name: ${inv_data.Name}`, leftColumnX, doc.y)
+        //             .text(`Customer Phone: ${inv_data.phoneNo || '-'}`, leftColumnX, doc.y + lineSpacing)
+        //             .text(`Customer Email: ${inv_data.EmailID || '-'}`, leftColumnX, doc.y + lineSpacing * 2)
+        //             .text(`Customer Address: ${inv_data.user_address}`, leftColumnX, doc.y + lineSpacing * 3, { width: 250, lineGap: 2 });
+
+        //         doc.moveDown(0.5);
+
+        //         var lineSpacing = 20; // Reduced spacing for better alignment
+        //         // Invoice Details (Right Side, Now Properly Aligned)
+        //         const invoiceDetailsY = doc.y - (lineSpacing * 4); // Adjusted to align with customer details
+        //         doc.font('Helvetica').fontSize(10)
+        //             .text(`Invoice No: ${inv_data.Invoices}`, rightColumnX1, invoiceDetailsY, { align: 'right' })
+        //             .text(`Invoice Date: ${formattedDate}`, rightColumnX1, invoiceDetailsY + lineSpacing, { align: 'right' });
+
+        //         doc.moveDown(3);
+
+        //         const startX = 50, startY = doc.y + 20, tableWidth = 500, columnWidth = tableWidth / 3;
+        //         doc.rect(startX, startY, tableWidth, 25).fill('#b2b5b8').stroke();
+        //         doc.rect(startX, startY, columnWidth, 25).stroke();
+        //         doc.rect(startX + columnWidth, startY, columnWidth, 25).stroke();
+        //         doc.rect(startX + 2 * columnWidth, startY, columnWidth, 25).stroke();
+
+        //         doc.fontSize(10).fillColor('#000000')
+        //             .text('SNo', startX + 15, startY + 7)
+        //             .text('Description', startX + columnWidth + 15, startY + 7)
+        //             .text('Amount', startX + 2 * columnWidth + 15, startY + 7);
+        //         doc.fillColor('black');
+
+        //         // Table Content with Full Borders and Extra Space Below Last Line
+        //         let serialNumber = 1, dataY = startY + 25;
+        //         data.forEach(row => {
+        //             doc.rect(startX, dataY, tableWidth, 25).stroke();
+        //             doc.rect(startX, dataY, columnWidth, 25).stroke();
+        //             doc.rect(startX + columnWidth, dataY, columnWidth, 25).stroke();
+        //             doc.rect(startX + 2 * columnWidth, dataY, columnWidth, 25).stroke();
+
+        //             doc.fontSize(10)
+        //                 .text(serialNumber.toString(), startX + 15, dataY + 7)
+        //                 .text(row.am_name, startX + columnWidth + 15, dataY + 7)
+        //                 .text(row.amount.toFixed(2), startX + 2 * columnWidth + 15, dataY + 7);
+        //             serialNumber++;
+        //             dataY += 25;
+        //         });
+
+        //         doc.rect(startX, dataY, tableWidth, 25).stroke();
+        //         doc.fontSize(10).fillColor('black')
+        //             .text('Total Amount', startX + columnWidth, dataY + 7)
+        //             .text(inv_data.Amount.toFixed(2), startX + 2 * columnWidth + 15, dataY + 7);
+        //         dataY += 25;
+
+        //         if (inv_data.PaidAmount > 0) {
+
+        //             doc.rect(startX, dataY, tableWidth, 25).stroke();
+        //             doc.fontSize(10).fillColor('black')
+        //                 .text('Paid Amount', startX + columnWidth, dataY + 7)
+        //                 .text(inv_data.PaidAmount.toFixed(2), startX + 2 * columnWidth + 15, dataY + 7);
+        //             dataY += 60;
+        //         }
+
+
+        //         doc.moveDown(3);
+        //         const pageWidth = doc.page.width; // Get page width
+        //         const textWidth = doc.widthOfString(`We have received your payment of ${converter.toWords(inv_data.Amount.toFixed(0))} Rupees and Zero Paise`);
+        //         const centerX = (pageWidth - textWidth) / 2; // Calculate center position
+
+        //         doc.fontSize(10).fillColor('black')
+        //             .text(`We have received your payment of ${converter.toWords(inv_data.Amount.toFixed(0))} Rupees and Zero Paise`, centerX, doc.y);
+
+        //         doc.moveDown(1);
+        //         const footerText = "This is a system-generated receipt and no signature is required.";
+        //         const footerWidth = doc.widthOfString(footerText);
+        //         const footerX = (pageWidth - footerWidth) / 2; // Calculate center position
+
+        //         doc.fontSize(9)
+        //             .text(footerText, footerX, doc.y);
+
+        //         doc.end();
+
+
+        //         return new Promise((resolve, reject) => {
+        //             stream.on('finish', async () => {
+        //                 fs.unlinkSync(localLogoPath);
+        //                 resolve(outputPath);
+
+        //                 var inv_id = inv_data.id;
+
+        //                 await uploadToS3(outputPath, filename, inv_id);
+        //                 fs.unlinkSync(outputPath);
+        //             });
+        //             stream.on('error', reject);
+        //         });
+        //     } catch (error) {
+        //         console.error('Error generating PDF:', error);
+        //         throw error;
+        //     }
+        // };
 
         if (!action_type) {
             var action_type = "manual";
@@ -1149,13 +1196,26 @@ function InvoicePDf(connection, request, response) {
 
         if (action_type == 'manual') {
 
-            var sql1 = "SELECT inv.*,man.*,hs.Address AS user_address,hsv.Address AS hostel_address,hsv.profile AS hostel_profile FROM invoicedetails AS inv JOIN hostel AS hs ON hs.ID=inv.hos_user_id LEFT JOIN manual_invoice_amenities AS man ON man.invoice_id=inv.id JOIN hosteldetails AS hsv ON hsv.id=inv.Hostel_Id WHERE inv.id=?;";
-            connection.query(sql1, [reqBodyData.id], function (err, inv_data) {
+            var sql1 = "SELECT inv.*,man.*,hsv.email_id AS hostel_email,hsv.hostel_PhoneNo AS hostel_phone,hs.Address AS user_address,hsv.Address AS hostel_address,hsv.profile AS hostel_profile FROM invoicedetails AS inv JOIN hostel AS hs ON hs.ID=inv.hos_user_id LEFT JOIN manual_invoice_amenities AS man ON man.invoice_id=inv.id JOIN hosteldetails AS hsv ON hsv.id=inv.Hostel_Id WHERE inv.id=?;";
+            connection.query(sql1, [reqBodyData.id], async function (err, inv_data) {
                 if (err) {
                     return response.status(201).json({ message: "Unable to Get Invoice Details", statusCode: 201 })
                 } else if (inv_data.length != 0) {
 
-                    generatemanualPDF(inv_data);
+                    const currentDate = moment().format('YYYY-MM-DD');
+                    const currentMonth = moment(currentDate).month() + 1;
+                    const currentYear = moment(currentDate).year();
+                    const currentTime = moment().format('HHmmss');
+
+                    const filename = `INV${currentMonth}${currentYear}${currentTime}${inv_data[0].User_Id}.pdf`;
+                    const outputPath = path.join(__dirname, filename);
+
+                    // generateManualPDF(inv_data, outputPath, filename);
+
+                    const pdfPath = await generateManualPDF(inv_data, outputPath, filename);
+
+                    response.status(200).json({ message: 'Insert PDF successfully', pdf_url: pdfPath });
+
 
                 } else {
                     return response.status(201).json({ message: "Invalid Invoice Details", statusCode: 201 })
@@ -1590,6 +1650,7 @@ function generatePDFFor(breakUpTable, hosdata, hostel, data, response, connectio
     const textStartY = doc.y;
     const logoPath = './Asset/Logo.jpeg';
     if (hostel.Hostel_Logo) {
+
         embedImage(doc, hostel.Hostel_Logo, logoPath, (error, body) => {
             if (error) {
                 console.error(error);
@@ -2863,7 +2924,7 @@ function edit_manual_invoice(req, res) {
                 return res.status(201).json({ statusCode: 201, message: "Invalid Invoice Details" })
             }
 
-            var paid_amount = parseInt(inv_data[0].PaidAmount);
+            var paid_amount = parseInt(inv_data[0].PaidAmount || 0);
 
             if (paid_amount > total_amount) {
                 return res.status(201).json({ statusCode: 201, message: "Paid Amount Greater Than Total Amount" })
@@ -3681,6 +3742,9 @@ function advance_invoice(req, res) {
             } else if (sel_res.length != 0) {
 
                 var inv_data = sel_res[0];
+
+                var ad_amount = sel_res[0]
+
                 var currentDate = moment().format("YYYY-MM-DD");
                 var dueDate = moment(currentDate).endOf("month").format("YYYY-MM-DD");
 
@@ -3726,6 +3790,7 @@ function advance_invoice(req, res) {
                 });
             } else {
                 console.log("Invalid Advance User Details");
+                return res.status(201).json({ statusCode: 201, message: "In this User Not Assigned" })
             }
         });
     })

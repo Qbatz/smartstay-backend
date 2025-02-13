@@ -59,7 +59,7 @@ exports.all_announcements = (req, res) => {
 
     var hostel_id = req.hostel_id;
 
-    var sql = "SELECT * FROM announcements WHERE hostel_id=? AND status=1";
+    var sql = "SELECT * FROM announcements WHERE hostel_id=? AND status=1 ORDER BY id DESC";
     connection.query(sql, [hostel_id], function (err, data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Error Fetching User Details", reason: err.message })

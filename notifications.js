@@ -185,17 +185,17 @@ function add_room_reading(req, res) {
                 return res.status(201).json({ statusCode: 201, message: 'Database error' });
             } else if (amount_details.length != 0) {
 
-                var s1l3 = "SELECT * FROM room_readings WHERE hostel_id=? ORDER BY id DESC";
-                connection.query(s1l3, [hostel_id], function (err, ch_maxdata) {
+                var s1l3 = "SELECT * FROM room_readings WHERE hostel_id=? AND floor_id=? AND room_id=? AND status=1 ORDER BY id DESC";
+                connection.query(s1l3, [hostel_id, floor_id, room_id], function (err, ch_maxdata) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: 'Database error', reason: err.message });
                     } else {
 
                         if (ch_maxdata != 0) {
 
-                            var last_reading = ch_maxdata[0].total_reading;
+                            var last_reading = ch_maxdata[0].reading;
 
-                            if (last_reading > reading) {
+                            if (last_reading >= reading) {
                                 return res.status(201).json({ statusCode: 201, message: 'Current Reading is Older than Last Reading' });
                             }
                         } else {
@@ -303,7 +303,7 @@ function add_hostel_reading(req, res) {
 
                 var particular_amount = amount_details[0].amount;
 
-                var s1l3 = "SELECT * FROM hostel_readings WHERE hostel_id=? ORDER BY id DESC";
+                var s1l3 = "SELECT * FROM hostel_readings WHERE hostel_id=? AND status=1 ORDER BY id DESC";
                 connection.query(s1l3, [hostel_id], function (err, ch_maxdata) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: 'Database error', reason: err.message });
@@ -311,9 +311,12 @@ function add_hostel_reading(req, res) {
 
                         if (ch_maxdata != 0) {
 
-                            var last_reading = ch_maxdata[0].total_reading;
+                            var last_reading = ch_maxdata[0].reading;
 
-                            if (last_reading > reading) {
+                            console.log("last_reading", last_reading);
+                            console.log("last_reading", reading);
+
+                            if (last_reading >= parseInt(reading)) {
                                 return res.status(201).json({ statusCode: 201, message: 'Current Reading is Older than Last Reading' });
                             }
                         } else {
@@ -379,7 +382,7 @@ function add_hostel_reading(req, res) {
                                             })
 
                                         } else {
-                                            return res.status(201).json({ message: 'New reading must be greater than the old reading' });
+                                            return res.status(201).json({ statusCode: 201, message: 'New reading must be greater than the old reading' });
                                         }
                                     }
                                 })
@@ -428,6 +431,23 @@ function edit_room_reading(req, res) {
             } else if (check_data.length != 0) {
 
                 const per_unit_amount = check_data[0].amount;
+
+                // var s1l3 = "SELECT * FROM room_readings WHERE hostel_id=? AND floor_id=? AND room_id=? AND status=1 AND id !=? ORDER BY id DESC";
+                // connection.query(s1l3, [hostel_id, floor_id, room_id], function (err, ch_maxdata) {
+                //     if (err) {
+                //         return res.status(201).json({ statusCode: 201, message: 'Database error', reason: err.message });
+                //     } else {
+
+                //         if (ch_maxdata != 0) {
+
+                //             var last_reading = ch_maxdata[0].reading;
+
+                //             if (last_reading > reading) {
+                //                 return res.status(201).json({ statusCode: 201, message: 'Current Reading is Older than Last Reading' });
+                //             }
+                //         } else {
+                //             console.log("Empty Reading");
+                //         }
 
                 // Check for duplicate date entries
                 const sql2 = "SELECT * FROM room_readings WHERE hostel_id=? AND floor_id=? AND room_id=? AND date=? AND status=1 AND id!=?";
@@ -600,6 +620,8 @@ function edit_room_reading(req, res) {
                         return res.status(201).json({ statusCode: 201, message: 'Date already has an added in this Room. Please select a different date.' });
                     }
                 });
+                //     }
+                // })
             } else {
                 return res.status(201).json({ statusCode: 201, message: 'Invalid Reading Details', error: err });
             }
@@ -634,19 +656,33 @@ function edit_hostel_reading(req, res) {
 
                 const per_unit_amount = check_data[0].amount;
 
+                // var s1l3 = "SELECT * FROM hostel_readings WHERE hostel_id=? AND status=1 AND id !=? ORDER BY id DESC";
+                // connection.query(s1l3, [hostel_id, id], function (err, ch_maxdata) {
+                //     if (err) {
+                //         return res.status(201).json({ statusCode: 201, message: 'Database error', reason: err.message });
+                //     } else {
+
+                //         if (ch_maxdata != 0) {
+
+                //             var last_reading = ch_maxdata[0].reading;
+
+                //             console.log("last_reading", last_reading);
+                //             console.log("last_reading", reading);
+
+                //             if (last_reading > parseInt(reading)) {
+                //                 return res.status(201).json({ statusCode: 201, message: 'Current Reading is Older than Last Reading' });
+                //             }
+                //         } else {
+                //             console.log("Empty Reading");
+
+                //         }
+
                 // Check for duplicate date entries
                 const sql2 = "SELECT * FROM hostel_readings WHERE hostel_id=? AND date=? AND status=1 AND id!=?";
                 connection.query(sql2, [hostel_id, date, id], function (err, date_res) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: 'Unable to Get Eb Amount Details2', error: err });
                     } else if (date_res.length == 0) {
-
-                        // Update the current reading record
-                        // const up_query = "UPDATE hostel_readings SET date=?, reading=? WHERE id=?";
-                        // connection.query(up_query, [date, reading, id], async function (err, up_res) {
-                        //     if (err) {
-                        //         return res.status(201).json({ statusCode: 201, message: 'Unable to Update Eb Amount Details3', error: err });
-                        //     } else {
 
                         var old_hostel = check_data[0].hostel_id;
 
@@ -714,6 +750,8 @@ function edit_hostel_reading(req, res) {
                         return res.status(201).json({ statusCode: 201, message: 'Date already has an added in this Room. Please select a different date.' });
                     }
                 });
+                //     }
+                // })
             } else {
                 return res.status(201).json({ statusCode: 201, message: 'Invalid Reading Details', error: err });
             }
