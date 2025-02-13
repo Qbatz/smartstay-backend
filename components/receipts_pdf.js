@@ -148,7 +148,7 @@ const generatereceipt = async (inv_data, outputPath, filename) => {
 
         doc.moveDown(2);
         doc.fontSize(10).fillColor('black').text('Total:', 430, rowStartY + 50);
-        doc.font('Helvetica-Bold').text('7005', 500, rowStartY + 50);
+        doc.font('Helvetica-Bold').text(inv_data.Amount, 500, rowStartY + 50);
 
         doc.moveDown(8);
         doc.fontSize(10).fillColor('#666').text('Received From:', 50, rowStartY + 90);
