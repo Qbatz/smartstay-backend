@@ -195,7 +195,7 @@ function add_room_reading(req, res) {
 
                             var last_reading = ch_maxdata[0].reading;
 
-                            if (last_reading > reading) {
+                            if (last_reading >= reading) {
                                 return res.status(201).json({ statusCode: 201, message: 'Current Reading is Older than Last Reading' });
                             }
                         } else {
@@ -316,7 +316,7 @@ function add_hostel_reading(req, res) {
                             console.log("last_reading", last_reading);
                             console.log("last_reading", reading);
 
-                            if (last_reading > parseInt(reading)) {
+                            if (last_reading >= parseInt(reading)) {
                                 return res.status(201).json({ statusCode: 201, message: 'Current Reading is Older than Last Reading' });
                             }
                         } else {
