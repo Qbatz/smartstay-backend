@@ -233,7 +233,7 @@ async function new_subscription(req, res) {
         var currentDate = new Date().toISOString().split('T')[0];
 
         // Fetch hostel details from the database
-        var sql = `SELECT hs.id, hs.Name,hs.subscription_id FROM hosteldetails AS hs JOIN createaccount AS ca ON ca.id=hs.createdby WHERE hs.id IN (?) AND hs.isActive=1`;
+        var sql = `SELECT hs.id, hs.Name,ca.subscription_id FROM hosteldetails AS hs JOIN createaccount AS ca ON ca.id=hs.created_By WHERE hs.id IN (?) AND hs.isActive=1`;
         connection.query(sql, [hostel_ids], async (err, hostels) => {
             if (err) {
                 return res.status(201).json({ message: "Database Error", error: err });
