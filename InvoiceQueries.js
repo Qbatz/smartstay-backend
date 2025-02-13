@@ -2924,7 +2924,7 @@ function edit_manual_invoice(req, res) {
                 return res.status(201).json({ statusCode: 201, message: "Invalid Invoice Details" })
             }
 
-            var paid_amount = parseInt(inv_data[0].PaidAmount);
+            var paid_amount = parseInt(inv_data[0].PaidAmount || 0);
 
             if (paid_amount > total_amount) {
                 return res.status(201).json({ statusCode: 201, message: "Paid Amount Greater Than Total Amount" })
