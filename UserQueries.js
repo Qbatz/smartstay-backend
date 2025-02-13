@@ -65,12 +65,7 @@ function createUser(connection, request, response) {
   var role_permissions = request.role_permissions;
   var is_admin = request.is_admin;
 
-  if(atten.lastname){
-
-    var FirstNameInitial = atten.firstname.charAt(0).toUpperCase();
-  }else{
-    var FirstNameInitial="S";
-  }
+  var FirstNameInitial = atten.firstname.charAt(0).toUpperCase();
 
   if (atten.lastname) {
     var LastNameInitial = atten.lastname.charAt(0).toUpperCase();
