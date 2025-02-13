@@ -1002,12 +1002,12 @@ function transitionlist(request, response) {
     if (invoice_type == 1) {
 
       if (!amount && amount == undefined && (!balance_due || balance_due == undefined)) {
-        response.status(203).json({ message: "Missing Required Fields" });
+        response.status(203).json({ statusCode: 201, message: "Missing Required Fields" });
       } else {
         var sql1 = "SELECT * FROM invoicedetails WHERE id='" + id + "';";
         connection.query(sql1, function (check_err, check_res) {
           if (check_err) {
-            response.status(201).json({ message: "Unable to Get User Details" });
+            response.status(201).json({ statusCode: 201, message: "Unable to Get User Details" });
           } else if (check_res.length != 0) {
 
             var new_user_id = check_res[0].User_Id;
@@ -1016,7 +1016,7 @@ function transitionlist(request, response) {
             var sql3 = "SELECT * FROM hostel WHERE User_Id=?";
             connection.query(sql3, new_user_id, function (sel1_err, sel1_res) {
               if (sel1_err) {
-                response.status(201).json({ message: "Unable to Get User Details" });
+                response.status(201).json({ statusCode: 201, message: "Unable to Get User Details" });
               } else if (sel1_res.length != 0) {
                 var user_id = sel1_res[0].ID;
 
@@ -1035,14 +1035,14 @@ function transitionlist(request, response) {
                 var sql2 = "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=?,Status=? WHERE id=?";
                 connection.query(sql2, [balance_due, new_amount, Status, id], function (up_err, up_res) {
                   if (up_err) {
-                    response.status(201).json({ message: "Unable to Update User Details" });
+                    response.status(201).json({ statusCode: 201, message: "Unable to Update User Details" });
                   } else {
 
                     var sql3 = "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by,payment_type,payment_date,description,action) VALUES (?,?,?,1,?,?,?,'Invoice',1)";
                     connection.query(sql3, [user_id, invoice_id, amount, created_by, payment_by, payment_date,],
                       function (ins_err, ins_res) {
                         if (ins_err) {
-                          response.status(201).json({ message: "Unable to Add Transactions Details", });
+                          response.status(201).json({ statusCode: 201, message: "Unable to Add Transactions Details", });
                         } else {
 
                           if (payment_by == "Net Banking" && bank_id) {
@@ -1087,28 +1087,28 @@ function transitionlist(request, response) {
                             }
                           })
 
-                          response.status(200).json({ message: "Update Successfully" });
+                          response.status(200).json({ statusCode: 200, message: "Update Successfully" });
                         }
                       });
                   }
                 });
               } else {
-                response.status(201).json({ message: "Invalid User Id" });
+                response.status(201).json({ statusCode: 201, message: "Invalid User Id" });
               }
             });
           } else {
-            response.status(201).json({ message: "Invalid User Id" });
+            response.status(201).json({ statusCode: 201, message: "Invalid User Id" });
           }
         });
       }
     } else {
       if (!amount && amount == undefined) {
-        response.status(203).json({ message: "Missing Required Field" });
+        response.status(201).json({ statusCode: 201, message: "Missing Required Field" });
       } else {
         var sql1 = "SELECT * FROM invoicedetails WHERE id='" + id + "';";
         connection.query(sql1, function (check_err, check_res) {
           if (check_err) {
-            response.status(201).json({ message: "Unable to Get User Details" });
+            response.status(201).json({ statusCode: 201, message: "Unable to Get User Details" });
           } else if (check_res.length != 0) {
             var new_user_id = check_res[0].User_Id;
             var invoice_number = check_res[0].Invoices;
@@ -1116,7 +1116,7 @@ function transitionlist(request, response) {
             var sql3 = "SELECT * FROM hostel WHERE User_Id=?";
             connection.query(sql3, new_user_id, function (sel1_err, sel1_res) {
               if (sel1_err) {
-                response.status(201).json({ message: "Unable to Get User Details" });
+                response.status(201).json({ statusCode: 201, message: "Unable to Get User Details" });
               } else if (sel1_res.length != 0) {
                 var ID = sel1_res[0].ID;
 
@@ -1126,7 +1126,7 @@ function transitionlist(request, response) {
                 var new_amount = already_paid_amount + amount;
 
                 if (new_amount > total_advance) {
-                  response.status(201).json({ message: "Pay Amount More than Advance Amount, Kindly Check Advance Amount", });
+                  response.status(201).json({ statusCode: 201, message: "Pay Amount More than Advance Amount, Kindly Check Advance Amount", });
                 } else {
                   if (new_amount == total_advance) {
                     var Status = "Success";
@@ -1137,18 +1137,18 @@ function transitionlist(request, response) {
                   var sql2 = "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=?,Status=? WHERE id=?";
                   connection.query(sql2, [balance_due, new_amount, Status, id], function (up_err, up_res) {
                     if (up_err) {
-                      response.status(201).json({ message: "Unable to Update User Details" });
+                      response.status(201).json({ statusCode: 201, message: "Unable to Update User Details" });
                     } else {
                       var sql4 = "UPDATE hostel SET paid_advance=?,pending_advance=? WHERE ID=?";
                       connection.query(sql4, [new_amount, balance_due, ID], function (up_err1, up_res1) {
                         if (up_err) {
-                          response.status(201).json({ message: "Unable to Update Payemnt Details", });
+                          response.status(201).json({ statusCode: 201, message: "Unable to Update Payemnt Details", });
                         } else {
                           var sql3 = "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by,payment_type,payment_date,description,action) VALUES (?,?,?,1,?,?,?,'Invoice',1)";
                           connection.query(sql3, [ID, invoice_id, amount, created_by, payment_by, payment_date,],
                             function (ins_err, ins_res) {
                               if (ins_err) {
-                                response.status(201).json({ message: "Unable to Add Transactions Details", });
+                                response.status(201).json({ statusCode: 201, message: "Unable to Add Transactions Details", });
                               } else {
 
                                 var sql1 = "INSERT INTO receipts (user_id,reference_id,invoice_number,amount_received,payment_date,payment_mode,created_by) VALUES (?)";
@@ -1160,7 +1160,7 @@ function transitionlist(request, response) {
                                     // return res.status(201).json({ statusCode: 201, message: "Error to Add Receipt Details", reason: err.message });
                                   }
                                 })
-                                response.status(200).json({ message: "Update Successfully" });
+                                response.status(200).json({ statusCode: 200, message: "Update Successfully" });
                               }
                             }
                           );
@@ -1172,11 +1172,11 @@ function transitionlist(request, response) {
                   );
                 }
               } else {
-                response.status(201).json({ message: "Invalid User Id" });
+                response.status(201).json({ statusCode: 201, message: "Invalid User Id" });
               }
             });
           } else {
-            response.status(201).json({ message: "Invalid User Id" });
+            response.status(201).json({ statusCode: 201, message: "Invalid User Id" });
           }
         });
       }
