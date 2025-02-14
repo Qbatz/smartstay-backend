@@ -25,6 +25,10 @@ const queries = [
 
     "CREATE TABLE subscription_hostels (id INT AUTO_INCREMENT PRIMARY KEY,subscription_id VARCHAR(255) NOT NULL,customer_id VARCHAR(255) NOT NULL,hostel_id INT NOT NULL,hostel_name VARCHAR(255) NOT NULL,status INT(11) DEFAULT 1,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); ",
 
+    "ALTER TABLE `hosteldetails` CHANGE COLUMN `inv_date` `inv_date` INT(11) NULL DEFAULT NULL ,CHANGE COLUMN `due_date` `due_date` INT(11) NULL DEFAULT NULL ;",
+
+    "ALTER TABLE `createaccount` ADD COLUMN `hostel_count` BIGINT(20) NULL DEFAULT 1 AFTER `description`,CHANGE COLUMN `createdat` `createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP AFTER `createdby`;",
+
     "ALTER TABLE `trial_plan_details` ADD COLUMN `startdate` DATE NULL AFTER `plan_duration`,ADD COLUMN `end_date` DATE NULL AFTER `startdate`;"
 ];
 
