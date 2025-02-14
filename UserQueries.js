@@ -21,7 +21,7 @@ function getUsers(connection, response, request) {
   // var limit = request.body.page_limit || 10;
   // var offset = (page - 1) * limit;
 
-  console.log(role_permissions[4]);
+  // console.log(role_permissions[4]);
 
   if (is_admin == 1 || (role_permissions[4] && role_permissions[4].per_view == 1)) {
 
