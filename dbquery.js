@@ -25,7 +25,9 @@ const queries = [
 
     "ALTER TABLE `invoicedetails` ADD COLUMN `rec_invstartdate` DATE NULL AFTER `end_date`,ADD COLUMN `rec_invenddate` DATE NULL AFTER `rec_invstartdate`,ADD COLUMN `rec_ebstartdate` DATE NULL AFTER `rec_invenddate`,ADD COLUMN `rec_ebenddate` DATE NULL AFTER `rec_ebstartdate`,ADD COLUMN `rec_ebunit` DECIMAL(10,2) NULL AFTER `rec_ebenddate`;",
 
-    "ALTER TABLE `hosteldetails` CHANGE COLUMN `inv_date` `inv_date` INT(11) NULL DEFAULT NULL ,CHANGE COLUMN `due_date` `due_date` INT(11) NULL DEFAULT NULL ;"
+    "ALTER TABLE `hosteldetails` CHANGE COLUMN `inv_date` `inv_date` INT(11) NULL DEFAULT NULL ,CHANGE COLUMN `due_date` `due_date` INT(11) NULL DEFAULT NULL ;",
+
+    "ALTER TABLE `createaccount` ADD COLUMN `hostel_count` BIGINT(20) NULL DEFAULT 1 AFTER `description`,CHANGE COLUMN `createdat` `createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP AFTER `createdby`;"
 
 ];
 
