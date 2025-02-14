@@ -1738,8 +1738,10 @@ function hosteldetails(req, res) {
 
     var created_by = req.user_details.id;
 
-    var sql1 = "SELECT id,Name,profile FROM hosteldetails WHERE isActive=1 AND created_By=?";
-    connection.query(sql1, [created_by], function (err, data) {
+    var show_ids = req.show_ids;
+
+    var sql1 = "SELECT id,Name,profile FROM hosteldetails WHERE isActive=1 AND created_By IN (?)";
+    connection.query(sql1, [show_ids], function (err, data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
         } else if (data.length == 0) {
