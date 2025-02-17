@@ -3355,7 +3355,7 @@ function get_recuring_amount(req, res) {
                     return res.status(200).json({ statusCode: 200, message: "Bill Amounts", data: total_array })
 
                 } else {
-                    return res.status(201).json({ message: "Kindly Enable Recuring Details", statusCode: 201 });
+                    return res.status(202).json({ message: "Kindly Enable Recuring Details", statusCode: 202, recure: 0 });
                 }
             } else {
                 return res.status(201).json({ message: "Invalid Hostel Details", statusCode: 201 });
