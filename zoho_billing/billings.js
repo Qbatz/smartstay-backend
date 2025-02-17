@@ -226,13 +226,13 @@ async function new_subscription(req, res) {
     try {
         var { user_id, customer_id, plan_code, hostel_ids } = req.body;
 
-        if (!user_id || !customer_id || !plan_code || hostel_ids.length === 0) {
+        if (!user_id || !customer_id || !plan_code) {
             return res.status(201).json({ message: "Missing or Invalid Parameters" });
         }
 
         var currentDate = new Date().toISOString().split('T')[0];
 
-        if (Array.isArray(hostel_ids) && hostel_ids.length > 0) {
+        if (hostel_ids && Array.isArray(hostel_ids) && hostel_ids.length > 0) {
             var sql = `SELECT hs.id, hs.Name,ca.subscription_id FROM hosteldetails AS hs JOIN createaccount AS ca ON ca.id=hs.created_By WHERE hs.id IN (?) AND hs.isActive=1`;
             connection.query(sql, [hostel_ids], async (err, hostels) => {
                 if (err) {
@@ -256,7 +256,7 @@ async function new_subscription(req, res) {
                     addon_code: "hostel_addon",
                     name: "Hostel Subscription Addon",
                     price: 1,
-                    quantity: hostels.length,
+                    quantity: hostels.length || 1,
                     type: "one_time"
                 }
             ];
