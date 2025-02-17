@@ -2670,8 +2670,8 @@ function available_checkout_users(req, res) {
     if (!hostel_id) {
       return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Details" })
     }
-    var sql1 = "SELECT * FROM hostel WHERE Hostel_Id=? AND isActive=1 AND Floor != 'undefined' AND Rooms != 'undefined' AND Bed != 'undefined' AND created_by IN (?)";
-    connection.query(sql1, [hostel_id, show_ids], function (err, data) {
+    var sql1 = "SELECT * FROM hostel WHERE Hostel_Id=? AND isActive=1 AND Floor != 'undefined' AND Rooms != 'undefined' AND Bed != 'undefined' AND CheckoutDate is NULL;";
+    connection.query(sql1, [hostel_id], function (err, data) {
       if (err) {
         return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
       } else {
