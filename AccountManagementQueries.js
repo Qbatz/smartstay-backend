@@ -523,7 +523,7 @@ function createnewAccount(request, response) {
 
 // Generate JWT Token
 const generateToken = (user, plan_details) => {
-    return jwt.sign({ id: user.id, sub: user.id, user_type: user.user_type, username: user.Name, role_id: user.role_id, plan_code: plan_details.plan_code, plan_status: user.plan_status, start_date: plan_details.startdate, end_date: plan_details.end_date }, process.env.JWT_SECRET, { expiresIn: '30m' });
+    return jwt.sign({ id: user.id, sub: user.id, user_type: user.user_type, username: user.Name, role_id: user.role_id, plan_code: plan_details.plan_code, plan_status: user.plan_status, start_date: plan_details.startdate, end_date: plan_details.end_date, hostel_count: user.hostel_count }, process.env.JWT_SECRET, { expiresIn: '30m' });
 };
 
 // Login API

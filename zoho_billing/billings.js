@@ -226,39 +226,37 @@ async function new_subscription(req, res) {
     try {
         var { user_id, customer_id, plan_code, hostel_ids } = req.body;
 
-        if (!user_id || !customer_id || !plan_code || !Array.isArray(hostel_ids) || hostel_ids.length === 0) {
+        if (!user_id || !customer_id || !plan_code || hostel_ids.length === 0) {
             return res.status(201).json({ message: "Missing or Invalid Parameters" });
         }
 
         var currentDate = new Date().toISOString().split('T')[0];
 
-        // Fetch hostel details from the database
-        var sql = `SELECT hs.id, hs.Name,ca.subscription_id FROM hosteldetails AS hs JOIN createaccount AS ca ON ca.id=hs.created_By WHERE hs.id IN (?) AND hs.isActive=1`;
-        connection.query(sql, [hostel_ids], async (err, hostels) => {
-            if (err) {
-                return res.status(201).json({ message: "Database Error", error: err });
-            }
+        if (Array.isArray(hostel_ids) && hostel_ids.length > 0) {
+            var sql = `SELECT hs.id, hs.Name,ca.subscription_id FROM hosteldetails AS hs JOIN createaccount AS ca ON ca.id=hs.created_By WHERE hs.id IN (?) AND hs.isActive=1`;
+            connection.query(sql, [hostel_ids], async (err, hostels) => {
+                if (err) {
+                    return res.status(201).json({ message: "Database Error", error: err });
+                }
 
-            if (hostels.length === 0) {
-                return res.status(201).json({ message: "No valid hostels found" });
-            }
+                if (hostels.length === 0) {
+                    return res.status(201).json({ message: "No valid hostels found" });
+                } else {
+                    add_new_subs_func(hostels);
+                }
+            })
+        } else {
+            add_new_subs_func([]);
+        }
 
-            // var addons = hostels.map(hostel => ({
-            //     addon_code: "hostel_addon",
-            //     name: `Hostel - ${hostel.Name}`,
-            //     price: 1,
-            //     quantity: 1,
-            //     type: "one_time"
-            // }));
-
-            var subscription_id = hostels[0].subscription_id;
+        async function add_new_subs_func(hostels) {
 
             var addons = [
                 {
-                    addon_code: "hostel_addon", // Single add-on entry
+                    addon_code: "hostel_addon",
                     name: "Hostel Subscription Addon",
-                    price: 1, // Assuming 1 unit price
-                    quantity: hostels.length, // Set quantity based on number of hostels
+                    price: 1,
+                    quantity: hostels.length,
                     type: "one_time"
                 }
             ];
@@ -271,7 +269,7 @@ async function new_subscription(req, res) {
                 customer_id: customer_id,
                 addons: addons,
                 custom_fields: [],
-                redirect_url: "https://smartstay.qbatz.com/",
+                redirect_url: "",
                 start_date: currentDate,
                 notes: "New User Subscription with multiple hostels"
             };
@@ -280,29 +278,26 @@ async function new_subscription(req, res) {
 
             if (api_data.code == 0) {
 
-                let insertQuery = `INSERT INTO subscription_hostels (subscription_id, customer_id, hostel_id, hostel_name,status) VALUES ?`;
-                let values = hostels.map(hostel => [subscription_id, user_id, hostel.id, hostel.Name, 0]);
-                connection.query(insertQuery, [values], (err, result) => {
-                    if (err) {
-                        console.error("Error saving hostels:", err);
-                    }
+                if (hostels.length > 0) {
 
-                    var sql2 = "UPDATE createaccount SET hostel_ids=" + hostels + " WHERE id=?";
-                    connection.query(sql2, [user_id], (err, result) => {
+                    let hostelIdsArray = hostels.map(hostel => hostel.id);
+                    let hostelIdsString = JSON.stringify(hostelIdsArray);
+
+                    var sql2 = "UPDATE createaccount SET hostel_ids=? WHERE id=?";
+                    connection.query(sql2, [hostelIdsString, user_id], (err, result) => {
                         if (err) {
                             console.error("Error saving hostels:", err);
                         }
                     })
-                });
+                }
 
-                return res.status(200).json({ message: api_data.message, data: api_data.hostedpage, selected_hostels: hostels });
+                return res.status(200).json({ statusCode: 200, message: api_data.message, data: api_data.hostedpage, selected_hostels: hostels });
             } else {
-                return res.status(201).json({ message: api_data.message });
+                return res.status(201).json({ statusCode: 201, message: api_data.message });
             }
-        });
-
+        }
     } catch (error) {
-        return res.status(201).json({ message: "Internal Server Error", error: error.message });
+        return res.status(201).json({ statusCode: 201, message: "Internal Server Error", error: error.message });
     }
 }
 
@@ -361,30 +356,35 @@ async function webhook_status(req, res) {
                         connection.query(sql4, [user_id], function (err, hs_data) {
                             if (err) {
                                 console.log("Hostel Details API Error");
-                            } else if (hs_data.length != 0) {
-                                var hostel_id = hs_data.map(x => x.id);
+                            } else if (hs_data.length !== 0) {
+                                var hostel_id = hs_data.map(x => x.id); // Extract hostel IDs
 
-                                console.log("hostel_id :", hostel_id);
+                                console.log("hostel_id:", hostel_id);
 
-                                var sql5 = "UPDATE hosteldetails SET isActive=2 WHERE id IN (?)";
-                                connection.query(sql5, [hostel_id], function (err, up_data) {
-                                    if (err) {
-                                        console.log("Update Hostel Details Query Error");
-                                    } else {
-                                        var sql6 = "UPDATE hosteldetails SET isActive=1 WHERE id IN (?)";
-                                        connection.query(sql6, [hostel_ids], function (err, up_res2) {
-                                            if (err) {
-                                                console.log("Update Error for Activve Hostel Details Query Error");
-                                            } else {
-                                                console.log("Updated New Hostel Details");
-                                            }
-                                        })
-                                    }
-                                })
+                                if (hostel_id.length > 0) {
+                                    var sql5 = "UPDATE hosteldetails SET isActive=2 WHERE id IN (?)";
+                                    connection.query(sql5, [hostel_id], function (err, up_data) {
+                                        if (err) {
+                                            console.log("Update Hostel Details Query Error", err);
+                                        } else {
+                                            var sql6 = "UPDATE hosteldetails SET isActive=1 WHERE id IN (?)";
+                                            connection.query(sql6, [hostel_ids], function (err, up_res2) {
+                                                if (err) {
+                                                    console.log("Update Error for Active Hostel Details Query Error", err);
+                                                } else {
+                                                    console.log("Updated New Hostel Details");
+                                                }
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    console.log("No Hostels to Update");
+                                }
                             } else {
                                 console.log("No Hostels Added");
                             }
-                        })
+                        });
+
                     }
                 } else {
                     console.log("Invalid user details");
