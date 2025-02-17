@@ -134,7 +134,7 @@ module.exports = (req, res, next) => {
                         // Refresh the token if about to expire
                         if (timeToExpire <= 600) {
                             newToken = jwt.sign(
-                                { id: decoded.id, sub: decoded.id, user_type: decoded.user_type, username: decoded.username, role_id: decoded.role_id },
+                                { id: decoded.id, sub: decoded.id, user_type: decoded.user_type, username: decoded.username, role_id: decoded.role_id, plan_code: decoded.plan_code, plan_status: decoded.plan_status, start_date: decoded.startdate, end_date: decoded.end_date, hostel_count: decoded.hostel_count },
                                 process.env.JWT_SECRET, { expiresIn: '30m' }
                             );
                             res.locals.refresh_token = newToken;
