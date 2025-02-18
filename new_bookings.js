@@ -311,11 +311,11 @@ function add_confirm_checkout(req, res) {
 
                 const totalBalanceDue = result[0]?.totalBalanceDue || 0;
 
-                if (advance_return >= totalBalanceDue) {
-                    processInvoicesAndFinalizeCheckout(id, totalBalanceDue, advance_return, created_by, checkout_date, bed_id, advance_return, comments, res);
-                } else {
-                    return res.status(201).json({ statusCode: 201, message: "Room rent is less than total balance due" });
-                }
+                // if (advance_return >= totalBalanceDue) {
+                processInvoicesAndFinalizeCheckout(id, totalBalanceDue, advance_return, created_by, checkout_date, bed_id, advance_return, comments, res);
+                // } else {
+                //     return res.status(201).json({ statusCode: 201, message: "Room rent is less than total balance due" });
+                // }
             });
         }
     });
