@@ -362,8 +362,9 @@ async function createPG(reqHostel, res, req) {
                         } else {
 
                             var sql3 = "UPDATE hostel SET HostelName='" + hostel_name + "' WHERE Hostel_Id=" + id + " AND isActive=1;";
-                            var sql4 = "UPDATE compliance SET hostelname='" + hostel_name + "' WHERE Hostel_id=" + id + " AND isActive=1";
-                            var sql5 = sql3 + sql4;
+                            var sql4 = "UPDATE compliance SET hostelname='" + hostel_name + "' WHERE Hostel_id=" + id + " AND isActive=1;";
+                            var sql6 = "UPDATE invoicedetails SET Hostel_Name='" + hostel_name + "' WHERE Hostel_Id=" + id + "";
+                            var sql5 = sql3 + sql4 + sql6;
                             connection.query(sql5, function (err, up_res) {
                                 if (err) {
                                     return res.status(201).json({ message: "Unable to Update Hostel Details", statusCode: 201 })

@@ -3736,7 +3736,7 @@ function advance_invoice(req, res) {
         }
 
         var sql2 = "SELECT rms.Price,rms.Hostel_Id AS roomHostel_Id,rms.Floor_Id AS roomFloor_Id,rms.Room_Id AS roomRoom_Id,dtls.id AS detHostel_Id,dtls.isHostelBased,dtls.prefix,dtls.suffix,dtls.Name,hstl.ID AS hos_user_id,hstl.User_Id,hstl.Address,hstl.Name AS UserName,hstl.Hostel_Id AS hosHostel_Id,hstl.Rooms AS hosRoom,hstl.Floor AS hosFloor,hstl.Bed,hstl.RoomRent,hstl.Name AS user_name,hstl.Phone,hstl.Email,hstl.Address,hstl.paid_advance,hstl.pending_advance,hstl.AdvanceAmount AS advance_amount, hstl.CheckoutDate,CASE WHEN dtls.isHostelBased = true THEN (SELECT eb.EbAmount FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id ORDER BY eb.id DESC LIMIT 1)ELSE (SELECT eb.EbAmount FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id AND eb.Floor = hstl.Floor AND eb.Room = hstl.Rooms ORDER BY eb.id DESC LIMIT 1)END AS ebBill,(SELECT eb.Floor FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id ORDER BY eb.id DESC LIMIT 1) AS ebFloor, (SELECT eb.hostel_Id FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id ORDER BY eb.id DESC LIMIT 1 ) AS ebhostel_Id,(SELECT eb.Room FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id ORDER BY eb.id DESC LIMIT 1) AS ebRoom,(SELECT eb.createAt FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id AND eb.Floor = hstl.Floor AND eb.Room = hstl.Rooms ORDER BY eb.id DESC LIMIT 1) AS createdAt,( SELECT invd.Invoices FROM invoicedetails invd WHERE invd.Invoices LIKE CONCAT(dtls.prefix, '%')ORDER BY CAST(SUBSTRING(invd.Invoices, LENGTH(dtls.prefix) + 1) AS UNSIGNED) DESC LIMIT 1) AS InvoiceDetails FROM hostel hstl INNER JOIN hosteldetails dtls ON dtls.id = hstl.Hostel_Id INNER JOIN hostelrooms rms ON rms.Hostel_Id = hstl.Hostel_Id AND rms.Floor_Id = hstl.Floor AND rms.id = hstl.Rooms WHERE hstl.isActive = true AND hstl.id =?;";
-        connection.query(sql2, [user_id], function (sel_err, sel_res) {
+        connection.query(sql2, [user_id], async function (sel_err, sel_res) {
             if (sel_err) {
                 return res.status(201).json({ statusCode: 201, message: "Error to Fetch User Details", reason: err.message })
             } else if (sel_res.length != 0) {
@@ -3748,21 +3748,48 @@ function advance_invoice(req, res) {
                 var currentDate = moment().format("YYYY-MM-DD");
                 var dueDate = moment(currentDate).endOf("month").format("YYYY-MM-DD");
 
-                if (inv_data.prefix && inv_data.suffix) {
-                    let numericSuffix;
-                    if (inv_data.InvoiceDetails != null) {
-                        numericSuffix = parseInt(inv_data.InvoiceDetails.substring(inv_data.prefix.length)) || 0;
-                        numericSuffix++;
-                    } else {
-                        numericSuffix = inv_data.suffix;
-                    }
-                    invoiceNo = inv_data.prefix + numericSuffix;
-                } else {
-                    const userID = inv_data.User_Id.toString().slice(0, 4);
-                    const month = moment(new Date()).month() + 1;
-                    const year = moment(new Date()).year();
-                    invoiceNo = "AD_INVC" + month + year + userID;
-                }
+                // if (inv_data.prefix && inv_data.suffix) {
+                //     let numericSuffix;
+                //     if (inv_data.InvoiceDetails != null) {
+                //         numericSuffix = parseInt(inv_data.InvoiceDetails.substring(inv_data.prefix.length)) || 0;
+                //         numericSuffix++;
+                //     } else {
+                //         numericSuffix = inv_data.suffix;
+                //     }
+                //     invoiceNo = inv_data.prefix + numericSuffix;
+                // } else {
+                //     const userID = inv_data.User_Id.toString().slice(0, 4);
+                //     const month = moment(new Date()).month() + 1;
+                //     const year = moment(new Date()).year();
+                //     invoiceNo = "AD_INVC" + month + year + userID;
+                // }
+
+                const invoiceNo = await new Promise((resolve, reject) => {
+
+                    const options = {
+                        url: process.env.BASEURL + '/get_invoice_id',
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ user_id: user_id })
+                    };
+
+                    request(options, (error, response, body) => {
+                        if (error) {
+                            return reject(error);
+                        } else {
+                            const result = JSON.parse(body);
+                            console.log(result);
+
+                            if (result.statusCode == 200) {
+                                resolve(result.invoice_number);
+                            } else {
+                                resolve([]);
+                            }
+                        }
+                    });
+                })
+
+                console.log("invoice_id:", invoiceNo);
 
                 var status = "Pending";
 

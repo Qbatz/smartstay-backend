@@ -61,17 +61,36 @@ const generateManualPDF = async (data, outputPath, filename) => {
 
         doc.image(localLogoPath, logoX, logoY, { width: logoWidth, height: logoHeight });
 
-        const rightColumnX = 400; // Adjusted for proper alignment
+        // const rightColumnX = 100; // Adjusted for proper alignment
+
+        // doc.font('Helvetica-Bold').fontSize(12)
+        //     .text(`Hostel Name: ${inv_data.Hostel_Name.toUpperCase()}`, rightColumnX, logoY, { align: 'right' });
+
+        // // Phone & Email (Right Side, One Below the Other)
+        // doc.font('Helvetica').fontSize(10)
+        //     .text(`Phone: ${inv_data.phoneNo || '-'}`, rightColumnX, logoY + 15, { align: 'right' })
+        //     .text(`Email: ${inv_data.EmailID || '-'}`, rightColumnX, logoY + 30, { align: 'right' });
+
+        // doc.moveDown(1);
+
+        const rightColumnX = 100; // Adjusted for proper alignment
+        let currentY = logoY; // Start from the logo's Y position
 
         doc.font('Helvetica-Bold').fontSize(12)
-            .text(`Hostel Name: ${inv_data.Hostel_Name.toUpperCase()}`, rightColumnX, logoY, { align: 'right' });
+            .text(`Hostel Name: ${inv_data.Hostel_Name.toUpperCase()}`, rightColumnX, currentY, { align: 'right' });
+
+        // Move down a bit before adding the next line
+        currentY += 20; // Adjust spacing based on font size
 
         // Phone & Email (Right Side, One Below the Other)
         doc.font('Helvetica').fontSize(10)
-            .text(`Phone: ${inv_data.phoneNo || '-'}`, rightColumnX, logoY + 15, { align: 'right' })
-            .text(`Email: ${inv_data.EmailID || '-'}`, rightColumnX, logoY + 30, { align: 'right' });
+            .text(`Phone: ${inv_data.phoneNo || '-'}`, rightColumnX, currentY, { align: 'right' });
+
+        currentY += 15; // Adjust spacing
+        doc.text(`Email: ${inv_data.EmailID || '-'}`, rightColumnX, currentY, { align: 'right' });
 
         doc.moveDown(1);
+
 
 
         // Invoice Title
@@ -127,7 +146,7 @@ const generateManualPDF = async (data, outputPath, filename) => {
                 .text(serialNumber.toString(), startX + 15, dataY + 7)
                 .text(row.am_name, startX + columnWidth + 15, dataY + 7)
                 .text((row.amount ?? 0).toFixed(2), startX + 2 * columnWidth + 15, dataY + 7);
-                serialNumber++;
+            serialNumber++;
             dataY += 25;
         });
 
