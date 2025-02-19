@@ -34,7 +34,13 @@ exports.add_recuring = (req, res) => {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Update Electricity Details" });
                     } else {
-                        return res.status(200).json({ statusCode: 200, message: "Added Electricity Details" });
+
+                        if (recure == 0) {
+                            return res.status(200).json({ statusCode: 200, message: "Recure Disabled Successfully" });
+                        } else {
+                            return res.status(200).json({ statusCode: 200, message: "Added Electricity Details" });
+                        }
+
                     }
                 })
             } else if (type == 'invoice') {
@@ -44,7 +50,11 @@ exports.add_recuring = (req, res) => {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Update Invoice Details" });
                     } else {
-                        return res.status(200).json({ statusCode: 200, message: "Added Invoice Details" });
+                        if (recure == 0) {
+                            return res.status(200).json({ statusCode: 200, message: "Recure Disabled Successfully" });
+                        } else {
+                            return res.status(200).json({ statusCode: 200, message: "Added Invoice Details" });
+                        }
                     }
                 })
             } else {
@@ -62,7 +72,11 @@ exports.add_recuring = (req, res) => {
                                 console.log(err);
                                 return res.status(201).json({ statusCode: 201, message: "Unable to Update Amenity Details" });
                             } else {
-                                return res.status(200).json({ statusCode: 200, message: "Added Amenities Details" });
+                                if (recure == 0) {
+                                    return res.status(200).json({ statusCode: 200, message: "Recure Disabled Successfully" });
+                                } else {
+                                    return res.status(200).json({ statusCode: 200, message: "Added Amenities Details" });
+                                }
                             }
                         })
 
