@@ -84,7 +84,7 @@ function edit_role(req, res) {
             } else if (check_res.length != 0) {
 
                 var sq1 = "SELECT * FROM roles WHERE status=1 AND hostel_id=? AND LOWER(role_name) = LOWER(?) AND id !=?";
-                connection.query(sq1, [role_name, hostel_id, id], function (err, data) {
+                connection.query(sq1, [hostel_id,role_name, id], function (err, data) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Get Role Details" })
                     } else if (data.length > 0) {
