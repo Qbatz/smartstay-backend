@@ -29,8 +29,19 @@ const queries = [
 
     "ALTER TABLE `createaccount` ADD COLUMN `hostel_count` BIGINT(20) NULL DEFAULT 1 AFTER `description`,CHANGE COLUMN `createdat` `createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP AFTER `createdby`;",
 
-    "ALTER TABLE `customer_walk_in_details` ADD COLUMN `walk_In_Date` DATE NULL AFTER `mobile_Number`;"
+    "ALTER TABLE `customer_walk_in_details` ADD COLUMN `walk_In_Date` DATE NULL AFTER `mobile_Number`;",
 
+    "CREATE TABLE `referral_codes` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`user_id` BIGINT(20) NULL,`referral_code` VARCHAR(45) NULL,`is_used` INT NULL DEFAULT 0,`is_active` INT NULL DEFAULT 1,`used_by` BIGINT(20) NULL DEFAULT 0,`amount` BIGINT(20) NULL,`updated_by` BIGINT(20) NULL DEFAULT 0,`created_by` BIGINT(20) NULL DEFAULT 0,`is_credited` INT NULL DEFAULT 0,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+
+    "ALTER TABLE `createaccount` ADD COLUMN `reference_id` VARCHAR(50) NULL DEFAULT 0 AFTER `role_id`;",
+
+    "ALTER TABLE `createaccount` ADD COLUMN `is_credited` INT NULL DEFAULT 0 AFTER `reference_id`;",
+    
+    "CREATE TABLE `wallet` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`amount` DECIMAL(10,2) NULL,`user_id` BIGINT(20) NULL,`is_active` INT NULL DEFAULT 1,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+    
+    "CREATE TABLE `wallet_logs` (`id` BIGINT(20) NOT NULL,`logs` VARCHAR(255) NULL,`ref_id` BIGINT(20) NULL DEFAULT 0,`used_by` BIGINT(20) NULL DEFAULT 0,`status` INT NULL DEFAULT 1,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+    
+    "ALTER TABLE `wallet_logs` CHANGE COLUMN `id` `id` BIGINT(20) NOT NULL AUTO_INCREMENT ;"
 ];
 
 queries.forEach(executeQuery);

@@ -17,6 +17,7 @@ const newBookings = require('./new_bookings');
 
 var user_announcements_routes = require('./2factor/user_announcements')
 const receipts = require('./receipts');
+const referrals = require('./referrals');
 
 
 const app = express()
@@ -1256,6 +1257,8 @@ app.post('/add_new_subscription', subsc_route.add_new_subscription);
 
 
 // **************************** End Cashfree Subscription  *****************************
+
+app.post('/referrals/generate_code', referrals.generate_code);
 
 
 // Mobile API
