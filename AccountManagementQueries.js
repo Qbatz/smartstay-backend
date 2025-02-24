@@ -442,34 +442,71 @@ function createnewAccount(request, response) {
                                 var subscription_id = subscription_response.subscription_id;
                                 var plan_duration = subscription_response.trial_remaining_days;
 
-                        if (reference_id && reference_id != 0) {
+                                if (reference_id && reference_id != 0) {
 
-                            var sql3 = "SELECT * FROM referral_codes WHERE referral_code=? AND is_active=1";
-                            connection.query(sql3, [reference_id], function (err, ref_res) {
-                                if (err) {
-                                    console.log("Error for Reference", err);
-                                    return response.status(201).json({ message: 'Error to Get Reference Details' });
-                                } else if (ref_res.length != 0) {
+                                    var sql3 = "SELECT * FROM referral_codes WHERE referral_code=? AND is_active=1";
+                                    connection.query(sql3, [reference_id], function (err, ref_res) {
+                                        if (err) {
+                                            console.log("Error for Reference", err);
+                                            return response.status(201).json({ message: 'Error to Get Reference Details' });
+                                        } else if (ref_res.length != 0) {
 
-                                    var full_name = reqBodyData.first_name + " " + reqBodyData.last_name
-                                    var ref_id = ref_res[0].id;
-                                    var logs = full_name + " Added for Receipt Id"
+                                            var full_name = reqBodyData.first_name + " " + reqBodyData.last_name
+                                            var ref_id = ref_res[0].id;
+                                            var logs = full_name + " Added for Receipt Id"
 
-                                    var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status,reference_id,is_credited) VALUES (?,?,?,?,?,?,?,?,1,?,0)"
-                                    connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, plan_code, ref_id], function (error, result) {
+                                            var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status,reference_id,is_credited) VALUES (?,?,?,?,?,?,?,?,1,?,0)"
+                                            connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, plan_code, ref_id], function (error, result) {
+                                                if (error) {
+                                                    console.log(error);
+                                                    return response.status(201).json({ message: 'Database error' });
+                                                } else {
+                                                    var user_id = result.insertId;
+
+                                                    var sql4 = "INSERT INTO wallet_logs (logs,ref_id,used_by,status) VALUES (?,?,?,?)";
+                                                    connection.query(sql4, [logs, ref_id, user_id, 1], function (err, wall_data) {
+                                                        if (err) {
+                                                            console.log(error);
+                                                        }
+                                                    })
+                                                    // return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
+
+                                                    var sql2 = "INSERT INTO trial_plan_details (plan_code,user_id,customer_id,subscription_id,plan_status,plan_duration,startdate,end_date) VALUES (?,?,?,?,?,?,?,?)";
+                                                    connection.query(sql2, [plan_code, user_id, customer_id, subscription_id, 1, 30, currentDate, formattedFutureDate], (err, ins_data) => {
+                                                        if (err) {
+                                                            console.log(err);
+                                                            return response.status(201).json({ message: "Unable to Add Subscribtion History", statusCode: 201 })
+                                                        } else {
+
+                                                            var sql4 = "INSERT INTO wallet (amount,user_id,is_active) VALUES (?,?,?)";
+                                                            connection.query(sql4, [0, user_id, 1], function (err, wal_res) {
+                                                                if (err) {
+                                                                    console.log("Unable to Add Wallet Details");
+                                                                    // return response.status(201).json({ message: "Unable to Add Wallet Details", statusCode: 201 })
+                                                                }
+
+                                                                return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
+                                                            })
+                                                        }
+                                                    })
+                                                }
+                                            });
+
+
+                                        } else {
+                                            return response.status(201).json({ message: 'Invalid Reference Details' });
+                                        }
+                                    })
+
+                                } else {
+
+                                    var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status) VALUES (?,?,?,?,?,?,?,?,1)"
+                                    connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, plan_code], function (error, result) {
                                         if (error) {
                                             console.log(error);
                                             return response.status(201).json({ message: 'Database error' });
                                         } else {
                                             var user_id = result.insertId;
-
-                                            var sql4 = "INSERT INTO wallet_logs (logs,ref_id,used_by,status) VALUES (?,?,?,?)";
-                                            connection.query(sql4, [logs, ref_id, user_id, 1], function (err, wall_data) {
-                                                if (err) {
-                                                    console.log(error);
-                                                }
-                                            })
-                                            // return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
 
                                             var sql2 = "INSERT INTO trial_plan_details (plan_code,user_id,customer_id,subscription_id,plan_status,plan_duration,startdate,end_date) VALUES (?,?,?,?,?,?,?,?)";
                                             connection.query(sql2, [plan_code, user_id, customer_id, subscription_id, 1, 30, currentDate, formattedFutureDate], (err, ins_data) => {
@@ -477,12 +514,11 @@ function createnewAccount(request, response) {
                                                     console.log(err);
                                                     return response.status(201).json({ message: "Unable to Add Subscribtion History", statusCode: 201 })
                                                 } else {
-
+                                                    // return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
                                                     var sql4 = "INSERT INTO wallet (amount,user_id,is_active) VALUES (?,?,?)";
                                                     connection.query(sql4, [0, user_id, 1], function (err, wal_res) {
                                                         if (err) {
                                                             console.log("Unable to Add Wallet Details");
-                                                            // return response.status(201).json({ message: "Unable to Add Wallet Details", statusCode: 201 })
                                                         }
 
                                                         return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
@@ -491,66 +527,31 @@ function createnewAccount(request, response) {
                                             })
                                         }
                                     });
-
-
-                                } else {
-                                    return response.status(201).json({ message: 'Invalid Reference Details' });
                                 }
-                            })
 
-                        } else {
+                            } else {
+                                response.status(210).json({ message: 'Password and Confirm Password Not Matched', statusCode: 210 });
+                            }
 
-                            var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status) VALUES (?,?,?,?,?,?,?,?,1)"
-                            connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, plan_code], function (error, result) {
-                                if (error) {
-                                    console.log(error);
-                                    return response.status(201).json({ message: 'Database error' });
-                                } else {
-                                    var user_id = result.insertId;
+                            // } else {
+                            //     const mobileExists = data.some(record => Number(record.mobileNo) === Number(reqBodyData.mobileNo));
 
-                                    var sql2 = "INSERT INTO trial_plan_details (plan_code,user_id,customer_id,subscription_id,plan_status,plan_duration,startdate,end_date) VALUES (?,?,?,?,?,?,?,?)";
-                                    connection.query(sql2, [plan_code, user_id, customer_id, subscription_id, 1, 30, currentDate, formattedFutureDate], (err, ins_data) => {
-                                        if (err) {
-                                            console.log(err);
-                                            return response.status(201).json({ message: "Unable to Add Subscribtion History", statusCode: 201 })
-                                        } else {
-                                            // return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
-                                            var sql4 = "INSERT INTO wallet (amount,user_id,is_active) VALUES (?,?,?)";
-                                            connection.query(sql4, [0, user_id, 1], function (err, wal_res) {
-                                                if (err) {
-                                                    console.log("Unable to Add Wallet Details");
-                                                }
+                            //     const emailExists = data.some(record => record.email_Id === reqBodyData.emailId);
 
-                                                return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
-                                            })
-                                        }
-                                    })
-                                }
-                            });
-                        }
-
-                    } else {
-                        response.status(210).json({ message: 'Password and Confirm Password Not Matched', statusCode: 210 });
+                            //     if(mobileExists && emailExists) {
+                            //     response.status(203).json({ message: 'Mobile Number and Email ID already exist', statusCode: 203 });
+                            // } else if (emailExists) {
+                            //     response.status(201).json({ message: 'Email ID already exists', statusCode: 201 });
+                            // } else if (mobileExists) {
+                            //     response.status(202).json({ message: 'Mobile Number already exists', statusCode: 202 });
+                            // }
+                            // else {
+                            //     response.status(400).json({ message: 'Missing Parameter' });
+                            // }
+                        })
                     }
-
-                } else {
-                    const mobileExists = data.some(record => Number(record.mobileNo) === Number(reqBodyData.mobileNo));
-
-                    const emailExists = data.some(record => record.email_Id === reqBodyData.emailId);
-
-                    if (mobileExists && emailExists) {
-                        response.status(203).json({ message: 'Mobile Number and Email ID already exist', statusCode: 203 });
-                    } else if (emailExists) {
-                        response.status(201).json({ message: 'Email ID already exists', statusCode: 201 });
-                    } else if (mobileExists) {
-                        response.status(202).json({ message: 'Mobile Number already exists', statusCode: 202 });
-                    }
-                    // else {
-                    //     response.status(400).json({ message: 'Missing Parameter' });
-                    // }
                 }
-            }
-        );
+            });
     } else {
         response.status(400).json({ message: 'Missing Parameter' });
     }
