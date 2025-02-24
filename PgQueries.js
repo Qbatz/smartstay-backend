@@ -362,8 +362,9 @@ async function createPG(reqHostel, res, req) {
                         } else {
 
                             var sql3 = "UPDATE hostel SET HostelName='" + hostel_name + "' WHERE Hostel_Id=" + id + " AND isActive=1;";
-                            var sql4 = "UPDATE compliance SET hostelname='" + hostel_name + "' WHERE Hostel_id=" + id + " AND isActive=1";
-                            var sql5 = sql3 + sql4;
+                            var sql4 = "UPDATE compliance SET hostelname='" + hostel_name + "' WHERE Hostel_id=" + id + " AND isActive=1;";
+                            var sql6 = "UPDATE invoicedetails SET Hostel_Name='" + hostel_name + "' WHERE Hostel_Id=" + id + "";
+                            var sql5 = sql3 + sql4 + sql6;
                             connection.query(sql5, function (err, up_res) {
                                 if (err) {
                                     return res.status(201).json({ message: "Unable to Update Hostel Details", statusCode: 201 })
@@ -1768,16 +1769,47 @@ function hosteldetails(req, res) {
 
     var created_by = req.user_details.id;
 
-    var sql1 = "SELECT id,Name,profile FROM hosteldetails WHERE isActive=1 AND created_By=?";
-    connection.query(sql1, [created_by], function (err, data) {
-        if (err) {
-            return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
-        } else if (data.length == 0) {
-            return res.status(201).json({ statusCode: 201, message: 'No Data Found' });
-        } else {
-            return res.status(200).json({ statusCode: 200, message: 'Hostel Details', data: data });
-        }
-    })
+    var show_ids = req.show_ids;
+
+    var user_type = req.user_type;
+
+    if (user_type == 'staff') {
+
+        var sql2 = "SELECT ro.hostel_id FROM createaccount AS ca JOIN roles AS ro ON ca.role_id=ro.id WHERE ca.id=? AND ca.user_status=1 AND ro.status=1 ORDER BY ca.id DESC;";
+        connection.query(sql2, [created_by], function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
+            } else if (data.length == 0) {
+                return res.status(201).json({ statusCode: 201, message: 'Invalid User Details' });
+            } else {
+                var hostel_id = data[0].hostel_id;
+
+                var sql1 = "SELECT id,Name,profile FROM hosteldetails WHERE isActive=1 AND id=?";
+                connection.query(sql1, [hostel_id], function (err, data) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
+                    } else if (data.length == 0) {
+                        return res.status(201).json({ statusCode: 201, message: 'No Data Found' });
+                    } else {
+                        return res.status(200).json({ statusCode: 200, message: 'Hostel Details', data: data });
+                    }
+                })
+            }
+        })
+    } else {
+
+        var sql1 = "SELECT id,Name,profile FROM hosteldetails WHERE isActive=1 AND created_By IN (?)";
+        connection.query(sql1, [show_ids], function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
+            } else if (data.length == 0) {
+                return res.status(201).json({ statusCode: 201, message: 'No Data Found' });
+            } else {
+                return res.status(200).json({ statusCode: 200, message: 'Hostel Details', data: data });
+            }
+        })
+    }
+
 }
 
 module.exports = { createBed, getHostelList, checkRoom, hostelListDetails, createPG, FloorList, RoomList, BedList, RoomCount, ListForFloor, CreateRoom, CreateFloor, update_floor, RoomFull, UpdateEB, listDashBoard, deleteHostel, deleteFloor, deleteRoom, deleteBed, get_room_details, update_room_details, bed_details, delete_hostel_image, hosteldetails }

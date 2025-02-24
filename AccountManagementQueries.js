@@ -382,6 +382,8 @@ function createnewAccount(request, response) {
 
     var reqBodyData = request.body;
 
+    var reference_id = request.body.reference_id;
+
     if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.first_name && reqBodyData.password && reqBodyData.confirm_password) {
 
         connection.query(`SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`,
@@ -440,59 +442,92 @@ function createnewAccount(request, response) {
                                 var subscription_id = subscription_response.subscription_id;
                                 var plan_duration = subscription_response.trial_remaining_days;
 
-                                var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status) VALUES (?,?,?,?,?,?,?,?,1)"
-                                connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, plan_code], function (error, result) {
-                                    if (error) {
-                                        console.log(error);
-                                        return response.status(201).json({ message: 'Database error' });
-                                    } else {
-                                        var user_id = result.insertId;
+                        if (reference_id && reference_id != 0) {
 
-                                        var sql2 = "INSERT INTO trial_plan_details (plan_code,user_id,customer_id,subscription_id,plan_status,plan_duration,startdate,end_date) VALUES (?,?,?,?,?,?,?,?)";
-                                        connection.query(sql2, [plan_code, user_id, customer_id, subscription_id, 1, plan_duration, currentDate, formattedFutureDate], (err, ins_data) => {
-                                            if (err) {
-                                                console.log(err);
-                                                return response.status(201).json({ message: "Unable to Add Subscribtion History", statusCode: 201 })
-                                            } else {
-                                                return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
-                                            }
-                                        })
-                                    }
-                                });
-                            } else {
-                                response.status(201).json({ message: api_data.message, statusCode: 201 });
-                            }
-                        })
-                            .catch(error => {
-                                console.error('Error:', error)
-                                response.status(201).json({ message: error, statusCode: 201 });
+                            var sql3 = "SELECT * FROM referral_codes WHERE referral_code=? AND is_active=1";
+                            connection.query(sql3, [reference_id], function (err, ref_res) {
+                                if (err) {
+                                    console.log("Error for Reference", err);
+                                    return response.status(201).json({ message: 'Error to Get Reference Details' });
+                                } else if (ref_res.length != 0) {
+
+                                    var full_name = reqBodyData.first_name + " " + reqBodyData.last_name
+                                    var ref_id = ref_res[0].id;
+                                    var logs = full_name + " Added for Receipt Id"
+
+                                    var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status,reference_id,is_credited) VALUES (?,?,?,?,?,?,?,?,1,?,0)"
+                                    connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, plan_code, ref_id], function (error, result) {
+                                        if (error) {
+                                            console.log(error);
+                                            return response.status(201).json({ message: 'Database error' });
+                                        } else {
+                                            var user_id = result.insertId;
+
+                                            var sql4 = "INSERT INTO wallet_logs (logs,ref_id,used_by,status) VALUES (?,?,?,?)";
+                                            connection.query(sql4, [logs, ref_id, user_id, 1], function (err, wall_data) {
+                                                if (err) {
+                                                    console.log(error);
+                                                }
+                                            })
+                                            // return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
+
+                                            var sql2 = "INSERT INTO trial_plan_details (plan_code,user_id,customer_id,subscription_id,plan_status,plan_duration,startdate,end_date) VALUES (?,?,?,?,?,?,?,?)";
+                                            connection.query(sql2, [plan_code, user_id, customer_id, subscription_id, 1, 30, currentDate, formattedFutureDate], (err, ins_data) => {
+                                                if (err) {
+                                                    console.log(err);
+                                                    return response.status(201).json({ message: "Unable to Add Subscribtion History", statusCode: 201 })
+                                                } else {
+
+                                                    var sql4 = "INSERT INTO wallet (amount,user_id,is_active) VALUES (?,?,?)";
+                                                    connection.query(sql4, [0, user_id, 1], function (err, wal_res) {
+                                                        if (err) {
+                                                            console.log("Unable to Add Wallet Details");
+                                                            // return response.status(201).json({ message: "Unable to Add Wallet Details", statusCode: 201 })
+                                                        }
+
+                                                        return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
+                                                    })
+                                                }
+                                            })
+                                        }
+                                    });
+
+
+                                } else {
+                                    return response.status(201).json({ message: 'Invalid Reference Details' });
+                                }
                             })
 
-                        // var customer_id = 0;
-                        // var subscription_id = 0;
-                        // var plan_code = 'free_plan';
+                        } else {
 
-                        // var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status) VALUES (?,?,?,?,?,?,?,?,1)"
-                        // connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, plan_code], function (error, result) {
-                        //     if (error) {
-                        //         console.log(error);
-                        //         return response.status(201).json({ message: 'Database error' });
-                        //     } else {
-                        //         var user_id = result.insertId;
+                            var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status) VALUES (?,?,?,?,?,?,?,?,1)"
+                            connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, plan_code], function (error, result) {
+                                if (error) {
+                                    console.log(error);
+                                    return response.status(201).json({ message: 'Database error' });
+                                } else {
+                                    var user_id = result.insertId;
 
-                        //         // return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
+                                    var sql2 = "INSERT INTO trial_plan_details (plan_code,user_id,customer_id,subscription_id,plan_status,plan_duration,startdate,end_date) VALUES (?,?,?,?,?,?,?,?)";
+                                    connection.query(sql2, [plan_code, user_id, customer_id, subscription_id, 1, 30, currentDate, formattedFutureDate], (err, ins_data) => {
+                                        if (err) {
+                                            console.log(err);
+                                            return response.status(201).json({ message: "Unable to Add Subscribtion History", statusCode: 201 })
+                                        } else {
+                                            // return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
+                                            var sql4 = "INSERT INTO wallet (amount,user_id,is_active) VALUES (?,?,?)";
+                                            connection.query(sql4, [0, user_id, 1], function (err, wal_res) {
+                                                if (err) {
+                                                    console.log("Unable to Add Wallet Details");
+                                                }
 
-                        //         var sql2 = "INSERT INTO trial_plan_details (plan_code,user_id,customer_id,subscription_id,plan_status,plan_duration,startdate,end_date) VALUES (?,?,?,?,?,?,?,?)";
-                        //         connection.query(sql2, [plan_code, user_id, customer_id, subscription_id, 1, 30, currentDate, formattedFutureDate], (err, ins_data) => {
-                        //             if (err) {
-                        //                 console.log(err);
-                        //                 return response.status(201).json({ message: "Unable to Add Subscribtion History", statusCode: 201 })
-                        //             } else {
-                        //                 return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
-                        //             }
-                        //         })
-                        //     }
-                        // });
+                                                return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
+                                            })
+                                        }
+                                    })
+                                }
+                            });
+                        }
 
                     } else {
                         response.status(210).json({ message: 'Password and Confirm Password Not Matched', statusCode: 210 });

@@ -285,6 +285,8 @@ function add_confirm_checkout(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Invalid User Details" });
         }
 
+        const advance_amount = hostelData[0].AdvanceAmount
+
         const bed_id = hostelData[0].Bed;
 
         // Handle non-reimbursement case
@@ -311,10 +313,10 @@ function add_confirm_checkout(req, res) {
 
                 const totalBalanceDue = result[0]?.totalBalanceDue || 0;
 
-                if (advance_return >= totalBalanceDue) {
+                if (advance_amount >= totalBalanceDue) {
                     processInvoicesAndFinalizeCheckout(id, totalBalanceDue, advance_return, created_by, checkout_date, bed_id, advance_return, comments, res);
                 } else {
-                    return res.status(201).json({ statusCode: 201, message: "Room rent is less than total balance due" });
+                    return res.status(201).json({ statusCode: 201, message: "Advance Amount is Less than Toal Balance Due" });
                 }
             });
         }

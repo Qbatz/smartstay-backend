@@ -21,7 +21,7 @@ function getUsers(connection, response, request) {
   // var limit = request.body.page_limit || 10;
   // var offset = (page - 1) * limit;
 
-  console.log(role_permissions[4]);
+  // console.log(role_permissions[4]);
 
   if (is_admin == 1 || (role_permissions[4] && role_permissions[4].per_view == 1)) {
 
@@ -32,7 +32,7 @@ function getUsers(connection, response, request) {
     }
 
     // var sql1 = "SELECT COUNT(*) as totalItems FROM hostel WHERE created_by='" + userDetails.id + "' AND isActive=1;";
-    var query = "SELECT hstl.*,bd.bed_no AS Bed,hstl.Bed AS hstl_Bed,hsroom.Room_Id AS Rooms,hstl.Rooms AS hstl_Rooms,hsroom.id AS room_id,hsroom.Room_Id,DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,hstl.Hostel_Id AS user_hostel,hf.floor_name FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true LEFT JOIN country_list AS cl ON hstl.country_code=cl.country_code Left Join hostelrooms hsroom ON hsroom.Hostel_Id = hstlDetails.id and hsroom.Floor_Id = hstl.Floor and hsroom.id = hstl.Rooms LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=hstl.Floor AND hf.hostel_id=hstl.Hostel_Id LEFT JOIN bed_details AS bd ON bd.id=hstl.Bed  WHERE hstl.Hostel_Id=? ORDER BY hstl.ID DESC";
+    var query = "SELECT hstl.*,CASE WHEN hstl.CheckoutDate is NULL THEN 1 ELSE 0 END AS check_outed,bd.bed_no AS Bed,hstl.Bed AS hstl_Bed,hsroom.Room_Id AS Rooms,hstl.Rooms AS hstl_Rooms,hsroom.id AS room_id,hsroom.Room_Id,DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,hstl.Hostel_Id AS user_hostel,hf.floor_name FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true LEFT JOIN country_list AS cl ON hstl.country_code=cl.country_code Left Join hostelrooms hsroom ON hsroom.Hostel_Id = hstlDetails.id and hsroom.Floor_Id = hstl.Floor and hsroom.id = hstl.Rooms LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=hstl.Floor AND hf.hostel_id=hstl.Hostel_Id LEFT JOIN bed_details AS bd ON bd.id=hstl.Bed  WHERE hstl.Hostel_Id=? ORDER BY hstl.ID DESC";
     connection.query(query, [hostel_id], function (error, hostelData) {
       if (error) {
         console.error(error);
@@ -536,209 +536,278 @@ function createUser(connection, request, response) {
               } else {
                 // Check and Update Advance Amount and first month rent Amount;
 
-                var paid_advance = atten.paid_advance ? atten.paid_advance : 0;
-                var pending_advance = atten.AdvanceAmount - paid_advance;
-
-                connection.query(`INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance,created_by,country_code,joining_Date) VALUES ('${Circle}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}','${paid_advance}','${pending_advance}','${created_by}','${country_code}','${atten.joining_date}')`, async function (insertError, insertData) {
-                  if (insertError) {
-                    console.log("insertError", insertError);
-                    response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
+                var sql10 = "SELECT ref.* FROM referral_codes AS ref JOIN createaccount AS ca ON ca.reference_id=ref.id WHERE ref.is_active=1 AND ca.id=?";
+                connection.query(sql10, [created_by], function (err, ref_data) {
+                  if (err) {
+                    response.status(201).json({ message: "Error to Get Referral Details", statusCode: 201 });
                   } else {
-                    var user_ids = insertData.insertId;
 
-                    const gen_user_id = generateUserId(atten.firstname, user_ids);
+                    var referral_code = ref_data[0]?.referral_code || 0;
 
-                    // Upload Profile Image to S3
-                    if (profile) {
-                      try {
-                        const timestamp = Date.now();
-                        profile_url = await uploadImage.uploadProfilePictureToS3Bucket("smartstaydevs", "users/", "profile" + gen_user_id + `${timestamp}` + ".jpg", profile);
-                      } catch (err) {
-                        console.error(err);
-                        profile_url = 0;
-                      }
-                    } else {
-                      profile_url = 0;
+                    console.log(referral_code);
+
+                    if (referral_code != 0) {
+
+                      var sql11 = "SELECT * FROM wallet_logs WHERE used_by=? AND logs='Receipt Amount " + ref_data[0].amount + " Added Wallet' AND status=1";
+                      connection.query(sql11, [created_by], function (err, logs_data) {
+                        if (err) {
+                          return response.status(201).json({ message: "Error to Get Referral Details", statusCode: 201 });
+                        } else if (logs_data.length != 0) {
+                          console.log("Already Amount Refered !!!");
+                        } else {
+
+                          console.log("===========================");
+
+                          var ref_id = ref_data[0].id;
+
+                          var logs = "Receipt Amount " + ref_data[0].amount + " Added Wallet";
+                          var sql12 = "INSERT INTO wallet_logs (logs,ref_id,used_by,status) VALUES (?,?,?,1)";
+                          connection.query(sql12, [logs, ref_id, created_by, 1], function (err, log_data) {
+                            if (err) {
+                              return response.status(201).json({ message: "Error to Get Referral Details", statusCode: 201 })
+                            }
+
+                            var admin_id = ref_data[0].user_id;
+
+                            console.log("admin_id :",admin_id);
+                            
+                            var sql13 = "SELECT * FROM wallet WHERE user_id=?";
+                            connection.query(sql13, [admin_id], function (err, wal_data) {
+                              if (err) {
+                                return response.status(201).json({ message: "Unable to Get Wallet Details", statusCode: 201 });
+                              } else if (wal_data.length != 0) {
+
+                                var old_amount = Number(wal_data[0].amount);
+                                var new_amount = old_amount + 500;
+
+                                console.log(up_query);
+                                console.log(new_amount, admin_id);
+
+                                var up_query = "UPDATE wallet SET amount=? WHERE user_id=?";
+                                connection.query(up_query, [new_amount, admin_id], function (err, data) {
+                                  if (err) {
+                                    return response.status(201).json({ message: "Unable to Update Wallet Amount", statusCode: 201 });
+                                  }
+                                })
+                              } else {
+                                var ins_query = "INSERT INTO  wallet (amount,user_id) VALUES (?,?)";
+                                connection.query(ins_query, [500, admin_id], function (err, data) {
+                                  if (err) {
+                                    return response.status(201).json({ message: "Unable to Add Wallet Amount", statusCode: 201 });
+                                  }
+                                })
+                              }
+                            })
+                          })
+                        }
+                      })
                     }
 
-                    var bed_details_obj = {
-                      old_bed: 0,
-                      old_room: 0,
-                      old_floor: 0,
-                      old_hostel: 0,
-                      hostel_id: atten.hostel_Id,
-                      floor_id: atten.Floor,
-                      room: atten.Rooms,
-                      bed: atten.Bed,
-                      user_id: user_ids,
-                    };
+                    var paid_advance = atten.paid_advance ? atten.paid_advance : 0;
+                    var pending_advance = atten.AdvanceAmount - paid_advance;
 
-                    bedDetails.check_bed_details(bed_details_obj)
-                      .then(() => {
+                    connection.query(`INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance,created_by,country_code,joining_Date) VALUES ('${Circle}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}','${paid_advance}','${pending_advance}','${created_by}','${country_code}','${atten.joining_date}')`, async function (insertError, insertData) {
+                      if (insertError) {
+                        console.log("insertError", insertError);
+                        response.status(201).json({ message: "Internal Server Error", statusCode: 201 });
+                      } else {
+                        var user_ids = insertData.insertId;
 
-                        var update_user_id = "UPDATE hostel SET User_Id=?,profile=? WHERE ID=?";
-                        connection.query(update_user_id, [gen_user_id, profile_url, user_ids], async function (up_id_err, up_id_res) {
-                          if (up_id_err) {
-                            response.status(201).json({ message: "Unable to add User Id", statusCode: 201, });
-                          } else {
-                            var paid_rent = atten.paid_rent;
-                            var paid_amount = paid_rent || 0; // Use logical OR to provide default value
-                            var total_rent = atten.RoomRent;
+                        const gen_user_id = generateUserId(atten.firstname, user_ids);
 
-                            return response.status(200).json({ message: "Save Successfully", statusCode: 200, });
-
-                            // if (
-                            //   atten.AdvanceAmount != undefined &&
-                            //   atten.AdvanceAmount > 0
-                            // ) {
-                            //   if (paid_rent > 0) {
-                            //     var sqL_12 = "INSERT INTO transactions (user_id,invoice_id,amount,created_by,status) VALUES ('" +
-                            //       user_ids +
-                            //       "',0,'" +
-                            //       paid_rent +
-                            //       "','" +
-                            //       created_by +
-                            //       "',1)";
-                            //     connection.query(
-                            //       sqL_12,
-                            //       function (err, data) {
-                            //         if (err) {
-                            //           console.log(err);
-                            //         } else {
-                            //         }
-                            //       }
-                            //     );
-
-                            //     var title = "Paid Rent Amount";
-                            //     var user_type = 0;
-                            //     var message =
-                            //       "Your Rent Amount " +
-                            //       paid_rent +
-                            //       " Received Successfully";
-
-                            //     await addNotification.add_notification(
-                            //       user_ids,
-                            //       title,
-                            //       user_type,
-                            //       message
-                            //     );
-                            //   }
-
-                            //   if (paid_advance > 0) {
-                            //     var sqL_12 =
-                            //       "INSERT INTO advance_amount_transactions (user_id,inv_id,advance_amount,created_by) VALUES ('" +
-                            //       user_ids +
-                            //       "',0,'" +
-                            //       atten.paid_advance +
-                            //       "','" +
-                            //       created_by +
-                            //       "')";
-                            //     connection.query(
-                            //       sqL_12,
-                            //       function (err, data) {
-                            //         if (err) {
-                            //           console.log(err);
-                            //         }
-                            //       }
-                            //     );
-
-                            //     var title = "Paid Advance Amount";
-                            //     var user_type = 0;
-                            //     var message =
-                            //       "Your Advance Amount " +
-                            //       paid_advance +
-                            //       " Received Successfully";
-
-                            //     await addNotification.add_notification(
-                            //       user_ids,
-                            //       title,
-                            //       user_type,
-                            //       message
-                            //     );
-                            //   }
-
-                            //   var currentDate =
-                            //     moment().format("YYYY-MM-DD");
-                            //   var joinDate =
-                            //     moment(currentDate).format("YYYY-MM-DD");
-                            //   var dueDate = moment(joinDate)
-                            //     .endOf("month")
-                            //     .format("YYYY-MM-DD");
-                            //   var invoiceDate =
-                            //     moment(joinDate).format("YYYY-MM-DD");
-                            //   var formattedJoinDate =
-                            //     moment(invoiceDate).format("YYYY-MM-DD");
-                            //   var formattedDueDate =
-                            //     moment(dueDate).format("YYYY-MM-DD");
-                            //   var numberOfDays =
-                            //     moment(formattedDueDate).diff(
-                            //       moment(formattedJoinDate),
-                            //       "days"
-                            //     ) + 1;
-                            //   var totalDaysInCurrentMonth =
-                            //     moment(currentDate).daysInMonth();
-                            //   var oneday_amount =
-                            //     total_rent / totalDaysInCurrentMonth;
-                            //   var payableamount =
-                            //     oneday_amount * numberOfDays;
-                            //   var payable_rent = Math.round(payableamount);
-                            //   var balance_rent = payable_rent - paid_amount;
-
-                            //   insert_rent_invoice(
-                            //     connection,
-                            //     user_ids,
-                            //     paid_amount,
-                            //     balance_rent,
-                            //     payable_rent
-                            //   )
-                            //     .then(() => {
-                            //       return insert_advance_invoice(
-                            //         connection,
-                            //         user_ids
-                            //       );
-                            //     })
-                            //     .then(() => {
-                            //       response
-                            //         .status(200)
-                            //         .json({
-                            //           message: "Save Successfully",
-                            //           statusCode: 200,
-                            //         });
-                            //     })
-                            //     .catch((error) => {
-                            //       console.error("Error:", error);
-                            //       response
-                            //         .status(205)
-                            //         .json({
-                            //           message: "Error processing invoices",
-                            //           statusCode: 205,
-                            //         });
-                            //     });
-                            // } else {
-                            //   response
-                            //     .status(200)
-                            //     .json({
-                            //       message: "Save Successfully",
-                            //       statusCode: 200,
-                            //     });
-                            // }
+                        // Upload Profile Image to S3
+                        if (profile) {
+                          try {
+                            const timestamp = Date.now();
+                            profile_url = await uploadImage.uploadProfilePictureToS3Bucket("smartstaydevs", "users/", "profile" + gen_user_id + `${timestamp}` + ".jpg", profile);
+                          } catch (err) {
+                            console.error(err);
+                            profile_url = 0;
                           }
-                        });
-                      })
-                      .catch((error) => {
-                        console.log(error);
-                        var del_query = "DELETE FROM hostel WHERE ID=?";
-                        connection.query(del_query, [user_ids],
-                          function (err, del_res) {
-                            if (err) {
-                              return response.status(201).json({ message: "Unable to Delete Bed Details", statusCode: 205, });
-                            } else {
-                              return response.status(201).json({ message: "Invalid Bed Details", statusCode: 201, });
-                            }
+                        } else {
+                          profile_url = 0;
+                        }
+
+                        var bed_details_obj = {
+                          old_bed: 0,
+                          old_room: 0,
+                          old_floor: 0,
+                          old_hostel: 0,
+                          hostel_id: atten.hostel_Id,
+                          floor_id: atten.Floor,
+                          room: atten.Rooms,
+                          bed: atten.Bed,
+                          user_id: user_ids,
+                        };
+
+                        bedDetails.check_bed_details(bed_details_obj)
+                          .then(() => {
+
+                            var update_user_id = "UPDATE hostel SET User_Id=?,profile=? WHERE ID=?";
+                            connection.query(update_user_id, [gen_user_id, profile_url, user_ids], async function (up_id_err, up_id_res) {
+                              if (up_id_err) {
+                                response.status(201).json({ message: "Unable to add User Id", statusCode: 201, });
+                              } else {
+                                var paid_rent = atten.paid_rent;
+                                var paid_amount = paid_rent || 0; // Use logical OR to provide default value
+                                var total_rent = atten.RoomRent;
+
+                                return response.status(200).json({ message: "Save Successfully", statusCode: 200, });
+
+                                // if (
+                                //   atten.AdvanceAmount != undefined &&
+                                //   atten.AdvanceAmount > 0
+                                // ) {
+                                //   if (paid_rent > 0) {
+                                //     var sqL_12 = "INSERT INTO transactions (user_id,invoice_id,amount,created_by,status) VALUES ('" +
+                                //       user_ids +
+                                //       "',0,'" +
+                                //       paid_rent +
+                                //       "','" +
+                                //       created_by +
+                                //       "',1)";
+                                //     connection.query(
+                                //       sqL_12,
+                                //       function (err, data) {
+                                //         if (err) {
+                                //           console.log(err);
+                                //         } else {
+                                //         }
+                                //       }
+                                //     );
+
+                                //     var title = "Paid Rent Amount";
+                                //     var user_type = 0;
+                                //     var message =
+                                //       "Your Rent Amount " +
+                                //       paid_rent +
+                                //       " Received Successfully";
+
+                                //     await addNotification.add_notification(
+                                //       user_ids,
+                                //       title,
+                                //       user_type,
+                                //       message
+                                //     );
+                                //   }
+
+                                //   if (paid_advance > 0) {
+                                //     var sqL_12 =
+                                //       "INSERT INTO advance_amount_transactions (user_id,inv_id,advance_amount,created_by) VALUES ('" +
+                                //       user_ids +
+                                //       "',0,'" +
+                                //       atten.paid_advance +
+                                //       "','" +
+                                //       created_by +
+                                //       "')";
+                                //     connection.query(
+                                //       sqL_12,
+                                //       function (err, data) {
+                                //         if (err) {
+                                //           console.log(err);
+                                //         }
+                                //       }
+                                //     );
+
+                                //     var title = "Paid Advance Amount";
+                                //     var user_type = 0;
+                                //     var message =
+                                //       "Your Advance Amount " +
+                                //       paid_advance +
+                                //       " Received Successfully";
+
+                                //     await addNotification.add_notification(
+                                //       user_ids,
+                                //       title,
+                                //       user_type,
+                                //       message
+                                //     );
+                                //   }
+
+                                //   var currentDate =
+                                //     moment().format("YYYY-MM-DD");
+                                //   var joinDate =
+                                //     moment(currentDate).format("YYYY-MM-DD");
+                                //   var dueDate = moment(joinDate)
+                                //     .endOf("month")
+                                //     .format("YYYY-MM-DD");
+                                //   var invoiceDate =
+                                //     moment(joinDate).format("YYYY-MM-DD");
+                                //   var formattedJoinDate =
+                                //     moment(invoiceDate).format("YYYY-MM-DD");
+                                //   var formattedDueDate =
+                                //     moment(dueDate).format("YYYY-MM-DD");
+                                //   var numberOfDays =
+                                //     moment(formattedDueDate).diff(
+                                //       moment(formattedJoinDate),
+                                //       "days"
+                                //     ) + 1;
+                                //   var totalDaysInCurrentMonth =
+                                //     moment(currentDate).daysInMonth();
+                                //   var oneday_amount =
+                                //     total_rent / totalDaysInCurrentMonth;
+                                //   var payableamount =
+                                //     oneday_amount * numberOfDays;
+                                //   var payable_rent = Math.round(payableamount);
+                                //   var balance_rent = payable_rent - paid_amount;
+
+                                //   insert_rent_invoice(
+                                //     connection,
+                                //     user_ids,
+                                //     paid_amount,
+                                //     balance_rent,
+                                //     payable_rent
+                                //   )
+                                //     .then(() => {
+                                //       return insert_advance_invoice(
+                                //         connection,
+                                //         user_ids
+                                //       );
+                                //     })
+                                //     .then(() => {
+                                //       response
+                                //         .status(200)
+                                //         .json({
+                                //           message: "Save Successfully",
+                                //           statusCode: 200,
+                                //         });
+                                //     })
+                                //     .catch((error) => {
+                                //       console.error("Error:", error);
+                                //       response
+                                //         .status(205)
+                                //         .json({
+                                //           message: "Error processing invoices",
+                                //           statusCode: 205,
+                                //         });
+                                //     });
+                                // } else {
+                                //   response
+                                //     .status(200)
+                                //     .json({
+                                //       message: "Save Successfully",
+                                //       statusCode: 200,
+                                //     });
+                                // }
+                              }
+                            });
+                          })
+                          .catch((error) => {
+                            console.log(error);
+                            var del_query = "DELETE FROM hostel WHERE ID=?";
+                            connection.query(del_query, [user_ids],
+                              function (err, del_res) {
+                                if (err) {
+                                  return response.status(201).json({ message: "Unable to Delete Bed Details", statusCode: 205, });
+                                } else {
+                                  return response.status(201).json({ message: "Invalid Bed Details", statusCode: 201, });
+                                }
+                              });
                           });
-                      });
+                      }
+                    });
                   }
-                });
+                })
               }
             });
           }
@@ -2670,8 +2739,8 @@ function available_checkout_users(req, res) {
     if (!hostel_id) {
       return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Details" })
     }
-    var sql1 = "SELECT * FROM hostel WHERE Hostel_Id=? AND isActive=1 AND Floor != 'undefined' AND Rooms != 'undefined' AND Bed != 'undefined' AND created_by IN (?)";
-    connection.query(sql1, [hostel_id, show_ids], function (err, data) {
+    var sql1 = "SELECT * FROM hostel WHERE Hostel_Id=? AND isActive=1 AND Floor != 'undefined' AND Rooms != 'undefined' AND Bed != 'undefined' AND CheckoutDate is NULL;";
+    connection.query(sql1, [hostel_id], function (err, data) {
       if (err) {
         return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
       } else {
