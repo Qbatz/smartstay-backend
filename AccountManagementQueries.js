@@ -533,27 +533,31 @@ function createnewAccount(request, response) {
                                 response.status(210).json({ message: 'Password and Confirm Password Not Matched', statusCode: 210 });
                             }
 
-                            // } else {
-                            //     const mobileExists = data.some(record => Number(record.mobileNo) === Number(reqBodyData.mobileNo));
 
-                            //     const emailExists = data.some(record => record.email_Id === reqBodyData.emailId);
-
-                            //     if(mobileExists && emailExists) {
-                            //     response.status(203).json({ message: 'Mobile Number and Email ID already exist', statusCode: 203 });
-                            // } else if (emailExists) {
-                            //     response.status(201).json({ message: 'Email ID already exists', statusCode: 201 });
-                            // } else if (mobileExists) {
-                            //     response.status(202).json({ message: 'Mobile Number already exists', statusCode: 202 });
-                            // }
-                            // else {
-                            //     response.status(400).json({ message: 'Missing Parameter' });
-                            // }
                         })
+                    } else {
+                        return response.status(201).json({ message: 'Password and Confirm Password Not Same' });
+                    }
+                    // }
+                } else {
+                    const mobileExists = data.some(record => Number(record.mobileNo) === Number(reqBodyData.mobileNo));
+
+                    const emailExists = data.some(record => record.email_Id === reqBodyData.emailId);
+
+                    if (mobileExists && emailExists) {
+                        response.status(203).json({ message: 'Mobile Number and Email ID already exist', statusCode: 203 });
+                    } else if (emailExists) {
+                        response.status(201).json({ message: 'Email ID already exists', statusCode: 201 });
+                    } else if (mobileExists) {
+                        response.status(202).json({ message: 'Mobile Number already exists', statusCode: 202 });
+                    }
+                    else {
+                        response.status(201).json({ message: 'Missing Parameter' });
                     }
                 }
             });
     } else {
-        response.status(400).json({ message: 'Missing Parameter' });
+        response.status(201).json({ message: 'Missing Parameter' });
     }
 }
 
