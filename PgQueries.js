@@ -510,7 +510,7 @@ function RoomCount(connection, request, response) {
 
         if (reqFloorID) {
 
-            var sql1 = "SELECT *,hs.id AS room_id, hs.Room_Id  FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Floor_Id=? AND hs.Hostel_Id=? AND hs.isActive=true   ORDER BY CASE WHEN hs.Room_Id REGEXP '^[0-9]+$' THEN CAST(hs.Room_Id AS UNSIGNED) ELSE 0  END ASC, hs.Room_Id ASC";
+            var sql1 = "SELECT *,hs.id AS room_id, hs.Room_Id  FROM hostelrooms AS hs JOIN Hostel_Floor AS hf ON hf.hostel_id=hs.Hostel_Id AND hf.floor_id=hs.Floor_Id WHERE hs.Floor_Id=? AND hs.Hostel_Id=? AND hs.isActive=true ORDER BY hs.Room_Id ASC";
             connection.query(sql1, [reqFloorID.floor_Id, reqFloorID.hostel_Id], function (error, RoomsData) {
                 if (error) {
                     console.log(error);
