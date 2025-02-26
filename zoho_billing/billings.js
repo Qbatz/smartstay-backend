@@ -224,10 +224,14 @@ async function invoice_payments(req, res) {
 
 async function new_subscription(req, res) {
     try {
-        var { user_id, customer_id, plan_code, hostel_ids } = req.body;
+        var { user_id, customer_id, plan_code, hostel_ids, hostel_count } = req.body;
 
         if (!user_id || !customer_id || !plan_code) {
             return res.status(201).json({ message: "Missing or Invalid Parameters" });
+        }
+
+        if (!hostel_count) {
+            hostel_count = 1
         }
 
         var currentDate = new Date().toISOString().split('T')[0];
@@ -256,7 +260,7 @@ async function new_subscription(req, res) {
                     addon_code: "hostel_addon",
                     name: "Hostel Subscription Addon",
                     price: 1,
-                    quantity: hostels.length || 1,
+                    quantity: hostel_count,
                     type: "one_time"
                 }
             ];
@@ -283,8 +287,15 @@ async function new_subscription(req, res) {
                     let hostelIdsArray = hostels.map(hostel => hostel.id);
                     let hostelIdsString = JSON.stringify(hostelIdsArray);
 
-                    var sql2 = "UPDATE createaccount SET hostel_ids=? WHERE id=?";
-                    connection.query(sql2, [hostelIdsString, user_id], (err, result) => {
+                    var sql2 = "UPDATE createaccount SET hostel_ids=?,hostel_count=? WHERE id=?";
+                    connection.query(sql2, [hostelIdsString, hostel_count, user_id], (err, result) => {
+                        if (err) {
+                            console.error("Error saving hostels:", err);
+                        }
+                    })
+                } else {
+                    var sql2 = "UPDATE createaccount SET hostel_count=? WHERE id=?";
+                    connection.query(sql2, [hostel_count, user_id], (err, result) => {
                         if (err) {
                             console.error("Error saving hostels:", err);
                         }
@@ -409,6 +420,7 @@ async function webhook_status(req, res) {
     } else {
         console.log("In this Evenot not Success and Not Failure Event");
         console.log(event);
+        res.status(200).json({ success: true, message: "Webhook received" });
     }
 }
 
