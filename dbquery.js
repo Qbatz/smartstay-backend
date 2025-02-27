@@ -36,17 +36,19 @@ const queries = [
     "ALTER TABLE `createaccount` ADD COLUMN `reference_id` VARCHAR(50) NULL DEFAULT 0 AFTER `role_id`;",
 
     "ALTER TABLE `createaccount` ADD COLUMN `is_credited` INT NULL DEFAULT 0 AFTER `reference_id`;",
-    
+
     "CREATE TABLE `wallet` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`amount` DECIMAL(10,2) NULL,`user_id` BIGINT(20) NULL,`is_active` INT NULL DEFAULT 1,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
-    
+
     "CREATE TABLE `wallet_logs` (`id` BIGINT(20) NOT NULL,`logs` VARCHAR(255) NULL,`ref_id` BIGINT(20) NULL DEFAULT 0,`used_by` BIGINT(20) NULL DEFAULT 0,`status` INT NULL DEFAULT 1,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
-    
+
     "ALTER TABLE `wallet_logs` CHANGE COLUMN `id` `id` BIGINT(20) NOT NULL AUTO_INCREMENT ;",
     "ALTER TABLE `createaccount` ADD COLUMN `hostel_count` BIGINT(20) NULL DEFAULT 1 AFTER `description`,CHANGE COLUMN `createdat` `createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP AFTER `createdby`;",
 
     "ALTER TABLE `trial_plan_details` ADD COLUMN `startdate` DATE NULL AFTER `plan_duration`,ADD COLUMN `end_date` DATE NULL AFTER `startdate`;",
 
-    "ALTER TABLE `createaccount` ADD COLUMN `hostel_ids` VARCHAR(500) NULL DEFAULT 0 AFTER `hostel_count`;"
+    "ALTER TABLE `createaccount` ADD COLUMN `hostel_ids` VARCHAR(500) NULL DEFAULT 0 AFTER `hostel_count`;",
+
+    "INSERT INTO `permissions` (`id`, `permission_name`) VALUES ('1', 'Dashboard'),('2', 'Announcement'),('3', 'Updates'),('4', 'Paying Guest'),('5', 'Customers'),('6', 'Bookings'),('7', 'Check out'),('8', 'Walk In'),('9', 'Assets'),('10', 'Vendor'),('11', 'Bills'),('12', 'Recuring Bills'),('13', 'Electricity'),('14', 'Complaints'),('15', 'Expenses'),('16', 'Reports'),('17', 'Bankings'),('18', 'Profile'),('19', 'Amenities');"
 ];
 
 queries.forEach(executeQuery);

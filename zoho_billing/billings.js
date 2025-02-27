@@ -444,7 +444,47 @@ async function plans_list(req, res) {
     }
 }
 
-module.exports = { subscipition, invoice_details, invoice_payments, check_trail_end, checkAllSubscriptions, new_subscription, webhook_status, plans_list }
+async function new_hosted_page(req, res) {
+
+    var { first_name, last_name, mob_no, email } = req.body;
+
+    if (!first_name || !mob_no || !email) {
+        return res.json({ statusCode: 201, message: "Missing Mandatory Fields" })
+    }
+
+    last_name = last_name || '';
+
+    var currentDate = new Date().toISOString().split('T')[0];
+
+    var input_body = {
+        plan: { plan_code: 'test_499' },
+        customer: {
+            display_name: first_name + " " + last_name,
+            first_name: first_name,
+            last_name: last_name,
+            email: email,
+            mobile: mob_no
+        },
+        redirect_url: "https://fullstack.qbatzclay.com/",
+        start_date: currentDate,
+        notes: `New Subscription - Order ID: ${Date.now()}`
+    };
+
+    var apiEndpoint = "https://www.zohoapis.in/billing/v1/hostedpages/newsubscription";
+    var method = "POST";
+
+    let api_data = await apiResponse(apiEndpoint, method, input_body);
+
+    if (api_data.code == 0) {
+
+        return res.status(200).json({ statusCode: 200, message: api_data.message, data: api_data.hostedpage });
+    } else {
+        return res.status(201).json({ statusCode: 201, message: api_data.message });
+    }
+
+}
+
+module.exports = { subscipition, invoice_details, invoice_payments, check_trail_end, checkAllSubscriptions, new_subscription, webhook_status, plans_list, new_hosted_page }
 
 
 // async function new_subscription(req, res) {

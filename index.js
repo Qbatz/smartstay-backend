@@ -1181,6 +1181,14 @@ app.post('/users/recuring_bill_users', (req, res) => {
     newBookings.recuring_bill_users(req, res)
 })
 
+// Qbatzclay Landing Page API 
+
+app.post('/billing/new_hosted_page', (req, res) => {
+    billings.new_hosted_page(req, res)
+})
+
+// Qbatzclay Landing Page API 
+
 // Settings Page API
 var settings_router = require('./settings/general')
 
@@ -1249,6 +1257,7 @@ app.post('/receipts/edit', receipts.edit_receipt)
 app.post('/receipts/delete', receipts.delete_receipt)
 
 app.post('/receipts/pdf_generate', receipts.pdf_generate)
+
 
 // **************************** Start Cashfree Subscription ****************************
 
