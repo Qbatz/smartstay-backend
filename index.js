@@ -785,6 +785,10 @@ app.post('/invoice_record_payments', (req, res) => {
     billings.invoice_payments(req, res)
 })
 
+app.get('/plans_list', (req, res) => {
+    billings.plans_list(req, res)
+})
+
 // Add Razorpay details
 app.post('/add_payment_details', (req, res) => {
     payments.add_payment_details(req, res)

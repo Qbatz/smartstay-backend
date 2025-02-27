@@ -385,13 +385,43 @@ async function createPG(reqHostel, res, req) {
 
         if (is_admin == 1 || (role_permissions[3] && role_permissions[3].per_create == 1)) {
 
-            const sql1 = "INSERT INTO hosteldetails(Name,hostel_PhoneNo,email_id,Address,created_By,isHostelBased,profile,image1,image2,image3,image4) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
-            connection.query(sql1, [hostel_name, hostel_phone, hostel_email, hostel_location, created_by, 0, profile_url, image1_url, image2_url, image3_url, image4_url], function (error, data) {
+            var hostel_count = req.user_details.hostel_count;
+
+            const sqlCount = "SELECT COUNT(id) AS hos_count FROM hosteldetails WHERE created_By=? AND isActive=1";
+            connection.query(sqlCount, [created_by], function (error, result) {
                 if (error) {
-                    console.log("error", error);
-                    return res.status(201).json({ statusCode: 201, message: 'Cannot Insert Details' })
+                    console.log("Error fetching hostel count:", error);
+                    return res.status(201).json({ statusCode: 201, message: 'Error fetching hostel count' });
+                } else if (result.length == 0) {
+
+                    const sql1 = "INSERT INTO hosteldetails(Name,hostel_PhoneNo,email_id,Address,created_By,isHostelBased,profile,image1,image2,image3,image4) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+                    connection.query(sql1, [hostel_name, hostel_phone, hostel_email, hostel_location, created_by, 0, profile_url, image1_url, image2_url, image3_url, image4_url], function (error, data) {
+                        if (error) {
+                            console.log("error", error);
+                            return res.status(201).json({ statusCode: 201, message: 'Cannot Insert Details' })
+                        } else {
+                            return res.status(200).json({ statusCode: 200, message: 'PG Added Succsessfully' })
+                        }
+                    })
                 } else {
-                    return res.status(200).json({ statusCode: 200, message: 'PG Added Succsessfully' })
+                    var hos_count = result[0].hos_count;
+
+                    console.log("hos_count :", hos_count);
+
+                    if (hos_count >= hostel_count) {
+                        return res.status(201).json({ statusCode: 201, message: "Upgrade your plan to add more hostels" });
+                    }
+
+                    const sql1 = "INSERT INTO hosteldetails(Name,hostel_PhoneNo,email_id,Address,created_By,isHostelBased,profile,image1,image2,image3,image4) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+                    connection.query(sql1, [hostel_name, hostel_phone, hostel_email, hostel_location, created_by, 0, profile_url, image1_url, image2_url, image3_url, image4_url], function (error, data) {
+                        if (error) {
+                            console.log("error", error);
+                            return res.status(201).json({ statusCode: 201, message: 'Cannot Insert Details' })
+                        } else {
+                            return res.status(200).json({ statusCode: 200, message: 'PG Added Succsessfully' })
+                        }
+                    })
+
                 }
             })
         } else {

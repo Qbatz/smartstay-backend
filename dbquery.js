@@ -23,7 +23,7 @@ const queries = [
 
     "ALTER TABLE expenses MODIFY COLUMN purchase_amount DECIMAL(10,2);",
 
-    "ALTER TABLE `invoicedetails` ADD COLUMN `rec_invstartdate` DATE NULL AFTER `end_date`,ADD COLUMN `rec_invenddate` DATE NULL AFTER `rec_invstartdate`,ADD COLUMN `rec_ebstartdate` DATE NULL AFTER `rec_invenddate`,ADD COLUMN `rec_ebenddate` DATE NULL AFTER `rec_ebstartdate`,ADD COLUMN `rec_ebunit` DECIMAL(10,2) NULL AFTER `rec_ebenddate`;",
+    "CREATE TABLE subscription_hostels (id INT AUTO_INCREMENT PRIMARY KEY,subscription_id VARCHAR(255) NOT NULL,customer_id VARCHAR(255) NOT NULL,hostel_id INT NOT NULL,hostel_name VARCHAR(255) NOT NULL,status INT(11) DEFAULT 1,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); ",
 
     "ALTER TABLE `hosteldetails` CHANGE COLUMN `inv_date` `inv_date` INT(11) NULL DEFAULT NULL ,CHANGE COLUMN `due_date` `due_date` INT(11) NULL DEFAULT NULL ;",
 
@@ -41,7 +41,12 @@ const queries = [
     
     "CREATE TABLE `wallet_logs` (`id` BIGINT(20) NOT NULL,`logs` VARCHAR(255) NULL,`ref_id` BIGINT(20) NULL DEFAULT 0,`used_by` BIGINT(20) NULL DEFAULT 0,`status` INT NULL DEFAULT 1,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
     
-    "ALTER TABLE `wallet_logs` CHANGE COLUMN `id` `id` BIGINT(20) NOT NULL AUTO_INCREMENT ;"
+    "ALTER TABLE `wallet_logs` CHANGE COLUMN `id` `id` BIGINT(20) NOT NULL AUTO_INCREMENT ;",
+    "ALTER TABLE `createaccount` ADD COLUMN `hostel_count` BIGINT(20) NULL DEFAULT 1 AFTER `description`,CHANGE COLUMN `createdat` `createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP AFTER `createdby`;",
+
+    "ALTER TABLE `trial_plan_details` ADD COLUMN `startdate` DATE NULL AFTER `plan_duration`,ADD COLUMN `end_date` DATE NULL AFTER `startdate`;",
+
+    "ALTER TABLE `createaccount` ADD COLUMN `hostel_ids` VARCHAR(500) NULL DEFAULT 0 AFTER `hostel_count`;"
 ];
 
 queries.forEach(executeQuery);

@@ -187,40 +187,132 @@ async function invoice_payments(req, res) {
     }
 }
 
+// async function new_subscription(req, res) {
+
+//     var { customer_id, plan_code } = req.body;
+
+//     if (!customer_id || !plan_code) {
+//         return res.status(201).json({ message: "Missing Parameter ", statusCode: 201 })
+//     }
+
+//     var currentDate = new Date().toISOString().split('T')[0];
+
+//     var apiEndpoint = "https://www.zohoapis.in/billing/v1/hostedpages/newsubscription";
+//     var method = "POST";
+
+//     var inbut_body = {
+//         plan: {
+//             plan_code: plan_code
+//         },
+//         customer_id: customer_id,
+//         addons: [],
+//         custom_fields: [],
+//         redirect_url: req.body.redirect_url,
+//         start_date: currentDate,
+//         notes: "New User Subscribtion"
+//     };
+//     apiResponse(apiEndpoint, method, inbut_body).then(api_data => {
+//         console.log('API Response:', api_data);
+
+//         if (api_data.code == 0) {
+//             return res.status(200).json({ message: api_data.message, data: api_data.hostedpage })
+//         } else {
+//             return res.status(201).json({ message: api_data.message, statusCode: 201, error: error })
+//         }
+//     })
+// }
+
 async function new_subscription(req, res) {
+    try {
+        var { user_id, customer_id, plan_code, hostel_ids, hostel_count } = req.body;
 
-    var { customer_id, plan_code } = req.body;
-
-    if (!customer_id || !plan_code) {
-        return res.status(201).json({ message: "Missing Parameter ", statusCode: 201 })
-    }
-
-    var currentDate = new Date().toISOString().split('T')[0];
-
-    var apiEndpoint = "https://www.zohoapis.in/billing/v1/hostedpages/newsubscription";
-    var method = "POST";
-
-    var inbut_body = {
-        plan: {
-            plan_code: plan_code
-        },
-        customer_id: customer_id,
-        addons: [],
-        custom_fields: [],
-        redirect_url: req.body.redirect_url,
-        start_date: currentDate,
-        notes: "New User Subscribtion"
-    };
-    apiResponse(apiEndpoint, method, inbut_body).then(api_data => {
-        console.log('API Response:', api_data);
-
-        if (api_data.code == 0) {
-            return res.status(200).json({ message: api_data.message, data: api_data.hostedpage })
-        } else {
-            return res.status(201).json({ message: api_data.message, statusCode: 201, error: error })
+        if (!user_id || !customer_id || !plan_code) {
+            return res.status(201).json({ message: "Missing or Invalid Parameters" });
         }
-    })
+
+        if (!hostel_count) {
+            hostel_count = 1
+        }
+
+        var currentDate = new Date().toISOString().split('T')[0];
+
+        if (hostel_ids && Array.isArray(hostel_ids) && hostel_ids.length > 0) {
+            var sql = `SELECT hs.id, hs.Name,ca.subscription_id FROM hosteldetails AS hs JOIN createaccount AS ca ON ca.id=hs.created_By WHERE hs.id IN (?) AND hs.isActive=1`;
+            connection.query(sql, [hostel_ids], async (err, hostels) => {
+                if (err) {
+                    return res.status(201).json({ message: "Database Error", error: err });
+                }
+
+                if (hostels.length === 0) {
+                    return res.status(201).json({ message: "No valid hostels found" });
+                } else {
+                    add_new_subs_func(hostels);
+                }
+            })
+        } else {
+            add_new_subs_func([]);
+        }
+
+        async function add_new_subs_func(hostels) {
+
+            var addons = [
+                {
+                    addon_code: "hostel_addon",
+                    name: "Hostel Subscription Addon",
+                    price: 1,
+                    quantity: hostel_count,
+                    type: "one_time"
+                }
+            ];
+
+            var apiEndpoint = "https://www.zohoapis.in/billing/v1/hostedpages/newsubscription";
+            var method = "POST";
+
+            var input_body = {
+                plan: { plan_code: plan_code },
+                customer_id: customer_id,
+                addons: addons,
+                custom_fields: [],
+                redirect_url: "",
+                start_date: currentDate,
+                notes: "New User Subscription with multiple hostels"
+            };
+
+            let api_data = await apiResponse(apiEndpoint, method, input_body);
+
+            if (api_data.code == 0) {
+
+                if (hostels.length > 0) {
+
+                    let hostelIdsArray = hostels.map(hostel => hostel.id);
+                    let hostelIdsString = JSON.stringify(hostelIdsArray);
+
+                    var sql2 = "UPDATE createaccount SET hostel_ids=?,hostel_count=? WHERE id=?";
+                    connection.query(sql2, [hostelIdsString, hostel_count, user_id], (err, result) => {
+                        if (err) {
+                            console.error("Error saving hostels:", err);
+                        }
+                    })
+                } else {
+                    var sql2 = "UPDATE createaccount SET hostel_count=? WHERE id=?";
+                    connection.query(sql2, [hostel_count, user_id], (err, result) => {
+                        if (err) {
+                            console.error("Error saving hostels:", err);
+                        }
+                    })
+                }
+
+                return res.status(200).json({ statusCode: 200, message: api_data.message, data: api_data.hostedpage, selected_hostels: hostels });
+            } else {
+                return res.status(201).json({ statusCode: 201, message: api_data.message });
+            }
+        }
+    } catch (error) {
+        return res.status(201).json({ statusCode: 201, message: "Internal Server Error", error: error.message });
+    }
 }
+
+
 
 async function webhook_status(req, res) {
 
@@ -259,6 +351,57 @@ async function webhook_status(req, res) {
                 console.error('Error executing query:', error);
             }
 
+            var sql3 = "SELECT * FROM createaccount WHERE customer_id=?";
+            connection.query(sql3, [customer_id], function (err, get_data) {
+                if (err) {
+                    console.log("Unbale to get user details");
+                } else if (get_data.length != 0) {
+
+                    var hostel_ids = get_data[0].hostel_ids;
+
+                    if (hostel_ids != 0 && Array.isArray(hostel_ids)) {
+
+                        var user_id = get_data[0].id;
+
+                        var sql4 = "SELECT * FROM hosteldetails WHERE created_By=?";
+                        connection.query(sql4, [user_id], function (err, hs_data) {
+                            if (err) {
+                                console.log("Hostel Details API Error");
+                            } else if (hs_data.length !== 0) {
+                                var hostel_id = hs_data.map(x => x.id); // Extract hostel IDs
+
+                                console.log("hostel_id:", hostel_id);
+
+                                if (hostel_id.length > 0) {
+                                    var sql5 = "UPDATE hosteldetails SET isActive=2 WHERE id IN (?)";
+                                    connection.query(sql5, [hostel_id], function (err, up_data) {
+                                        if (err) {
+                                            console.log("Update Hostel Details Query Error", err);
+                                        } else {
+                                            var sql6 = "UPDATE hosteldetails SET isActive=1 WHERE id IN (?)";
+                                            connection.query(sql6, [hostel_ids], function (err, up_res2) {
+                                                if (err) {
+                                                    console.log("Update Error for Active Hostel Details Query Error", err);
+                                                } else {
+                                                    console.log("Updated New Hostel Details");
+                                                }
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    console.log("No Hostels to Update");
+                                }
+                            } else {
+                                console.log("No Hostels Added");
+                            }
+                        });
+
+                    }
+                } else {
+                    console.log("Invalid user details");
+                }
+            })
+
             var sql2 = "UPDATE createaccount SET plan_status=1 WHERE customer_id=?";
             connection.query(sql2, [customer_id], function (err, up_date) {
                 if (err) {
@@ -277,10 +420,31 @@ async function webhook_status(req, res) {
     } else {
         console.log("In this Evenot not Success and Not Failure Event");
         console.log(event);
+        res.status(200).json({ success: true, message: "Webhook received" });
     }
 }
 
-module.exports = { subscipition, invoice_details, invoice_payments, check_trail_end, checkAllSubscriptions, new_subscription, webhook_status }
+async function plans_list(req, res) {
+
+    var apiEndpoint = " https://www.zohoapis.in/billing/v1/plans";
+    var method = 'GET'
+
+    var input_body = 0;
+
+    try {
+        const response = await apiResponse(apiEndpoint, method, input_body);
+        console.log("Invoice Details", response);
+
+        var plan_details = response.plans;
+        return res.status(200).json({ message: "Plan Details", statusCode: 200, plan_details: plan_details })
+
+    } catch (error) {
+        console.error('Error subscribing user:', error);
+        return res.status(201).json({ message: "Unable to update Plan Details", statusCode: 201, error: error })
+    }
+}
+
+module.exports = { subscipition, invoice_details, invoice_payments, check_trail_end, checkAllSubscriptions, new_subscription, webhook_status, plans_list }
 
 
 // async function new_subscription(req, res) {
@@ -294,7 +458,7 @@ module.exports = { subscipition, invoice_details, invoice_payments, check_trail_
 //             async function (error, data) {
 //                 if (error) {
 //                     console.error("Database error:", error);
-//                     response.status(500).json({ message: 'Database error' });
+//                     response.status(201).json({ message: 'Database error' });
 //                     return;
 //                 }
 
@@ -382,6 +546,6 @@ module.exports = { subscipition, invoice_details, invoice_payments, check_trail_
 //             }
 //         );
 //     } else {
-//         res.status(400).json({ message: 'Missing Parameter' });
+//         res.status(201).json({ message: 'Missing Parameter' });
 //     }
 // }
