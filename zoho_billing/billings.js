@@ -230,6 +230,8 @@ async function new_subscription(req, res) {
             return res.status(201).json({ message: "Missing or Invalid Parameters" });
         }
 
+        var wallet_amount = req.body.wallet_amount || 0;
+
         if (!hostel_count) {
             hostel_count = 1
         }
@@ -255,11 +257,33 @@ async function new_subscription(req, res) {
 
         async function add_new_subs_func(hostels) {
 
+            var price = 500 - Number(wallet_amount || 0);
+
+            if (wallet_amount) {
+
+                var sql1 = "SELECT * FROM wallet WHERE user_id=? AND is_active=1";
+                connection.query(sql1, [user_id], function (err, wal_data) {
+                    if (err) {
+                        return res.status(201).json({ message: "Database Error", error: err });
+                    } else if (wal_data.length != 0) {
+
+                        var acc_amount = wal_data[0].amount;
+
+                        if (wallet_amount > acc_amount) {
+                            return res.status(201).json({ message: "Wallet Amount Less than Selected Am" });
+                        }
+
+                    } else {
+                        return res.status(201).json({ message: "Wallet Amount Not Added" });
+                    }
+                })
+            }
+
             var addons = [
                 {
                     addon_code: "hostel_addon",
                     name: "Hostel Subscription Addon",
-                    price: 1,
+                    price: price,
                     quantity: hostel_count,
                     type: "one_time"
                 }
@@ -329,9 +353,11 @@ async function webhook_status(req, res) {
         const amount = req.body.data.payment.amount;
         var customer_id = body_val.data.payment.customer_id;
 
+        var wallet_amount = 10 - amount;
+
         var event_id = body_val.event_id;
 
-        var plan_code = 'one_rupee';
+        var plan_code = 'addon_plan';
         var plan_status = 1;
         var plan_type = 'paid';
         var plan_duration = 30;
@@ -356,6 +382,41 @@ async function webhook_status(req, res) {
                 if (err) {
                     console.log("Unbale to get user details");
                 } else if (get_data.length != 0) {
+
+                    var user_id = get_data[0].id;
+
+                    var sql4 = "SELECT * FROM wallet WHERE user_id=? AND is_active=1";
+                    connection.query(sql4, [user_id], function (err, wal_data) {
+                        if (err) {
+                            console.log("Wallet error", err);
+                        } else if (wal_data.length != 0) {
+
+                            var old_wallet = wal_data[0].amount;
+
+                            var new_wallet = old_wallet - wallet_amount
+
+                            var row_id = wal_data[0].id;
+                            var sql5 = "UPDATE wallet amount=? WHERE id=?";
+                            connection.query(sql5, [new_wallet, row_id], function (err, data) {
+                                if (err) {
+                                    console.log("Wallet error", err);
+                                } else {
+                                    var logs = "Subscribe Your Wallet Amount for " + " " + wallet_amount
+                                    var sql6 = "INSERT INTO wallet_logs (logs,used_by) VALUES (?,?)";
+                                    connection.query(sql6, [logs, user_id], function (err, ins_err) {
+                                        if (err) {
+                                            console.log("Wallet error", err);
+                                        } else {
+                                            console.log("Wallet Updated");
+
+                                        }
+                                    })
+                                }
+                            })
+                        } else {
+                            console.log("No Wallet Added");
+                        }
+                    })
 
                     var hostel_ids = get_data[0].hostel_ids;
 
@@ -410,6 +471,8 @@ async function webhook_status(req, res) {
                     console.log('Subscription history inserted:', results);
                 }
             })
+
+
         });
         console.log(`Payment ${paymentId} for subscription ${subscriptionId} was successful. Amount: ${amount}`);
 
