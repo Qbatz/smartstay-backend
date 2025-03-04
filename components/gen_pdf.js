@@ -156,15 +156,15 @@ const generateManualPDF = async (data, outputPath, filename) => {
             .text(inv_data.Amount.toFixed(2), startX + 2 * columnWidth + 15, dataY + 7);
         dataY += 25;
 
-        if (inv_data.PaidAmount > 0) {
-
+        if (inv_data.PaidAmount && Number(inv_data.PaidAmount) > 0) {
+            const paidAmount = Number(inv_data.PaidAmount) || 0; // Convert to number safely
+        
             doc.rect(startX, dataY, tableWidth, 25).stroke();
             doc.fontSize(10).fillColor('black')
                 .text('Paid Amount', startX + columnWidth, dataY + 7)
-                .text(inv_data.PaidAmount.toFixed(2), startX + 2 * columnWidth + 15, dataY + 7);
+                .text(paidAmount.toFixed(2), startX + 2 * columnWidth + 15, dataY + 7);
             dataY += 60;
         }
-
 
         doc.moveDown(3);
         const pageWidth = doc.page.width; // Get page width

@@ -447,3 +447,34 @@ exports.pdf_generate = (req, res) => {
 
     })
 }
+
+exports.wallet_details = (req, res) => {
+
+    var user_id = req.user_details.id;
+    var sql1 = "SELECT * FROM wallet WHERE user_id=? AND is_active=1";
+    connection.query(sql1, user_id, function (err, wall_data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Error to Get Wallet Details" })
+        } else if (wall_data.length == 0) {
+
+            var sql2 = "INSERT INTO wallet (amount,user_id) VALUES (0,?)";
+            connection.query(sql2, user_id, function (err, ins_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Error to Get Wallet Detail" })
+                } else {
+
+                    var sql1 = "SELECT * FROM wallet WHERE user_id=? AND is_active=1";
+                    connection.query(sql1, user_id, function (err, data) {
+                        if (err) {
+                            return res.status(201).json({ statusCode: 201, message: "Error to Get Wallet Details" })
+                        } else {
+                            return res.status(200).json({ statusCode: 200, message: "Wallet Detail", wallet_data: data })
+                        }
+                    })
+                }
+            })
+        } else {
+            return res.status(200).json({ statusCode: 200, message: "Wallet Detail", wallet_data: wall_data })
+        }
+    })
+}

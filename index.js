@@ -1258,6 +1258,8 @@ app.post('/receipts/delete', receipts.delete_receipt)
 
 app.post('/receipts/pdf_generate', receipts.pdf_generate)
 
+app.get('/wallet/details', receipts.wallet_details)
+
 
 // **************************** Start Cashfree Subscription ****************************
 
