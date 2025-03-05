@@ -1187,6 +1187,10 @@ app.post('/billing/new_hosted_page', (req, res) => {
     billings.new_hosted_page(req, res)
 })
 
+app.get('/reviews/all_review', (req, res) => {
+    billings.all_reviews(req, res)
+})
+
 // Qbatzclay Landing Page API 
 
 // Settings Page API

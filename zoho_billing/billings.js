@@ -1,4 +1,6 @@
 const bcrypt = require('bcrypt')
+const request = require('request')
+
 const connection = require('../config/connection')
 const apiResponse = require('./api_response')
 
@@ -547,7 +549,32 @@ async function new_hosted_page(req, res) {
 
 }
 
-module.exports = { subscipition, invoice_details, invoice_payments, check_trail_end, checkAllSubscriptions, new_subscription, webhook_status, plans_list, new_hosted_page }
+function all_reviews(req, res) {
+
+    var api_url = "https://maps.googleapis.com/maps/api/place/details/json?place_id=ChIJ994DNHInBDsR4ouAItexpm0&fields=name,rating,reviews&key=AIzaSyBq3a6aID7NM9FJ-tl_c9iSsURCEHcFMDU";
+
+    const method = "GET";
+
+    const options = {
+        url: api_url,
+        method: method,
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    };
+
+    request(options, (error, response, body) => {
+        if (error) {
+            res.status(201).send({ error: 'Message sending failed' });
+        } else {
+            const parsedBody = JSON.parse(body);
+            res.status(200).send({ message: "All Reviews",data:parsedBody });
+        }
+    });
+
+}
+
+module.exports = { subscipition, invoice_details, invoice_payments, check_trail_end, checkAllSubscriptions, new_subscription, webhook_status, plans_list, new_hosted_page, all_reviews }
 
 
 // async function new_subscription(req, res) {

@@ -29,7 +29,8 @@ module.exports = (req, res, next) => {
         '/customers/login',
         '/customers/verify_otp',
         '/get_invoice_id',
-        '/billing/new_hosted_page'
+        '/billing/new_hosted_page',
+        '/reviews/all_review'
     ];
 
 
