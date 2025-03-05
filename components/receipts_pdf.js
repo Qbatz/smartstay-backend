@@ -46,7 +46,8 @@ const generatereceipt = async (inv_data, outputPath, filename) => {
         let logoUrl = inv_data.hostel_profile ? inv_data.hostel_profile.trim() : null;
         const defaultLogo = 'https://smartstaydevs.s3.ap-south-1.amazonaws.com/Logo/Logo141717749724216.jpg';
 
-        var amount_words = converter.toWords(inv_data.amount_received.toFixed(0)).toUpperCase();
+        var amount_received = Number(inv_data.amount_received) || 0; // Convert to number, default to 0 if null/undefined
+        var amount_words = converter.toWords(amount_received.toFixed(0)).toUpperCase();
 
         // Check if logoUrl is valid, otherwise use the default logo
         if (!logoUrl || !/^https?:\/\//.test(logoUrl)) {
