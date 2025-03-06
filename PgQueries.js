@@ -1108,7 +1108,7 @@ function listDashBoard(connection, response, request) {
                                         console.log(item.projected_amount);
                                     });
 
-                                    const projectedAmounts = pro_res.map((item) => item.projected_amount || 0);
+                                    const projectedAmounts = pro_res.map((item) => Number(item.projected_amount) || 0);
 
                                     project_amount = projectedAmounts.reduce((total, amount) => total + amount, 0);
 
