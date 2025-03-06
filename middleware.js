@@ -30,11 +30,12 @@ module.exports = (req, res, next) => {
         '/customers/verify_otp',
         '/get_invoice_id',
         '/billing/new_hosted_page',
-        '/reviews/all_review'
+        '/reviews/all_review',
+        // '/invoice_redirect/:invoiceUrl'
     ];
 
 
-    if (openEndpoints.includes(req.originalUrl) || req.originalUrl.startsWith('/login/login?') || req.originalUrl.startsWith('/customers')) {
+    if (openEndpoints.includes(req.originalUrl) || req.originalUrl.startsWith('/login/login?') || req.originalUrl.startsWith('/invoice_redirect') || req.originalUrl.startsWith('/customers')) {
         return next();
     } else {
         if (!token) {

@@ -1191,6 +1191,11 @@ app.get('/reviews/all_review', (req, res) => {
     billings.all_reviews(req, res)
 })
 
+app.get('/invoice_redirect/:invoiceUrl', (req, res) => {
+    billings.redirect_func(req, res)
+});
+
+
 // Qbatzclay Landing Page API 
 
 // Settings Page API

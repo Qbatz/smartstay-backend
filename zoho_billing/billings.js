@@ -568,13 +568,43 @@ function all_reviews(req, res) {
             res.status(201).send({ error: 'Message sending failed' });
         } else {
             const parsedBody = JSON.parse(body);
-            res.status(200).send({ message: "All Reviews",data:parsedBody });
+            res.status(200).send({ message: "All Reviews", data: parsedBody });
         }
     });
 
 }
 
-module.exports = { subscipition, invoice_details, invoice_payments, check_trail_end, checkAllSubscriptions, new_subscription, webhook_status, plans_list, new_hosted_page, all_reviews }
+async function redirect_func(req, res) {
+
+    console.log(req.params);
+
+    let invoiceId = req.params.invoiceUrl;
+
+    console.log(invoiceId);
+
+    if (!invoiceId) {
+        return res.status(201).send('Invalid Invoice ID');
+    }
+
+    var apiEndpoint = "https://www.zohoapis.in/billing/v1/invoices/" + invoiceId;
+    var method = "GET";
+
+    var input_body = 0;
+
+    let api_data = await apiResponse(apiEndpoint, method, input_body);
+
+    if (api_data.code == 0) {
+
+        console.log(api_data);
+        res.redirect(api_data.invoice.invoice_url);
+        // return res.status(200).json({ statusCode: 200, message: api_data.message, data: api_data.hostedpage });
+    } else {
+        console.log(api_data);
+        // return res.status(201).json({ statusCode: 201, message: api_data.message });
+    }
+}
+
+module.exports = { subscipition, invoice_details, invoice_payments, check_trail_end, checkAllSubscriptions, new_subscription, webhook_status, plans_list, new_hosted_page, all_reviews, redirect_func }
 
 
 // async function new_subscription(req, res) {

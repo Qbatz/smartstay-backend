@@ -556,50 +556,55 @@ function RoomCount(connection, request, response) {
                 console.log("RoomsData", RoomsData);
 
                 if (RoomsData.length > 0) {
-                    let responseData = [];
-                    let roomsProcessed = 0;
+                    let responseData = new Array(RoomsData.length); // Ensure order is maintained
 
-                    RoomsData.forEach((room, i) => {
-                        const Room_Id = room.room_id;
+                    let promises = RoomsData.map((room, i) => {
+                        return new Promise((resolve, reject) => {
+                            const Room_Id = room.room_id;
 
-                        // Query to get booked bed count
-                        const bookedBedCountQuery = `SELECT COUNT('Bed') AS bookedBedCount FROM hostel WHERE Floor = ? AND Hostel_Id = ? AND Rooms = ? AND isActive = true`;
-                        connection.query(bookedBedCountQuery, [reqFloorID.floor_Id, reqFloorID.hostel_Id, Room_Id], function (error, hostelData) {
-                            if (error) {
-                                console.log(error);
-                                return response.status(202).json({ message: "Error occurred while fetching data" });
-                            }
+                            // Query to get booked bed count
+                            const bookedBedCountQuery = `SELECT COUNT('Bed') AS bookedBedCount FROM hostel 
+                                             WHERE Floor = ? AND Hostel_Id = ? AND Rooms = ? AND isActive = true`;
 
-                            // Create room object
-                            const objectFormation = {
-                                bookedBedCount: hostelData[0] ? hostelData[0].bookedBedCount : 0,
-                                Hostel_Id: room.Hostel_Id,
-                                Floor_Id: room.Floor_Id,
-                                Room_Id: room.room_id,
-                                Room_Name: room.Room_Id,
-                                Number_Of_Beds: room.Number_Of_Beds,
-                                Room_Rent: room.Price,
-                                isActive: room.isActive
-                            };
+                            connection.query(bookedBedCountQuery, [reqFloorID.floor_Id, reqFloorID.hostel_Id, Room_Id], function (error, hostelData) {
+                                if (error) return reject(error);
 
-                            // Query to get bed details
-                            const bed_query = `SELECT bd.id, bd.bed_no, bd.bed_amount, bd.isfilled FROM hostelrooms AS hr JOIN bed_details AS bd ON bd.hos_detail_id = hr.id WHERE hr.Hostel_Id = ? AND hr.Floor_Id = ? AND hr.id = ? AND bd.status = 1 AND hr.isActive = 1`;
-                            connection.query(bed_query, [objectFormation.Hostel_Id, objectFormation.Floor_Id, objectFormation.Room_Id], function (err, bed_data) {
-                                if (err) {
-                                    objectFormation['bed_details'] = 0;
-                                } else {
-                                    objectFormation['bed_details'] = bed_data.length > 0 ? bed_data : 0;
-                                }
+                                const objectFormation = {
+                                    bookedBedCount: hostelData[0] ? hostelData[0].bookedBedCount : 0,
+                                    Hostel_Id: room.Hostel_Id,
+                                    Floor_Id: room.Floor_Id,
+                                    Room_Id: room.room_id,
+                                    Room_Name: room.Room_Id,
+                                    Number_Of_Beds: room.Number_Of_Beds,
+                                    Room_Rent: room.Price,
+                                    isActive: room.isActive
+                                };
 
-                                responseData[i] = objectFormation; // Store data in the same index
-                                roomsProcessed++;
+                                // Query to get bed details
+                                const bed_query = `SELECT bd.id, bd.bed_no, bd.bed_amount, bd.isfilled 
+                                       FROM hostelrooms AS hr 
+                                       JOIN bed_details AS bd ON bd.hos_detail_id = hr.id 
+                                       WHERE hr.Hostel_Id = ? AND hr.Floor_Id = ? AND hr.id = ? 
+                                       AND bd.status = 1 AND hr.isActive = 1`;
 
-                                if (roomsProcessed === RoomsData.length) {
-                                    response.status(200).json({ responseData });
-                                }
+                                connection.query(bed_query, [objectFormation.Hostel_Id, objectFormation.Floor_Id, objectFormation.Room_Id], function (err, bed_data) {
+                                    objectFormation['bed_details'] = err ? 0 : (bed_data.length > 0 ? bed_data : 0);
+                                    responseData[i] = objectFormation; // Maintain order
+                                    resolve();
+                                });
                             });
                         });
                     });
+
+                    Promise.all(promises)
+                        .then(() => {
+                            response.status(200).json({ responseData });
+                        })
+                        .catch(err => {
+                            console.log(err);
+                            response.status(500).json({ message: "Error occurred while fetching data" });
+                        });
+
                 } else {
                     response.status(201).json({ message: "No Data Found" });
                 }
