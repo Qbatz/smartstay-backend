@@ -259,7 +259,10 @@ async function new_subscription(req, res) {
 
         async function add_new_subs_func(hostels) {
 
-            var price = 500 - Number(wallet_amount || 0);
+            var hos_amount = hostel_count * 599;
+
+            var price = hos_amount - Number(wallet_amount || 0);
+            // var price=1;
 
             if (wallet_amount) {
 
@@ -530,7 +533,7 @@ async function new_hosted_page(req, res) {
             email: email,
             mobile: mob_no
         },
-        redirect_url: "https://fullstack.qbatzclay.com/",
+        redirect_url: "https://fullstack.qbatzclay.com/thank-you-page",
         start_date: currentDate,
         notes: `New Subscription - Order ID: ${Date.now()}`
     };
