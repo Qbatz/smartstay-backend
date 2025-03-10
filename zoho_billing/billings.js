@@ -533,7 +533,7 @@ async function new_hosted_page(req, res) {
             email: email,
             mobile: mob_no
         },
-        redirect_url: "https://fullstack.qbatzclay.com/thank-you-page",
+        redirect_url: "https://frontend.qbatzclay.com/thank-you-page",
         start_date: currentDate,
         notes: `New Subscription - Order ID: ${Date.now()}`
     };

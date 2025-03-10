@@ -229,38 +229,38 @@ function add_room_reading(req, res) {
 
                                         var cal_startmeter = data_res[0].reading;
 
-                                        if (reading > cal_startmeter) {
+                                        // if (reading > cal_startmeter) {
 
-                                            var total_reading = reading - cal_startmeter;
+                                        var total_reading = reading - cal_startmeter;
 
-                                            var last_cal_date = data_res[0].get_date;
+                                        var last_cal_date = data_res[0].get_date;
 
-                                            var particular_amount = amount_details[0].amount;  // Get Single Amount
-                                            var total_amount = particular_amount * total_reading;  // Get Total Amount
+                                        var particular_amount = amount_details[0].amount;  // Get Single Amount
+                                        var total_amount = particular_amount * total_reading;  // Get Total Amount
 
-                                            var sql5 = "INSERT INTO room_readings (hostel_id,floor_id,room_id,date,reading,total_amount,total_reading,created_by) VALUES (?,?,?,?,?,?,?,?)";
-                                            connection.query(sql5, [hostel_id, floor_id, room_id, date, reading, total_amount, total_reading, created_by], function (err, ins_data) {
-                                                if (err) {
-                                                    return res.status(201).json({ message: 'Unable to Add Eb Amount Details', error: err });
-                                                } else {
+                                        var sql5 = "INSERT INTO room_readings (hostel_id,floor_id,room_id,date,reading,total_amount,total_reading,created_by) VALUES (?,?,?,?,?,?,?,?)";
+                                        connection.query(sql5, [hostel_id, floor_id, room_id, date, reading, total_amount, total_reading, created_by], function (err, ins_data) {
+                                            if (err) {
+                                                return res.status(201).json({ message: 'Unable to Add Eb Amount Details', error: err });
+                                            } else {
 
-                                                    console.log("Reading Inserted!");
+                                                console.log("Reading Inserted!");
 
-                                                    var eb_id = ins_data.insertId;
+                                                var eb_id = ins_data.insertId;
 
-                                                    split_eb_amounts(atten, cal_startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, type, function (result) {
-                                                        if (result.statusCode === 200) {
-                                                            return res.status(200).json({ statusCode: result.statusCode, message: result.message });
-                                                        } else {
-                                                            return res.status(201).json({ statusCode: result.statusCode, message: result.message, error: result.error });
-                                                        }
-                                                    });
-                                                }
-                                            })
+                                                split_eb_amounts(atten, cal_startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, type, function (result) {
+                                                    if (result.statusCode === 200) {
+                                                        return res.status(200).json({ statusCode: result.statusCode, message: result.message });
+                                                    } else {
+                                                        return res.status(201).json({ statusCode: result.statusCode, message: result.message, error: result.error });
+                                                    }
+                                                });
+                                            }
+                                        })
 
-                                        } else {
-                                            return res.status(201).json({ statusCode: 201, message: 'New reading must be greater than the old reading' });
-                                        }
+                                        // } else {
+                                        //     return res.status(201).json({ statusCode: 201, message: 'New reading must be greater than the old reading' });
+                                        // }
                                     }
                                 })
                             } else {
@@ -351,39 +351,39 @@ function add_hostel_reading(req, res) {
 
                                         var cal_startmeter = data_res[0].reading;
 
-                                        if (reading > cal_startmeter) {
+                                        // if (reading > cal_startmeter) {
 
-                                            var total_reading = reading - cal_startmeter;
+                                        var total_reading = reading - cal_startmeter;
 
-                                            var last_cal_date = data_res[0].get_date;
+                                        var last_cal_date = data_res[0].get_date;
 
-                                            var total_amount = particular_amount * total_reading;  // Get Total Amount
+                                        var total_amount = particular_amount * total_reading;  // Get Total Amount
 
-                                            var sql5 = "INSERT INTO hostel_readings (hostel_id,date,reading,total_amount,total_reading,created_by) VALUES (?,?,?,?,?,?)";
-                                            connection.query(sql5, [hostel_id, date, reading, total_amount, total_reading, created_by], function (err, ins_data) {
-                                                if (err) {
-                                                    return res.status(201).json({ message: 'Unable to Add Eb Amount Details', error: err });
-                                                } else {
+                                        var sql5 = "INSERT INTO hostel_readings (hostel_id,date,reading,total_amount,total_reading,created_by) VALUES (?,?,?,?,?,?)";
+                                        connection.query(sql5, [hostel_id, date, reading, total_amount, total_reading, created_by], function (err, ins_data) {
+                                            if (err) {
+                                                return res.status(201).json({ message: 'Unable to Add Eb Amount Details', error: err });
+                                            } else {
 
-                                                    console.log("Reading Inserted!");
+                                                console.log("Reading Inserted!");
 
-                                                    var eb_id = ins_data.insertId;
+                                                var eb_id = ins_data.insertId;
 
-                                                    var type = 'hostel'
+                                                var type = 'hostel'
 
-                                                    split_eb_amounts(atten, cal_startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, type, function (result) {
-                                                        if (result.statusCode === 200) {
-                                                            return res.status(200).json({ statusCode: result.statusCode, message: result.message });
-                                                        } else {
-                                                            return res.status(201).json({ statusCode: result.statusCode, message: result.message, error: result.error });
-                                                        }
-                                                    });
-                                                }
-                                            })
+                                                split_eb_amounts(atten, cal_startmeter, reading, last_cal_date, total_amount, total_reading, eb_id, created_by, type, function (result) {
+                                                    if (result.statusCode === 200) {
+                                                        return res.status(200).json({ statusCode: result.statusCode, message: result.message });
+                                                    } else {
+                                                        return res.status(201).json({ statusCode: result.statusCode, message: result.message, error: result.error });
+                                                    }
+                                                });
+                                            }
+                                        })
 
-                                        } else {
-                                            return res.status(201).json({ statusCode: 201, message: 'New reading must be greater than the old reading' });
-                                        }
+                                        // } else {
+                                        //     return res.status(201).json({ statusCode: 201, message: 'New reading must be greater than the old reading' });
+                                        // }
                                     }
                                 })
                             } else {
