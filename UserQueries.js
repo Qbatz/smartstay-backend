@@ -569,8 +569,8 @@ function createUser(connection, request, response) {
 
                             var admin_id = ref_data[0].user_id;
 
-                            console.log("admin_id :",admin_id);
-                            
+                            console.log("admin_id :", admin_id);
+
                             var sql13 = "SELECT * FROM wallet WHERE user_id=?";
                             connection.query(sql13, [admin_id], function (err, wal_data) {
                               if (err) {
@@ -2702,7 +2702,7 @@ function delete_check_out(req, res) {
 
     var created_by = req.user_details.id;
 
-    var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1 AND created_by=?";
+    var sql1 = "SELECT * FROM hostel WHERE ID=? AND created_by=?";
     connection.query(sql1, [user_id, created_by], function (err, sel_res) {
       if (err) {
         return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
