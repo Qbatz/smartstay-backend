@@ -844,7 +844,7 @@ function CreateRoom(connection, request, response) {
                                 }
                             })
                         } else {
-                            return response.status(201).json({ statusCode: 201, message: "Room Name Already Exist!" })
+                            return response.status(201).json({ statusCode: 201, message: "Room Name Already Exist" })
                         }
                     })
 

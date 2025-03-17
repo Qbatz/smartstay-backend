@@ -233,7 +233,7 @@ exports.add_annoncement = (req, res) => {
                     }
 
                     if (checkResult[0].count > 0) {
-                        return res.status(201).json({ statusCode: 201, message: "Title already exists. Please use a different title." });
+                        return res.status(201).json({ statusCode: 201, message: "Title Already Exists so Please use a Different Title" });
                     } else {
                         var sql3 = "UPDATE announcements SET title=?, description=? WHERE id=?";
                         connection.query(sql3, [title, description, id], function (err, ins_data) {

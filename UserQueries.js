@@ -83,7 +83,7 @@ function createUser(connection, request, response) {
   const created_by = request.user_details.id;
 
   if (atten.Email == undefined) {
-    atten.Email = "NA";
+    atten.Email = "N/A";
   }
 
   if (atten.ID) {
@@ -120,7 +120,7 @@ function createUser(connection, request, response) {
                 response.status(202).json({ message: "Phone Number Already Exists", statusCode: 202, });
               } else {
                 // Need to Check for the Mail Exist Error
-                connection.query(`SELECT * FROM hostel WHERE Email='${atten.Email}' AND Email !='NA' AND Hostel_Id='${atten.hostel_Id}' AND isActive = 1 AND ID !='${atten.ID}'`,
+                connection.query(`SELECT * FROM hostel WHERE Email='${atten.Email}' AND Email !='N/A' AND Hostel_Id='${atten.hostel_Id}' AND isActive = 1 AND ID !='${atten.ID}'`,
                   async function (error, data) {
                     if (error) {
                       return response.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201, });
@@ -530,7 +530,7 @@ function createUser(connection, request, response) {
             response.status(202).json({ message: "Phone Number Already Exists", statusCode: 202 });
           } else {
             // Need to Check for the Mail Exist Error
-            connection.query(`SELECT * FROM hostel WHERE Email='${atten.Email}' AND Email !='NA' AND isActive = 1 AND Hostel_Id='${atten.hostel_Id}'`, async function (error, data) {
+            connection.query(`SELECT * FROM hostel WHERE Email='${atten.Email}' AND Email !='N/A' AND isActive = 1 AND Hostel_Id='${atten.hostel_Id}'`, async function (error, data) {
               if (data.length > 0) {
                 response.status(203).json({ message: "Email Already Exists", statusCode: 203 });
               } else {

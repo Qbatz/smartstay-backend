@@ -271,7 +271,7 @@ exports.check_password = (req, res) => {
             if (isMatch) {
                 return res.status(200).json({ statusCode: 200, message: "Password Matched!" });
             } else {
-                return res.status(201).json({ statusCode: 201, message: "Password Does Not Matched !" });
+                return res.status(201).json({ statusCode: 201, message: "Password Does Not Matched" });
             }
         } catch (bcryptError) {
             return res.status(201).json({ statusCode: 201, message: "Error Verifying Password", reason: bcryptError.message });
