@@ -456,7 +456,7 @@ function createnewAccount(request, response) {
                                             var logs = full_name + " Added for Receipt Id"
 
                                             var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status,reference_id,is_credited) VALUES (?,?,?,?,?,?,?,?,1,?,0)"
-                                            connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, plan_code, ref_id], function (error, result) {
+                                            connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, 'free_plan', ref_id], function (error, result) {
                                                 if (error) {
                                                     console.log(error);
                                                     return response.status(201).json({ message: 'Database error' });
@@ -530,7 +530,7 @@ function createnewAccount(request, response) {
                                 }
 
                             } else {
-                                response.status(210).json({ message: 'Password and Confirm Password Not Matched', statusCode: 210 });
+                                response.status(210).json({ message: api_data, statusCode: 210 });
                             }
 
 
@@ -587,9 +587,9 @@ function loginAccount(connection, response, email_Id, password) {
                             var user_id = data[0].id;
 
                             if (plan_code == 'free_plan') {
-                                var sql2 = "SELECT * FROM trial_plan_details WHERE user_id=?";
+                                var sql2 = "SELECT * FROM trial_plan_details WHERE user_id=? ORDER BY id DESC";
                             } else {
-                                var sql2 = "SELECT * FROM subscribtion_history WHERE customer_id=?";
+                                var sql2 = "SELECT * FROM subscribtion_history WHERE customer_id=? ORDER BY id DESC";
                             }
                             connection.query(sql2, [user_id], function (err, Data) {
                                 if (err) {
@@ -645,8 +645,33 @@ function get_user_details(connection, request, response) {
             var role_id = sel_res[0].role_id;
 
             if (user_type === 'admin') {
+
+                var customer_id = request.customer_id;
+                var plan_code = request.plan_code;
+
+                if (!plan_code || plan_code == 'free_plan') {
+
+                    var sql1 = "SELECT * FROM trial_plan_details WHERE customer_id=?";
+                    connection.query(sql1, customer_id, function (err, plan_data) {
+                        if (err) {
+                            return response.status(201).json({ statusCode: 201, message: "Error to Get Plan Details" })
+                        }
+
+                        return response.status(200).json({ message: "User Details", user_details: sel_res[0], is_owner: 1, role_permissions: [], plan_data: plan_data });
+                    })
+                } else {
+
+                    var sql1 = "SELECT * FROM manage_plan_details WHERE customer_id=? AND status != 2 ORDER BY id DESC LIMIT 1;"
+                    connection.query(sql1, [customer_id], function (err, data) {
+                        if (err) {
+                            return response.status(201).json({ statusCode: 201, message: "Error to Get Plan Details" })
+                        }
+
+                        return response.status(200).json({ message: "User Details", user_details: sel_res[0], is_owner: 1, role_permissions: [], plan_data: plan_data });
+                    })
+                }
                 // Admin Details
-                response.status(200).json({ message: "User Details", user_details: sel_res[0], is_owner: 1, role_permissions: [] });
+                // response.status(200).json({ message: "User Details", user_details: sel_res[0], is_owner: 1, role_permissions: [] });
             } else {
 
                 var sql2 = `SELECT rp.*, per.permission_name, ro.role_name FROM role_permissions AS rp JOIN permissions AS per ON rp.permission_id = per.id JOIN roles AS ro ON ro.id = rp.role_id WHERE rp.role_id = ?`;
@@ -1198,4 +1223,36 @@ function formatDate(dateString) {
 }
 
 
-module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount, get_user_details, forgotpassword_otp_response, payment_history, update_account_details, transactionHistory, transactionHistoryPDF }
+function plan_details(req, res) {
+
+    var customer_id = req.customer_id;
+    var plan_code = req.plan_code;
+
+    if (!plan_code || plan_code == 'free_plan') {
+
+        var sql1 = "SELECT * FROM trial_plan_details WHERE plan_code=?";
+        connection.query(sql1, function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Error to Get Plan Details" })
+            } else if (data.length == 0) {
+                return res.status(200).json({ statusCode: 200, message: "Not Added Trail Plan", plan_details: [] })
+            } else {
+                return res.status(200).json({ statusCode: 200, message: "Trail Plan Detail", plan_details: data })
+            }
+        })
+    } else {
+
+        var sql1 = "SELECT * FROM manage_plan_details WHERE customer_id=? AND status != 2 ORDER BY id DESC LIMIT 1;"
+        connection.query(sql1, [customer_id], function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Error to Get Plan Details" })
+            } else if (data.length == 0) {
+                return res.status(200).json({ statusCode: 200, message: "Not Added Recent Plans", plan_details: [] })
+            } else {
+                return res.status(200).json({ statusCode: 200, message: "Plan Details", plan_details: data })
+            }
+        })
+    }
+}
+
+module.exports = { createAccountForLogin, loginAccount, forgetPassword, sendOtpForMail, sendResponseOtp, forgetPasswordOtpSend, createnewAccount, get_user_details, forgotpassword_otp_response, payment_history, update_account_details, transactionHistory, transactionHistoryPDF, plan_details }

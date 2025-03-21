@@ -16,7 +16,7 @@ function add_booking(req, res) {
     var l_name = req.body.l_name;
 
     if (!l_name) {
-        l_name = " "
+        l_name = ""
     }
 
     var { f_name, mob_no, email_id, address, joining_date, amount, hostel_id, id } = req.body;

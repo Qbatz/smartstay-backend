@@ -64,7 +64,11 @@ module.exports = (req, res, next) => {
                         return res.status(206).json({ message: "Invalid User", statusCode: 206 });
                     }
 
+
                     const user = data[0];
+
+                    req.customer_id = data[0].customer_id;
+                    req.plan_code = data[0].plan_code;
 
                     if (decoded.user_type === "admin") {
                         show_ids.push(decoded.id);

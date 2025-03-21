@@ -25,7 +25,7 @@ function AddCompliance(connection, request, response) {
 
                 } else if (com_data.length != 0) {
 
-                    var sql2 = "UPDATE compliance SET Name='" + Name + "',Complainttype='" + Complainttype + "', Assign='" + Assign + "', Status='" + Status + "', hostelname='" + hostelname + "', Description='" + Description + "' WHERE ID=" + id + ""
+                    var sql2 = "UPDATE compliance SET Name='" + Name + "',Complainttype='" + Complainttype + "', Assign='" + Assign + "', Status='" + Status + "', hostelname='" + hostelname + "', Description='" + Description + "',date='" + date + "' WHERE ID=" + id + ""
                     connection.query(sql2, function (up_err, up_res) {
                         if (up_err) {
                             response.status(201).json({ message: "Unable to Update Complaince Detailis", statusCode: 201 });

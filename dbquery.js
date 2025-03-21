@@ -50,7 +50,11 @@ const queries = [
 
     "INSERT INTO `permissions` (`id`, `permission_name`) VALUES ('1', 'Dashboard'),('2', 'Announcement'),('3', 'Updates'),('4', 'Paying Guest'),('5', 'Customers'),('6', 'Bookings'),('7', 'Check out'),('8', 'Walk In'),('9', 'Assets'),('10', 'Vendor'),('11', 'Bills'),('12', 'Recuring Bills'),('13', 'Electricity'),('14', 'Complaints'),('15', 'Expenses'),('16', 'Reports'),('17', 'Bankings'),('18', 'Profile'),('19', 'Amenities');",
 
-    "ALTER TABLE `invoicedetails` CHANGE COLUMN `PaidAmount` `PaidAmount` BIGINT(20) NULL DEFAULT 0 ;"
+    "ALTER TABLE `invoicedetails` CHANGE COLUMN `PaidAmount` `PaidAmount` BIGINT(20) NULL DEFAULT 0 ;",
+
+    "CREATE TABLE `manage_plan_details` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`hosted_page_id` VARCHAR(255) NULL,`plan_code` VARCHAR(45) NULL,`total_amount` BIGINT(20) NULL,`wallet_amount` BIGINT(20) NULL,`hostel_count` BIGINT(20) NULL,`selected_hostels` VARCHAR(45) NULL,`comments` VARCHAR(255) NULL,`status` BIGINT(20) NULL DEFAULT 2,`plan_name` VARCHAR(255) NULL,`plan_start_date` DATE NULL,`plan_end_date` DATE NULL,`payment_method` VARCHAR(255) NULL,`payment_id` VARCHAR(255) NULL,`invoice_id` VARCHAR(255) NULL,`event_id` VARCHAR(255) NULL,`interval_unit` VARCHAR(45) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+
+    "ALTER TABLE `manage_plan_details` ADD COLUMN`customer_id` VARCHAR(45) NULL AFTER`hosted_page_id`;"
 ];
 
 queries.forEach(executeQuery);

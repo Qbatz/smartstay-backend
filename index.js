@@ -501,6 +501,10 @@ app.post('/get_user_details', (request, response) => {
     accountManagement.get_user_details(connection, request, response);
 })
 
+app.get('/plan_details', (req, res) => {
+    accountManagement.plan_details(req, res);
+})
+
 // Not Use
 app.post('/invoice/invoiceUpdate', (request, response) => {
     response.set('Access-Control-Allow-Origin', '*');
@@ -797,6 +801,10 @@ app.post('/add_payment_details', (req, res) => {
 app.get('/payment_details', (req, res) => {
     payments.payment_details(req, res)
 })
+
+// app.post('/cancel_plan', (req, res) => {
+//     payments.payment_details(req, res)
+// })
 
 //================= Zoho Billing API =======================//
 

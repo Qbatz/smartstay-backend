@@ -24,8 +24,6 @@ const apiMiddleware = (apiEndpoint, method, input_body) => {
                     body: body_value
                 };
 
-                console.log(options);
-
                 request(options, (error, response, body) => {
                     if (error) {
                         return reject('Error calling API: ' + error);
@@ -34,7 +32,6 @@ const apiMiddleware = (apiEndpoint, method, input_body) => {
                     try {
                         const parsedBody = JSON.parse(body);
                         console.log(parsedBody);
-
                         if (parsedBody.code === 0) {
                             resolve({ shouldRetry: false, response: parsedBody }); // No need to retry, pass the body
                         } else if (parsedBody.code != 57) {
