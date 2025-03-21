@@ -529,7 +529,7 @@ async function webhook_status(req, res) {
         const amount = req.body.data.payment.amount;
         var customer_id = body_val.data.payment.customer_id;
 
-        var event_id = event.event_id;
+        var event_id = req.body.event_id;
         // var event_id = "1757351000002399314";
         // var paymentId = "1757351000002399258";
         // var customer_id = "1757351000002401039"
@@ -541,6 +541,8 @@ async function webhook_status(req, res) {
         let event_api_data = await apiResponse(event_api_url, event_method, 0);
 
         if (event_api_data.code == 0) {
+
+            console.log("1 st api success");
 
             var event_data = JSON.parse(event_api_data.event.payload);
 
@@ -558,6 +560,8 @@ async function webhook_status(req, res) {
             let subs_apidata = await apiResponse(sub_api_url, method, 0);
 
             if (subs_apidata.code == 0) {
+
+                console.log("2 nd api success");
 
                 var plan_details = subs_apidata.subscription.plan;
                 var plan_start = subs_apidata.subscription.current_term_starts_at;

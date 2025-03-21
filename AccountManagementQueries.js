@@ -662,7 +662,7 @@ function get_user_details(connection, request, response) {
                 } else {
 
                     var sql1 = "SELECT * FROM manage_plan_details WHERE customer_id=? AND status != 2 ORDER BY id DESC LIMIT 1;"
-                    connection.query(sql1, [customer_id], function (err, data) {
+                    connection.query(sql1, [customer_id], function (err, plan_data) {
                         if (err) {
                             return response.status(201).json({ statusCode: 201, message: "Error to Get Plan Details" })
                         }
