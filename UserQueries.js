@@ -1271,7 +1271,7 @@ function customer_details(req, res) {
       return res.status(201).json({ message: "Missing User Details", statusCode: 201 });
     }
 
-    var sql1 = "SELECT hs.*,hosroom.id as Room_Id,hosroom.Room_Id as Room_Name,hf.floor_name,inv.id AS inv_id,CASE WHEN inv.BalanceDue IS NULL THEN 'Not Generate' WHEN inv.BalanceDue > 0 OR inv.BalanceDue IS NULL THEN 'Unpaid' ELSE 'Paid' END AS status FROM hostel AS hs LEFT JOIN hostelrooms hosroom ON hosroom.id = hs.Rooms LEFT JOIN Hostel_Floor AS hf ON hs.Floor=hf.floor_id AND hs.Hostel_Id=hf.hostel_id LEFT JOIN invoicedetails AS inv ON inv.hos_user_id=hs.ID AND inv.action='advance' AND inv.invoice_status=1 WHERE hs.ID=? AND hs.isActive=1;";
+    var sql1 = "SELECT hs.*,hosroom.id as Room_Id,hosroom.Room_Id as Room_Name,hf.floor_name,inv.id AS inv_id,CASE WHEN inv.BalanceDue IS NULL THEN 'Not Generate' WHEN inv.BalanceDue > 0 OR inv.BalanceDue IS NULL THEN 'Unpaid' ELSE 'Paid' END AS status,inv.Date,inv.DueDate FROM hostel AS hs LEFT JOIN hostelrooms hosroom ON hosroom.id = hs.Rooms LEFT JOIN Hostel_Floor AS hf ON hs.Floor=hf.floor_id AND hs.Hostel_Id=hf.hostel_id LEFT JOIN invoicedetails AS inv ON inv.hos_user_id=hs.ID AND inv.action='advance' AND inv.invoice_status=1 WHERE hs.ID=? AND hs.isActive=1;";
     connection.query(sql1, [user_id], (user_err, user_data) => {
       if (user_err) {
         console.log("user_err", user_err);
