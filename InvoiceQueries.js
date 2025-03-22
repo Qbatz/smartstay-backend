@@ -3720,9 +3720,11 @@ function edit_eb_readings(req, res) {
 function advance_invoice(req, res) {
 
     var user_id = req.body.user_id;
+    var invoice_date = req.body.invoice_date;
+    var due_date = req.body.due_date;
 
-    if (!user_id) {
-        return res.status(201).json({ statusCode: 201, message: "Missing User Details" })
+    if (!user_id || !invoice_date || !due_date) {
+        return res.status(201).json({ statusCode: 201, message: "Missing User or Invoice Details" })
     }
 
     var sql1 = "SELECT * FROM invoicedetails WHERE hos_user_id=? AND invoice_status=1 AND action='advance'";
@@ -3796,7 +3798,7 @@ function advance_invoice(req, res) {
                 var pending_advance = inv_data.advance_amount;
 
                 var sql2 = "INSERT INTO invoicedetails (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, Date, DueDate, Invoices, Status, User_Id, RoomRent, EbAmount, AmnitiesAmount, Amnities_deduction_Amount, Hostel_Based, Room_Based, Bed,BalanceDue,PaidAmount,numberofdays,invoice_type,hos_user_id,action) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,2,?,'advance')";
-                connection.query(sql2, [inv_data.user_name, inv_data.Phone, inv_data.Email, inv_data.Name, inv_data.detHostel_Id, inv_data.hosFloor, inv_data.hosRoom, inv_data.advance_amount, inv_data.Address, currentDate, dueDate, invoiceNo, status, inv_data.User_Id, 0, 0, 0, 0, 0, 0, inv_data.Bed, pending_advance, inv_data.paid_advance, inv_data.hos_user_id], function (ins_err, ins_res) {
+                connection.query(sql2, [inv_data.user_name, inv_data.Phone, inv_data.Email, inv_data.Name, inv_data.detHostel_Id, inv_data.hosFloor, inv_data.hosRoom, inv_data.advance_amount, inv_data.Address, invoice_date, due_date, invoiceNo, status, inv_data.User_Id, 0, 0, 0, 0, 0, 0, inv_data.Bed, pending_advance, inv_data.paid_advance, inv_data.hos_user_id], function (ins_err, ins_res) {
                     if (ins_err) {
                         console.log("Insert Error", ins_err);
                         return res.status(201).json({ statusCode: 201, message: "Error to Add Invoice Details", reason: err.message })
