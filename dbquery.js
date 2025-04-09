@@ -54,7 +54,9 @@ const queries = [
 
     "CREATE TABLE `manage_plan_details` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`hosted_page_id` VARCHAR(255) NULL,`plan_code` VARCHAR(45) NULL,`total_amount` BIGINT(20) NULL,`wallet_amount` BIGINT(20) NULL,`hostel_count` BIGINT(20) NULL,`selected_hostels` VARCHAR(45) NULL,`comments` VARCHAR(255) NULL,`status` BIGINT(20) NULL DEFAULT 2,`plan_name` VARCHAR(255) NULL,`plan_start_date` DATE NULL,`plan_end_date` DATE NULL,`payment_method` VARCHAR(255) NULL,`payment_id` VARCHAR(255) NULL,`invoice_id` VARCHAR(255) NULL,`event_id` VARCHAR(255) NULL,`interval_unit` VARCHAR(45) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 
-    "ALTER TABLE `manage_plan_details` ADD COLUMN`customer_id` VARCHAR(45) NULL AFTER`hosted_page_id`;"
+    "ALTER TABLE `manage_plan_details` ADD COLUMN`customer_id` VARCHAR(45) NULL AFTER`hosted_page_id`;",
+
+    "CREATE TABLE `checkout_deductions` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`reason` VARCHAR(255) NULL,`amount` BIGINT(20) NULL,`user_id` BIGINT(20) NULL,`created_by` BIGINT(20) NULL,`created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));"
 ];
 
 queries.forEach(executeQuery);

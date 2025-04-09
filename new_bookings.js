@@ -266,13 +266,25 @@ function assign_booking(req, res) {
 
 function add_confirm_checkout(req, res) {
 
-    const { id, hostel_id, checkout_date, advance_return, due_amount, comments, reinburse } = req.body;
+    const { id, hostel_id, checkout_date, advance_return, due_amount, comments, reinburse, reasons } = req.body;
 
     const created_by = req.user_details.id;
 
     // Validate mandatory fields
     if (!id || !hostel_id || !checkout_date || !advance_return) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
+    }
+
+    if (reasons) {
+        if (!Array.isArray(reasons) || reasons.length === 0) {
+            return res.status(201).json({ statusCode: 201, message: "Invalid Resons and Amounts" });
+        }
+
+        for (let res of reasons) {
+            if (!res.reason || !res.amount) {
+                return res.status(201).json({ statusCode: 201, message: "Missing Required Fields in Reason Details" });
+            }
+        }
     }
 
     const sql1 = `SELECT * FROM hostel WHERE ID = ? AND Hostel_Id = ? AND isActive = 1 AND CheckoutDate IS NOT NULL`;
@@ -314,7 +326,7 @@ function add_confirm_checkout(req, res) {
                 const totalBalanceDue = result[0]?.totalBalanceDue || 0;
 
                 if (advance_amount >= totalBalanceDue) {
-                    processInvoicesAndFinalizeCheckout(id, totalBalanceDue, advance_return, created_by, checkout_date, bed_id, advance_return, comments, res);
+                    processInvoicesAndFinalizeCheckout(id, totalBalanceDue, advance_return, created_by, checkout_date, bed_id, advance_return, comments, reasons, res);
                 } else {
                     return res.status(201).json({ statusCode: 201, message: "Advance Amount is Less than Toal Balance Due" });
                 }
@@ -338,7 +350,7 @@ function finalizeCheckout(id, bed_id, advance_return, comments, res) {
 }
 
 // Helper function to process invoices and finalize checkout
-function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, created_by, checkout_date, bed_id, advance_return, comments, res) {
+function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, created_by, checkout_date, bed_id, advance_return, comments, reasons, res) {
 
     const sql = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
     connection.query(sql, [id], (err, invoices) => {
@@ -346,11 +358,31 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
             return res.status(201).json({ statusCode: 201, message: "Unable to fetch invoices for processing", reason: err.message });
         }
 
+        if (reasons && Array.isArray(reasons) && reasons.length > 0) {
+
+            var sql2 = "DELETE FROM checkout_deductions WHERE user_id=?";
+            connection.query(sql2, [id], function (err, data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Error for Delete Previous Reasons", reason: err.message });
+                }
+
+                const insertValues = reasons.map(item => [item.reason, item.amount, id, created_by]);
+                const insertQuery = "INSERT INTO checkout_deductions (reason, amount, user_id, created_by) VALUES ?";
+
+                connection.query(insertQuery, [insertValues], function (err, result) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Error inserting reason data", reason: err.message });
+                    }
+                });
+
+            })
+        }
+
         const queries = invoices.map((invoice) => {
 
             const { BalanceDue, id: invoiceId, PaidAmount } = invoice;
 
-            const all_amount = PaidAmount + totalBalanceDue
+            const all_amount = Number(PaidAmount) + Number(totalBalanceDue)
 
             const updateInvoice = `UPDATE invoicedetails SET BalanceDue = 0, PaidAmount = ?, Status = 'Success' WHERE id = ?`;
             const insertTransaction = `
