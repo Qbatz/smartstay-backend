@@ -271,12 +271,12 @@ function add_confirm_checkout(req, res) {
     const created_by = req.user_details.id;
 
     // Validate mandatory fields
-    if (!id || !hostel_id || !checkout_date || !advance_return) {
+    if (!id || !hostel_id || !checkout_date) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
     }
 
     if (Array.isArray(reasons) || reasons.length > 0) {
-       
+
         for (let reson of reasons) {
             if (!reson.reason || !reson.amount) {
                 return res.status(201).json({ statusCode: 201, message: "Missing Required Fields in Reason Details" });
