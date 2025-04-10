@@ -33,7 +33,7 @@ exports.add_contact = (req, res) => {
                             }
                         })
                     } else {
-                        return res.status(201).json({ statusCode: 201, message: "Mobile Number Already Exists!" })
+                        return res.status(201).json({ statusCode: 201, message: "Mobile Number Already Exists" })
                     }
                 })
 
@@ -81,7 +81,7 @@ exports.add_contact = (req, res) => {
                                 }
                             })
                         } else {
-                            return res.status(201).json({ statusCode: 201, message: "Contact Limit Exceed !" })
+                            return res.status(201).json({ statusCode: 201, message: "Contact Limit Exceed" })
                         }
                     }
                 })

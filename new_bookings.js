@@ -275,13 +275,10 @@ function add_confirm_checkout(req, res) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
     }
 
-    if (reasons) {
-        if (!Array.isArray(reasons) || reasons.length === 0) {
-            return res.status(201).json({ statusCode: 201, message: "Invalid Resons and Amounts" });
-        }
-
-        for (let res of reasons) {
-            if (!res.reason || !res.amount) {
+    if (Array.isArray(reasons) || reasons.length > 0) {
+       
+        for (let reson of reasons) {
+            if (!reson.reason || !reson.amount) {
                 return res.status(201).json({ statusCode: 201, message: "Missing Required Fields in Reason Details" });
             }
         }
@@ -328,7 +325,7 @@ function add_confirm_checkout(req, res) {
                 if (advance_amount >= totalBalanceDue) {
                     processInvoicesAndFinalizeCheckout(id, totalBalanceDue, advance_return, created_by, checkout_date, bed_id, advance_return, comments, reasons, res);
                 } else {
-                    return res.status(201).json({ statusCode: 201, message: "Advance Amount is Less than Toal Balance Due" });
+                    return res.status(201).json({ statusCode: 201, message: "Advance Amount is Less than Total Balance Due" });
                 }
             });
         }
