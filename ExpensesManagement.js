@@ -344,7 +344,7 @@ function AddExpenseCategory(request, response) {
                         })
 
                     } else {
-                        return response.status(201).json({ statusCode: 201, message: "Category Name Already Exist!" });
+                        return response.status(201).json({ statusCode: 201, message: "Category Name Already Exist" });
                     }
                 } else {
                     var sql2 = `INSERT INTO Expense_Category_Name(category_Name,hostel_id,created_by) VALUES('${reqData.category_Name}',${hostel_id},'${created_by}');`;
@@ -1037,7 +1037,7 @@ function edit_expense_category(req, res) {
                             }
                         })
                     } else {
-                        return res.status(201).json({ statusCode: 201, message: "Category Name Already Exists!" })
+                        return res.status(201).json({ statusCode: 201, message: "Category Name Already Exists" })
                     }
                 })
             } else {
@@ -1069,7 +1069,7 @@ function edit_expense_category(req, res) {
                             }
                         })
                     } else {
-                        return res.status(201).json({ statusCode: 201, message: "Sub Category Name Already Exists!" })
+                        return res.status(201).json({ statusCode: 201, message: "Sub Category Name Already Exists" })
                     }
                 })
             } else {
