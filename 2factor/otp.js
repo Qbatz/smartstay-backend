@@ -55,7 +55,7 @@ exports.user_login = (req, res) => {
                             res.status(201).json({ statusCode: 201, message: 'Message sending failed' });
                         } else {
                             console.log("response body", body);
-                            res.status(200).json({ statusCode: 200, message: 'Message sent successfully' });
+                            res.status(200).json({ statusCode: 200, message: 'Message sent successfully', otp: otp });
                         }
                     });
 
