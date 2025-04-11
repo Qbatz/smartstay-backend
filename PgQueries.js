@@ -865,7 +865,7 @@ function CreateRoom(connection, request, response) {
                     return response.status(500).json({ message: 'Database Error', error: error.message });
                 }
                 if (existingRoom.length > 0) {
-                    return response.status(201).json({ message: 'Room ID already exists', statusCode: 201 });
+                    return response.status(201).json({ message: 'Room Already exists', statusCode: 201 });
                 } else {
                     const insertQuery = `INSERT INTO hostelrooms (Hostel_Id, Floor_Id, Room_Id, Created_By) VALUES ('${reqsData.hostel_id}', '${reqsData.floorId}', '${reqsData.roomId}',  '${created_by}');`
 
