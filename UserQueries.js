@@ -82,6 +82,9 @@ function createUser(connection, request, response) {
 
   const created_by = request.user_details.id;
 
+  var bucketName = process.env.AWS_BUCKET_NAME;
+
+
   if (atten.Email == undefined) {
     atten.Email = "N/A";
   }
@@ -131,7 +134,7 @@ function createUser(connection, request, response) {
                       if (profile) {
                         try {
                           const timestamp = Date.now();
-                          profile_url = await uploadImage.uploadProfilePictureToS3Bucket("smartstaydevs", "users/", "profile" + unique_user_id + timestamp + ".jpg", profile);
+                          profile_url = await uploadImage.uploadProfilePictureToS3Bucket(bucketName, "users/", "profile" + unique_user_id + timestamp + ".jpg", profile);
 
                           if (
                             old_profile != null &&
@@ -139,7 +142,7 @@ function createUser(connection, request, response) {
                             old_profile != 0
                           ) {
                             const old_profile_key = getKeyFromUrl(old_profile);
-                            var deleteResponse = await uploadImage.deleteImageFromS3Bucket("smartstaydevs", old_profile_key);
+                            var deleteResponse = await uploadImage.deleteImageFromS3Bucket(bucketName, old_profile_key);
                             console.log("Image deleted successfully");
                           } else {
                             console.error("Failed to extract key from URL:", old_profile);
@@ -619,7 +622,9 @@ function createUser(connection, request, response) {
                         if (profile) {
                           try {
                             const timestamp = Date.now();
-                            profile_url = await uploadImage.uploadProfilePictureToS3Bucket("smartstaydevs", "users/", "profile" + gen_user_id + `${timestamp}` + ".jpg", profile);
+                            var bucketName = process.env.AWS_BUCKET_NAME;
+
+                            profile_url = await uploadImage.uploadProfilePictureToS3Bucket(bucketName, "users/", "profile" + gen_user_id + `${timestamp}` + ".jpg", profile);
                           } catch (err) {
                             console.error(err);
                             profile_url = 0;

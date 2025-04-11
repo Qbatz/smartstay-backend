@@ -187,7 +187,7 @@ const uploadToS3 = async (filePath, filename) => {
         const fileContent = fs.readFileSync(filePath);
 
         const key = `Receipts/${filename}`;
-        const bucketName = 'smartstaydevs';
+        var bucketName = process.env.AWS_BUCKET_NAME;
 
         const params = {
             Bucket: bucketName,

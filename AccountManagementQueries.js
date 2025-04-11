@@ -27,8 +27,10 @@ AWS.config.update({
 const s3 = new AWS.S3();
 
 
-function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileData, callback) {
+function uploadProfilePictureToS3Bucket(folderName, fileName, fileData, callback) {
     const s3 = new AWS.S3();
+
+    var bucketName = process.env.AWS_BUCKET_NAME
 
     const params = {
         Bucket: bucketName,
@@ -54,7 +56,7 @@ function createAccountForLogin(connection, reqBodyData, response) {
 
         if (reqBodyData.profile) {
             const timestamp = Date.now();
-            uploadProfilePictureToS3Bucket('smartstaydevs', 'Profile/', 'Profile' + reqBodyData.id + `${timestamp}` + '.jpg', reqBodyData.profile, (err, S3URL) => {
+            uploadProfilePictureToS3Bucket('Profile/', 'Profile' + reqBodyData.id + `${timestamp}` + '.jpg', reqBodyData.profile, (err, S3URL) => {
                 if (err) {
                     console.error('Error uploading profile picture:', err);
                     response.status(201).json({ message: 'Error uploading profile picture' });
@@ -136,11 +138,11 @@ function update_account_details(request, response) {
                                     if (profile) {
                                         try {
                                             const timestamp = Date.now();
-                                            profile_url = await uploadImage.uploadProfilePictureToS3Bucket('smartstaydevs', 'Profile/', 'Profile' + user_id + timestamp + '.jpg', profile);
+                                            profile_url = await uploadImage.uploadProfilePictureToS3Bucket('Profile/', 'Profile' + user_id + timestamp + '.jpg', profile);
 
                                             if (old_profile != null && old_profile != undefined && old_profile != 0 && old_profile != '') {
                                                 const old_profile_key = getKeyFromUrl(old_profile);
-                                                var deleteResponse = await uploadImage.deleteImageFromS3Bucket('smartstaydevs', old_profile_key);
+                                                var deleteResponse = await uploadImage.deleteImageFromS3Bucket(old_profile_key);
                                                 console.log("Image deleted successfully:", deleteResponse);
                                             } else {
                                                 console.error("Failed to extract key from URL:", old_profile);
@@ -1153,7 +1155,7 @@ where trans.status = true and trans.created_by = ${createdBy}
                             let pdfInfo = [];
                             const fileContent = fs.readFileSync(res.filename);
                             const key = `transaction/${res.filename}`;
-                            const BucketName = 'smartstaydevs';
+                            const BucketName = process.env.AWS_BUCKET_NAME;
                             const params = {
                                 Bucket: BucketName,
                                 Key: key,

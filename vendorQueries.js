@@ -70,7 +70,10 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                     function updatevendor() {
 
                         if (reqInvoice.profile) {
-                            uploadProfilePictureToS3Bucket('smartstaydevs', 'Vendor_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqInvoice.profile, (err, vendor_profile) => {
+
+                            var bucketName = process.env.AWS_BUCKET_NAME;
+
+                            uploadProfilePictureToS3Bucket(bucketName, 'Vendor_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqInvoice.profile, (err, vendor_profile) => {
                                 if (err) {
                                     response.status(202).json({ message: 'Database error' });
                                 } else {
@@ -160,7 +163,10 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
 
                             function insertVendor() {
                                 if (reqInvoice.profile) {
-                                    uploadProfilePictureToS3Bucket('smartstaydevs', 'Vendor_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqInvoice.profile, (err, vendor_profile) => {
+
+                                    var bucketName = process.env.AWS_BUCKET_NAME;
+
+                                    uploadProfilePictureToS3Bucket(bucketName, 'Vendor_Logo/', 'Logo' + `${timestamp}` + '.jpg', reqInvoice.profile, (err, vendor_profile) => {
                                         if (err) {
                                             response.status(201).json({ message: 'Database error' });
                                         } else {

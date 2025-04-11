@@ -298,7 +298,7 @@ async function createPG(reqHostel, res, req) {
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
-    var bucket_name = "smartstaydevs";
+    var bucket_name = process.env.AWS_BUCKET_NAME;
     var folderName = "Hostel-Images/";
 
     var { hostel_name, hostel_phone, hostel_email, hostel_location, profile, image1, image2, image3, image4, id } = reqHostel
@@ -1751,9 +1751,11 @@ function delete_hostel_image(req, res) {
                 var Data = data[0].image
                 // console.log(Data);
 
+                var bucketName = process.env.AWS_BUCKET_NAME;
+
                 if (Data != 0) {
                     const old_profile_key = await getKeyFromUrl(Data);
-                    var deleteResponse = await uploadImage.deleteImageFromS3Bucket("smartstaydevs", old_profile_key);
+                    var deleteResponse = await uploadImage.deleteImageFromS3Bucket(bucketName, old_profile_key);
                     console.log("Image deleted successfully");
                 }
 

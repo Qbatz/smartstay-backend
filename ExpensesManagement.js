@@ -939,7 +939,7 @@ WHERE expen.status = true AND expen.created_by = ${createdBy}`;
                     let pdfInfo = [];
                     const fileContent = fs.readFileSync(res.filename);
                     const key = `expense/${res.filename}`;
-                    const BucketName = 'smartstaydevs';
+                    const BucketName = process.env.AWS_BUCKET_NAME;
                     const params = {
                         Bucket: BucketName,
                         Key: key,

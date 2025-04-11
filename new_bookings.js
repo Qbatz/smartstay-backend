@@ -8,7 +8,7 @@ function add_booking(req, res) {
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
-    var bucket_name = "smartstaydevs";
+    var bucket_name = process.env.AWS_BUCKET_NAME;
     var folderName = "booking_user_profile/";
     var timestamp = Date.now();
 
@@ -426,7 +426,7 @@ function upload_doc(req, res) {
         return res.status(201).json({ statusCode: 201, message: "No files or file URLs provided in the payload" });
     }
 
-    const bucket_name = "smartstaydevs";
+    var bucket_name = process.env.AWS_BUCKET_NAME;
     const folderName = "customer/uploaded_docs/";
     const timestamp = Date.now();
 

@@ -12,7 +12,7 @@ exports.add_general_user = async (req, res) => {
 
     if (user_type == 'admin') {
 
-        var bucket_name = "smartstaydevs";
+        var bucket_name = process.env.AWS_BUCKET_NAME;
         var folderName = "general_user_profile/";
         var timestamp = Date.now();
 

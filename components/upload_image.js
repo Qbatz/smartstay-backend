@@ -18,6 +18,8 @@ const s3 = new AWS.S3();
 
 function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileData) {
 
+    var bucketName = process.env.AWS_BUCKET_NAME;
+
     return new Promise((resolve, reject) => {
 
         const s3 = new AWS.S3();
@@ -41,7 +43,10 @@ function uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, fileDa
     })
 }
 
-function deleteImageFromS3Bucket(bucket, key) {
+function deleteImageFromS3Bucket(key) {
+
+    var bucket = process.env.AWS_BUCKET_NAME;
+
     return new Promise((resolve, reject) => {
         const params = {
             Bucket: bucket,
@@ -63,7 +68,7 @@ function export_function(data, filePath) {
     return new Promise((resolve, reject) => {
 
         try {
-            var bucket_name = 'smartstaydevs';
+            var bucket_name = process.env.AWS_BUCKET_NAME;
 
             const worksheet = xlsx.utils.json_to_sheet(data);
             const workbook = xlsx.utils.book_new();

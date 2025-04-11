@@ -107,8 +107,12 @@ function InvoiceSettings(connection, request, response) {
 
 
             if (Prefix && Suffix && Profile) {
+
                 const timestamp = Date.now();
-                uploadProfilePictureToS3('smartstaydevs', 'Logo/', 'Logo' + reqInvoice.hostel_Id + `${timestamp}` + '.jpg', reqInvoice.profile, (err, s3Url) => {
+
+                var bucketName = process.env.AWS_BUCKET_NAME;
+
+                uploadProfilePictureToS3(bucketName, 'Logo/', 'Logo' + reqInvoice.hostel_Id + `${timestamp}` + '.jpg', reqInvoice.profile, (err, s3Url) => {
                     if (err) {
                         response.status(202).json({ message: 'Database error' });
                     } else {
@@ -126,8 +130,9 @@ function InvoiceSettings(connection, request, response) {
                 });
             } else if (Profile) {
                 const timestamp = Date.now();
-                console.log("timestamp", timestamp)
-                uploadProfilePictureToS3('smartstaydevs', 'Logo/', 'Logo' + reqInvoice.hostel_Id + `${timestamp}` + '.jpg', reqInvoice.profile, (err, s3Url) => {
+                var bucketName = process.env.AWS_BUCKET_NAME;
+
+                uploadProfilePictureToS3(bucketName, 'Logo/', 'Logo' + reqInvoice.hostel_Id + `${timestamp}` + '.jpg', reqInvoice.profile, (err, s3Url) => {
                     console.log("s3URL", s3Url);
                     if (err) {
                         console.error('Error uploading profile picture:', err);
@@ -148,7 +153,7 @@ function InvoiceSettings(connection, request, response) {
 
             } else if (Prefix && Suffix) {
 
-                var hostel_id=reqInvoice.hostel_Id;
+                var hostel_id = reqInvoice.hostel_Id;
 
                 const query = `UPDATE hosteldetails SET  prefix='${reqInvoice.prefix}', suffix='${reqInvoice.suffix}',inv_date='${inv_date}',due_date='${due_date}' WHERE id='${reqInvoice.hostel_Id}'`;
                 connection.query(query, function (error, invoiceData) {
