@@ -108,14 +108,14 @@ exports.amenities_list = (req, res) => {
                         if (year > currentYear || (year === currentYear && month > currentMonth)) {
                             break;
                         }
-                        const gapUniqueKey = `${sel_res[0].User_Id}-${amenityId}-${year}-${month}`;
+                        const gapUniqueKey = `${am_data[0].user_Id}-${amenityId}-${year}-${month}`;
                         if (!seenRecords.has(gapUniqueKey)) {
                             seenRecords.add(gapUniqueKey);
                             result.push({
                                 id: null,
-                                user_Id: sel_res[0].User_Id,
+                                user_Id: am_data[0].user_Id,
                                 amenity_Id: amenityId,
-                                hostel_Id: sel_res[0].ID,
+                                hostel_Id: am_data[0].Hostel_Id,
                                 created_At: `${year}-${String(month).padStart(2, "0")}-01T00:00:00.000Z`,
                                 Amnities_Name: lastStatusMap[amenityId].Amnities_Name,
                                 Amount: lastStatusMap[amenityId].Amount,
