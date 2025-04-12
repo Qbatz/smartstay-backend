@@ -301,9 +301,11 @@ async function createPG(reqHostel, res, req) {
     var bucket_name = process.env.AWS_BUCKET_NAME;
     var folderName = "Hostel-Images/";
 
+    var {area,landmark,pin_code,city,state}=req.body;
+
     var { hostel_name, hostel_phone, hostel_email, hostel_location, profile, image1, image2, image3, image4, id } = reqHostel
 
-    if (!hostel_name || !hostel_phone || !hostel_location) {
+    if (!hostel_name || !hostel_phone || !hostel_location || !area || !landmark|| !pin_code|| !city|| !state) {
         return res.status(201).json({ message: "Please Add All Required Fields", statusCode: 201 })
     }
 
@@ -355,8 +357,8 @@ async function createPG(reqHostel, res, req) {
                     return res.status(201).json({ message: "Unable to Get Hostel Details", statusCode: 201 })
                 } else if (hos_data.length != 0) {
 
-                    var sql2 = "UPDATE hosteldetails SET Name=?,email_id=?,Address=?,hostel_PhoneNo=?,profile=?,image1=?,image2=?,image3=?,image4=? WHERE id=?";
-                    connection.query(sql2, [hostel_name, hostel_email, hostel_location, hostel_phone, profile_url, image1_url, image2_url, image3_url, image4_url, id], function (err, up_data) {
+                    var sql2 = "UPDATE hosteldetails SET Name=?,email_id=?,Address=?,area=?,landmark=?,pin_code=?,city=?,state=?,hostel_PhoneNo=?,profile=?,image1=?,image2=?,image3=?,image4=? WHERE id=?";
+                    connection.query(sql2, [hostel_name, hostel_email, hostel_location,area,landmark,pin_code,city,state, hostel_phone, profile_url, image1_url, image2_url, image3_url, image4_url, id], function (err, up_data) {
                         if (err) {
                             return res.status(201).json({ message: "Unable to Update Hostel Details", statusCode: 201 })
                         } else {
@@ -394,8 +396,8 @@ async function createPG(reqHostel, res, req) {
                     return res.status(201).json({ statusCode: 201, message: 'Error fetching hostel count' });
                 } else if (result.length == 0) {
 
-                    const sql1 = "INSERT INTO hosteldetails(Name,hostel_PhoneNo,email_id,Address,created_By,isHostelBased,profile,image1,image2,image3,image4) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
-                    connection.query(sql1, [hostel_name, hostel_phone, hostel_email, hostel_location, created_by, 0, profile_url, image1_url, image2_url, image3_url, image4_url], function (error, data) {
+                    const sql1 = "INSERT INTO hosteldetails(Name,hostel_PhoneNo,email_id,Address,area,landmark,pin_code,city,state,created_By,isHostelBased,profile,image1,image2,image3,image4) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                    connection.query(sql1, [hostel_name, hostel_phone, hostel_email, hostel_location,area,landmark,pin_code,city,state, created_by, 0, profile_url, image1_url, image2_url, image3_url, image4_url], function (error, data) {
                         if (error) {
                             console.log("error", error);
                             return res.status(201).json({ statusCode: 201, message: 'Cannot Insert Details' })
@@ -412,8 +414,8 @@ async function createPG(reqHostel, res, req) {
                         return res.status(201).json({ statusCode: 201, message: "Upgrade your plan to add more hostels" });
                     }
 
-                    const sql1 = "INSERT INTO hosteldetails(Name,hostel_PhoneNo,email_id,Address,created_By,isHostelBased,profile,image1,image2,image3,image4) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
-                    connection.query(sql1, [hostel_name, hostel_phone, hostel_email, hostel_location, created_by, 0, profile_url, image1_url, image2_url, image3_url, image4_url], function (error, data) {
+                    const sql1 = "INSERT INTO hosteldetails(Name,hostel_PhoneNo,email_id,Address,area,landmark,pin_code,city,state,created_By,isHostelBased,profile,image1,image2,image3,image4) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                    connection.query(sql1, [hostel_name, hostel_phone, hostel_email, hostel_location,area,landmark,pin_code,city,state, created_by, 0, profile_url, image1_url, image2_url, image3_url, image4_url], function (error, data) {
                         if (error) {
                             console.log("error", error);
                             return res.status(201).json({ statusCode: 201, message: 'Cannot Insert Details' })
