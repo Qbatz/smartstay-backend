@@ -4,7 +4,7 @@ const uploadImage = require('../components/upload_image')
 
 exports.add_general_user = async (req, res) => {
 
-    var { f_name, l_name, mob_no, email_id, address, password, id } = req.body;
+    var { f_name, l_name, mob_no, email_id, address, password, id, area, landmark, pin_code, city, state } = req.body;
 
     var created_by = req.user_details.id;
 
@@ -20,7 +20,7 @@ exports.add_general_user = async (req, res) => {
 
         if (id) {
 
-            if (!f_name || !email_id || !mob_no) {
+            if (!f_name || !email_id || !mob_no || !address || !area || !landmark || !pin_code || !city || !state ) {
                 return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
             }
 
@@ -61,8 +61,8 @@ exports.add_general_user = async (req, res) => {
                                     }
 
                                     // Update User Details
-                                    var sql4 = "UPDATE createaccount SET first_name=?,last_name=?,mobileNo=?,email_Id=?,Address=?,profile=? WHERE id=?";
-                                    connection.query(sql4, [f_name, l_name, mob_no, email_id, address, profile_url, id], function (err, up_res) {
+                                    var sql4 = "UPDATE createaccount SET first_name=?,last_name=?,mobileNo=?,email_Id=?,Address=?,profile=?,area=?,landmark=?,pin_code=?,city=?,state=? WHERE id=?";
+                                    connection.query(sql4, [f_name, l_name, mob_no, email_id, address, profile_url,area,landmark,pin_code,city,state, id], function (err, up_res) {
                                         if (err) {
                                             return res.status(201).json({ statusCode: 201, message: "Unable to Update User Details" })
                                         } else {
@@ -83,7 +83,7 @@ exports.add_general_user = async (req, res) => {
             })
         } else {
 
-            if (!f_name || !email_id || !mob_no || !password) {
+            if (!f_name || !email_id || !mob_no || !password || !address || !area || !landmark || !pin_code || !city || !state) {
                 return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
             }
 
@@ -117,8 +117,8 @@ exports.add_general_user = async (req, res) => {
                                 }
                             }
 
-                            var sql2 = "INSERT INTO createaccount (first_name,last_name,mobileNo,email_Id,password,user_type,Address,profile,user_status,createdby) VALUES (?,?,?,?,?,?,?,?,1,?)";
-                            connection.query(sql2, [f_name, l_name, mob_no, email_id, hash_password, 'agent', address, profile_url, created_by], function (err, ins_res) {
+                            var sql2 = "INSERT INTO createaccount (first_name,last_name,mobileNo,email_Id,password,user_type,Address,profile,user_status,createdby,area,landmark,pin_code,city,state) VALUES (?,?,?,?,?,?,?,?,1,?,?,?,?,?,?)";
+                            connection.query(sql2, [f_name, l_name, mob_no, email_id, hash_password, 'agent', address, profile_url, created_by,area,landmark,pin_code,city,state], function (err, ins_res) {
                                 if (err) {
                                     return res.status(201).json({ statusCode: 201, message: "Unable to Add User Details" })
                                 } else {
