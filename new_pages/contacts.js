@@ -2,11 +2,11 @@ const connection = require('../config/connection')
 
 exports.add_contact = (req, res) => {
 
-    var { user_name, guardian, mob_no, address, user_id, id } = req.body;
+    var { user_name, guardian, mob_no, address, user_id, id, area,landmark,pin_code,city,state} = req.body;
 
     var created_by = req.user_details.id;
 
-    if (!user_name || !guardian || !mob_no || !user_id) {
+    if (!user_name || !guardian || !mob_no || !address || !user_id || !area || !landmark || !pin_code || !city || !state) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
     }
 
@@ -24,8 +24,8 @@ exports.add_contact = (req, res) => {
                         return res.status(201).json({ statusCode: 201, message: "Error Fetching Contact Details", reason: err.message })
                     } else if (sel_res.length == 0) {
 
-                        var sql3 = "UPDATE contacts SET user_name=?,guardian=?,mob_no=?,address=? WHERE id=?";
-                        connection.query(sql3, [user_name, guardian, mob_no, address, id], function (err, ins_data) {
+                        var sql3 = "UPDATE contacts SET user_name=?,guardian=?,mob_no=?,address=?,area=?,landmark=?,pin_code=?,city=?,state=? WHERE id=?";
+                        connection.query(sql3, [user_name, guardian, mob_no, address,area,landmark,pin_code,city,state, id], function (err, ins_data) {
                             if (err) {
                                 return res.status(201).json({ statusCode: 201, message: "Error Fetching Edit Contact Details", reason: err.message })
                             } else {
@@ -66,8 +66,8 @@ exports.add_contact = (req, res) => {
                                     return res.status(201).json({ statusCode: 201, message: "Error Fetching Contact Details", reason: err.message })
                                 } else if (sel_res.length == 0) {
 
-                                    var sql3 = "INSERT INTO contacts (user_name,guardian,mob_no,address,user_id,created_by) VALUES (?)";
-                                    var params = [user_name, guardian, mob_no, address, user_id, created_by];
+                                    var sql3 = "INSERT INTO contacts (user_name,guardian,mob_no,address,user_id,created_by,area,landmark,pin_code,city,state) VALUES (?)";
+                                    var params = [user_name, guardian, mob_no, address, user_id, created_by,area,landmark,pin_code,city,state];
 
                                     connection.query(sql3, [params], function (err, ins_data) {
                                         if (err) {
