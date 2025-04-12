@@ -19,9 +19,9 @@ function add_booking(req, res) {
         l_name = ""
     }
 
-    var { f_name, mob_no, email_id, address, joining_date, amount, hostel_id, id } = req.body;
+    var { f_name, mob_no, email_id, address, joining_date, amount, hostel_id, id,area,landmark,pin_code,city,state } = req.body;
 
-    if (!f_name || !mob_no || !joining_date || !amount || !hostel_id) {
+    if (!f_name || !mob_no || !joining_date || !amount || !hostel_id || !area || !landmark || !pin_code || !city || !state) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
     }
 
@@ -73,8 +73,8 @@ function add_booking(req, res) {
                         }
 
                         // var sql3 = "INSERT INTO bookings (first_name,last_name,joining_date,amount,hostel_id,phone_number,email_id,address,created_by,profile) VALUES (?)";
-                        var sql3 = "UPDATE bookings SET first_name=?,last_name=?,joining_date=?,amount=?,hostel_id=?,phone_number=?,email_id=?,address=?,profile=? WHERE id=?";
-                        connection.query(sql3, [f_name, l_name, joining_date, amount, hostel_id, mob_no, email_id, address, profile_url, id], function (err, ins_data) {
+                        var sql3 = "UPDATE bookings SET first_name=?,last_name=?,joining_date=?,amount=?,hostel_id=?,phone_number=?,email_id=?,address=?,profile=?,area=?,landmark=?,pin_code=?,city=?,state=? WHERE id=?";
+                        connection.query(sql3, [f_name, l_name, joining_date, amount, hostel_id, mob_no, email_id, address, profile_url,area,landmark,pin_code,city,state, id], function (err, ins_data) {
                             if (err) {
                                 return res.status(201).json({ statusCode: 201, message: "Unable to Add Booking Details", reason: err.message });
                             } else {
@@ -135,8 +135,8 @@ function add_booking(req, res) {
                             }
                         }
 
-                        var sql3 = "INSERT INTO bookings (first_name,last_name,joining_date,amount,hostel_id,phone_number,email_id,address,created_by,profile) VALUES (?)";
-                        var params = [f_name, l_name, joining_date, amount, hostel_id, mob_no, email_id, address, created_by, profile_url]
+                        var sql3 = "INSERT INTO bookings (first_name,last_name,joining_date,amount,hostel_id,phone_number,email_id,address,created_by,profile, area,landmark,pin_code,city,state) VALUES (?)";
+                        var params = [f_name, l_name, joining_date, amount, hostel_id, mob_no, email_id, address, created_by, profile_url, area, landmark, pin_code, city, state]
 
                         connection.query(sql3, [params], function (err, ins_data) {
                             if (err) {
@@ -145,7 +145,7 @@ function add_booking(req, res) {
                                 return res.status(200).json({ statusCode: 200, message: "Booking Added Successfully!" })
                             }
                         })
-                    }
+                }
 
 
                 } else {
@@ -232,8 +232,8 @@ function assign_booking(req, res) {
                         var hostel_name = booking_details.hostel_name;
                         var profile = booking_details.profile || 0;
 
-                        var sql4 = "INSERT INTO hostel (Circle, Name, Phone, Email, Address,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent,paid_advance,pending_advance,created_by,joining_Date,profile) VALUES (?)";
-                        var params = [circle, name, mob_no, email_id, address, hostel_name, hostel_id, floor, room, bed, ad_amount, rent_amount, 0, ad_amount, created_by, join_date, profile];
+                        var sql4 = "INSERT INTO hostel (Circle, Name, Phone, Email, Address,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent,paid_advance,pending_advance,created_by,joining_Date,profile,area,landmark,pincode,city,state) VALUES (?)";
+                        var params = [circle, name, mob_no, email_id, address, hostel_name, hostel_id, floor, room, bed, ad_amount, rent_amount, 0, ad_amount, created_by, join_date, profile,area,landmark,pincode,city,state];
                         connection.query(sql4, [params], function (err, ins_data) {
                             if (err) {
                                 console.log(err);
