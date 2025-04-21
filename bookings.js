@@ -6,9 +6,9 @@ function add_booking(req, res) {
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
-    var { first_name, last_name, joining_date, amount, hostel_id, floor_id, room_id, bed_id, comments, id, phone_number, email_id, address } = req.body;
+    var { first_name, last_name, joining_date, amount, hostel_id, floor_id, room_id, bed_id, comments, id, phone_number, email_id, address,area,landmark,pin_code,city,state } = req.body;
 
-    if (!first_name || !joining_date || !amount || !hostel_id) {
+    if (!first_name || !joining_date || !amount || !hostel_id || !address || !landmark || !pin_code || !city || !state) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
     }
 
@@ -49,8 +49,8 @@ function add_booking(req, res) {
                             }
 
                             function update_booking() {
-                                var sql2 = "UPDATE bookings SET first_name=?,last_name=?,joining_date=?,amount=?,hostel_id=?,floor_id=?,room_id=?,bed_id=?,comments=?, phone_number = ?,email_id =?,address=? WHERE id=?";
-                                connection.query(sql2, [first_name, last_name, joining_date, amount, hostel_id, floor_id, room_id, bed_id, comments, phone_number, email_id, address, id,], function (err, ins_data) {
+                                var sql2 = "UPDATE bookings SET first_name=?,last_name=?,joining_date=?,amount=?,hostel_id=?,floor_id=?,room_id=?,bed_id=?,comments=?, phone_number = ?,email_id =?,address=? ,area = ?,landmark = ?,pin_code = ?,city = ?,state = ? WHERE id=?";
+                                connection.query(sql2, [first_name, last_name, joining_date, amount, hostel_id, floor_id, room_id, bed_id, comments, phone_number, email_id, address, area, landmark,pin_code ,city , state,id,], function (err, ins_data) {
                                     if (err) {
                                         return res.status(201).json({ statusCode: 201, message: "Unable to Add New Booking" });
                                     } else {
@@ -167,7 +167,7 @@ function add_booking(req, res) {
 
                         // Proceed to insert new booking
                         var sql2 =
-                            "INSERT INTO bookings (first_name, last_name, joining_date, amount, hostel_id, floor_id, room_id, bed_id, comments, phone_number, email_id, address, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                            "INSERT INTO bookings (first_name, last_name, joining_date, amount, hostel_id, floor_id, room_id, bed_id, comments, phone_number, email_id, address, created_by,area,landmark,pin_code,city,state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                         connection.query(
                             sql2,
                             [
@@ -350,7 +350,7 @@ function assign_booking(req, res) {
                     return res.status(201).send("Server error");
                 } else {
                     const query2 =
-                        "INSERT INTO hostel (Circle, Name, Phone, Email, Address, HostelName, Hostel_Id, Floor, Rooms, Bed, created_by,country_code) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                        "INSERT INTO hostel (Circle, Name, Phone, Email, Address, HostelName, Hostel_Id, Floor, Rooms, Bed, created_by,country_code,area,landmark,pincode,city,state) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
                     connection.query(
                         query2,
