@@ -56,7 +56,9 @@ const queries = [
 
     "ALTER TABLE `manage_plan_details` ADD COLUMN`customer_id` VARCHAR(45) NULL AFTER`hosted_page_id`;",
 
-    "CREATE TABLE `checkout_deductions` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`reason` VARCHAR(255) NULL,`amount` BIGINT(20) NULL,`user_id` BIGINT(20) NULL,`created_by` BIGINT(20) NULL,`created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));"
+    "CREATE TABLE `checkout_deductions` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`reason` VARCHAR(255) NULL,`amount` BIGINT(20) NULL,`user_id` BIGINT(20) NULL,`created_by` BIGINT(20) NULL,`created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+
+    "ALTER TABLE `otp_verification` ADD COLUMN `role` VARCHAR(45) NULL DEFAULT 'customer' AFTER `otp`;"
 ];
 
 queries.forEach(executeQuery);
