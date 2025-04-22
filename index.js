@@ -1304,7 +1304,7 @@ app.post('/customers/login', user_middleware, twofactor_routes.user_login)
 
 app.post('/customers/verify_otp', twofactor_routes.verify_otp)
 
-app.post('/customers/dashboard', user_middleware, twofactor_routes.dashborad)
+app.post('/customers/dashboard',user_middleware, twofactor_routes.dashborad)
 
 app.get('/customers/amenities_list', user_middleware, user_list_routes.amenities_list)
 

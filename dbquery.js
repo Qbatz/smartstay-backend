@@ -64,10 +64,13 @@ const queries = [
     "ALTER TABLE `customer_walk_in_details` ADD COLUMN `area` VARCHAR(255) NULL AFTER `comments`,ADD COLUMN `landmark` VARCHAR(255) NULL AFTER `area`,ADD COLUMN `pin_code` INT NULL AFTER `landmark`,ADD COLUMN `city` VARCHAR(255) NULL AFTER `pin_code`,ADD COLUMN `state` VARCHAR(45) NULL AFTER `city`,CHANGE COLUMN `comments` `comments` VARCHAR(255) NULL DEFAULT NULL AFTER `created_At`;",
     "ALTER TABLE `Vendor` ADD COLUMN `area` VARCHAR(255) NULL AFTER `Vendor_Address`,ADD COLUMN `landmark` VARCHAR(255) NULL AFTER `area`,ADD COLUMN `city` VARCHAR(255) NULL AFTER `Pincode`,ADD COLUMN `state` VARCHAR(45) NULL AFTER `city`,CHANGE COLUMN `Pincode` `Pincode` INT NULL DEFAULT NULL AFTER `landmark`;",
     "ALTER TABLE `createaccount` ADD COLUMN `area` VARCHAR(255) NULL AFTER `Address`,ADD COLUMN `landmark` VARCHAR(255) NULL AFTER `area`,ADD COLUMN `pin_code` INT NULL AFTER `landmark`,ADD COLUMN `city` VARCHAR(255) NULL AFTER `pin_code`,ADD COLUMN `state` VARCHAR(45) NULL AFTER `city`;",
-    "ALTER TABLE `contacts` ADD COLUMN `area` VARCHAR(255) NULL AFTER `address`,ADD COLUMN `landmark` VARCHAR(255) NULL AFTER `area`,ADD COLUMN `pin_code` INT NULL AFTER `landmark`,ADD COLUMN `city` VARCHAR(255) NULL AFTER `pin_code`,ADD COLUMN `state` VARCHAR(45) NULL AFTER `city`;"
+    "ALTER TABLE `contacts` ADD COLUMN `area` VARCHAR(255) NULL AFTER `address`,ADD COLUMN `landmark` VARCHAR(255) NULL AFTER `area`,ADD COLUMN `pin_code` INT NULL AFTER `landmark`,ADD COLUMN `city` VARCHAR(255) NULL AFTER `pin_code`,ADD COLUMN `state` VARCHAR(45) NULL AFTER `city`;",
 
 
 
+    "CREATE TABLE `checkout_deductions` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`reason` VARCHAR(255) NULL,`amount` BIGINT(20) NULL,`user_id` BIGINT(20) NULL,`created_by` BIGINT(20) NULL,`created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
+
+    "ALTER TABLE `otp_verification` ADD COLUMN `role` VARCHAR(45) NULL DEFAULT 'customer' AFTER `otp`;"
 ];
 
 queries.forEach(executeQuery);
