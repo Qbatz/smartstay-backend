@@ -309,6 +309,8 @@ async function createPG(reqHostel, res, req) {
         return res.status(201).json({ message: "Please Add All Required Fields", statusCode: 201 })
     }
 
+    var hostel_location=reqHostel.hostel_location || ""
+
     let profile_url = 0;
     let image1_url = 0;
     let image2_url = 0;
