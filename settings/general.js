@@ -20,7 +20,7 @@ exports.add_general_user = async (req, res) => {
 
         if (id) {
 
-            if (!f_name || !email_id || !mob_no || !address || !area || !landmark || !pin_code || !city || !state ) {
+            if (!f_name || !email_id || !mob_no  || !pin_code || !city || !state ) {
                 return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
             }
 
@@ -83,7 +83,7 @@ exports.add_general_user = async (req, res) => {
             })
         } else {
 
-            if (!f_name || !email_id || !mob_no || !password || !address || !area || !landmark || !pin_code || !city || !state) {
+            if (!f_name || !email_id || !mob_no || !password || !pin_code || !city || !state) {
                 return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
             }
 

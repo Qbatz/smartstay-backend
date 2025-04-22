@@ -28,7 +28,7 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
       .status(201)
       .json({ statusCode: 201, message: "Missing Hostel Details" });
   }
-  if (!area || !landmark || !city || !state) {
+  if (!city || !state) {
     return response.status(201).json({ statusCode: 201, message: "Missing Mandatory Field" });
   }
 
@@ -114,7 +114,7 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                                     Vendor_Email = '${reqInvoice.Vendor_Email}',
                                     Vendor_Address = '${reqInvoice.Vendor_Address}',
                                     Vendor_profile = '${vendor_profile}',
-                                    Country = '${reqInvoice.Country}',
+                                    Country = '${reqInvoice.Country || ""}',
                                     Pincode = ${reqInvoice.Pincode},
                                     area = '${area}',
                                     landmark = '${landmark}',
@@ -154,7 +154,7 @@ function ToAddAndUpdateVendor(connection, reqInvoice, response, request) {
                             Vendor_Mobile = '${reqInvoice.Vendor_Mobile}',
                             Vendor_Email = '${reqInvoice.Vendor_Email}',
                             Vendor_Address = '${reqInvoice.Vendor_Address}',
-                            Country = '${reqInvoice.Country}',
+                            Country = '${reqInvoice.Country || ""}',
                             Pincode = ${reqInvoice.Pincode},
                             area = '${area}',
                             landmark = '${landmark}',

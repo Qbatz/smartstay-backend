@@ -305,7 +305,7 @@ async function createPG(reqHostel, res, req) {
 
     var { hostel_name, hostel_phone, hostel_email, hostel_location, profile, image1, image2, image3, image4, id } = reqHostel
 
-    if (!hostel_name || !hostel_phone || !hostel_location || !area || !landmark|| !pin_code|| !city|| !state) {
+    if (!hostel_name || !hostel_phone || !pin_code|| !city|| !state) {
         return res.status(201).json({ message: "Please Add All Required Fields", statusCode: 201 })
     }
 

@@ -59,12 +59,16 @@ function getKeyFromUrl(url) {
 function createUser(connection, request, response) {
 
   var atten = request.body;
+
+  console.log(atten);
+  
+
   var profile = request.file;
   var country_code = atten.country_code;
 
   var {area,landmark,pincode,city,state}=request.body;
 
-  if(!atten.firstname || !area || !landmark || !pincode || !city || !state){
+  if(!atten.firstname || !pincode || !city || !state){
     return response.status(201).json({statusCode:201,message:"Missing Mandatory Details"})
   }
 
@@ -615,7 +619,7 @@ function createUser(connection, request, response) {
                     var paid_advance = atten.paid_advance ? atten.paid_advance : 0;
                     var pending_advance = atten.AdvanceAmount - paid_advance;
 
-                    connection.query(`INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance,created_by,country_code,joining_Date,area,landmark,pincode,city,state) VALUES ('${Circle}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}','${paid_advance}','${pending_advance}','${created_by}','${country_code}','${atten.joining_date}','${area}','${landmark}','${pincode}','${city}','${state}')`, async function (insertError, insertData) {
+                    connection.query(`INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance,created_by,country_code,joining_Date,area,landmark,pincode,city,state) VALUES ('${Circle}', '${Name}', '${atten.Phone}', '${atten.Email}', '${atten.Address || ""}', '${atten.AadharNo}', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName}' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms}', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent}', '${atten.BalanceDue}', '${atten.PaymentType}', '${Status}','${paid_advance}','${pending_advance}','${created_by}','${country_code}','${atten.joining_date}','${area}','${landmark}','${pincode}','${city}','${state}')`, async function (insertError, insertData) {
                       if (insertError) {
                         console.log("insertError", insertError);
                         response.status(201).json({ message: "Internal Server Error", statusCode: 201 });

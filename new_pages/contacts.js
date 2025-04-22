@@ -6,7 +6,7 @@ exports.add_contact = (req, res) => {
 
     var created_by = req.user_details.id;
 
-    if (!user_name || !guardian || !mob_no || !address || !user_id || !area || !landmark || !pin_code || !city || !state) {
+    if (!user_name || !guardian || !mob_no || !user_id  || !pin_code || !city || !state) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
     }
 
