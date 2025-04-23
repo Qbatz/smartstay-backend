@@ -19,9 +19,9 @@ function add_booking(req, res) {
         l_name = ""
     }
 
-    var { f_name, mob_no, email_id, address, joining_date, amount, hostel_id, id,area,landmark,pin_code,city,state } = req.body;
+    var { f_name, mob_no, email_id, address, joining_date, amount, hostel_id, id, area, landmark, pin_code, city, state } = req.body;
 
-    if (!f_name || !mob_no || !joining_date || !amount || !hostel_id  || !pin_code || !city || !state) {
+    if (!f_name || !mob_no || !joining_date || !amount || !hostel_id || !pin_code || !city || !state) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
     }
 
@@ -74,7 +74,7 @@ function add_booking(req, res) {
 
                         // var sql3 = "INSERT INTO bookings (first_name,last_name,joining_date,amount,hostel_id,phone_number,email_id,address,created_by,profile) VALUES (?)";
                         var sql3 = "UPDATE bookings SET first_name=?,last_name=?,joining_date=?,amount=?,hostel_id=?,phone_number=?,email_id=?,address=?,profile=?,area=?,landmark=?,pin_code=?,city=?,state=? WHERE id=?";
-                        connection.query(sql3, [f_name, l_name, joining_date, amount, hostel_id, mob_no, email_id, address, profile_url,area,landmark,pin_code,city,state, id], function (err, ins_data) {
+                        connection.query(sql3, [f_name, l_name, joining_date, amount, hostel_id, mob_no, email_id, address, profile_url, area, landmark, pin_code, city, state, id], function (err, ins_data) {
                             if (err) {
                                 return res.status(201).json({ statusCode: 201, message: "Unable to Add Booking Details", reason: err.message });
                             } else {
@@ -145,7 +145,7 @@ function add_booking(req, res) {
                                 return res.status(200).json({ statusCode: 200, message: "Booking Added Successfully!" })
                             }
                         })
-                }
+                    }
 
 
                 } else {
@@ -233,7 +233,7 @@ function assign_booking(req, res) {
                         var profile = booking_details.profile || 0;
 
                         var sql4 = "INSERT INTO hostel (Circle, Name, Phone, Email, Address,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent,paid_advance,pending_advance,created_by,joining_Date,profile,area,landmark,pincode,city,state) VALUES (?)";
-                        var params = [circle, name, mob_no, email_id, address, hostel_name, hostel_id, floor, room, bed, ad_amount, rent_amount, 0, ad_amount, created_by, join_date, profile,area,landmark,pincode,city,state];
+                        var params = [circle, name, mob_no, email_id, address, hostel_name, hostel_id, floor, room, bed, ad_amount, rent_amount, 0, ad_amount, created_by, join_date, profile, area, landmark, pincode, city, state];
                         connection.query(sql4, [params], function (err, ins_data) {
                             if (err) {
                                 console.log(err);
@@ -375,37 +375,106 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
             })
         }
 
-        const queries = invoices.map((invoice) => {
+        if (invoices.length == 0) {
+            finalizeCheckout(id, bed_id, advance_return, comments, res);
 
-            const { BalanceDue, id: invoiceId, PaidAmount } = invoice;
+        } else {
+            // const queries = invoices.map((invoice) => {
 
-            const all_amount = Number(PaidAmount) + Number(totalBalanceDue)
+            //     const { BalanceDue, id: Invoices, PaidAmount } = invoice;
 
-            const updateInvoice = `UPDATE invoicedetails SET BalanceDue = 0, PaidAmount = ?, Status = 'Success' WHERE id = ?`;
-            const insertTransaction = `
-                INSERT INTO transactions 
-                (user_id, invoice_id, amount, status, created_by, payment_type, payment_date, description, action) 
-                VALUES (?, ?, ?, 1, ?, 'CASH', ?, 'Invoice', 1)
-            `;
-            return new Promise((resolve, reject) => {
-                connection.query(updateInvoice, [all_amount, invoiceId], (err) => {
-                    if (err) return reject(err);
+            //     const all_amount = Number(PaidAmount) + Number(totalBalanceDue);
 
-                    connection.query(insertTransaction, [id, invoiceId, BalanceDue, created_by, checkout_date], (err) => {
-                        if (err) return reject(err);
-                        resolve();
+            //     const receipt_number = crypto.randomBytes(5).toString("hex").toUpperCase(); // 10 characters unique value
+
+            //     const updateInvoice = `UPDATE invoicedetails SET BalanceDue = 0, PaidAmount = ?, Status = 'Success' WHERE id = ?`;
+            //     const insertTransaction = `
+            //         INSERT INTO transactions 
+            //         (user_id, invoice_id, amount, status, created_by, payment_type, payment_date, description, action) 
+            //         VALUES (?, ?, ?, 1, ?, 'CASH', ?, 'Invoice', 1)
+            //     `;
+            //     return new Promise((resolve, reject) => {
+            //         connection.query(updateInvoice, [all_amount, Invoices], (err) => {
+            //             if (err) return reject(err);
+
+            //             connection.query(insertTransaction, [id, Invoices, BalanceDue, created_by, checkout_date], (err) => {
+            //                 if (err) return reject(err);
+            //                 resolve();
+            //             });
+            //         });
+            //     });
+            // });
+
+            const queries = invoices.map((invoice) => {
+                const { BalanceDue, Invoices: invoiceId, PaidAmount } = invoice;
+                const all_amount = Number(PaidAmount) + Number(BalanceDue);
+
+                const generateUniqueReceiptNumber = () => {
+                    return new Promise((resolve, reject) => {
+                        const tryGenerate = () => {
+                            const receipt_number = crypto.randomBytes(5).toString("hex").toUpperCase(); // 10 char
+
+                            connection.query("SELECT COUNT(*) as count FROM receipts WHERE reference_id = ?", [receipt_number], (err, result) => {
+                                if (err) return reject(err);
+
+                                if (result[0].count > 0) {
+                                    tryGenerate(); // try again
+                                } else {
+                                    resolve(receipt_number);
+                                }
+                            });
+                        };
+
+                        tryGenerate();
                     });
+                };
+
+                console.log(invoiceId);
+                
+                return new Promise(async (resolve, reject) => {
+                    try {
+                        const receipt_number = await generateUniqueReceiptNumber();
+
+                        const insertReceiptQuery = `
+                            INSERT INTO receipts 
+                            (user_id, reference_id, invoice_number, amount_received, payment_date, payment_mode, notes, created_by, bank_id) 
+                            VALUES (?, ?, ?, ?, ?, 'CASH', 'Checkout Payment', ?, 0)
+                        `;
+
+                        connection.query(insertReceiptQuery, [id, receipt_number, invoiceId, BalanceDue, checkout_date, created_by], (err) => {
+                            if (err) return reject(err);
+
+                            const updateInvoice = `UPDATE invoicedetails SET BalanceDue = 0, PaidAmount = ?, Status = 'Success' WHERE id = ?`;
+                            connection.query(updateInvoice, [all_amount, invoiceId], (err) => {
+                                if (err) return reject(err);
+
+                                const insertTransaction = `
+                                    INSERT INTO transactions 
+                                    (user_id, invoice_id, amount, status, created_by, payment_type, payment_date, description, action) 
+                                    VALUES (?, ?, ?, 1, ?, 'CASH', ?, 'Invoice', 1)
+                                `;
+
+                                connection.query(insertTransaction, [id, invoiceId, BalanceDue, created_by, checkout_date], (err) => {
+                                    if (err) return reject(err);
+                                    resolve();
+                                });
+                            });
+                        });
+                    } catch (err) {
+                        reject(err);
+                    }
                 });
             });
-        });
 
-        Promise.all(queries)
-            .then(() => {
-                finalizeCheckout(id, bed_id, advance_return, comments, res);
-            })
-            .catch((err) => {
-                res.status(201).json({ statusCode: 201, message: "Error processing invoices", reason: err.message });
-            });
+
+            Promise.all(queries)
+                .then(() => {
+                    finalizeCheckout(id, bed_id, advance_return, comments, res);
+                })
+                .catch((err) => {
+                    res.status(201).json({ statusCode: 201, message: "Error processing invoices", reason: err.message });
+                });
+        }
     });
 }
 
