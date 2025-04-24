@@ -407,7 +407,7 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
             // });
 
             const queries = invoices.map((invoice) => {
-                const { BalanceDue, Invoices: invoiceId, PaidAmount } = invoice;
+                const { BalanceDue, Invoices: invoiceId, id: inv_id, PaidAmount } = invoice;
                 const all_amount = Number(PaidAmount) + Number(BalanceDue);
 
                 const generateUniqueReceiptNumber = () => {
@@ -431,7 +431,7 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
                 };
 
                 console.log(invoiceId);
-                
+
                 return new Promise(async (resolve, reject) => {
                     try {
                         const receipt_number = await generateUniqueReceiptNumber();
@@ -446,7 +446,7 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
                             if (err) return reject(err);
 
                             const updateInvoice = `UPDATE invoicedetails SET BalanceDue = 0, PaidAmount = ?, Status = 'Success' WHERE id = ?`;
-                            connection.query(updateInvoice, [all_amount, invoiceId], (err) => {
+                            connection.query(updateInvoice, [all_amount, inv_id], (err) => {
                                 if (err) return reject(err);
 
                                 const insertTransaction = `
