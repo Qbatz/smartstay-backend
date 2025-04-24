@@ -1,5 +1,6 @@
 const connection = require("./config/connection");
 const uploadImage = require("./components/upload_image");
+const crypto = require('crypto');
 
 function add_booking(req, res) {
 
