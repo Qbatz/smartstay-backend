@@ -1,3 +1,5 @@
+const moment = require("moment");
+
 const connection = require("./config/connection");
 
 exports.get_receipt_detailsbyid = async (req, res) => {
@@ -63,53 +65,101 @@ exports.get_bill_detailsbyid = async (req, res) => {
         return res.status(201).json({ statusCode: 201, message: "Missing Bill Details" })
     }
 
-    var sql1 = "SELECT inv.id AS invoice_id,inv.Invoices,inv.Date,inv.DueDate,inv.Status,hs.Name AS uname,hs.Phone AS uphone,hs.Email AS uemail,hs.Address AS uaddress,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upin_code,hs.city AS ucity,hs.state AS ustate,hos.Name AS hname,hos.Address AS haddress,hos.area AS harea,hos.landmark AS hlandmark,hos.pin_code AS hpincode,hos.city AS hcity,hos.state AS hstate FROM invoicedetails AS inv JOIN hosteldetails AS hos ON hos.id=inv.Hostel_Id JOIN hostel AS hs ON hs.id=inv.hos_user_id WHERE inv.id=?;";
-    connection.query(sql1, bill_id, function (err, Data) {
-        if (err) {
-            return res.status(201).json({ statusCode: 201, message: "Error to Get Bill Details", reason: err.message })
-        }
-
-        var invoice_id = Data[0].invoice_id;
-
-        var sql2 = "SELECT * FROM manual_invoice_amenities WHERE invoice_id=?";
-        connection.query(sql2, [invoice_id], function (err, amenities) {
+    try {
+        var sql1 = "SELECT inv.id AS invoice_id,inv.Invoices,inv.Date,inv.DueDate,inv.Status,inv.rec_invstartdate,inv.rec_invenddate,inv.action,hs.Name AS uname,hs.Phone AS uphone,hs.Email AS uemail,hs.Address AS uaddress,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upin_code,hs.city AS ucity,hs.state AS ustate,hos.Name AS hname,hos.Address AS haddress,hos.area AS harea,hos.landmark AS hlandmark,hos.pin_code AS hpincode,hos.city AS hcity,hos.state AS hstate,hs.joining_Date,hf.floor_name,hr.Room_Id,bd.bed_no FROM invoicedetails AS inv JOIN hosteldetails AS hos ON hos.id=inv.Hostel_Id JOIN hostel AS hs ON hs.id=inv.hos_user_id JOIN hostelrooms AS hr ON hr.id=hs.Bed JOIN Hostel_Floor AS hf ON hf.id=hs.Floor JOIN bed_details AS bd ON bd.id=hs.Bed WHERE inv.id=?;";
+        connection.query(sql1, bill_id, function (err, Data) {
             if (err) {
-                return res.status(201).json({ statusCode: 201, message: "Error to Get Bill Details", reason: err.message })
+                return res.status(201).json({ statusCode: 201, message: "Error to Get Bill Details 1", reason: err.message })
             }
-            
 
-            const finalresponse = {
-                id: Data[0].id,
-                invoice_id: Data[0].Invoices,
-                payment_date: Data[0].payment_date,
-                payment_mode: Data[0].payment_mode,
-                invoice_number: Data[0].invoice_number,
-                user_details: {
-                    name: Data[0].uname || "",
-                    phone: Data[0].uphone || "",
-                    email: Data[0].uemail || "",
-                    address: Data[0].uaddress || "",
-                    area: Data[0].uarea || "",
-                    landmark: Data[0].ulandmark || "",
-                    pincode: Data[0].upin_code || "",
-                    city: Data[0].ucity || "",
-                    state: Data[0].ustate || "",
-                },
-                hostel_details: {
-                    name: Data[0].hname || "",
-                    address: Data[0].haddress || "",
-                    area: Data[0].harea || "",
-                    landmark: Data[0].hlandmark || "",
-                    pincode: Data[0].hpincode || "",
-                    city: Data[0].hcity || "",
-                    state: Data[0].hstate || "",
-                },
-                amenities: amenities || []
-            };
+            if (Data.length != 0) {
 
-            return res.status(200).json({ statusCode: 200, receipt: finalresponse })
+                var invoice_id = Data[0].invoice_id;
 
+                var sql2 = "SELECT * FROM manual_invoice_amenities WHERE invoice_id=?";
+                connection.query(sql2, [invoice_id], function (err, amenities) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Error to Get Bill Details", reason: err.message })
+                    }
+
+                    let total_amount = 0;
+
+                    const amenitiesWithInvoiceId = amenities.map(item => {
+                        let duration = "";
+
+                        if (Data[0].action === "recuring") {
+                            const startDate = new Date(Data[0].rec_invstartdate);
+                            const endDate = new Date(Data[0].rec_invenddate);
+
+                            const startMonthYear = startDate.toLocaleString('default', { month: 'short', year: 'numeric' });
+                            const endMonthYear = endDate.toLocaleString('default', { month: 'short', year: 'numeric' });
+
+                            if (startMonthYear === endMonthYear) {
+                                duration = startMonthYear;
+                            } else {
+                                duration = `${startMonthYear} - ${endMonthYear}`;
+                            }
+                        } else {
+                            const createdAt = new Date(Data[0].Date);
+                            duration = createdAt.toLocaleString('default', { month: 'long', year: 'numeric' });
+                        }
+
+                        total_amount += item.amount;
+
+                        return {
+                            ...item,
+                            invoice_id: Data[0].Invoices,
+                            duration: duration
+                        };
+                    });
+
+
+                    const finalresponse = {
+                        id: invoice_id,
+                        invoice_details: {
+                            invoice_id: Data[0].Invoices,
+                            invioice_date: moment.utc(Data[0].Date).format('YYYY-MM-DD') || "",
+                            due_date: moment.utc(Data[0].DueDate).format('YYYY-MM-DD') || "",
+                            invoice_number: Data[0].invoice_number,
+                            invoice_type: Data[0].action,
+                            total_amount: total_amount
+                        },
+                        user_details: {
+                            name: Data[0].uname || "",
+                            phone: Data[0].uphone || "",
+                            email: Data[0].uemail || "",
+                            address: Data[0].uaddress || "",
+                            area: Data[0].uarea || "",
+                            landmark: Data[0].ulandmark || "",
+                            pincode: Data[0].upin_code || "",
+                            city: Data[0].ucity || "",
+                            state: Data[0].ustate || "",
+                            joining_date: moment.utc(Data[0].joining_Date).format('YYYY-MM-DD') || "",
+                            floor_name: Data[0].floor_name,
+                            room_name: Data[0].Room_Id,
+                            bed_name: Data[0].bed_no
+                        },
+                        hostel_details: {
+                            name: Data[0].hname || "",
+                            address: Data[0].haddress || "",
+                            area: Data[0].harea || "",
+                            landmark: Data[0].hlandmark || "",
+                            pincode: Data[0].hpincode || "",
+                            city: Data[0].hcity || "",
+                            state: Data[0].hstate || "",
+                        },
+                        amenities: amenitiesWithInvoiceId
+                    };
+
+                    return res.status(200).json({ statusCode: 200, receipt: finalresponse })
+
+                })
+            } else {
+                return res.status(201).json({ statusCode: 201, message: "Invalid Bill Details" })
+            }
         })
-
-    })
+    } catch (error) {
+        console.log(error);
+        return res.status(201).json({ statusCode: 201, message: "Error to Get Bill Details" })
+    }
 }
