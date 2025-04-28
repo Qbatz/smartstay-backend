@@ -18,6 +18,8 @@ const newBookings = require('./new_bookings');
 var user_announcements_routes = require('./2factor/user_announcements')
 const receipts = require('./receipts');
 const referrals = require('./referrals');
+const receiptPdf = require('./receipt_pdf');
+
 
 
 const app = express()
@@ -54,7 +56,7 @@ app.use(function (req, res, next) {
 })
 const dbquery = require('./dbquery');
 
-app.use(middleware);
+// app.use(middleware);
 
 app.listen(process.env.PORT, function () {
     console.log("node is started at " + process.env.PORT + "")
@@ -1277,6 +1279,12 @@ app.post('/receipts/pdf_generate', receipts.pdf_generate)
 
 app.get('/wallet/details', receipts.wallet_details)
 
+// Receipt Details 
+
+app.get('/get_receipt_details/:receipt_id', receiptPdf.get_receipt_detailsbyid)
+
+app.get('/get_bill_details/:bill_id', receiptPdf.get_bill_detailsbyid)
+
 
 // **************************** Start Cashfree Subscription ****************************
 
@@ -1304,7 +1312,7 @@ app.post('/customers/login', user_middleware, twofactor_routes.user_login)
 
 app.post('/customers/verify_otp', twofactor_routes.verify_otp)
 
-app.post('/customers/dashboard',user_middleware, twofactor_routes.dashborad)
+app.post('/customers/dashboard', user_middleware, twofactor_routes.dashborad)
 
 app.get('/customers/amenities_list', user_middleware, user_list_routes.amenities_list)
 

@@ -2254,9 +2254,6 @@ function get_beduser_details(req, res) {
 
 function get_bill_details(req, res) {
 
-  const created_by = req.user_details.id;
-
-  var show_ids = req.show_ids;
   var role_permissions = req.role_permissions;
   var is_admin = req.is_admin;
   var hostel_id = req.body.hostel_id;
@@ -2267,7 +2264,6 @@ function get_bill_details(req, res) {
       return res.status(201).json({ message: "Missing Hostel Details", statusCode: 201 });
     }
 
-    // var sql1 = "SELECT * FROM invoicedetails WHERE created_By IN (?) AND invoice_status=1 ORDER BY id DESC";
     var sql1 = "SELECT inv.*,hostel.Address AS user_address,ca.Address AS admin_address,eb.start_date AS eb_start_date,eb.end_date AS eb_end_date,eb.amount AS eb_unit_amount,hostel.ID AS ID,CASE WHEN inv.BalanceDue > 0 OR inv.BalanceDue IS NULL THEN 'Unpaid' ELSE 'Paid' END AS status FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id LEFT JOIN hostel ON hostel.id=inv.hos_user_id LEFT JOIN createaccount AS ca ON ca.id=hostel.created_by LEFT JOIN eb_settings AS eb ON inv.Hostel_Id=eb.hostel_id AND eb.status=1 WHERE inv.Hostel_Id=? AND inv.invoice_status=1 ORDER BY inv.id DESC;";
     connection.query(sql1, [hostel_id], function (err, invoices) {
       if (err) {
