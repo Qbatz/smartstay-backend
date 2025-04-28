@@ -56,7 +56,7 @@ app.use(function (req, res, next) {
 })
 const dbquery = require('./dbquery');
 
-// app.use(middleware);
+app.use(middleware);
 
 app.listen(process.env.PORT, function () {
     console.log("node is started at " + process.env.PORT + "")

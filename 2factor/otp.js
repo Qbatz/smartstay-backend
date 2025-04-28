@@ -148,11 +148,11 @@ function generateOtp() {
 
 // Generate JWT Token
 const generateToken = (user) => {
-    return jwt.sign({ id: user.ID, sub: "customers", username: user.Name, hostel_id: user.Hostel_Id }, process.env.JWT_SECRET, { expiresIn: '1hr' });
+    return jwt.sign({ id: user.ID, sub: "customers", username: user.Name, user_type: "customers", hostel_id: user.Hostel_Id }, process.env.JWT_SECRET, { expiresIn: '1hr' });
 };
 
 const generateAdminToken = (user) => {
-    return jwt.sign({ id: user.id, sub: "admin", first_name: user.first_name, last_name: user.last_name }, process.env.JWT_SECRET, { expiresIn: '1hr' });
+    return jwt.sign({ id: user.id, sub: "admin", first_name: user.first_name, user_type: user.user_type, last_name: user.last_name, role_id: user.role_id, }, process.env.JWT_SECRET, { expiresIn: '2hr' });
 };
 
 exports.verify_otp = (req, res) => {
@@ -235,7 +235,7 @@ exports.verify_otp = (req, res) => {
 
 exports.dashborad = (req, res) => {
 
-    var id = req.user_details.id ;
+    var id = req.user_details.id;
 
     var sql1 = "SELECT COALESCE(SUM(amount),0) AS last_month_ebamount FROM customer_eb_amount WHERE DATE_FORMAT(date, '%Y-%m') = DATE_FORMAT(CURDATE() - INTERVAL 1 MONTH, '%Y-%m') AND user_id=" + id + " AND status=1;"
     var sql2 = "SELECT ID.user_id, COALESCE((SELECT MIA.amount FROM manual_invoice_amenities MIA WHERE MIA.invoice_id = ID.id AND LOWER(MIA.am_name) IN ('roomrent', 'room rent', 'rent', 'room') ORDER BY MIA.id DESC LIMIT 1), ID.RoomRent, 0) AS last_month_room_rent FROM invoicedetails ID WHERE ID.Date = (SELECT MAX(Date) FROM invoicedetails WHERE Date >= DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL -1 MONTH), '%Y-%m-01') AND Date < DATE_FORMAT(CURDATE(), '%Y-%m-01') AND hos_user_id = ID.hos_user_id) AND ID.hos_user_id = " + id + " GROUP BY ID.user_id;";

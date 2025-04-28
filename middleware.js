@@ -34,7 +34,6 @@ module.exports = (req, res, next) => {
         // '/invoice_redirect/:invoiceUrl'
     ];
 
-
     if (openEndpoints.includes(req.originalUrl) || req.originalUrl.startsWith('/login/login?') || req.originalUrl.startsWith('/invoice_redirect') || req.originalUrl.startsWith('/customers')) {
         return next();
     } else {
@@ -44,6 +43,7 @@ module.exports = (req, res, next) => {
             try {
 
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
                 req.user_details = decoded;
                 req.user_type = decoded.user_type;
 
@@ -70,7 +70,7 @@ module.exports = (req, res, next) => {
                     req.customer_id = data[0].customer_id;
                     req.plan_code = data[0].plan_code;
 
-                    if (decoded.user_type === "admin") {
+                    if (decoded.user_type == "admin") {
                         show_ids.push(decoded.id);
 
                         const sqlAdminDirectUsers = "SELECT id FROM createaccount WHERE createdby = ?";
@@ -100,7 +100,7 @@ module.exports = (req, res, next) => {
                                 sendResponseWithToken();
                             }
                         });
-                    } else if (decoded.user_type === "agent") {
+                    } else if (decoded.user_type == "agent") {
 
                         is_admin = 1;
                         show_ids.push(decoded.id, user.createdby);
