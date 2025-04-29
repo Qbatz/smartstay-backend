@@ -171,7 +171,7 @@ exports.get_all_receipts = (req, res) => {
             return res.status(201).json({ message: "Missing Hostel Id", statusCode: 201 });
         }
 
-        var sql1 = `SELECT re.*,hos.Name AS user_name,hos.profile AS user_profile,inv.*,inv.id AS inv_id,re.id AS id,hos.Address AS user_address,ca.Address AS admin_address FROM receipts AS re JOIN hostel AS hos ON hos.id = re.user_id JOIN invoicedetails AS inv ON inv.Invoices=re.invoice_number JOIN createaccount AS ca ON ca.id=re.created_by WHERE hos.Hostel_Id = ? AND re.status = 1 AND inv.invoice_status=1 GROUP BY re.id ORDER BY re.id DESC`;
+        var sql1 = `SELECT re.*,hos.Name AS user_name,hos.profile AS user_profile,inv.*,inv.id AS inv_id,re.id AS id,hos.Address AS user_address,ca.Address AS admin_address FROM receipts AS re JOIN hostel AS hos ON hos.id = re.user_id JOIN invoicedetails AS inv ON inv.Invoices=re.invoice_number JOIN createaccount AS ca ON ca.id=hos.created_by WHERE hos.Hostel_Id = ? AND re.status = 1 AND inv.invoice_status=1 GROUP BY re.id ORDER BY re.id DESC`;
         connection.query(sql1, [hostel_id], function (err, receipts) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Error to Get Receipt Details", reason: err.message });

@@ -461,6 +461,8 @@ function finalizeCheckout(id, bed_id, advance_return, comments, res) {
 // }
 
 function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, created_by, checkout_date, bed_id, advance_return, comments, reasons, new_hosdetails, res) {
+    
+    
     const sql = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
     connection.query(sql, [id], async (err, invoices) => {
         if (err) {
@@ -489,7 +491,7 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
         if (invoices.length === 0) {
             if (totalBalanceDue > 0 || (reasons && reasons.length > 0)) {
 
-                const newInvoiceNumber = generateNewInvoiceNumber(id);
+                const newInvoiceNumber =await generateNewInvoiceNumber(new_hosdetails.Hostel_Id);
 
                 let reasonTotalAmount = 0;
                 if (reasons && reasons.length > 0) {
@@ -502,7 +504,7 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
                 const insertInvoice = `
                     INSERT INTO invoicedetails
                     (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, DueDate, Date, Invoices, Status, User_Id, Bed, BalanceDue, PaidAmount, action, invoice_type, hos_user_id, invoice_status)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?, ?, 'Success', ?, ?, 0, ?, 'Checkout', ?, 1)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?, ?, 'Success', ?, ?, 0, ?, 'Checkout','2', ?, 1)
                 `;
 
                 const invoiceParams = [
@@ -517,14 +519,18 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
                     currentDate,
                     currentDate,
                     newInvoiceNumber,
+                    new_hosdetails.User_Id,
+                    new_hosdetails.Bed,
+                    finalInvoiceAmount,
                     id,
-                    bed_id,
-                    totalBalanceDue,
-                    id
                 ];
+
+                console.log(insertInvoice);
+                console.log(invoiceParams);
 
                 connection.query(insertInvoice, invoiceParams, async (err, insert_details) => {
                     if (err) {
+                        console.log(err);
                         return res.status(201).json({ statusCode: 201, message: "Error inserting invoice", reason: err.message });
                     }
 
@@ -538,6 +544,13 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
                                     console.log("Error inserting amenity details:", err);
                                 }
                             });
+
+                            const insertOutstandingDue = `INSERT INTO manual_invoice_amenities (am_name, user_id, amount, invoice_id) VALUES (?, ?, ?, ?)`;
+                        connection.query(insertOutstandingDue, ["Outstanding Due", id, totalBalanceDue, inv_id], (err) => {
+                            if (err) {
+                                console.log("Error inserting Outstanding Due:", err);
+                            }
+                        });
                         });
                     } else {
                         const insertOutstandingDue = `INSERT INTO manual_invoice_amenities (am_name, user_id, amount, invoice_id) VALUES (?, ?, ?, ?)`;
@@ -550,10 +563,10 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
 
                     const receipt_no = await generateUniqueReceiptNumber();
                     const insertReceipt = `
-                            INSERT INTO receipts (user_id, invoice_id, amount, payment_mode, reference_id, date)
-                            VALUES (?, ?, ?, ?, ?, ?)
+                            INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date,created_by)
+                            VALUES (?, ?, ?, ?, ?, ?,?)
                         `;
-                    const params = [id, inv_id, totalBalanceDue, "Cash", receipt_no, new Date()];
+                    const params = [id, newInvoiceNumber, finalInvoiceAmount, "Cash", receipt_no, new Date(),created_by];
 
                     connection.query(insertReceipt, params, (err) => {
                         if (err) {
@@ -566,32 +579,32 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
 
             } else {
                 // No dues, just create Advance Return Invoice
-                const newInvoiceNumber = generateNewInvoiceNumber(id);
+                const newInvoiceNumber =await generateNewInvoiceNumber(new_hosdetails.Hostel_Id);
                 const currentDate = checkout_date;
 
                 const insertInvoice = `
-                    INSERT INTO invoicedetails
-                    (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, DueDate, Date, Invoices, Status, User_Id, Bed, BalanceDue, PaidAmount, action, invoice_type, hos_user_id, invoice_status)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?, ?, 'Success', ?, ?, 0, ?, 'Checkout', ?, 1)
-                `;
+                INSERT INTO invoicedetails
+                (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, DueDate, Date, Invoices, Status, User_Id, Bed, BalanceDue, PaidAmount, action, invoice_type, hos_user_id, invoice_status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?, ?, 'Success', ?, ?, 0, ?, 'Checkout','2', ?, 1)
+            `;
 
-                const invoiceParams = [
-                    new_hosdetails.Name,
-                    new_hosdetails.Phone,
-                    new_hosdetails.Email,
-                    new_hosdetails.HostelName,
-                    new_hosdetails.Hostel_Id,
-                    new_hosdetails.Floor,
-                    new_hosdetails.Rooms,
-                    advance_return,
-                    currentDate,
-                    currentDate,
-                    newInvoiceNumber,
-                    id,
-                    bed_id,
-                    advance_return,
-                    id
-                ];
+            const invoiceParams = [
+                new_hosdetails.Name,
+                new_hosdetails.Phone,
+                new_hosdetails.Email,
+                new_hosdetails.HostelName,
+                new_hosdetails.Hostel_Id,
+                new_hosdetails.Floor,
+                new_hosdetails.Rooms,
+                advance_return,
+                currentDate,
+                currentDate,
+                newInvoiceNumber,
+                new_hosdetails.User_Id,
+                new_hosdetails.Bed,
+                advance_return,
+                id,
+            ];
 
                 connection.query(insertInvoice, invoiceParams, async (err, insert_details) => {
                     if (err) {
@@ -609,10 +622,10 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
 
                     const receipt_no = await generateUniqueReceiptNumber();
                     const insertReceipt = `
-                            INSERT INTO receipts (user_id, invoice_id, amount, payment_mode, reference_id, date)
-                            VALUES (?, ?, ?, ?, ?, ?)
+                            INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date,created_by)
+                            VALUES (?, ?, ?, ?, ?, ?,?)
                         `;
-                    const params = [id, inv_id, advance_return, "Cash", receipt_no, new Date()];
+                    const params = [id, newInvoiceNumber, advance_return, "Cash", receipt_no, new Date(),created_by];
 
                     connection.query(insertReceipt, params, (err) => {
                         if (err) {
@@ -636,10 +649,10 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
                     try {
                         const receipt_no = await generateUniqueReceiptNumber();
                         const insertReceipt = `
-                            INSERT INTO receipts (user_id, invoice_id, amount, payment_mode, reference_id, date)
-                            VALUES (?, ?, ?, ?, ?, ?)
+                            INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date,created_by)
+                            VALUES (?, ?, ?, ?, ?, ?,?)
                         `;
-                        const params = [id, inv_id, BalanceDue, "Cash", receipt_no, new Date()];
+                        const params = [id, invoiceId, BalanceDue, "Cash", receipt_no, new Date(),created_by];
 
                         connection.query(insertReceipt, params, (err) => {
                             if (err) return reject(err);
@@ -647,7 +660,7 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
                             // Update Invoice as Paid
                             const updateInvoice = `
                                 UPDATE invoicedetails
-                                SET PaidAmount = ?, BalanceDue = 0, Status = 'Paid', invoice_status = 0
+                                SET PaidAmount = ?, BalanceDue = 0, Status = 'Paid'
                                 WHERE id = ?
                             `;
                             connection.query(updateInvoice, [all_amount, inv_id], (err) => {
@@ -662,40 +675,43 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
             });
 
             Promise.all(queries)
-                .then(() => {
+                .then(async() => {
                     // After marking all old invoices as paid, insert new invoice for checkout
-                    const newInvoiceNumber = generateNewInvoiceNumber(id);
+                    const newInvoiceNumber =await generateNewInvoiceNumber(new_hosdetails.Hostel_Id);
                     let reasonTotalAmount = 0;
                     if (reasons && reasons.length > 0) {
                         reasonTotalAmount = reasons.reduce((acc, item) => acc + Number(item.amount), 0);
                     }
-                    const finalInvoiceAmount = totalBalanceDue + reasonTotalAmount;
+                    const finalInvoiceAmount = Number(totalBalanceDue) + Number(reasonTotalAmount);
                     const currentDate = checkout_date;
 
                     const insertInvoice = `
-                        INSERT INTO invoicedetails
-                        (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, DueDate, Date, Invoices, Status, User_Id, Bed, BalanceDue, PaidAmount, action, invoice_type, hos_user_id, invoice_status)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?, ?, 'Success', ?, ?, 0, ?, 'Checkout', ?, 1)
-                    `;
+                    INSERT INTO invoicedetails
+                    (Name, phoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, UserAddress, DueDate, Date, Invoices, Status, User_Id, Bed, BalanceDue, PaidAmount, action, invoice_type, hos_user_id, invoice_status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?, ?, 'Success', ?, ?, 0, ?, 'Checkout','2', ?, 1)
+                `;
+    
+                const invoiceParams = [
+                    new_hosdetails.Name,
+                    new_hosdetails.Phone,
+                    new_hosdetails.Email,
+                    new_hosdetails.HostelName,
+                    new_hosdetails.Hostel_Id,
+                    new_hosdetails.Floor,
+                    new_hosdetails.Rooms,
+                    finalInvoiceAmount,
+                    currentDate,
+                    currentDate,
+                    newInvoiceNumber,
+                    new_hosdetails.User_Id,
+                    new_hosdetails.Bed,
+                    finalInvoiceAmount,
+                    id,
+                ];
 
-                    const invoiceParams = [
-                        new_hosdetails.Name,
-                        new_hosdetails.Phone,
-                        new_hosdetails.Email,
-                        new_hosdetails.HostelName,
-                        new_hosdetails.Hostel_Id,
-                        new_hosdetails.Floor,
-                        new_hosdetails.Rooms,
-                        finalInvoiceAmount,
-                        currentDate,
-                        currentDate,
-                        newInvoiceNumber,
-                        id,
-                        bed_id,
-                        totalBalanceDue,
-                        id
-                    ];
-
+                console.log(insertInvoice);
+                console.log(invoiceParams);
+                
                     connection.query(insertInvoice, invoiceParams, async (err, insert_details) => {
                         if (err) {
                             return res.status(201).json({ statusCode: 201, message: "Error inserting invoice", reason: err.message });
@@ -712,21 +728,29 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
                                     }
                                 });
                             });
+                        
+                            const insertOutstandingDue = `INSERT INTO manual_invoice_amenities (am_name, user_id, amount, invoice_id) VALUES (?, ?, ?, ?)`;
+                            connection.query(insertOutstandingDue, ["Outstanding Due", id, finalInvoiceAmount, inv_id], (err) => {
+                                if (err) {
+                                    console.log("Error inserting Outstanding Due:", err);
+                                }
+                            });
                         } else {
                             const insertOutstandingDue = `INSERT INTO manual_invoice_amenities (am_name, user_id, amount, invoice_id) VALUES (?, ?, ?, ?)`;
-                            connection.query(insertOutstandingDue, ["Outstanding Due", id, totalBalanceDue, inv_id], (err) => {
+                            connection.query(insertOutstandingDue, ["Outstanding Due", id, finalInvoiceAmount, inv_id], (err) => {
                                 if (err) {
                                     console.log("Error inserting Outstanding Due:", err);
                                 }
                             });
                         }
+                        
 
                         const receipt_no = await generateUniqueReceiptNumber();
                         const insertReceipt = `
-                            INSERT INTO receipts (user_id, invoice_id, amount, payment_mode, reference_id, date)
-                            VALUES (?, ?, ?, ?, ?, ?)
-                        `;
-                        const params = [id, inv_id, totalBalanceDue, "Cash", receipt_no, new Date()];
+                        INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date,created_by)
+                        VALUES (?, ?, ?, ?, ?, ?,?)
+                    `;
+                        const params = [id, newInvoiceNumber, finalInvoiceAmount, "Cash", receipt_no, new Date(),created_by];
 
                         connection.query(insertReceipt, params, (err) => {
                             if (err) {
