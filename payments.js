@@ -65,21 +65,25 @@ function add_bank(req, res) {
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
-    var acc_name = req.body.acc_name;
-    var acc_no = req.body.acc_no || 0;
-    var bank_name = req.body.bank_name;
-    var ifsc_code = req.body.ifsc_code || 0;
-    var desc = req.body.desc || 0;
+    var acc_name = req.body.acc_name || "";
+    var acc_no = req.body.acc_no || "";
+    var bank_name = req.body.bank_name || "";
+    var ifsc_code = req.body.ifsc_code || "";
+    var desc = req.body.desc || "";
     var id = req.body.id;
+
+    var type = req.body.type || 'bank';
+
+    var benificiary_name = req.body.benificiary_name || "";
+    var upi_id = req.body.upi_id || "";
+    var card_type = req.body.card_type || "";
+    var card_holder = req.body.card_holder || "";
+    var card_no = req.body.card_no || "";
 
     var hostel_id = req.body.hostel_id;
 
     if (!hostel_id) {
         return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
-    }
-
-    if (!acc_name || !bank_name) {
-        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
     }
 
     if (id) {
@@ -93,26 +97,16 @@ function add_bank(req, res) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Get Bank Details" })
                 } else if (sel_data.length != 0) {
 
-                    var sql1 = "SELECT * FROM bankings WHERE acc_name=? AND bank_name=? AND status=1 AND id !=? AND hostel_id=?";
-                    connection.query(sql1, [acc_name, bank_name, id, hostel_id], function (err, acc_data) {
+                    var sql2 = "UPDATE bankings SET acc_name=?,acc_num=?,bank_name=?,ifsc_code=?,description=?,benificiary_name=?,upi_id=?,card_type=?,card_holder=?,card_no=? WHERE id=?";
+                    connection.query(sql2, [acc_name, acc_no, bank_name, ifsc_code, desc, benificiary_name, upi_id, card_type, card_holder, card_no, id], function (err, data) {
                         if (err) {
-                            return res.status(201).json({ statusCode: 201, message: "Unable to Get Bank Details" })
-                        } else if (acc_data.length != 0) {
-                            return res.status(202).json({ statusCode: 202, message: "Account Name and Bank Name Already Exists!" })
+                            console.log(err);
+                            return res.status(201).json({ statusCode: 201, message: "Unable to Update Bank Details" })
                         } else {
-
-                            var sql2 = "UPDATE bankings SET acc_name=?,acc_num=?,bank_name=?,ifsc_code=?,description=? WHERE id=?";
-                            connection.query(sql2, [acc_name, acc_no, bank_name, ifsc_code, desc, id], function (err, data) {
-                                if (err) {
-                                    console.log(err);
-                                    return res.status(201).json({ statusCode: 201, message: "Unable to Update Bank Details" })
-                                } else {
-                                    return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully!" })
-                                }
-                            })
-
+                            return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully!" })
                         }
                     })
+
                 } else {
                     return res.status(201).json({ statusCode: 201, message: "Invalid Bank Details" })
                 }
@@ -133,8 +127,8 @@ function add_bank(req, res) {
                     return res.status(202).json({ statusCode: 202, message: "Account Name and Bank Name Already Exists!" })
                 } else {
 
-                    var sql1 = "INSERT INTO bankings (acc_name,acc_num,bank_name,ifsc_code,description,setus_default,balance,createdby,hostel_id) VALUES (?,?,?,?,?,?,?,?,?)";
-                    connection.query(sql1, [acc_name, acc_no, bank_name, ifsc_code, desc, 0, 0, created_by, hostel_id], function (err, data) {
+                    var sql1 = "INSERT INTO bankings (acc_name,acc_num,bank_name,ifsc_code,description,setus_default,balance,createdby,hostel_id,benificiary_name,upi_id,card_type,card_holder,card_no,type) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                    connection.query(sql1, [acc_name, acc_no, bank_name, ifsc_code, desc, 0, 0, created_by, hostel_id, benificiary_name, upi_id, card_type, card_holder, card_no, type], function (err, data) {
                         if (err) {
                             return res.status(201).json({ statusCode: 201, message: "Unable to Add Bank Details" })
                         } else {

@@ -70,7 +70,10 @@ const queries = [
 
     "CREATE TABLE `checkout_deductions` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`reason` VARCHAR(255) NULL,`amount` BIGINT(20) NULL,`user_id` BIGINT(20) NULL,`created_by` BIGINT(20) NULL,`created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`));",
 
-    "ALTER TABLE `otp_verification` ADD COLUMN `role` VARCHAR(45) NULL DEFAULT 'customer' AFTER `otp`;"
+    "ALTER TABLE `otp_verification` ADD COLUMN `role` VARCHAR(45) NULL DEFAULT 'customer' AFTER `otp`;",
+
+    "ALTER TABLE `bankings` ADD COLUMN `type` VARCHAR(45) NULL DEFAULT 'bank' AFTER `status`,ADD COLUMN `benificiary_name` VARCHAR(255) NULL AFTER `type`,ADD COLUMN `upi_id` VARCHAR(200) NULL AFTER `benificiary_name`,ADD COLUMN `card_type` VARCHAR(45) NULL AFTER `upi_id`,ADD COLUMN `card_holder` VARCHAR(255) NULL AFTER `card_type`,ADD COLUMN `card_no` VARCHAR(255) NULL AFTER `card_holder`;"
+
 ];
 
 queries.forEach(executeQuery);
