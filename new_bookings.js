@@ -544,14 +544,16 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
                                     console.log("Error inserting amenity details:", err);
                                 }
                             });
+                        });
 
+                        if(totalBalanceDue){
                             const insertOutstandingDue = `INSERT INTO manual_invoice_amenities (am_name, user_id, amount, invoice_id) VALUES (?, ?, ?, ?)`;
                         connection.query(insertOutstandingDue, ["Outstanding Due", id, totalBalanceDue, inv_id], (err) => {
                             if (err) {
                                 console.log("Error inserting Outstanding Due:", err);
                             }
                         });
-                        });
+                        }
                     } else {
                         const insertOutstandingDue = `INSERT INTO manual_invoice_amenities (am_name, user_id, amount, invoice_id) VALUES (?, ?, ?, ?)`;
                         connection.query(insertOutstandingDue, ["Outstanding Due", id, totalBalanceDue, inv_id], (err) => {
@@ -728,16 +730,20 @@ function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, creat
                                     }
                                 });
                             });
+
+                        if(totalBalanceDue){
                         
                             const insertOutstandingDue = `INSERT INTO manual_invoice_amenities (am_name, user_id, amount, invoice_id) VALUES (?, ?, ?, ?)`;
-                            connection.query(insertOutstandingDue, ["Outstanding Due", id, finalInvoiceAmount, inv_id], (err) => {
+                            connection.query(insertOutstandingDue, ["Outstanding Due", id, totalBalanceDue, inv_id], (err) => {
                                 if (err) {
                                     console.log("Error inserting Outstanding Due:", err);
                                 }
                             });
+                        }
                         } else {
+                            
                             const insertOutstandingDue = `INSERT INTO manual_invoice_amenities (am_name, user_id, amount, invoice_id) VALUES (?, ?, ?, ?)`;
-                            connection.query(insertOutstandingDue, ["Outstanding Due", id, finalInvoiceAmount, inv_id], (err) => {
+                            connection.query(insertOutstandingDue, ["Outstanding Due", id, totalBalanceDue, inv_id], (err) => {
                                 if (err) {
                                     console.log("Error inserting Outstanding Due:", err);
                                 }
