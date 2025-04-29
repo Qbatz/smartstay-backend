@@ -34,8 +34,6 @@ function generateInvoice() {
         .fontSize(20)
         .text('Smartstay', 50, 40);
 
-    // 🏨 Hostel address (right-aligned)
-    // Set alignment explicitly for both with x and width
     doc
         .font('Helvetica')
         .fontSize(12)
@@ -46,34 +44,73 @@ function generateInvoice() {
             align: 'right'
         });
 
-
-    // 🧾 Title
-    doc
-        .roundedRect(0, 0, doc.page.width, 0, 20)
-        .fill('#FFFFFF');
-
     doc.moveDown().fillColor('#000')
         .fontSize(16)
         .font('Helvetica-Bold')
         .text('Security Deposit Invoice', { align: 'center' });
 
     // 📄 Section: Bill To + Invoice Details
+    const startX = 50;
     const startY = 160;
+    const textWidth = 278; // as you said 278px
+    const lineHeight = 16; // 16px (rounded from 16.421875)
+    const gap = 10;        // 10px gap between lines
+
+    let currentY = startY;
+
+    // Bill To
     doc.font('Helvetica').fontSize(10).fillColor('#000');
-    doc.text('Bill to:', 50, startY);
-    doc.font('Helvetica-Bold').text('Mr. Muthuraja M', 50, startY + 15);
-    doc.font('Helvetica')
-        .text('+91 85647 85332', 50, startY + 30)
-        .text('8th Main Rd, Someshwara Nagar,\nBengaluru, Karnataka 560011', 50, startY + 45);
+    doc.text('Bill to:', startX, currentY, { width: textWidth });
 
-    // Right column
-    doc.text('Invoice #: 234535', 350, startY)
-        .text('Date: 31 March 2024', 350, startY + 15)
-        .text('Billing: Mar - June 2024', 350, startY + 30)
-        .text('Joining Date: 01 Jan 2024', 350, startY + 45)
-        .text('Total Stay: 120 Days', 350, startY + 60);
+    currentY += lineHeight + gap;
 
-    // 🧾 Table header with background
+    doc.font('Helvetica-Bold');
+    doc.text('Mr. Muthuraja M', startX, currentY, { width: textWidth });
+
+    currentY += lineHeight + gap;
+
+    doc.font('Helvetica');
+    doc.text('+91 85647 85332', startX, currentY, { width: textWidth });
+
+    currentY += lineHeight + gap;
+
+    // Address (multi-line)
+    doc.text('8th Main Rd, Someshwara Nagar,\nBengaluru, Karnataka 560011', startX, currentY, {
+        width: textWidth,
+        lineGap: 5, // additional gap between address lines inside
+    });
+
+
+    const rightStartX = 350;
+    const rightStartY = 160;  // same starting Y as left side
+    const rightWidth = 191;
+    const rightLineHeight = 16; // assume text height ~16px (standard Helvetica 10pt)
+    const rightGap = 7; // 7px gap
+
+    let currentRightY = rightStartY;
+
+    doc.font('Helvetica').fontSize(10).fillColor('#000');
+
+    doc.text('Invoice #: 234535', rightStartX, currentRightY, { width: rightWidth });
+
+    currentRightY += rightLineHeight + rightGap;
+
+    doc.text('Date: 31 March 2024', rightStartX, currentRightY, { width: rightWidth });
+
+    currentRightY += rightLineHeight + rightGap;
+
+    doc.text('Billing: Mar - June 2024', rightStartX, currentRightY, { width: rightWidth });
+
+    currentRightY += rightLineHeight + rightGap;
+
+    doc.text('Joining Date: 01 Jan 2024', rightStartX, currentRightY, { width: rightWidth });
+
+    currentRightY += rightLineHeight + rightGap;
+
+    doc.text('Total Stay: 120 Days', rightStartX, currentRightY, { width: rightWidth });
+
+    // right column
+
     const tableY = 250;
     doc
         .fillColor(blue)
