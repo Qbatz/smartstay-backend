@@ -2675,7 +2675,7 @@ function add_manual_invoice(req, res) {
 
     if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_create == 1)) {
 
-        var { user_id, due_date, date, invoice_id, amenity, start_date, end_date } = req.body;
+        var { user_id, due_date, date, invoice_id, amenity } = req.body;
 
         var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
         connection.query(sql1, [user_id], function (err, user_details) {
@@ -2690,8 +2690,8 @@ function add_manual_invoice(req, res) {
 
                 // var total_amount = parseInt(total_am_amount) + parseInt(room_rent) + parseInt(eb_amount) + parseInt(advance_amount);
 
-                var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,action,invoice_type,hos_user_id,Amount,start_date,end_date) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-                connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, due_date, date, invoice_id, 'pending', user_data.User_Id, user_data.Bed, total_amount, 'manual', 1, user_id, total_amount, start_date, end_date], function (err, ins_data) {
+                var sql2 = "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,action,invoice_type,hos_user_id,Amount) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                connection.query(sql2, [user_data.Name, user_data.Phone, user_data.Email, user_data.HostelName, user_data.Hostel_Id, user_data.Floor, user_data.Rooms, due_date, date, invoice_id, 'pending', user_data.User_Id, user_data.Bed, total_amount, 'manual', 1, user_id, total_amount], function (err, ins_data) {
                     if (err) {
                         console.log(err);
                         return res.status(201).json({ statusCode: 201, message: "Unable to Add Invoice Details" })
