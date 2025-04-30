@@ -58,7 +58,6 @@ function AddExpense(request, response) {
                             var new_bank_id = reqData.bank_id;
                         }
 
-
                         let query = `UPDATE expenses SET vendor_id = '${reqData.vendor_id}',asset_id = '${reqData.asset_id}',category_id = ${reqData.category_id},purchase_date = '${purchase_date}',unit_count = ${reqData.unit_count},unit_amount = ${reqData.unit_amount},purchase_amount = ${purchase_amount},description = '${reqData.description}',created_by = ${createdBy},createdate = '${createdate}',payment_mode = '${reqData.payment_mode}',hostel_id ='${reqData.hostel_id}',bank_id='${new_bank_id}' WHERE id = ${reqData.id};`
                         connection.query(query, function (updateErr, updateData) {
                             if (updateErr) {
@@ -78,11 +77,9 @@ function AddExpense(request, response) {
                                                 console.log(err, "Up_trans Err");
                                             } else {
 
-                                                if (reqData.payment_mode == "Net Banking" && reqData.bank_id) {
+                                                if (reqData.payment_mode) {
 
                                                     var edit_id = reqData.id;
-
-                                                    console.log(reqData.bank_id);
 
                                                     var sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
                                                     connection.query(sql5, [reqData.bank_id], function (err, sel_res) {
@@ -108,7 +105,7 @@ function AddExpense(request, response) {
 
                                                                             // var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,desc,type,status,createdby,edit_id) VALUES (?,?,?,?,?,?,?,?)";
                                                                             var sql4 = "UPDATE bank_transactions SET bank_id=?,date=?,amount=? WHERE edit_id=?";
-                                                                            connection.query(sql4, [reqData.bank_id, purchase_date, purchase_amount, edit_id], function (err, ins_data) {
+                                                                            connection.query(sql4, [reqData.payment_mode, purchase_date, purchase_amount, edit_id], function (err, ins_data) {
                                                                                 if (err) {
                                                                                     console.log(err, "Insert Transactions Error");
                                                                                 } else {
@@ -116,13 +113,13 @@ function AddExpense(request, response) {
                                                                                     var new_amount = parseInt(balance_amount) + parseInt(last_amount) - parseInt(purchase_amount);
 
                                                                                     var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
-                                                                                    connection.query(sql5, [new_amount, reqData.bank_id], function (err, up_date) {
+                                                                                    connection.query(sql5, [new_amount, reqData.payment_mode], function (err, up_date) {
                                                                                         if (err) {
                                                                                             console.log(err, "Update Amount Error");
                                                                                         }
                                                                                     })
 
-                                                                                    if (old_bank == reqData.bank_id) {
+                                                                                    if (old_bank == reqData.payment_mode) {
 
                                                                                         console.log("Updated All Process 1");
 
@@ -146,7 +143,7 @@ function AddExpense(request, response) {
                                                                                                         var remain_amount = parseInt(balance_amount) - parseInt(purchase_amount);
 
                                                                                                         // Update New Bank amount
-                                                                                                        connection.query(sql5, [remain_amount, reqData.bank_id], function (err, ins_res) {
+                                                                                                        connection.query(sql5, [remain_amount, reqData.payment_mode], function (err, ins_res) {
                                                                                                             if (err) {
                                                                                                                 console.log(err);
                                                                                                                 // return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
@@ -197,17 +194,16 @@ function AddExpense(request, response) {
                 response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
             }
 
-        }
-        else {
+        } else {
 
             if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_create == 1)) {
                 let createdate = moment(new Date()).format('yyyy-MM-DD HH:mm:ss');
                 let new_bank_id = reqData.bank_id ? reqData.bank_id : 0;
 
-                if (reqData.payment_mode === "Net Banking" && reqData.bank_id) {
+                if (reqData.payment_mode) {
 
                     let sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
-                    connection.query(sql5, [reqData.bank_id], function (err, sel_res) {
+                    connection.query(sql5, [reqData.payment_mode], function (err, sel_res) {
                         if (err) {
                             console.log(err);
                             return response.status(201).json({ statusCode: 201, message: "Database Error" });
@@ -233,7 +229,7 @@ function AddExpense(request, response) {
 
             function insertExpense(new_bank_id, createdate, sel_res) {
 
-                let query = `INSERT INTO expenses (vendor_id, asset_id, category_id, purchase_date, unit_count, unit_amount, purchase_amount, description, created_by, createdate, payment_mode, hostel_id, bank_id) VALUES ('${reqData.vendor_id}', '${reqData.asset_id}', '${reqData.category_id}', '${purchase_date}', '${reqData.unit_count}', '${reqData.unit_amount}', '${purchase_amount}', '${reqData.description}', ${createdBy}, '${createdate}', '${reqData.payment_mode}', '${hostel_id}', '${new_bank_id}');`;
+                let query = `INSERT INTO expenses (vendor_id, asset_id, category_id, purchase_date, unit_count, unit_amount, purchase_amount, description, created_by, createdate, payment_mode, hostel_id, bank_id) VALUES ('${reqData.vendor_id}', '${reqData.asset_id}', '${reqData.category_id}', '${purchase_date}', '${reqData.unit_count}', '${reqData.unit_amount}', '${purchase_amount}', '${reqData.description}', ${createdBy}, '${createdate}', '${reqData.payment_mode}', '${hostel_id}', '${reqData.payment_mode}');`;
 
                 connection.query(query, function (insertErr, insertData) {
                     if (insertErr) {
@@ -254,19 +250,19 @@ function AddExpense(request, response) {
                                 return response.status(201).json({ statusCode: 201, message: "Unable to Add Transactions Details" });
                             }
 
-                            if (reqData.payment_mode === "Net Banking" && reqData.bank_id) {
+                            if (reqData.payment_mode) {
 
                                 var edit_id = insertData.insertId
 
                                 let sql4 = "INSERT INTO bank_transactions (bank_id, date, amount, `desc`, type, status, createdby, edit_id, hostel_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                                connection.query(sql4, [reqData.bank_id, purchase_date, purchase_amount, 'Expenses', 2, 1, createdBy, edit_id, hostel_id], function (err) {
+                                connection.query(sql4, [reqData.payment_mode, purchase_date, purchase_amount, 'Expenses', 2, 1, createdBy, edit_id, hostel_id], function (err) {
                                     if (err) {
                                         console.log("Insert Transactions Error", err);
                                         return response.status(201).json({ statusCode: 201, message: "Error processing bank transaction" });
                                     }
                                     let new_amount = parseInt(sel_res[0].balance) - parseInt(purchase_amount);
                                     let sql5 = "UPDATE bankings SET balance=? WHERE id=?";
-                                    connection.query(sql5, [new_amount, reqData.bank_id], function (err) {
+                                    connection.query(sql5, [new_amount, reqData.payment_mode], function (err) {
                                         if (err) {
                                             console.log("Update Amount Error", err);
                                         }
