@@ -6,57 +6,74 @@ exports.get_receipt_detailsbyid = async (req, res) => {
 
     var receipt_id = req.params.receipt_id;
 
-    var sql1 = "SELECT re.reference_id,re.payment_date,re.payment_mode,re.invoice_number,re.amount_received,hs.Name AS uname,hs.Phone AS uphone,hs.Email AS uemail,hs.Address AS uaddress,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upin_code,hs.city AS ucity,hs.state AS ustate,hos.Name AS hname,hos.Address AS haddress,hos.area AS harea,hos.landmark AS hlandmark,hos.pin_code AS hpincode,hos.city AS hcity,hos.state AS hstate,hos.email_id,hostel_PhoneNo,inv.id AS invoice_id,inv.action FROM receipts AS re JOIN hostel AS hs ON hs.ID=re.user_id JOIN hosteldetails AS hos ON hos.id=hs.Hostel_Id LEFT JOIN invoicedetails AS inv ON inv.Invoices=re.invoice_number WHERE re.id=?;";
+    var sql1 = "SELECT re.id,re.reference_id,re.payment_date,re.payment_mode,re.invoice_number,re.amount_received,hs.Name AS uname,hs.Phone AS uphone,hs.Email AS uemail,hs.Address AS uaddress,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upin_code,hs.city AS ucity,hs.state AS ustate,hos.Name AS hname,hos.Address AS haddress,hos.area AS harea,hos.id AS hostel_id,hos.landmark AS hlandmark,hos.pin_code AS hpincode,hos.city AS hcity,hos.state AS hstate,hos.email_id,hostel_PhoneNo FROM receipts AS re JOIN hostel AS hs ON hs.ID=re.user_id JOIN hosteldetails AS hos ON hos.id=hs.Hostel_Id WHERE re.id=?;";
+    console.log(sql1);
     connection.query(sql1, receipt_id, function (err, data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Error to Get Receipt Details", reason: err.message })
         } else if (data.length != 0) {
 
-            var invoice_id = data[0].invoice_id;
+            var invoice_number = data[0].invoice_number;
+            var hostel_id = data[0].hostel_id;
 
-            var sql2 = "SELECT * FROM manual_invoice_amenities WHERE invoice_id=?";
-            connection.query(sql2, [invoice_id], function (err, amenities) {
+            var sql2 = "SELECT id,action FROM invoicedetails WHERE Invoices=? AND Hostel_Id=?";
+            connection.query(sql2, [invoice_number, hostel_id], function (err, inv_details) {
                 if (err) {
-                    return res.status(201).json({ statusCode: 201, message: "Error to Get Bill Details", reason: err.message })
+                    return res.status(201).json({ statusCode: 201, message: "Error to Get Receipt Details", reason: err.message })
+                } else if (data.length != 0) {
+
+                    var invoice_id = inv_details[0].id;
+                    var action = inv_details[0].action;
+
+                    console.log(invoice_id);
+
+                    var sql2 = "SELECT * FROM manual_invoice_amenities WHERE invoice_id=?";
+                    connection.query(sql2, [invoice_id], function (err, amenities) {
+                        if (err) {
+                            return res.status(201).json({ statusCode: 201, message: "Error to Get Bill Details", reason: err.message })
+                        }
+
+                        var total_amount = amenities.reduce((sum, item) => sum + item.amount, 0);
+
+                        const finalresponse = {
+                            reference_id: data[0].reference_id,
+                            payment_date: moment(data[0].payment_date).format('YYYY-MM-DD'),
+                            payment_mode: data[0].payment_mode,
+                            invoice_number: data[0].invoice_number,
+                            invoice_type: action,
+                            total_amount: total_amount,
+                            amount_received: Number(data[0].amount_received),
+                            user_details: {
+                                name: data[0].uname || "",
+                                phone: data[0].uphone || "",
+                                email: data[0].uemail || "",
+                                address: data[0].uaddress || "",
+                                area: data[0].uarea || "",
+                                landmark: data[0].ulandmark || "",
+                                pincode: data[0].upin_code || "",
+                                city: data[0].ucity || "",
+                                state: data[0].ustate || "",
+                            },
+                            hostel_details: {
+                                name: data[0].hname || "",
+                                email: data[0].email_id || "",
+                                phone: data[0].hostel_PhoneNo || "",
+                                address: data[0].haddress || "",
+                                area: data[0].harea || "",
+                                landmark: data[0].hlandmark || "",
+                                pincode: data[0].hpincode || "",
+                                city: data[0].hcity || "",
+                                state: data[0].hstate || "",
+                            },
+                            amenities: amenities || []
+                        };
+
+                        return res.status(200).json({ statusCode: 200, receipt: finalresponse })
+
+                    })
+                } else {
+                    return res.status(201).json({ statusCode: 201, message: "Invalid Invoice Receipt Details" })
                 }
-
-                var total_amount = amenities.reduce((sum, item) => sum + item.amount, 0);
-
-                const finalresponse = {
-                    reference_id: data[0].reference_id,
-                    payment_date: moment(data[0].payment_date).format('YYYY-MM-DD'),
-                    payment_mode: data[0].payment_mode,
-                    invoice_number: data[0].invoice_number,
-                    invoice_type: data[0].action,
-                    total_amount: total_amount,
-                    amount_received: Number(data[0].amount_received),
-                    user_details: {
-                        name: data[0].uname || "",
-                        phone: data[0].uphone || "",
-                        email: data[0].uemail || "",
-                        address: data[0].uaddress || "",
-                        area: data[0].uarea || "",
-                        landmark: data[0].ulandmark || "",
-                        pincode: data[0].upin_code || "",
-                        city: data[0].ucity || "",
-                        state: data[0].ustate || "",
-                    },
-                    hostel_details: {
-                        name: data[0].hname || "",
-                        email: data[0].email_id || "",
-                        phone: data[0].hostel_PhoneNo || "",
-                        address: data[0].haddress || "",
-                        area: data[0].harea || "",
-                        landmark: data[0].hlandmark || "",
-                        pincode: data[0].hpincode || "",
-                        city: data[0].hcity || "",
-                        state: data[0].hstate || "",
-                    },
-                    amenities: amenities || []
-                };
-
-                return res.status(200).json({ statusCode: 200, receipt: finalresponse })
-
             })
         } else {
             return res.status(201).json({ statusCode: 201, message: "Invalid Receipt Details" })
