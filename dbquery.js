@@ -72,8 +72,9 @@ const queries = [
 
     "ALTER TABLE `otp_verification` ADD COLUMN `role` VARCHAR(45) NULL DEFAULT 'customer' AFTER `otp`;",
 
-    "ALTER TABLE `bankings` ADD COLUMN `type` VARCHAR(45) NULL DEFAULT 'bank' AFTER `status`,ADD COLUMN `benificiary_name` VARCHAR(255) NULL AFTER `type`,ADD COLUMN `upi_id` VARCHAR(200) NULL AFTER `benificiary_name`,ADD COLUMN `card_type` VARCHAR(45) NULL AFTER `upi_id`,ADD COLUMN `card_holder` VARCHAR(255) NULL AFTER `card_type`,ADD COLUMN `card_no` VARCHAR(255) NULL AFTER `card_holder`;"
+    "ALTER TABLE `bankings` ADD COLUMN `type` VARCHAR(45) NULL DEFAULT 'bank' AFTER `status`,ADD COLUMN `benificiary_name` VARCHAR(255) NULL AFTER `type`,ADD COLUMN `upi_id` VARCHAR(200) NULL AFTER `benificiary_name`,ADD COLUMN `card_type` VARCHAR(45) NULL AFTER `upi_id`,ADD COLUMN `card_holder` VARCHAR(255) NULL AFTER `card_type`,ADD COLUMN `card_no` VARCHAR(255) NULL AFTER `card_holder`;",
 
+    "ALTER TABLE `checkout_deductions` ADD COLUMN `receipt_id` VARCHAR(45) NULL AFTER `user_id`;",
 ];
 
 queries.forEach(executeQuery);
