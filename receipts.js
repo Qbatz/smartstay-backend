@@ -161,7 +161,6 @@ exports.gen_reference = (req, res) => {
 };
 
 exports.get_all_receipts = (req, res) => {
-
     var hostel_id = req.body.hostel_id;
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
@@ -171,8 +170,18 @@ exports.get_all_receipts = (req, res) => {
             return res.status(201).json({ message: "Missing Hostel Id", statusCode: 201 });
         }
 
-        var sql1 = "SELECT re.*, hos.Name AS Name, hos.profile AS user_profile, inv.id AS inv_id, re.id AS id, hos.Address AS user_address, ca.Address AS admin_address FROM receipts AS re JOIN hostel AS hos ON hos.id = re.user_id LEFT JOIN invoicedetails AS inv ON inv.Invoices = re.invoice_number AND inv.Hostel_Id = ? AND inv.invoice_status = 1 JOIN createaccount AS ca ON ca.id = hos.created_by WHERE hos.Hostel_Id = ? AND re.status = 1 ORDER BY re.id DESC;"
-        connection.query(sql1, [hostel_id, hostel_id], function (err, receipts) {
+        var sql1 = `
+            SELECT re.*, hos.Name AS Name, hos.profile AS user_profile, inv.id AS inv_id, re.id AS id,
+                   hos.Address AS user_address, ca.Address AS admin_address 
+            FROM receipts AS re 
+            JOIN hostel AS hos ON hos.id = re.user_id 
+            LEFT JOIN invoicedetails AS inv ON inv.Invoices = re.invoice_number AND inv.Hostel_Id = ? AND inv.invoice_status = 1 
+            JOIN createaccount AS ca ON ca.id = hos.created_by 
+            WHERE hos.Hostel_Id = ? AND re.status = 1 
+            ORDER BY re.id DESC;
+        `;
+
+        connection.query(sql1, [hostel_id, hostel_id], async (err, receipts) => {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Error to Get Receipt Details", reason: err.message });
             }
@@ -181,13 +190,50 @@ exports.get_all_receipts = (req, res) => {
                 return res.status(200).json({ statusCode: 200, message: "No Receipts Found", all_receipts: [] });
             }
 
-            return res.status(200).json({
-                statusCode: 200,
-                message: "All Receipts",
-                all_receipts: receipts,
-            });
+            try {
+                const enrichedReceipts = await Promise.all(receipts.map((receipt, index) => {
+                    return new Promise((resolve, reject) => {
+                        if (receipt.invoice_number == 0) {
+                            var sql2 = "SELECT * FROM checkout_deductions WHERE receipt_id=?";
+                            connection.query(sql2, [receipt.id], (err, result) => {
+                                if (err) {
+                                    receipt.amenity = [];
+                                    return resolve(receipt);
+                                }
 
+                                const mapped = result.map(item => ({
+                                    am_name: item.reason,
+                                    am_amount: item.amount
+                                }));
+
+                                receipt.amenity = mapped;
+                                resolve(receipt);
+                            });
+                        } else {
+                            var sql2 = "SELECT * FROM manual_invoice_amenities WHERE invoice_id = ?";
+                            connection.query(sql2, [receipt.inv_id], (err, amenities) => {
+                                if (err) {
+                                    receipt.amenity = [];
+                                } else {
+                                    receipt.amenity = amenities || [];
+                                }
+                                resolve(receipt);
+                            });
+                        }
+                    });
+                }));
+
+                return res.status(200).json({
+                    statusCode: 200,
+                    message: "All Receipts",
+                    all_receipts: enrichedReceipts,
+                });
+
+            } catch (e) {
+                return res.status(500).json({ statusCode: 500, message: "Unexpected Error", reason: e.message });
+            }
         });
+
     } else {
         return res.status(208).json({
             message: "Permission Denied. Please contact your administrator for access.",
@@ -195,6 +241,7 @@ exports.get_all_receipts = (req, res) => {
         });
     }
 };
+
 
 exports.edit_receipt = (req, res) => {
 
