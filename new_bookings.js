@@ -633,7 +633,9 @@ async function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent,
 
                     if (totalBalanceDue) {
                         insertValues.push(["Outstanding Due", totalBalanceDue, id, created_by, receipt_id]);
-                    } else if (advance_return) {
+                    }
+
+                    if ((!Array.isArray(reasons) || reasons.length === 0) && !totalBalanceDue) {
                         insertValues.push(["Advance Return", advance_return, id, created_by, receipt_id]);
                     }
 
