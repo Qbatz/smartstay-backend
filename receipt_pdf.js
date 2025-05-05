@@ -6,7 +6,7 @@ exports.get_receipt_detailsbyid = async (req, res) => {
 
     var receipt_id = req.params.receipt_id;
 
-    var sql1 = "SELECT re.id,re.reference_id,re.payment_date,re.payment_mode,re.invoice_number,re.amount_received,hs.Name AS uname,hs.Phone AS uphone,hs.Email AS uemail,hs.Address AS uaddress,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upin_code,hs.city AS ucity,hs.state AS ustate,hos.Name AS hname,hos.Address AS haddress,hos.area AS harea,hos.id AS hostel_id,hos.landmark AS hlandmark,hos.pin_code AS hpincode,hos.city AS hcity,hos.state AS hstate,hos.email_id,hostel_PhoneNo FROM receipts AS re JOIN hostel AS hs ON hs.ID=re.user_id JOIN hosteldetails AS hos ON hos.id=hs.Hostel_Id WHERE re.id=?;";
+    var sql1 = "SELECT re.id,re.reference_id,re.payment_date,re.payment_mode,re.invoice_number,re.amount_received,hs.Name AS uname,hs.Phone AS uphone,hs.Email AS uemail,hs.Address AS uaddress,hs.AdvanceAmount,hs.return_advance,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upin_code,hs.city AS ucity,hs.state AS ustate,hos.Name AS hname,hos.Address AS haddress,hos.area AS harea,hos.id AS hostel_id,hos.landmark AS hlandmark,hos.pin_code AS hpincode,hos.city AS hcity,hos.state AS hstate,hos.email_id,hostel_PhoneNo FROM receipts AS re JOIN hostel AS hs ON hs.ID=re.user_id JOIN hosteldetails AS hos ON hos.id=hs.Hostel_Id WHERE re.id=?;";
     connection.query(sql1, receipt_id, function (err, data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Error to Get Receipt Details", reason: err.message })
@@ -25,7 +25,12 @@ exports.get_receipt_detailsbyid = async (req, res) => {
                         return res.status(201).json({ statusCode: 201, message: "Error to Get Receipt Details", reason: err.message })
                     } else if (data.length != 0) {
 
-                        var total_amount = receipt_details.reduce((sum, item) => sum + item.amount, 0);
+                        const formattedAmenities = receipt_details.map(item => ({
+                            am_name: item.reason,
+                            amount: item.amount
+                        }));
+
+                        var total_amount = formattedAmenities.reduce((sum, item) => sum + item.amount, 0);
 
                         const finalresponse = {
                             reference_id: data[0].reference_id,
@@ -33,7 +38,9 @@ exports.get_receipt_detailsbyid = async (req, res) => {
                             payment_mode: data[0].payment_mode,
                             invoice_number: data[0].invoice_number,
                             invoice_type: 'checkout',
-                            total_amount: total_amount,
+                            total_advance_amount: data[0].AdvanceAmount,
+                            advance_return: data[0].return_advance,
+                            total_amount: total_amount || "",
                             amount_received: Number(data[0].amount_received),
                             user_details: {
                                 name: data[0].uname || "",
@@ -57,7 +64,7 @@ exports.get_receipt_detailsbyid = async (req, res) => {
                                 city: data[0].hcity || "",
                                 state: data[0].hstate || "",
                             },
-                            amenities: receipt_details || []
+                            amenities: formattedAmenities || []
                         };
 
                         return res.status(200).json({ statusCode: 200, receipt: finalresponse })
@@ -93,6 +100,8 @@ exports.get_receipt_detailsbyid = async (req, res) => {
                                 payment_mode: data[0].payment_mode,
                                 invoice_number: data[0].invoice_number,
                                 invoice_type: action,
+                                total_advance_amount: data[0].AdvanceAmount,
+                                advance_return: data[0].return_advance,
                                 total_amount: total_amount,
                                 amount_received: Number(data[0].amount_received),
                                 user_details: {
