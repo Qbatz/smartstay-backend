@@ -6,7 +6,7 @@ exports.get_receipt_detailsbyid = async (req, res) => {
 
     var receipt_id = req.params.receipt_id;
 
-    var sql1 = "SELECT re.id,re.reference_id,re.payment_date,re.payment_mode,re.invoice_number,re.amount_received,hs.Name AS uname,hs.Phone AS uphone,hs.Email AS uemail,hs.Address AS uaddress,hs.AdvanceAmount,hs.return_advance,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upin_code,hs.city AS ucity,hs.state AS ustate,hos.Name AS hname,hos.Address AS haddress,hos.area AS harea,hos.id AS hostel_id,hos.landmark AS hlandmark,hos.pin_code AS hpincode,hos.city AS hcity,hos.state AS hstate,hos.email_id,hostel_PhoneNo FROM receipts AS re JOIN hostel AS hs ON hs.ID=re.user_id JOIN hosteldetails AS hos ON hos.id=hs.Hostel_Id WHERE re.id=?;";
+    var sql1 = "SELECT re.id,re.reference_id,re.payment_date,re.payment_mode,re.invoice_number,re.amount_received,hs.Name AS uname,hs.Phone AS uphone,hs.Email AS uemail,hs.Address AS uaddress,hs.AdvanceAmount,hs.return_advance,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upin_code,hs.city AS ucity,hs.state AS ustate,hos.Name AS hname,hos.Address AS haddress,hos.area AS harea,hos.id AS hostel_id,hos.landmark AS hlandmark,hos.pin_code AS hpincode,hos.city AS hcity,hos.state AS hstate,hos.email_id,hostel_PhoneNo,hf.floor_name,hr.Room_Id,bd.bed_no FROM receipts AS re JOIN hostel AS hs ON hs.ID=re.user_id JOIN hosteldetails AS hos ON hos.id=hs.Hostel_Id JOIN hostelrooms AS hr ON hr.id=hs.Bed JOIN Hostel_Floor AS hf ON hf.id=hs.Floor JOIN bed_details AS bd ON bd.id=hs.Bed WHERE re.id=?;";
     connection.query(sql1, receipt_id, function (err, data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Error to Get Receipt Details", reason: err.message })
@@ -52,6 +52,9 @@ exports.get_receipt_detailsbyid = async (req, res) => {
                                 pincode: data[0].upin_code || "",
                                 city: data[0].ucity || "",
                                 state: data[0].ustate || "",
+                                floor_name: data[0].floor_name,
+                                room_name: data[0].Room_Id,
+                                bed_name: data[0].bed_no
                             },
                             hostel_details: {
                                 name: data[0].hname || "",
