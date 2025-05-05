@@ -117,6 +117,9 @@ exports.get_receipt_detailsbyid = async (req, res) => {
                                     pincode: data[0].upin_code || "",
                                     city: data[0].ucity || "",
                                     state: data[0].ustate || "",
+                                    floor_name: data[0].floor_name,
+                                    room_name: data[0].Room_Id,
+                                    bed_name: data[0].bed_no
                                 },
                                 hostel_details: {
                                     name: data[0].hname || "",
