@@ -597,30 +597,34 @@ app.post('/update_room_details', (request, response) => {
 
 // Truncate all tables
 app.get('/truncate_tables', (request, response) => {
+    const excludeTable = 'createaccount';
 
     var sql1 = "SHOW TABLES";
     connection.query(sql1, function (err, tables) {
         if (err) {
-            response.status(201).json({ message: "Unable to Connect Database", statusCode: 201 });
-        } else {
-            var tableNames = tables.map(row => Object.values(row)[0]);
-            if (tableNames.length === 0) {
-                console.log('No tables found in the database.');
-                response.status(201).json({ message: "No tables found in the database", statusCode: 201 });
-            } else {
-                const truncateQueries = tableNames.map(name => `TRUNCATE TABLE \`${name}\`;`).join('');
-                connection.query(truncateQueries, err => {
-                    if (err) {
-                        response.status(201).json({ message: "No tables found in the database", statusCode: 201 });
-                    } else {
-                        console.log('All tables truncated successfully.');
-                        response.status(200).json({ message: "All tables truncated successfully", statusCode: 200 });
-                    }
-                });
-            }
+            return response.status(201).json({ message: "Unable to Connect Database", statusCode: 201 });
         }
-    })
-})
+
+        var tableNames = tables.map(row => Object.values(row)[0]).filter(name => name !== excludeTable);
+
+        if (tableNames.length === 0) {
+            console.log('No tables to truncate.');
+            return response.status(201).json({ message: "No tables found to truncate", statusCode: 201 });
+        }
+
+        const truncateQueries = tableNames.map(name => `TRUNCATE TABLE \`${name}\`;`).join(' ');
+
+        connection.query(truncateQueries, err => {
+            if (err) {
+                return response.status(201).json({ message: "Failed to truncate some tables", reason: err.message, statusCode: 201 });
+            }
+
+            console.log('All tables truncated successfully, except createaccount.');
+            return response.status(200).json({ message: "All tables truncated successfully (excluding createaccount)", statusCode: 200 });
+        });
+    });
+});
+
 
 // ****************** Notification Start ***************** //
 // Get all Notifications
