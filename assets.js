@@ -236,8 +236,8 @@ function add_asset(req, res) {
 
                                                     if (data.payment_type) {
 
-                                                        var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,`desc`,type,status,createdby,edit_id) VALUES (?,?,?,?,?,?,?,?)";
-                                                        connection.query(sql4, [data.payment_type, data.purchase_date, data.price, 'Asset', 2, 1, user_id, edit_id], function (err, ins_data) {
+                                                        var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,`desc`,type,status,createdby,edit_id,hostel_id) VALUES (?,?,?,?,?,?,?,?,?)";
+                                                        connection.query(sql4, [data.payment_type, data.purchase_date, data.price, 'Asset', 2, 1, user_id, edit_id, hostel_id], function (err, ins_data) {
                                                             if (err) {
                                                                 console.log(err, "Insert Transactions Error");
                                                             } else {

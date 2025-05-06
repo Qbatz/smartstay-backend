@@ -285,6 +285,8 @@ function add_confirm_checkout(req, res) {
         }
     }
 
+    var payment_id = req.body.payment_id || 'Cash';
+
     const sql1 = `SELECT * FROM hostel WHERE ID = ? AND Hostel_Id = ? AND isActive = 1 AND CheckoutDate IS NOT NULL`;
     connection.query(sql1, [id, hostel_id], (err, hostelData) => {
         if (err) {
@@ -326,7 +328,7 @@ function add_confirm_checkout(req, res) {
                 const totalBalanceDue = result[0]?.totalBalanceDue || 0;
 
                 if (advance_amount >= totalBalanceDue) {
-                    processInvoicesAndFinalizeCheckout(id, totalBalanceDue, advance_return, created_by, checkout_date, bed_id, advance_return, comments, reasons, new_hosdetails, res);
+                    processInvoicesAndFinalizeCheckout(id, totalBalanceDue, advance_return, created_by, checkout_date, bed_id, advance_return, comments, reasons, new_hosdetails, payment_id, res);
                 } else {
                     return res.status(201).json({ statusCode: 201, message: "Advance Amount is Less than Total Balance Due" });
                 }
@@ -594,7 +596,7 @@ function finalizeCheckout(id, bed_id, advance_return, comments, res) {
 //     });
 // }
 
-async function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, created_by, checkout_date, bed_id, advance_return, comments, reasons, new_hosdetails, res) {
+async function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent, created_by, checkout_date, bed_id, advance_return, comments, reasons, new_hosdetails, payment_id, res) {
 
     const sql = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
     connection.query(sql, [id], async (err, invoices) => {
@@ -615,7 +617,7 @@ async function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent,
                 INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date, created_by)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             `;
-            const receiptParams = [id, '', receiptAmount, "Cash", receipt_no, new Date(), created_by];
+            const receiptParams = [id, '', receiptAmount, payment_id, receipt_no, new Date(), created_by];
 
             connection.query(insertReceiptSQL, receiptParams, (err, receipt_data) => {
                 if (err) {
@@ -676,7 +678,7 @@ async function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent,
                             INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date, created_by)
                             VALUES (?, ?, ?, ?, ?, ?, ?)
                         `;
-                        const receiptParams = [id, invoiceId, BalanceDue, "Cash", receipt_no, new Date(), created_by];
+                        const receiptParams = [id, invoiceId, BalanceDue, payment_id, receipt_no, new Date(), created_by];
 
                         connection.query(insertReceiptSQL, receiptParams, (err) => {
                             if (err) return reject(err);
@@ -704,7 +706,7 @@ async function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent,
                         INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date, created_by)
                         VALUES (?, ?, ?, ?, ?, ?, ?)
                     `;
-                    const receiptParams = [id, 0, finalInvoiceAmount > 0 ? finalInvoiceAmount : advance_return, "Cash", receipt_no, new Date(), created_by];
+                    const receiptParams = [id, 0, finalInvoiceAmount > 0 ? finalInvoiceAmount : advance_return, payment_id, receipt_no, new Date(), created_by];
 
                     connection.query(insertReceiptSQL, receiptParams, (err, receipt_data) => {
                         if (err) {
