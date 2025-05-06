@@ -102,4 +102,45 @@ function export_function(data, filePath) {
     });
 }
 
-module.exports = { uploadProfilePictureToS3Bucket, deleteImageFromS3Bucket, export_function }
+function generateNewInvoiceNumber(hostel_id) {
+    return new Promise((resolve, reject) => {
+        var sql1 = "SELECT * FROM hosteldetails WHERE id=? AND isActive=1";
+        connection.query(sql1, [hostel_id], function (err, hos_details) {
+            if (err) return reject(new Error("Unable to Get Hostel Details"));
+
+            if (hos_details.length > 0) {
+                let prefix = (hos_details[0].prefix || hos_details[0].Name || "INV").replace(/\s+/g, '-');
+
+                var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? AND action != 'advance' ORDER BY id DESC LIMIT 1;";
+                connection.query(sql2, [hostel_id], function (err, inv_data) {
+                    if (err) return reject(new Error("Unable to Get Invoice Details"));
+
+                    let newInvoiceNumber;
+
+                    if (inv_data.length > 0) {
+                        let lastInvoice = inv_data[0].Invoices || "";
+
+                        let lastPrefix = lastInvoice.replace(/-\d+$/, '');
+                        let lastSuffix = lastInvoice.match(/-(\d+)$/);
+                        lastSuffix = lastSuffix ? lastSuffix[1] : "001";
+
+                        if (prefix !== lastPrefix) {
+                            newInvoiceNumber = `${prefix}-001`;
+                        } else {
+                            let newSuffix = (parseInt(lastSuffix) + 1).toString().padStart(3, '0');
+                            newInvoiceNumber = `${prefix} -${newSuffix}`;
+                        }
+                    } else {
+                        newInvoiceNumber = `${prefix}-001`;
+                    }
+
+                    resolve(newInvoiceNumber);
+                });
+            } else {
+                reject(new Error("Invalid Hostel Details"));
+            }
+        });
+    });
+}
+
+module.exports = { uploadProfilePictureToS3Bucket, deleteImageFromS3Bucket, export_function, generateNewInvoiceNumber }
