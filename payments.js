@@ -82,12 +82,15 @@ function add_bank(req, res) {
 
     var hostel_id = req.body.hostel_id;
 
+    if (!benificiary_name) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Benificiary Details" })
+    }
+
     if (!hostel_id) {
         return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
     }
 
     if (id) {
-        // Update Process
 
         if (is_admin == 1 || (role_permissions[16] && role_permissions[16].per_edit == 1)) {
 
@@ -118,15 +121,6 @@ function add_bank(req, res) {
 
         if (is_admin == 1 || (role_permissions[16] && role_permissions[16].per_create == 1)) {
 
-            // Add Process
-            // var sql1 = "SELECT * FROM bankings WHERE acc_name=? AND bank_name=? AND status=1 AND hostel_id=?";
-            // connection.query(sql1, [acc_name, bank_name, hostel_id], function (err, acc_data) {
-            //     if (err) {
-            //         return res.status(201).json({ statusCode: 201, message: "Unable to Get Bank Details" })
-            //     } else if (acc_data.length != 0) {
-            //         return res.status(202).json({ statusCode: 202, message: "Account Name and Bank Name Already Exists!" })
-            //     } else {
-
             var sql1 = "INSERT INTO bankings (acc_name,acc_num,bank_name,ifsc_code,description,setus_default,balance,createdby,hostel_id,benificiary_name,upi_id,card_type,card_holder,card_no,type) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             connection.query(sql1, [acc_name, acc_no, bank_name, ifsc_code, desc, 0, 0, created_by, hostel_id, benificiary_name, upi_id, card_type, card_holder, card_no, type], function (err, data) {
                 if (err) {
@@ -136,8 +130,6 @@ function add_bank(req, res) {
                 }
             })
 
-            //     }
-            // })
         } else {
             res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
         }
