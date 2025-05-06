@@ -237,9 +237,9 @@ function createUser(connection, request, response) {
                                       console.log(due_date);
 
                                       var invoice_query = "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id) VALUES (?)";
-                                      var params = [user_details.Name, user_details.Phone, user_details.HostelName, user_details.Hostel_Id, atten.Floor, atten.Rooms, advance_amount, user_details.Address, due_date, atten.joining_date, invoice_number, 'Pending', user_details.User_Id, atten.Bed, advance_amount, 0, 'advance', 1, user_id]
+                                      var params = [user_details.Name, user_details.Phone,user_details.Email, user_details.HostelName, user_details.Hostel_Id, atten.Floor, atten.Rooms, advance_amount, user_details.Address, due_date, atten.joining_date, invoice_number, 'Pending', user_details.User_Id, atten.Bed, advance_amount, 0, 'advance', 1, user_id]
 
-                                      connection.query(invoice_query, params, async function (err, insdata) {
+                                      connection.query(invoice_query, [params], async function (err, insdata) {
                                         if (err) {
                                           console.log(err);
                                         } else {
@@ -427,9 +427,9 @@ function createUser(connection, request, response) {
                                   console.log(due_date);
 
                                   var invoice_query = "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id) VALUES (?)";
-                                  var params = [Name, atten.Phone, atten.HostelName, hostel_id, atten.Floor, atten.Rooms, advance_amount, atten.Address, due_date, atten.joining_date, invoice_number, 'Pending', gen_user_id, atten.Bed, advance_amount, 0, 'advance', 1, user_ids]
+                                  var params = [Name, atten.Phone,atten.Email, atten.HostelName, hostel_id, atten.Floor, atten.Rooms, advance_amount, atten.Address, due_date, atten.joining_date, invoice_number, 'Pending', gen_user_id, atten.Bed, advance_amount, 0, 'advance', 1, user_ids]
 
-                                  connection.query(invoice_query, params, async function (err, insdata) {
+                                  connection.query(invoice_query, [params], async function (err, insdata) {
                                     if (err) {
                                       console.log(err);
                                     } else {
