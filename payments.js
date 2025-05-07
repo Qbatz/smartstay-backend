@@ -157,7 +157,7 @@ function all_bankings(req, res) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Add Bank Details" })
             } else {
-                var sql2 = "SELECT trans.*,ban.acc_name,ban.bank_name FROM bank_transactions AS trans JOIN bankings AS ban ON ban.id=trans.bank_id WHERE trans.status=1 AND ban.hostel_id=?";
+                var sql2 = "SELECT trans.*,ban.benificiary_name,ban.type FROM bank_transactions AS trans JOIN bankings AS ban ON ban.id=trans.bank_id WHERE trans.status=1 AND ban.hostel_id=?";
                 connection.query(sql2, [hostel_id], function (err, trans_data) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Get Bank Transactions" })
