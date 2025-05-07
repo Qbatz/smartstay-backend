@@ -6,7 +6,7 @@ exports.get_receipt_detailsbyid = async (req, res) => {
 
     var receipt_id = req.params.receipt_id;
 
-    var sql1 = "SELECT re.id,re.reference_id,re.payment_date,re.payment_mode,re.invoice_number,re.amount_received,hs.Name AS uname,hs.Phone AS uphone,hs.Email AS uemail,hs.Address AS uaddress,hs.AdvanceAmount,hs.return_advance,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upin_code,hs.city AS ucity,hs.state AS ustate,hos.Name AS hname,hos.Address AS haddress,hos.area AS harea,hos.id AS hostel_id,hos.landmark AS hlandmark,hos.pin_code AS hpincode,hos.city AS hcity,hos.state AS hstate,hos.email_id,hostel_PhoneNo,hr.Room_Id,bd.bed_no FROM receipts AS re JOIN hostel AS hs ON hs.ID=re.user_id JOIN hosteldetails AS hos ON hos.id=hs.Hostel_Id JOIN hostelrooms AS hr ON hr.id=hs.Rooms JOIN bed_details AS bd ON bd.id=hs.Bed WHERE re.id=?";
+    var sql1 = "SELECT re.id,re.reference_id,re.payment_date,re.payment_mode,re.invoice_number,re.amount_received,hs.Name AS uname,hs.Phone AS uphone,hs.Email AS uemail,hs.Address AS uaddress,hs.AdvanceAmount,hs.return_advance,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upin_code,hs.city AS ucity,hs.state AS ustate,hos.Name AS hname,hos.Address AS haddress,hos.area AS harea,hos.id AS hostel_id,hos.landmark AS hlandmark,hos.pin_code AS hpincode,hos.city AS hcity,hos.state AS hstate,hos.email_id,hostel_PhoneNo,hr.Room_Id,bd.bed_no,ban.benificiary_name FROM receipts AS re JOIN hostel AS hs ON hs.ID=re.user_id JOIN hosteldetails AS hos ON hos.id=hs.Hostel_Id JOIN hostelrooms AS hr ON hr.id=hs.Rooms JOIN bed_details AS bd ON bd.id=hs.Bed LEFT JOIN bankings AS ban ON ban.id=re.payment_mode WHERE re.id=?";
     connection.query(sql1, receipt_id, function (err, data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Error to Get Receipt Details", reason: err.message })
@@ -42,6 +42,7 @@ exports.get_receipt_detailsbyid = async (req, res) => {
                             advance_return: data[0].return_advance,
                             total_amount: total_amount || "",
                             amount_received: Number(data[0].amount_received),
+                            benificiary_name: data[0].benificiary_name || "",
                             user_details: {
                                 name: data[0].uname || "",
                                 phone: data[0].uphone || "",
@@ -107,6 +108,7 @@ exports.get_receipt_detailsbyid = async (req, res) => {
                                 advance_return: data[0].return_advance,
                                 total_amount: total_amount,
                                 amount_received: Number(data[0].amount_received),
+                                benificiary_name: data[0].benificiary_name || "",
                                 user_details: {
                                     name: data[0].uname || "",
                                     phone: data[0].uphone || "",
