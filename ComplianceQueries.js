@@ -45,6 +45,8 @@ function AddCompliance(connection, request, response) {
 
         if (is_admin == 1 || (role_permissions[13] && role_permissions[13].per_create === 1)) {
 
+            var Status = request.body.Status || 'Pending';
+
             var sql3 = "SELECT MAX(Requestid) AS total_count FROM compliance;";
             connection.query(sql3, function (err, data) {
                 if (err) {
