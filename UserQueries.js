@@ -686,13 +686,17 @@ function transitionlist(request, response) {
 
                   var total_advance = sel1_res[0].AdvanceAmount;
 
-                  var already_paid_amount = sel1_res[0].paid_advance;
-                  var new_amount = already_paid_amount + amount;
+                  var total_amount = check_res[0].Amount;
+                  var paid_amount = check_res[0].PaidAmount;
 
-                  if (new_amount > total_advance) {
-                    response.status(201).json({ statusCode: 201, message: "Pay Amount More than Advance Amount, Kindly Check Advance Amount", });
+
+                  // var already_paid_amount = sel1_res[0].paid_advance;
+                  var new_amount = paid_amount + amount;
+
+                  if (new_amount > total_amount) {
+                    response.status(201).json({ statusCode: 201, message: "Pay Amount More than Invoice Total Amount" });
                   } else {
-                    if (new_amount == total_advance) {
+                    if (new_amount == total_amount) {
                       var Status = "Success";
                     } else {
                       var Status = "Pending";

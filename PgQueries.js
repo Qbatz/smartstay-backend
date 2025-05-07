@@ -1087,6 +1087,9 @@ function listDashBoard(connection, response, request) {
 
                 let project_amount;
 
+                // var sql11 = "SELECT COUNT(ID) AS count FROM compliance WHERE Status !='resolved' AND isActive=1 AND Hostel_id=?";
+
+
                 var sql12 = "SELECT *, CASE WHEN CheckoutDate IS NOT NULL AND ((MONTH(CheckoutDate) <= MONTH(NOW()) AND YEAR(CheckoutDate) = YEAR(NOW())) OR (YEAR(CheckoutDate) < YEAR(NOW()))) THEN 0 WHEN CheckoutDate IS NOT NULL AND MONTH(CheckoutDate) = MONTH(DATE_ADD(NOW(), INTERVAL 1 MONTH)) AND YEAR(CheckoutDate) = YEAR(DATE_ADD(NOW(), INTERVAL 1 MONTH)) THEN ROUND((DAY(CheckoutDate) / DAY(LAST_DAY(DATE_ADD(NOW(), INTERVAL 1 MONTH)))) * RoomRent, 2) ELSE RoomRent END AS projected_amount FROM hostel WHERE Hostel_Id=? AND isActive = 1;";
                 connection.query(sql12, [hostel_id], function (err, pro_res) {
                     if (err) {
