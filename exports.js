@@ -104,10 +104,10 @@ function dash_filter(req, res) {
     }
 
     if (!type) {
-        return res.status(201).json({ statusCode: 201, message: "Missing Data" })
+        return res.status(201).json({ statusCode: 201, message: "Missing Data Type" })
     }
 
-    const allowedTypes = ['expenses', 'cashback', 'exp_vs_rev'];
+    const allowedTypes = ['expenses', 'cashback', 'exp_vs_rev', 'advance'];
 
     if (!allowedTypes.includes(type)) {
         return res.status(201).json({ statusCode: 201, message: `Invalid type` });
@@ -218,6 +218,29 @@ function dash_filter(req, res) {
             }
         })
 
+
+    } else if (type == 'advance') {
+
+        if (range == 'six_month') {
+
+            var sql4 = "SELECT m.month, COALESCE(SUM(inv.PaidAmount), 0) AS advance_amount, COALESCE(SUM(hs.return_advance), 0) AS return_advance FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL seq MONTH), '%Y-%m') AS month FROM (SELECT 0 AS seq UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) AS seqs) AS m LEFT JOIN invoicedetails inv ON DATE_FORMAT(inv.Date, '%Y-%m') = m.month AND inv.action = 'advance' AND inv.invoice_status = 1 AND inv.Hostel_Id = ? LEFT JOIN hostel hs ON hs.id = inv.hos_user_id AND hs.isActive = 1 GROUP BY m.month ORDER BY m.month;"
+
+        } else if (range == 'this_year') {
+
+            var sql4 = "SELECT m.month, COALESCE(SUM(inv.PaidAmount), 0) AS advance_amount, COALESCE(SUM(hs.return_advance), 0) AS return_advance FROM (SELECT DATE_FORMAT(MAKEDATE(YEAR(CURDATE()), 1) + INTERVAL seq MONTH, '%Y-%m') AS month FROM (SELECT 0 AS seq UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS seqs WHERE seq < MONTH(CURDATE())) AS m LEFT JOIN invoicedetails inv ON DATE_FORMAT(inv.Date, '%Y-%m') = m.month AND inv.action = 'advance' AND inv.invoice_status = 1 AND inv.Hostel_Id = ? LEFT JOIN hostel hs ON hs.id = inv.hos_user_id AND hs.isActive = 1 GROUP BY m.month ORDER BY m.month;"
+
+        } else {
+
+            var sql4 = "SELECT m.month, COALESCE(SUM(inv.PaidAmount), 0) AS advance_amount, COALESCE(SUM(hs.return_advance), 0) AS return_advance FROM (SELECT DATE_FORMAT(MAKEDATE(YEAR(CURDATE()) - 1, 1) + INTERVAL seq MONTH, '%Y-%m') AS month FROM (SELECT 0 AS seq UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS seqs) AS m LEFT JOIN invoicedetails inv ON DATE_FORMAT(inv.Date, '%Y-%m') = m.month AND inv.action = 'advance' AND inv.invoice_status = 1 AND inv.Hostel_Id = ? LEFT JOIN hostel hs ON hs.id = inv.hos_user_id AND hs.isActive = 1 GROUP BY m.month ORDER BY m.month;"
+        }
+
+        connection.query(sql4, [hostel_id], function (err, data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Unable to Get Advance Details" })
+            } else {
+                return res.status(200).json({ statusCode: 200, message: "Advance Details", advance_data: data })
+            }
+        })
 
     } else {
 

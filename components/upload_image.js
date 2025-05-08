@@ -111,7 +111,7 @@ function generateNewInvoiceNumber(hostel_id) {
             if (hos_details.length > 0) {
                 let prefix = (hos_details[0].prefix || hos_details[0].Name || "INV").replace(/\s+/g, '-');
 
-                var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? AND action != 'advance' ORDER BY id DESC LIMIT 1;";
+                var sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? ORDER BY id DESC LIMIT 1;";
                 connection.query(sql2, [hostel_id], function (err, inv_data) {
                     if (err) return reject(new Error("Unable to Get Invoice Details"));
 

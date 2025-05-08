@@ -1062,11 +1062,6 @@ function UpdateEB(connection, atten, response) {
 };
 function listDashBoard(connection, response, request) {
 
-    var created_by = request.user_details.id;
-    let startingYear = new Date().getFullYear() - 1;
-    let endingYear = new Date().getFullYear();
-
-    var show_ids = request.show_ids;
     var role_permissions = request.role_permissions;
     var is_admin = request.is_admin;
 
@@ -1087,113 +1082,126 @@ function listDashBoard(connection, response, request) {
 
                 let project_amount;
 
-                // var sql11 = "SELECT COUNT(ID) AS count FROM compliance WHERE Status !='resolved' AND isActive=1 AND Hostel_id=?";
-
-
-                var sql12 = "SELECT *, CASE WHEN CheckoutDate IS NOT NULL AND ((MONTH(CheckoutDate) <= MONTH(NOW()) AND YEAR(CheckoutDate) = YEAR(NOW())) OR (YEAR(CheckoutDate) < YEAR(NOW()))) THEN 0 WHEN CheckoutDate IS NOT NULL AND MONTH(CheckoutDate) = MONTH(DATE_ADD(NOW(), INTERVAL 1 MONTH)) AND YEAR(CheckoutDate) = YEAR(DATE_ADD(NOW(), INTERVAL 1 MONTH)) THEN ROUND((DAY(CheckoutDate) / DAY(LAST_DAY(DATE_ADD(NOW(), INTERVAL 1 MONTH)))) * RoomRent, 2) ELSE RoomRent END AS projected_amount FROM hostel WHERE Hostel_Id=? AND isActive = 1;";
-                connection.query(sql12, [hostel_id], function (err, pro_res) {
+                var sql11 = "SELECT (SELECT COUNT(ID) FROM compliance WHERE Status != 'resolved' AND isActive = 1 AND Hostel_id = ?) AS activecomp_count,(SELECT COUNT(ID) FROM invoicedetails WHERE invoice_status = 1 AND Hostel_Id = ? AND BalanceDue != 0) AS pendinginv_count,(SELECT COUNT(ID) FROM bookings WHERE hostel_id = ? AND status = 1) AS booking_count,(SELECT coalesce(SUM(inv.PaidAmount),0) AS advance_inhand FROM invoicedetails AS inv JOIN hostel AS hs ON hs.id=inv.hos_user_id WHERE inv.action='advance' AND inv.invoice_status=1 AND hs.isActive=1 AND inv.Hostel_Id=?) AS advance_inhand";
+                connection.query(sql11, [hostel_id, hostel_id, hostel_id, hostel_id], function (err, countdata) {
                     if (err) {
-                        console.log("Unable to get Projection");
-                        response.status(201).json({ message: "Unable to get Projection", error: err.message });
-                    } else {
-
-                        if (data.length > 0) {
-                            let obj = {};
-                            let dashboardList = data.map((item) => {
-                                if (item.Revenue > 0) {
-                                    var current = item.Revenue - item.overdue
-                                } else {
-                                    var current = 0
-                                }
-
-                                if (pro_res.length != 0) {
-
-                                    pro_res.forEach((item) => {
-                                        console.log(item.projected_amount);
-                                    });
-
-                                    const projectedAmounts = pro_res.map((item) => Number(item.projected_amount) || 0);
-
-                                    project_amount = projectedAmounts.reduce((total, amount) => total + amount, 0);
-
-                                } else {
-                                    project_amount = 0;
-                                }
-
-                                obj = {
-                                    hostelCount: item.hostelCount,
-                                    roomCount: item.roomCount,
-                                    TotalBed: item.occupied_Bed + item.Bed,
-                                    occupied_Bed: item.occupied_Bed,
-                                    availableBed: item.Bed,
-                                    Revenue: item.Revenue,
-                                    overdue: item.overdue,
-                                    current: current,
-                                    first_name: item.first_name,
-                                    last_name: item.last_name,
-                                    eb_amount: item.eb_amount,
-                                    asset_amount: item.asset_amount,
-                                    free_bed: item.Bed,
-                                    customer_count: item.customer_count,
-                                    project_amount: project_amount
-                                }
-                                return obj
-                            })
-
-                            // Booking Data
-                            var sql4 = "SELECT id,first_name,last_name,amount,joining_date FROM bookings WHERE status=1 AND hostel_id=? ORDER BY id DESC LIMIT 5;";
-                            connection.query(sql4, [hostel_id], function (err, book_data) {
-                                if (err) {
-                                    response.status(201).json({ message: "Error fetching Booking Data" });
-                                } else {
-
-                                    var sql5 = "SELECT inv.id,inv.Invoices,inv.DueDate,inv.Amount AS total_amount FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id WHERE hs.id =? AND inv.invoice_status=1 and inv.BalanceDue !=0 ORDER BY id DESC LIMIT 5;"
-                                    connection.query(sql5, [hostel_id], function (err, bill_details) {
-                                        if (err) {
-                                            response.status(201).json({ message: "Error fetching Bill Data" });
-                                        } else {
-
-                                            var query1 = "SELECT m.month, COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue, COALESCE(SUM(COALESCE(expen.purchase_amount, 0)), 0) AS expense FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) AS numbers) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month, invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.id = ? AND invo.action != 'advance') AS invo ON m.month = invo.month LEFT JOIN (SELECT DATE_FORMAT(expen.createdate, '%Y-%m') AS month, expen.purchase_amount FROM expenses AS expen WHERE expen.hostel_id = ?) AS expen ON m.month = expen.month GROUP BY m.month ORDER BY m.month;"
-                                            connection.query(query1, [hostel_id, hostel_id], (error, results, fields) => {
-                                                if (error) {
-                                                    console.error('Error executing query:', error);
-                                                    return;
-                                                } else {
-                                                    // expense category
-                                                    var sql2 = "SELECT SUM(expen.purchase_amount) AS purchase_amount, expen.category_id, category.category_Name FROM expenses expen JOIN Expense_Category_Name category ON category.id = expen.category_id WHERE expen.status = true AND expen.hostel_id=? AND YEAR(expen.purchase_date) = YEAR(CURDATE()) AND MONTH(expen.createdate) = MONTH(CURDATE()) GROUP BY expen.category_id";
-                                                    connection.query(sql2, [hostel_id], function (error, data) {
-                                                        if (error) {
-                                                            console.log("error", error);
-                                                            response.status(201).json({ message: "Error fetching Data" });
-                                                        }
-                                                        else {
-                                                            if (data.length > 0) {
-
-                                                                let total_amount = 0
-                                                                for (let i of data) {
-
-                                                                    total_amount += i.purchase_amount;
-                                                                }
-
-                                                                response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, total_amount: total_amount, categoryList: data, book_data: book_data, bill_details: bill_details });
-
-                                                            } else {
-                                                                response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, total_amount: 0, categoryList: [], book_data: book_data, bill_details: bill_details });
-                                                            }
-                                                        }
-                                                    })
-                                                }
-                                            })
-                                        }
-                                    })
-                                }
-                            })
-                        } else {
-                            response.status(200).json({ dashboardList: [], Revenue_reports: [], totalAmount: [], categoryList: [] });
-                        }
+                        return response.status(201).json({ message: "Error to Get Count Details", error: err.message });
                     }
 
+                    var count_data = countdata[0];
+
+                    var sql12 = "SELECT *, CASE WHEN CheckoutDate IS NOT NULL AND ((MONTH(CheckoutDate) <= MONTH(NOW()) AND YEAR(CheckoutDate) = YEAR(NOW())) OR (YEAR(CheckoutDate) < YEAR(NOW()))) THEN 0 WHEN CheckoutDate IS NOT NULL AND MONTH(CheckoutDate) = MONTH(DATE_ADD(NOW(), INTERVAL 1 MONTH)) AND YEAR(CheckoutDate) = YEAR(DATE_ADD(NOW(), INTERVAL 1 MONTH)) THEN ROUND((DAY(CheckoutDate) / DAY(LAST_DAY(DATE_ADD(NOW(), INTERVAL 1 MONTH)))) * RoomRent, 2) ELSE RoomRent END AS projected_amount FROM hostel WHERE Hostel_Id=? AND isActive = 1;";
+                    connection.query(sql12, [hostel_id], function (err, pro_res) {
+                        if (err) {
+                            console.log("Unable to get Projection");
+                            response.status(201).json({ message: "Unable to get Projection", error: err.message });
+                        } else {
+
+                            if (data.length > 0) {
+                                let obj = {};
+                                let dashboardList = data.map((item) => {
+                                    if (item.Revenue > 0) {
+                                        var current = item.Revenue - item.overdue
+                                    } else {
+                                        var current = 0
+                                    }
+
+                                    if (pro_res.length != 0) {
+
+                                        const projectedAmounts = pro_res.map((item) => Number(item.projected_amount) || 0);
+                                        project_amount = projectedAmounts.reduce((total, amount) => total + amount, 0);
+                                    } else {
+                                        project_amount = 0;
+                                    }
+
+                                    obj = {
+                                        hostelCount: item.hostelCount,
+                                        roomCount: item.roomCount,
+                                        TotalBed: item.occupied_Bed + item.Bed,
+                                        occupied_Bed: item.occupied_Bed,
+                                        availableBed: item.Bed,
+                                        Revenue: item.Revenue,
+                                        overdue: item.overdue,
+                                        current: current,
+                                        first_name: item.first_name,
+                                        last_name: item.last_name,
+                                        eb_amount: item.eb_amount,
+                                        asset_amount: item.asset_amount,
+                                        free_bed: item.Bed,
+                                        customer_count: item.customer_count,
+                                        project_amount: project_amount,
+                                        active_complaint: count_data.activecomp_count,
+                                        pending_invoice: count_data.pendinginv_count,
+                                        new_booking: count_data.booking_count,
+                                        advance_inhand: Number(count_data.advance_inhand)
+                                    }
+                                    return obj
+                                })
+
+                                // Booking Data
+                                var sql4 = "SELECT id,first_name,last_name,amount,joining_date FROM bookings WHERE status=1 AND hostel_id=? ORDER BY id DESC LIMIT 5;";
+                                connection.query(sql4, [hostel_id], function (err, book_data) {
+                                    if (err) {
+                                        response.status(201).json({ message: "Error fetching Booking Data" });
+                                    } else {
+
+                                        var sql5 = "SELECT inv.id,inv.Invoices,inv.DueDate,inv.Amount AS total_amount FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id WHERE hs.id =? AND inv.invoice_status=1 and inv.BalanceDue !=0 ORDER BY id DESC LIMIT 5;"
+                                        connection.query(sql5, [hostel_id], function (err, bill_details) {
+                                            if (err) {
+                                                response.status(201).json({ message: "Error fetching Bill Data" });
+                                            } else {
+
+                                                var query1 = "SELECT m.month, COALESCE(SUM(COALESCE(invo.PaidAmount, 0)), 0) AS revenue, COALESCE(SUM(COALESCE(expen.purchase_amount, 0)), 0) AS expense FROM (SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m') AS month FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) AS numbers) AS m LEFT JOIN (SELECT DATE_FORMAT(invo.Date, '%Y-%m') AS month, invo.PaidAmount FROM invoicedetails AS invo JOIN hosteldetails AS hos ON hos.id = invo.Hostel_Id WHERE hos.id = ? AND invo.action != 'advance') AS invo ON m.month = invo.month LEFT JOIN (SELECT DATE_FORMAT(expen.createdate, '%Y-%m') AS month, expen.purchase_amount FROM expenses AS expen WHERE expen.hostel_id = ?) AS expen ON m.month = expen.month GROUP BY m.month ORDER BY m.month;"
+                                                connection.query(query1, [hostel_id, hostel_id], (error, results, fields) => {
+                                                    if (error) {
+                                                        console.error('Error executing query:', error);
+                                                        return;
+                                                    } else {
+
+                                                        var sql13 = "SELECT m.month, COALESCE(SUM(inv.PaidAmount), 0) AS advance_amount, COALESCE(SUM(hs.return_advance), 0) AS return_advance FROM (SELECT DATE_FORMAT(MAKEDATE(YEAR(CURDATE()), 1) + INTERVAL seq MONTH, '%Y-%m') AS month FROM (SELECT 0 AS seq UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS seqs WHERE seq < MONTH(CURDATE())) AS m LEFT JOIN invoicedetails inv ON DATE_FORMAT(inv.Date, '%Y-%m') = m.month AND inv.action = 'advance' AND inv.invoice_status = 1 AND inv.Hostel_Id = ? LEFT JOIN hostel hs ON hs.id = inv.hos_user_id AND hs.isActive = 1 GROUP BY m.month ORDER BY m.month;"
+                                                        connection.query(sql13, [hostel_id], function (err, advance_data) {
+                                                            if (error) {
+                                                                return response.status(201).json({ message: "Error fetching Advance Details" });
+                                                            } else {
+                                                                // expense category
+                                                                var sql2 = "SELECT SUM(expen.purchase_amount) AS purchase_amount, expen.category_id, category.category_Name FROM expenses expen JOIN Expense_Category_Name category ON category.id = expen.category_id WHERE expen.status = true AND expen.hostel_id=? AND YEAR(expen.purchase_date) = YEAR(CURDATE()) AND MONTH(expen.createdate) = MONTH(CURDATE()) GROUP BY expen.category_id";
+                                                                connection.query(sql2, [hostel_id], function (error, data) {
+                                                                    if (error) {
+                                                                        console.log("error", error);
+                                                                        response.status(201).json({ message: "Error fetching Data" });
+                                                                    }
+                                                                    else {
+                                                                        if (data.length > 0) {
+
+                                                                            let total_amount = 0
+                                                                            for (let i of data) {
+
+                                                                                total_amount += i.purchase_amount;
+                                                                            }
+
+                                                                            return response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, total_amount: total_amount, categoryList: data, book_data: book_data, bill_details: bill_details, advance_data: advance_data });
+
+                                                                        } else {
+                                                                            return response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, total_amount: 0, categoryList: [], book_data: book_data, bill_details: bill_details, advance_data: advance_data });
+                                                                        }
+                                                                    }
+                                                                })
+                                                            }
+                                                        })
+                                                    }
+                                                })
+                                            }
+                                        })
+                                    }
+                                })
+                            } else {
+                                response.status(200).json({ dashboardList: [], Revenue_reports: [], totalAmount: [], categoryList: [], advance_data: [] });
+                            }
+                        }
+
+                    })
                 })
+
             }
         })
     } else {
