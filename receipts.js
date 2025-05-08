@@ -171,7 +171,7 @@ exports.get_all_receipts = (req, res) => {
         }
 
         var sql1 = `
-            SELECT re.*, hos.Name AS Name, hos.profile AS user_profile, inv.id AS inv_id, re.id AS id,
+            SELECT re.*, hos.Name AS Name, hos.profile AS user_profile,hos.return_advance, inv.id AS inv_id, re.id AS id,
                    hos.Address AS user_address, ca.Address AS admin_address 
             FROM receipts AS re 
             JOIN hostel AS hos ON hos.id = re.user_id 

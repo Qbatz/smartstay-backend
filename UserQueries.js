@@ -63,6 +63,10 @@ function createUser(connection, request, response) {
   var profile = request.file;
   var country_code = atten.country_code;
 
+  var isadvance = atten.isadvance;
+  var due_date = atten.due_date;
+  var invoice_date = atten.invoice_date;
+
   var { area, landmark, pincode, city, state } = request.body;
 
   if (!atten.firstname || !pincode || !city || !state) {
@@ -218,7 +222,7 @@ function createUser(connection, request, response) {
                                   })
                                 }
 
-                                if (advance_amount) {
+                                if (advance_amount && isadvance == 1) {
 
                                   var hostel_id = atten.hostel_Id;
 
@@ -232,12 +236,12 @@ function createUser(connection, request, response) {
 
                                       var invoice_number = await uploadImage.generateNewInvoiceNumber(hostel_id);
 
-                                      console.log(invoice_number);
-                                      var due_date = moment(atten.joining_date).add(5, 'days').format('YYYY-MM-DD');
-                                      console.log(due_date);
+                                      // console.log(invoice_number);
+                                      // var due_date = moment(atten.joining_date).add(5, 'days').format('YYYY-MM-DD');
+                                      // console.log(due_date);
 
                                       var invoice_query = "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id) VALUES (?)";
-                                      var params = [user_details.Name, user_details.Phone, user_details.Email, user_details.HostelName, user_details.Hostel_Id, atten.Floor, atten.Rooms, advance_amount, user_details.Address, due_date, atten.joining_date, invoice_number, 'Pending', user_details.User_Id, atten.Bed, advance_amount, 0, 'advance', 1, user_id]
+                                      var params = [user_details.Name, user_details.Phone, user_details.Email, user_details.HostelName, user_details.Hostel_Id, atten.Floor, atten.Rooms, advance_amount, user_details.Address, due_date, invoice_date, invoice_number, 'Pending', user_details.User_Id, atten.Bed, advance_amount, 0, 'advance', 1, user_id]
 
                                       connection.query(invoice_query, [params], async function (err, insdata) {
                                         if (err) {
@@ -318,8 +322,6 @@ function createUser(connection, request, response) {
                           console.log("Already Amount Refered !!!");
                         } else {
 
-                          console.log("===========================");
-
                           var ref_id = ref_data[0].id;
 
                           var logs = "Receipt Amount " + ref_data[0].amount + " Added Wallet";
@@ -341,9 +343,6 @@ function createUser(connection, request, response) {
 
                                 var old_amount = Number(wal_data[0].amount);
                                 var new_amount = old_amount + 500;
-
-                                console.log(up_query);
-                                console.log(new_amount, admin_id);
 
                                 var up_query = "UPDATE wallet SET amount=? WHERE user_id=?";
                                 connection.query(up_query, [new_amount, admin_id], function (err, data) {
@@ -408,7 +407,7 @@ function createUser(connection, request, response) {
                           .then(() => {
                             var advance_amount = atten.AdvanceAmount
 
-                            if (advance_amount) {
+                            if (advance_amount && isadvance == 1) {
 
                               var hostel_id = atten.hostel_Id;
 
@@ -422,12 +421,13 @@ function createUser(connection, request, response) {
 
                                   var invoice_number = await uploadImage.generateNewInvoiceNumber(hostel_id);
 
-                                  console.log(invoice_number);
-                                  var due_date = moment(atten.joining_date).add(5, 'days').format('YYYY-MM-DD');
-                                  console.log(due_date);
+                                  // console.log(invoice_number);
+
+                                  // var due_date = moment(atten.joining_date).add(5, 'days').format('YYYY-MM-DD');
+                                  // console.log(due_date);
 
                                   var invoice_query = "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id) VALUES (?)";
-                                  var params = [Name, atten.Phone, atten.Email, atten.HostelName, hostel_id, atten.Floor, atten.Rooms, advance_amount, atten.Address, due_date, atten.joining_date, invoice_number, 'Pending', gen_user_id, atten.Bed, advance_amount, 0, 'advance', 1, user_ids]
+                                  var params = [Name, atten.Phone, atten.Email, atten.HostelName, hostel_id, atten.Floor, atten.Rooms, advance_amount, atten.Address, due_date, invoice_date, invoice_number, 'Pending', gen_user_id, atten.Bed, advance_amount, 0, 'advance', 1, user_ids]
 
                                   connection.query(invoice_query, [params], async function (err, insdata) {
                                     if (err) {
