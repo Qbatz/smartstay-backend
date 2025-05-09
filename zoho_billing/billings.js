@@ -238,7 +238,7 @@ async function new_subscription(req, res) {
 
         var { user_id, customer_id, plan_code, hostel_ids, hostel_count, amount, comments } = req.body;
 
-        if (!user_id || !customer_id || !plan_code || !amount) {
+        if (!user_id || !customer_id || !plan_code) {
             return res.status(201).json({ message: "Missing or Invalid Parameters" });
         }
 
@@ -269,11 +269,6 @@ async function new_subscription(req, res) {
 
         async function add_new_subs_func(hostels) {
 
-            var hos_amount = hostel_count * Number(amount);
-
-            var price = hos_amount - Number(wallet_amount || 0);
-            // var price=1;
-
             if (wallet_amount) {
 
                 var sql1 = "SELECT * FROM wallet WHERE user_id=? AND is_active=1";
@@ -294,28 +289,21 @@ async function new_subscription(req, res) {
                 })
             }
 
-            var addons = [
-                {
-                    addon_code: "hostel_addon",
-                    name: "Hostel Subscription Addon",
-                    price: price,
-                    quantity: hostel_count,
-                    type: "one_time"
-                }
-            ];
-
-            var apiEndpoint = "https://www.zohoapis.in/billing/v1/hostedpages/newsubscription";
+            var apiEndpoint = "https://www.zohoapis.in/billing/v1/subscriptions";
             var method = "POST";
 
             var input_body = {
-                plan: { plan_code: plan_code },
+                plan: {
+                    plan_code: plan_code,
+                    quantity: hostel_count
+                },
                 customer_id: customer_id,
-                addons: addons,
-                custom_fields: [],
-                redirect_url: "https://smartstaytesting.s3remotica.com/",
+                addons: [],
                 start_date: currentDate,
-                notes: "New User Subscription with multiple hostels"
+                notes: "New User Subscription without hosted page"
             };
+
+
 
             let api_data = await apiResponse(apiEndpoint, method, input_body);
 

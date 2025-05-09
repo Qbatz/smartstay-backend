@@ -418,14 +418,16 @@ function createnewAccount(request, response) {
                         var apiEndpoint = 'https://www.zohoapis.in/billing/v1/subscriptions';
                         var method = "POST";
 
+                        var last_name = reqBodyData.last_name || ''
+
                         var inbut_body = {
                             plan: {
                                 plan_code: plan_code
                             },
                             customer: {
-                                display_name: reqBodyData.first_name + ' ' + reqBodyData.last_name,
+                                display_name: reqBodyData.first_name + ' ' + last_name,
                                 first_name: reqBodyData.first_name,
-                                last_name: reqBodyData.last_name,
+                                last_name: last_name,
                                 email: reqBodyData.emailId,
                                 mobile: reqBodyData.mobileNo
                             },

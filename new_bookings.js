@@ -617,7 +617,7 @@ async function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent,
                 INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date, created_by)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             `;
-            const receiptParams = [id, '', receiptAmount, payment_id, receipt_no, checkout_date, created_by];
+            const receiptParams = [id, '', advance_return, payment_id, receipt_no, checkout_date, created_by];
 
             connection.query(insertReceiptSQL, receiptParams, (err, receipt_data) => {
                 if (err) {
@@ -678,7 +678,7 @@ async function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent,
                             INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date, created_by)
                             VALUES (?, ?, ?, ?, ?, ?, ?)
                         `;
-                        const receiptParams = [id, invoiceId, BalanceDue, payment_id, receipt_no, checkout_date, created_by];
+                        const receiptParams = [id, invoiceId, advance_return, payment_id, receipt_no, checkout_date, created_by];
 
                         connection.query(insertReceiptSQL, receiptParams, (err) => {
                             if (err) return reject(err);
@@ -706,7 +706,7 @@ async function processInvoicesAndFinalizeCheckout(id, totalBalanceDue, roomRent,
                         INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date, created_by)
                         VALUES (?, ?, ?, ?, ?, ?, ?)
                     `;
-                    const receiptParams = [id, 0, finalInvoiceAmount > 0 ? finalInvoiceAmount : advance_return, payment_id, receipt_no, checkout_date, created_by];
+                    const receiptParams = [id, 0, advance_return, payment_id, receipt_no, checkout_date, created_by];
 
                     connection.query(insertReceiptSQL, receiptParams, (err, receipt_data) => {
                         if (err) {
