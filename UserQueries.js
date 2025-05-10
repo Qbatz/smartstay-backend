@@ -1828,68 +1828,101 @@ function add_walk_in_customer(req, res) {
     return res.status(201).json({ message: 'Missing Hostel Details', statusCode: 201 });
   }
 
-  // If an id is provided, first check if it exists
-  if (id) {
+  try {
+    var bucket_name = process.env.AWS_BUCKET_NAME;
+    var timestamp = Date.now();
+    var folderName = 'walk_in_profiles/';
 
-    if (is_admin == 1 || (role_permissions[7] && role_permissions[7].per_edit == 1)) {
+    const profile = req.files?.profile || 0;
 
-      const checkIdQuery = `SELECT * FROM customer_walk_in_details WHERE id = ? AND isActive = true`;
-      connection.query(checkIdQuery, [id], (err, idResults) => {
-        if (err) {
-          return res.status(201).json({ error: 'Error checking ID' });
-        }
+    if (id) {
 
-        // If ID does not exist, return an error message
-        if (idResults.length === 0) {
-          return res.status(203).json({ message: 'Customer ID not found' });
-        }
+      if (is_admin == 1 || (role_permissions[7] && role_permissions[7].per_edit == 1)) {
 
-        // If the ID exists, proceed to update the existing record
-        const updateQuery = `UPDATE customer_walk_in_details SET first_name = ?,last_name=?, email_Id = ?, mobile_Number = ?, walk_In_Date = ?, joining_Date = ?, comments = ?, created_By = ?,area = ?,landmark = ?,pin_code = ?,city = ?,state = ? WHERE id = ?`;
-
-        connection.query(updateQuery, [first_name, last_name, email_Id, mobile_Number, walk_In_Date, joining_Date, comments, created_By, area, landmark, pin_code, city, state, id], (updateErr, updateResults) => {
-          if (updateErr) {
-            return res.status(201).json({ error: 'Error updating data' });
+        const checkIdQuery = `SELECT * FROM customer_walk_in_details WHERE id = ? AND isActive = true`;
+        connection.query(checkIdQuery, [id], async (err, idResults) => {
+          if (err) {
+            return res.status(201).json({ error: 'Error checking ID' });
           }
 
-          res.status(200).json({ message: 'Changes Saved successfully' });
-        });
-      });
-    } else {
-      res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
-    }
-  } else {
-
-    if (is_admin == 1 || (role_permissions[7] && role_permissions[7].per_create == 1)) {
-
-      // Step 2: Check if mobile_Number already exists
-      const checkMobileQuery = `SELECT * FROM customer_walk_in_details WHERE mobile_Number = ? AND isActive = true AND hostel_id=?`;
-      connection.query(checkMobileQuery, [mobile_Number, hostel_id], (err, mobileResults) => {
-        if (err) {
-          return res.status(201).json({ error: 'Error checking mobile number' });
-        }
-
-        // If mobile number exists, return an error message
-        if (mobileResults.length > 0) {
-          return res.status(201).json({ message: 'Mobile number already exists' });
-        }
-
-        // Step 3: If both email and mobile do not exist, proceed to insert the new record
-        const insertQuery = `INSERT INTO customer_walk_in_details (first_name,last_name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By,hostel_id,area,landmark,pin_code,city,state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-        connection.query(insertQuery, [first_name, last_name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By, hostel_id, area, landmark, pin_code, city, state], (insertErr, insertResults) => {
-          if (insertErr) {
-            return res.status(201).json({ error: 'Error inserting data' });
+          if (idResults.length === 0) {
+            return res.status(203).json({ message: 'Customer ID not found' });
           }
-          // , id: insertResults.insertId 
-          res.status(200).json({ message: 'Walk-in added successfully!', statusCode: 200 });
-        });
-      });
-      // });
 
+          let profile_url = 0;
+
+          if (!profile) {
+            profile_url = req.body.profile || 0
+          } else {
+            try {
+              profile_url = await uploadImage.uploadProfilePictureToS3Bucket(
+                bucket_name, folderName, `${first_name}${timestamp}${profile[0].originalname}`, profile[0]
+              );
+              console.log(profile_url);
+            } catch (error) {
+              console.error("Error uploading profile picture: ", error);
+            }
+          }
+
+          const updateQuery = `UPDATE customer_walk_in_details SET first_name = ?,last_name=?, email_Id = ?, mobile_Number = ?, walk_In_Date = ?, joining_Date = ?, comments = ?, created_By = ?,area = ?,landmark = ?,pin_code = ?,city = ?,state = ?,profile=? WHERE id = ?`;
+          connection.query(updateQuery, [first_name, last_name, email_Id, mobile_Number, walk_In_Date, joining_Date, comments, created_By, area, landmark, pin_code, city, state, profile_url, id], (updateErr, updateResults) => {
+            if (updateErr) {
+              return res.status(201).json({ error: 'Error updating data' });
+            }
+
+            res.status(200).json({ message: 'Changes Saved successfully' });
+          });
+        });
+      } else {
+        res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+      }
     } else {
-      res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+
+      if (is_admin == 1 || (role_permissions[7] && role_permissions[7].per_create == 1)) {
+
+        const checkMobileQuery = `SELECT * FROM customer_walk_in_details WHERE mobile_Number = ? AND isActive = true AND hostel_id=?`;
+        connection.query(checkMobileQuery, [mobile_Number, hostel_id], async (err, mobileResults) => {
+          if (err) {
+            return res.status(201).json({ error: 'Error checking mobile number' });
+          }
+
+          if (mobileResults.length > 0) {
+            return res.status(201).json({ message: 'Mobile number already exists' });
+          }
+
+          let profile_url = 0;
+
+          if (!profile) {
+            profile_url = req.body.profile || 0
+          } else {
+            try {
+              profile_url = await uploadImage.uploadProfilePictureToS3Bucket(
+                bucket_name, folderName, `${first_name}${timestamp}${profile[0].originalname}`, profile[0]
+              );
+              console.log(profile_url);
+            } catch (error) {
+              console.error("Error uploading profile picture: ", error);
+            }
+          }
+
+          const insertQuery = `INSERT INTO customer_walk_in_details (first_name,last_name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By,hostel_id,area,landmark,pin_code,city,state,profile) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)`;
+          connection.query(insertQuery, [first_name, last_name, email_Id, mobile_Number, walk_In_Date, comments, joining_Date, created_By, hostel_id, area, landmark, pin_code, city, state, profile_url], (insertErr, insertResults) => {
+            if (insertErr) {
+              return res.status(201).json({ error: 'Error inserting data' });
+            }
+            return res.status(200).json({ message: 'Walk-in added successfully!', statusCode: 200 });
+          });
+        });
+
+      } else {
+        res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+      }
     }
+  } catch (error) {
+    console.log(error);
+    return res.json({ statusCode: 201, message: error.message })
   }
+
 }
 
 function get_walk_in_customer_list(req, res) {

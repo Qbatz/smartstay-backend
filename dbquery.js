@@ -75,6 +75,8 @@ const queries = [
     "ALTER TABLE `bankings` ADD COLUMN `type` VARCHAR(45) NULL DEFAULT 'bank' AFTER `status`,ADD COLUMN `benificiary_name` VARCHAR(255) NULL AFTER `type`,ADD COLUMN `upi_id` VARCHAR(200) NULL AFTER `benificiary_name`,ADD COLUMN `card_type` VARCHAR(45) NULL AFTER `upi_id`,ADD COLUMN `card_holder` VARCHAR(255) NULL AFTER `card_type`,ADD COLUMN `card_no` VARCHAR(255) NULL AFTER `card_holder`;",
 
     "ALTER TABLE `checkout_deductions` ADD COLUMN `receipt_id` VARCHAR(45) NULL AFTER `user_id`;",
+
+    "ALTER TABLE `customer_walk_in_details` ADD COLUMN `profile` VARCHAR(255) NULL DEFAULT 0 AFTER `comments`,CHANGE COLUMN `comments` `comments` VARCHAR(255) NULL DEFAULT NULL AFTER `isActive`,CHANGE COLUMN `created_At` `created_At` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP ;",
 ];
 
 queries.forEach(executeQuery);

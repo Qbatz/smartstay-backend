@@ -984,7 +984,7 @@ app.post('/customer_readings', (req, res) => {
 });
 
 // add walk-in customer
-app.post('/add_walkin-customer', (req, res) => {
+app.post('/add_walkin-customer', upload.fields([{ name: 'profile', maxCount: 1 }]), (req, res) => {
     userQueries.add_walk_in_customer(req, res)
 });
 

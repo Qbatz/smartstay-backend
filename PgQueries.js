@@ -1794,21 +1794,49 @@ function hosteldetails(req, res) {
                     } else if (data.length == 0) {
                         return res.status(201).json({ statusCode: 201, message: 'No Data Found' });
                     } else {
-                        return res.status(200).json({ statusCode: 200, message: 'Hostel Details', data: data });
+
+                        const transformedData = data.map(item => {
+                            const imageUrls = [item.image1, item.image2, item.image3, item.image4].filter(Boolean);
+                            const images = imageUrls.map(url => ({ url }));
+
+                            // Return other fields except image1–4
+                            const { image1, image2, image3, image4, ...rest } = item;
+
+                            return {
+                                ...rest,
+                                images
+                            };
+                        });
+
+                        return res.status(200).json({ statusCode: 200, message: 'Hostel Details', data: transformedData });
                     }
                 })
             }
         })
     } else {
 
-        var sql1 = "SELECT id,Name,profile,email_id,hostel_PhoneNo AS phone,Address,area,landmark,pin_code,city,state FROM hosteldetails WHERE isActive=1 AND created_By IN (?)";
+        var sql1 = "SELECT id,Name,image1,image2,image3,image4,email_id,hostel_PhoneNo AS phone,Address,area,landmark,pin_code,city,state FROM hosteldetails WHERE isActive=1 AND created_By IN (?)";
         connection.query(sql1, [show_ids], function (err, data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
             } else if (data.length == 0) {
                 return res.status(201).json({ statusCode: 201, message: 'No Data Found' });
             } else {
-                return res.status(200).json({ statusCode: 200, message: 'Hostel Details', data: data });
+
+                const transformedData = data.map(item => {
+                    const imageUrls = [item.image1, item.image2, item.image3, item.image4].filter(Boolean);
+                    const images = imageUrls.map(url => ({ url }));
+
+                    // Return other fields except image1–4
+                    const { image1, image2, image3, image4, ...rest } = item;
+
+                    return {
+                        ...rest,
+                        images
+                    };
+                });
+
+                return res.status(200).json({ statusCode: 200, message: 'Hostel Details', data: transformedData });
             }
         })
     }
