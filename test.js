@@ -6,11 +6,10 @@ function generateInvoice(invoiceDetails, outputPath) {
 
     doc.pipe(fs.createWriteStream(outputPath));
 
-    // Header
-    // Header background
+    // ==== Header Background ====
     doc.rect(0, 0, doc.page.width, 120).fill('#1E45E1');
 
-    // LEFT SIDE (Smartstay)
+    // ==== LEFT HEADER ====
     doc
         .fillColor('white')
         .fontSize(22)
@@ -22,9 +21,8 @@ function generateInvoice(invoiceDetails, outputPath) {
         .font('Helvetica')
         .text('Meet All Your Needs', 40, 58);
 
-    // RIGHT SIDE (Demo Hostel)
-    var rightX = doc.page.width - 250; // fixed position from right side
-
+    // ==== RIGHT HEADER ====
+    const rightX = doc.page.width - 250;
     doc
         .fontSize(22)
         .font('Helvetica-Bold')
@@ -35,29 +33,29 @@ function generateInvoice(invoiceDetails, outputPath) {
         .font('Helvetica')
         .text('kaluneerkulam,', rightX, 58);
 
-    // Define base Y position for both sections (under header)
-    const baseY = 180;
-
-    const leftX = 50;
-
+    // ==== Centered Message ====
     doc
-        .fontSize(22)
-        .font('Helvetica-Bold')
-        .text('Payment Invoice', leftX, baseY);
+        .moveDown()
+        .fillColor('black')
+        .fontSize(12)
+        .text('This text is centered!', { align: 'center' });
+
+    // ==== Billing Section ====
+    const baseY = 180;
+    const leftX = 50;
 
     doc
         .fillColor('black')
         .fontSize(10)
         .font('Helvetica')
-        .text('Date: ' + invoiceDetails.date, leftX, baseY)
-        .text('Invoice No: ' + invoiceDetails.invoiceNo, leftX, baseY + 15)
-        .text('User: ' + invoiceDetails.username, leftX, baseY + 30)
-        .text('Room No: ' + invoiceDetails.roomNo, leftX, baseY + 45)
-        .text('Month: ' + invoiceDetails.month, leftX, baseY + 60)
-        .text('Due Date: ' + invoiceDetails.dueDate, leftX, baseY + 75);
+        .text(
+            `Date: ${invoiceDetails.date}\nInvoice No: ${invoiceDetails.invoiceNo}\nUser: ${invoiceDetails.username}\nRoom No: ${invoiceDetails.roomNo}\nMonth: ${invoiceDetails.month}\nDue Date: ${invoiceDetails.dueDate}`,
+            leftX,
+            baseY,
+            { lineGap: 10.86 }
+        );
 
-    // === RIGHT SECTION ===
-    var rightX = doc.page.width - 250; // adjust if needed
+    // ==== Billed To Section (Right) ====
     doc
         .font('Helvetica-Bold')
         .text('Billed To:', rightX, baseY)
@@ -66,7 +64,7 @@ function generateInvoice(invoiceDetails, outputPath) {
         .text(invoiceDetails.hostelName + ', ' + invoiceDetails.city, rightX, baseY + 30)
         .text('Phone: ' + invoiceDetails.phone, rightX, baseY + 45);
 
-    // Table Header
+    // ==== Table Header ====
     const tableTop = 300;
     const itemX = [50, 150, 250, 450];
 
@@ -84,7 +82,7 @@ function generateInvoice(invoiceDetails, outputPath) {
         .text('Description', itemX[2], tableTop + 7)
         .text('Amount / INR', itemX[3], tableTop + 7);
 
-    // Table Items
+    // ==== Table Rows ====
     let rowTop = tableTop + 30;
     doc.font('Helvetica').fontSize(12).fillColor('black');
 
@@ -97,7 +95,7 @@ function generateInvoice(invoiceDetails, outputPath) {
         rowTop += 25;
     });
 
-    // Summary
+    // ==== Summary Section ====
     rowTop += 30;
     const total = invoiceDetails.items.reduce((sum, i) => sum + i.amount, 0);
 
@@ -116,7 +114,7 @@ function generateInvoice(invoiceDetails, outputPath) {
         .text('Total', itemX[2], rowTop)
         .text(`Rs. ${total}`, itemX[3], rowTop);
 
-    // Footer
+    // ==== Footer ====
     doc
         .fontSize(10)
         .fillColor('gray')
@@ -125,7 +123,7 @@ function generateInvoice(invoiceDetails, outputPath) {
     doc.end();
 }
 
-// Example usage:
+// === Example Usage ===
 const invoiceData = {
     date: '2025-05-10',
     invoiceNo: 'INV-2025-001',
@@ -134,7 +132,8 @@ const invoiceData = {
     month: 'May 2025',
     dueDate: '2025-05-15',
     phone: '9876543210',
-    address: 'Anna Hostel, Chennai, India',
+    hostelName: 'Anna Hostel',
+    city: 'Chennai',
     items: [
         { sno: 1, invNo: 'INV-2025-001', desc: 'EB', amount: 300 },
         { sno: 2, invNo: 'INV-2025-001', desc: 'Room Rent', amount: 5000 }
