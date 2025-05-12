@@ -2098,146 +2098,86 @@ function get_confirm_checkout(req, res) {
 
 }
 
-// function add_confirm_checkout(req, res) {
-
-//   var { id, hostel_id, checkout_date, advance_return, due_amount, comments, reinburse } = req.body;
-
-//   var created_by = req.user_details.id;
-
-//   if (!id || !hostel_id || !checkout_date || !due_amount || !advance_return) {
-//     return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
-//   }
-
-//   var sql1 = "SELECT * FROM hostel WHERE ID=? AND Hostel_Id=? AND isActive=1 AND CheckoutDate !='null'";
-//   connection.query(sql1, [id, hostel_id], function (err, data) {
-//     if (err) {
-//       return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message })
-//     } else if (data.length != 0) {
-
-//       var bed_id = data[0].Bed;
-
-//       if (!reinburse || reinburse == 0) {
-
-//         var sql2 = "SELECT * FROM invoicedetails WHERE hos_user_id=? AND BalanceDue !=0  AND invoice_status=1";
-//         connection.query(sql2, [id], function (err, inv_data) {
-//           if (err) {
-//             return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message })
-//           } else if (inv_data.length == 0) {
-
-//             var sql3 = "UPDATE hostel SET isActive=0,return_advance='" + advance_return + "',checkout_comment='" + comments + "' WHERE ID=" + id + ";UPDATE bed_details SET user_id=0,isfilled=0 WHERE id=" + bed_id + "";
-//             connection.query(sql3, function (err, up_res) {
-//               if (err) {
-//                 return res.status(201).json({ statusCode: 201, message: "Unable to Checkout User Details", reason: err.message })
-//               } else {
-//                 return res.status(200).json({ statusCode: 200, message: "Checkout Added Successfully!" })
-//               }
-//             })
-//           } else {
-//             return res.status(201).json({ statusCode: 201, message: "Kindly Pay Due Amounts" })
-//           }
-//         })
-//       } else {
-
-//         var sql2 = "SELECT SUM(BalanceDue) AS totalBalanceDue FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status=1";
-//         connection.query(sql2, [id], function (err, results) {
-//           if (err) {
-//             console.error("Error fetching balance due:", err);
-//             return res.status(201).json({ statusCode: 201, message: "Error fetching balance due", reason: err.message })
-//           }
-
-//           const totalBalanceDue = results[0]?.totalBalanceDue || 0;
-
-//           if (roomRent >= totalBalanceDue) {
-
-//             var sql2 = "SELECT * FROM invoicedetails WHERE hos_user_id=? AND BalanceDue !=0  AND invoice_status=1";
-//             connection.query(sql2, [id], function (err, inv_data) {
-//               if (err) {
-//                 return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message })
-//               } else if (inv_data.length != 0) {
-
-//                 for (let i = 0; i < inv_data.length; i++) {
-
-//                   var c_bal = inv_data[i].BalanceDue;
-//                   var invoice_id = inv_data[i].id;
-
-//                   var sql2 = "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=?,Status=? WHERE id=?";
-//                   connection.query(sql2, [c_bal, c_bal, "Success", id], function (up_err, up_res) {
-//                     if (up_err) {
-//                       response.status(201).json({ message: "Unable to Update User Details" });
-//                     } else {
-
-//                       var sql3 = "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by,payment_type,payment_date,description,action) VALUES (?,?,?,1,?,?,?,'Invoice',1)";
-//                       connection.query(sql3, [id, invoice_id, c_bal, created_by, "CASH", checkout_date], function (ins_err, ins_res) {
-//                         if (ins_err) {
-//                           response.status(201).json({ message: "Unable to Add Transactions Details", });
-//                         } else {
-//                         }
-//                       })
-//                     }
-//                   })
-//                 }
-
-//                 var sql3 = "UPDATE hostel SET isActive=0,return_advance='" + advance_return + "',checkout_comment='" + comments + "' WHERE ID=" + id + ";UPDATE bed_details SET user_id=0,isfilled=0 WHERE id=" + bed_id + "";
-//                 connection.query(sql3, function (err, up_res) {
-//                   if (err) {
-//                     return res.status(201).json({ statusCode: 201, message: "Unable to Checkout User Details", reason: err.message })
-//                   } else {
-//                     return res.status(200).json({ statusCode: 200, message: "Checkout Added Successfully!" })
-//                   }
-//                 })
-
-//               } else {
-//                 return res.status(201).json({ statusCode: 201, message: "" })
-//               }
-//             })
-
-//           } else {
-//             console.error("Error: Room rent is less than or equal to total balance due.");
-//             return res.status(201).json({ statusCode: 201, message: "Room rent is less than to total balance due" })
-//           }
-//         });
-
-//       }
-
-//     } else {
-//       return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
-//     }
-//   })
-
-// }
-
 function checkout_list(req, res) {
-
-  var created_by = req.user_details.id;
+  const created_by = req.user_details.id;
   const today = new Date();
   const current_date = today.toISOString().slice(0, 10);
-
-  var role_permissions = req.role_permissions;
-  var is_admin = req.is_admin;
-
-  var show_ids = req.show_ids;
-
-  var hostel_id = req.body.hostel_id;
+  const role_permissions = req.role_permissions;
+  const is_admin = req.is_admin;
+  const hostel_id = req.body.hostel_id;
 
   if (!hostel_id) {
-    return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+    return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" });
   }
 
-
   if (is_admin == 1 || (role_permissions[6] && role_permissions[6].per_view == 1)) {
+    const sql1 = `
+      SELECT hs.Hostel_Id, hs.ID, hs.HostelName, hs.Name, hs.checkout_comment, 
+        DATE_FORMAT(hs.CheckoutDate, '%Y-%m-%d') AS CheckoutDate,
+        hs.profile AS user_profile,
+        DATEDIFF(hs.checkoutDate, ?) AS notice_period,
+        hos_de.profile, hs.Floor, hs.Bed,
+        DATE_FORMAT(hs.req_date, '%Y-%m-%d') AS req_date,
+        hs.isActive, hs.Phone, hf.floor_name AS floor_name,
+        hosroom.Room_Id AS room_name, bed.bed_no AS bed_name
+      FROM hostel AS hs 
+      JOIN hosteldetails AS hos_de ON hos_de.id = hs.Hostel_Id 
+      LEFT JOIN Hostel_Floor AS hf ON hf.floor_id = hs.Floor AND hf.hostel_id = hs.Hostel_Id 
+      LEFT JOIN hostelrooms AS hosroom ON hosroom.id = hs.Rooms 
+      LEFT JOIN bed_details AS bed ON bed.id = hs.Bed 
+      WHERE hs.Hostel_Id = ? AND hs.CheckoutDate IS NOT NULL 
+      ORDER BY hs.CheckoutDate DESC
+    `;
 
-    // var sql1 = "SELECT Hostel_Id,  ID,HostelName,Name,checkout_comment,DATE_FORMAT(CheckoutDate, '%Y-%m-%d') AS CheckoutDate,DATEDIFF(checkoutDate, '" + current_date + "') AS notice_period FROM hostel WHERE checkoutDate >= '" + current_date + "' AND isActive = 1 AND created_by = ?";
-    // var sql1 = "SELECT hs.Hostel_Id,hs.ID,hs.HostelName,hs.Name,hs.checkout_comment,DATE_FORMAT(hs.CheckoutDate, '%Y-%m-%d') AS CheckoutDate,hs.profile AS user_profile,DATEDIFF(checkoutDate, '" + current_date + "') AS notice_period,hos_de.profile FROM hostel AS hs JOIN hosteldetails AS hos_de ON hos_de.id=hs.Hostel_Id WHERE hs.checkoutDate >= '" + current_date + "' AND hs.isActive = 1 AND hs.created_by IN (?) ORDER BY hs.ID DESC";
-    var sql1 = "SELECT hs.Hostel_Id,hs.ID,hs.HostelName,hs.Name,hs.checkout_comment,DATE_FORMAT(hs.CheckoutDate, '%Y-%m-%d') AS CheckoutDate,hs.profile AS user_profile,DATEDIFF(checkoutDate, '" + current_date + "') AS notice_period,hos_de.profile,hs.Floor,hs.Bed,DATE_FORMAT(hs.req_date, '%Y-%m-%d') AS req_date,hs.isActive,hs.Phone,hf.floor_name AS floor_name,hosroom.Room_Id AS room_name,bed.bed_no AS bed_name FROM hostel AS hs JOIN hosteldetails AS hos_de ON hos_de.id=hs.Hostel_Id LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=hs.Floor AND hf.hostel_id=hs.Hostel_Id LEFT JOIN hostelrooms AS hosroom ON hosroom.id=hs.Rooms LEFT JOIN bed_details AS bed ON bed.id=hs.Bed WHERE hs.Hostel_Id =? AND hs.CheckoutDate IS NOT NULL ORDER BY hs.CheckoutDate DESC;";
-    connection.query(sql1, [hostel_id], function (err, ch_list) {
+    connection.query(sql1, [current_date, hostel_id], function (err, ch_list) {
       if (err) {
-        return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
-      } else {
-        return res.status(200).json({ statusCode: 200, message: "Check-Out Details!", checkout_details: ch_list })
+        return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message });
       }
-    })
+
+      if (!ch_list.length) {
+        return res.status(200).json({ statusCode: 200, message: "No Check-Out Records Found", checkout_details: [] });
+      }
+
+      let completed = 0;
+
+      ch_list.forEach((check_list, index) => {
+        const user_id = check_list.ID;
+
+        const sql2 = "SELECT id FROM receipts WHERE user_id = ? AND (invoice_number IS NULL OR invoice_number = '' OR invoice_number = '0')";
+        connection.query(sql2, [user_id], function (err, receipts) {
+          if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Error Getting Receipts", reason: err.message });
+          }
+
+          if (receipts.length > 0) {
+            const receipt_id = receipts[0].id;
+
+            const sql3 = "SELECT * FROM checkout_deductions WHERE receipt_id = ?";
+            connection.query(sql3, [receipt_id], function (err, deductions) {
+              if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Error Getting Deductions", reason: err.message });
+              }
+
+              ch_list[index].amenities = deductions || [];
+              completed++;
+
+              if (completed === ch_list.length) {
+                return res.status(200).json({ statusCode: 200, message: "Check-Out Details", checkout_details: ch_list });
+              }
+            });
+          } else {
+            ch_list[index].amenities = [];
+            completed++;
+
+            if (completed === ch_list.length) {
+              return res.status(200).json({ statusCode: 200, message: "Check-Out Details", checkout_details: ch_list });
+            }
+          }
+        });
+      });
+    });
   } else {
-    res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
   }
 }
 

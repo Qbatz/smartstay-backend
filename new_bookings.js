@@ -725,6 +725,92 @@ function recuring_bill_users(req, res) {
 
 function edit_confirm_checkout(req, res) {
 
+    var { payment_date, reasons, user_id, hostel_id } = req.body;
+
+    var created_by = req.user_details.id;
+
+    if (!user_id || !hostel_id || !payment_date) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
+    }
+
+    if (!Array.isArray(reasons) || reasons.length === 0) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Reason Details" });
+    } else {
+        for (let reson of reasons) {
+            if (!reson.reason || !reson.amount) {
+                return res.status(201).json({ statusCode: 201, message: "Missing Required Fields in Reason Details" });
+            }
+        }
+    }
+
+    var payment_id = req.body.payment_id || 'Cash';
+
+    const sql1 = `SELECT * FROM hostel WHERE ID = ? AND Hostel_Id = ? AND isActive = 1 AND CheckoutDate IS NOT NULL`;
+    connection.query(sql1, [user_id, hostel_id], (err, hostelData) => {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to fetch hostel details", reason: err.message });
+        }
+
+        if (hostelData.length === 0) {
+            return res.status(201).json({ statusCode: 201, message: "Invalid User Details" });
+        }
+
+        var new_hosdetails = hostelData[0];
+
+        const advance_amount = Number(new_hosdetails.AdvanceAmount);
+
+        const totalAmount = reasons.reduce((sum, r) => sum + Number(r.amount), 0);
+
+        const advance_return = advance_amount - totalAmount;
+
+        if (totalAmount > advance_amount) {
+            return res.status(201).json({ statusCode: 201, message: "Advance Amount is Less than Total Balance Due" });
+        }
+
+        var sql2 = "SELECT id FROM receipts WHERE user_id = ? AND(invoice_number IS NULL OR invoice_number = '' OR invoice_number = '0')";
+        connection.query(sql2, user_id, function (err, receipt_data) {
+            if (err) {
+                return res.status(201).json({ statusCode: 201, message: "Unable to fetch Receipt details", reason: err.message });
+            } else if (receipt_data.length != 0) {
+
+                var receipt_id = receipt_data[0].id;
+
+                var sql5 = "UPDATE receipts amount_received=?,payment_date=? WHERE id=?";
+                connection.query(sql5, [advance_return, payment_date, receipt_id], function (err, up_rec) {
+                    if (err) {
+                        return res.status(201).json({ statusCode: 201, message: "Unable to Update Receipt details", reason: err.message });
+                    } else {
+
+                        var sql3 = "DELETE checkout_deductions WHERE receipt_id=?";
+                        connection.query(sql3, [receipt_id], function (err, del_receipt) {
+                            if (err) {
+                                return res.status(201).json({ statusCode: 201, message: "Unable to Delete Receipt details", reason: err.message });
+                            } else {
+                                const values = reasons.map(r => [r.reason, r.amount, user_id, receipt_id, created_by]);
+                                var sql4 = "INSERT INTO checkout_deductions (reason,amount,user_id,receipt_id,created_by)"
+                                connection.query(sql4, [values], function (err, ch_res) {
+                                    if (err) {
+                                        return res.status(201).json({ statusCode: 201, message: "Unable to Update Receipt details", reason: err.message });
+                                    }
+
+                                    var sql6 = "UPDATE hostel SET return_advance=? WHERE ID=?";
+                                    connection.query(sql6, [advance_return, user_id], function (err, ch_res) {
+                                        if (err) {
+                                            return res.status(201).json({ statusCode: 201, message: "Unable to Update Advance details", reason: err.message });
+                                        }
+
+                                        return res.status(200).json({ message: "Changes saved successfully." });
+                                    })
+                                })
+                            }
+                        })
+                    }
+                })
+            } else {
+                return res.status(201).json({ statusCode: 201, message: "Not Found Receipt details", reason: err.message });
+            }
+        })
+    });
 }
 
 module.exports = { add_booking, assign_booking, add_confirm_checkout, upload_doc, delete_user, edit_customer_reading, delete_reading, recuring_bill_users, edit_confirm_checkout }
