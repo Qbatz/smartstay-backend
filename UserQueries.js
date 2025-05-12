@@ -2062,7 +2062,7 @@ function get_confirm_checkout(req, res) {
     return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
   }
 
-  var sql1 = "SELECT * FROM hostel WHERE ID=? AND Hostel_Id=? AND isActive=1";
+  var sql1 = "SELECT * FROM hostel WHERE ID=? AND Hostel_Id=?";
   connection.query(sql1, [id, hostel_id], function (err, data) {
     if (err) {
       return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message })
