@@ -691,7 +691,7 @@ function transitionlist(request, response) {
 
 
                   // var already_paid_amount = sel1_res[0].paid_advance;
-                  var new_amount = paid_amount + amount;
+                  var new_amount = Number(paid_amount) + Number(amount);
 
                   if (new_amount > total_amount) {
                     response.status(201).json({ statusCode: 201, message: "Pay Amount More than Invoice Total Amount" });

@@ -1011,6 +1011,11 @@ app.post('/add/confirm_checkout', (req, res) => {
     newBookings.add_confirm_checkout(req, res)
 });
 
+app.post('/edit/confirm_checkout', (req, res) => {
+    newBookings.edit_confirm_checkout(req, res)
+});
+
+
 app.post('/checkout_list', (req, res) => {
     userQueries.checkout_list(req, res)
 });
