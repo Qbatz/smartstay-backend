@@ -725,7 +725,7 @@ function recuring_bill_users(req, res) {
 
 function edit_confirm_checkout(req, res) {
 
-    var { payment_date, reasons, user_id, hostel_id } = req.body;
+    var { payment_date, reasons, user_id, hostel_id, comments } = req.body;
 
     var created_by = req.user_details.id;
 
@@ -745,7 +745,7 @@ function edit_confirm_checkout(req, res) {
 
     var payment_id = req.body.payment_id || 'Cash';
 
-    const sql1 = `SELECT * FROM hostel WHERE ID = ? AND Hostel_Id = ? AND isActive = 1 AND CheckoutDate IS NOT NULL`;
+    const sql1 = `SELECT * FROM hostel WHERE ID = ? AND Hostel_Id = ?`;
     connection.query(sql1, [user_id, hostel_id], (err, hostelData) => {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Unable to fetch hostel details", reason: err.message });
@@ -793,8 +793,8 @@ function edit_confirm_checkout(req, res) {
                                         return res.status(201).json({ statusCode: 201, message: "Unable to Update Receipt details", reason: err.message });
                                     }
 
-                                    var sql6 = "UPDATE hostel SET return_advance=? WHERE ID=?";
-                                    connection.query(sql6, [advance_return, user_id], function (err, ch_res) {
+                                    var sql6 = "UPDATE hostel SET return_advance=?,checkout_comment=? WHERE ID=?";
+                                    connection.query(sql6, [advance_return, comments, user_id], function (err, ch_res) {
                                         if (err) {
                                             return res.status(201).json({ statusCode: 201, message: "Unable to Update Advance details", reason: err.message });
                                         }
