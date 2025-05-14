@@ -244,11 +244,12 @@ exports.edit_receipt = (req, res) => {
     var { id, user_id, invoice_number, amount, payment_date, payment_mode, notes, bank_id } = req.body;
 
     if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_edit == 1)) {
-        if (!id || !user_id || !amount || !invoice_number || !payment_date || !payment_mode) {
+
+        if (!id || !user_id || !amount || !payment_date || !payment_mode) {
             return res.status(201).json({ message: "Missing required fields", statusCode: 201 });
         }
 
-        var sql1 = "SELECT *, inv.id AS inv_id, re.amount_received AS old_amount, re.payment_mode AS old_payment_mode, re.bank_id AS old_bank_id FROM receipts AS re JOIN invoicedetails AS inv ON inv.Invoices = re.invoice_number WHERE re.id = ? AND re.status = 1";
+        var sql1 = "SELECT *, inv.id AS inv_id, re.amount_received AS old_amount, re.payment_mode AS old_payment_mode, re.bank_id AS old_bank_id FROM receipts AS re LEFT JOIN invoicedetails AS inv ON inv.Invoices = re.invoice_number WHERE re.id = ? AND re.status = 1";
         connection.query(sql1, [id], function (err, data) {
             if (err) {
                 return res.status(201).json({ message: "Error to Get Receipts Details", reason: err.message, statusCode: 201 });
@@ -270,9 +271,13 @@ exports.edit_receipt = (req, res) => {
 
             // Update the receipts table
             var sql2 = "UPDATE receipts SET invoice_number = ?, amount_received = ?, payment_date = ?, payment_mode = ?, notes = ?, bank_id = ? WHERE id = ?";
-            connection.query(sql2, [invoice_number, amount, payment_date, payment_mode, notes, bank_id, id], function (err, up_res) {
+            connection.query(sql2, [invoice_number, amount, payment_date, payment_mode, notes, payment_mode, id], function (err, up_res) {
                 if (err) {
                     return res.status(201).json({ message: "Error to Update Receipts Details", reason: err.message, statusCode: 201 });
+                }
+
+                if (invoice_number == 0) {
+                    return proceedToBankUpdate();
                 }
 
                 // Update the invoicedetails table
@@ -282,6 +287,11 @@ exports.edit_receipt = (req, res) => {
                         return res.status(201).json({ message: "Error to Update Invoice Details", reason: up_err.message, statusCode: 201 });
                     }
 
+                    return proceedToBankUpdate()
+                });
+
+                function proceedToBankUpdate() {
+
                     // Update the transactions table
                     var sql4 = "UPDATE transactions SET amount = ?, payment_date = ?, payment_type = ? WHERE invoice_id = ? AND payment_type = ? AND amount = ?";
                     connection.query(sql4, [amount, payment_date, payment_mode, invoice_number, old_payment_mode, old_amount], function (trans_err) {
@@ -289,8 +299,7 @@ exports.edit_receipt = (req, res) => {
                             return res.status(201).json({ message: "Error to Update Transaction Details", reason: trans_err.message, statusCode: 201 });
                         }
 
-                        // Handle bank balance changes if payment mode is Net Banking
-                        if (payment_mode === 'Net Banking') {
+                        if (payment_mode) {
                             // Adjust the old bank balance
                             if (old_bank_id) {
                                 var sql5 = "UPDATE bankings SET balance = balance - ? WHERE id = ?";
@@ -300,15 +309,15 @@ exports.edit_receipt = (req, res) => {
                             }
 
                             // Adjust the new bank balance
-                            if (bank_id) {
+                            if (payment_mode) {
                                 var sql6 = "UPDATE bankings SET balance = balance + ? WHERE id = ?";
-                                connection.query(sql6, [amount, bank_id], function (err) {
+                                connection.query(sql6, [amount, payment_mode], function (err) {
                                     if (err) console.log("Error updating new bank balance:", err);
                                 });
 
                                 // Update the bank transactions
                                 var sql7 = "UPDATE bank_transactions SET amount = ?, date = ?, bank_id = ? WHERE edit_id = ?";
-                                connection.query(sql7, [amount, payment_date, bank_id, inv_id], function (err) {
+                                connection.query(sql7, [amount, payment_date, payment_mode, inv_id], function (err) {
                                     if (err) console.log("Error updating bank transactions:", err);
                                 });
                             }
@@ -316,15 +325,13 @@ exports.edit_receipt = (req, res) => {
 
                         return res.status(200).json({ message: "Receipt updated successfully!", statusCode: 200 });
                     });
-                });
+                }
             });
         });
     } else {
         return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
 };
-
-
 
 exports.delete_receipt = (req, res) => {
 
