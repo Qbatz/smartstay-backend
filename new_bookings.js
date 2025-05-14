@@ -327,7 +327,11 @@ function add_confirm_checkout(req, res) {
 
                 const totalBalanceDue = result[0]?.totalBalanceDue || 0;
 
-                if (advance_amount >= totalBalanceDue) {
+                const reasonTotalAmount = reasons?.reduce((acc, item) => acc + Number(item.amount || 0), 0) || 0;
+
+                var check_amount = Number(totalBalanceDue) + Number(reasonTotalAmount)
+
+                if (Number(advance_amount) >= check_amount) {
                     processInvoicesAndFinalizeCheckout(id, totalBalanceDue, advance_return, created_by, checkout_date, bed_id, advance_return, comments, reasons, new_hosdetails, payment_id, res);
                 } else {
                     return res.status(201).json({ statusCode: 201, message: "Advance Amount is Less than Total Balance Due" });
@@ -775,8 +779,8 @@ function edit_confirm_checkout(req, res) {
 
                 var receipt_id = receipt_data[0].id;
 
-                console.log(receipt_id,"receipt_id");
-                
+                console.log(receipt_id, "receipt_id");
+
                 var sql5 = "UPDATE receipts SET amount_received=?,payment_date=? WHERE id=?";
                 connection.query(sql5, [advance_return, payment_date, receipt_id], function (err, up_rec) {
                     if (err) {
@@ -790,7 +794,7 @@ function edit_confirm_checkout(req, res) {
                             } else {
                                 const values = reasons.map(r => [r.reason, r.amount, user_id, receipt_id, created_by]);
                                 console.log(values);
-                                
+
                                 var sql4 = "INSERT INTO checkout_deductions (reason,amount,user_id,receipt_id,created_by) VALUES ?"
                                 connection.query(sql4, [values], function (err, ch_res) {
                                     if (err) {
@@ -802,7 +806,7 @@ function edit_confirm_checkout(req, res) {
                                     connection.query(sql6, [advance_return, comments, user_id], function (err, ch_res) {
                                         if (err) {
                                             return res.status(201).json({ statusCode: 201, message: "Unable to Update Advance details", reason: err.message });
-                                        }else{
+                                        } else {
                                             return res.status(200).json({ message: "Changes saved successfully." });
                                         }
 
