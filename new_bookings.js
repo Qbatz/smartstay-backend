@@ -775,31 +775,37 @@ function edit_confirm_checkout(req, res) {
 
                 var receipt_id = receipt_data[0].id;
 
-                var sql5 = "UPDATE receipts amount_received=?,payment_date=? WHERE id=?";
+                console.log(receipt_id,"receipt_id");
+                
+                var sql5 = "UPDATE receipts SET amount_received=?,payment_date=? WHERE id=?";
                 connection.query(sql5, [advance_return, payment_date, receipt_id], function (err, up_rec) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Update Receipt details", reason: err.message });
                     } else {
 
-                        var sql3 = "DELETE checkout_deductions WHERE receipt_id=?";
+                        var sql3 = "DELETE FROM checkout_deductions WHERE receipt_id=?";
                         connection.query(sql3, [receipt_id], function (err, del_receipt) {
                             if (err) {
                                 return res.status(201).json({ statusCode: 201, message: "Unable to Delete Receipt details", reason: err.message });
                             } else {
                                 const values = reasons.map(r => [r.reason, r.amount, user_id, receipt_id, created_by]);
-                                var sql4 = "INSERT INTO checkout_deductions (reason,amount,user_id,receipt_id,created_by)"
+                                console.log(values);
+                                
+                                var sql4 = "INSERT INTO checkout_deductions (reason,amount,user_id,receipt_id,created_by) VALUES ?"
                                 connection.query(sql4, [values], function (err, ch_res) {
                                     if (err) {
-                                        return res.status(201).json({ statusCode: 201, message: "Unable to Update Receipt details", reason: err.message });
+                                        console.log(err);
+                                        return res.status(201).json({ statusCode: 201, message: "Unable to add Receipt details", reason: err.message });
                                     }
 
                                     var sql6 = "UPDATE hostel SET return_advance=?,checkout_comment=? WHERE ID=?";
                                     connection.query(sql6, [advance_return, comments, user_id], function (err, ch_res) {
                                         if (err) {
                                             return res.status(201).json({ statusCode: 201, message: "Unable to Update Advance details", reason: err.message });
+                                        }else{
+                                            return res.status(200).json({ message: "Changes saved successfully." });
                                         }
 
-                                        return res.status(200).json({ message: "Changes saved successfully." });
                                     })
                                 })
                             }
