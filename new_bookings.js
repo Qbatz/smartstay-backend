@@ -271,6 +271,8 @@ function add_confirm_checkout(req, res) {
 
     const created_by = req.user_details.id;
 
+    var payment_id = req.body.payment_id;
+
     // Validate mandatory fields
     if (!id || !hostel_id || !checkout_date || !payment_id) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
@@ -285,7 +287,6 @@ function add_confirm_checkout(req, res) {
         }
     }
 
-    var payment_id = req.body.payment_id;
 
     const sql1 = `SELECT * FROM hostel WHERE ID = ? AND Hostel_Id = ? AND isActive = 1 AND CheckoutDate IS NOT NULL`;
     connection.query(sql1, [id, hostel_id], (err, hostelData) => {
