@@ -784,11 +784,11 @@ function recuring_bill_users(req, res) {
 
 function edit_confirm_checkout(req, res) {
 
-    var { payment_date, reasons, user_id, hostel_id, comments } = req.body;
+    var { payment_date, reasons, user_id, hostel_id, comments, payment_id } = req.body;
 
     var created_by = req.user_details.id;
 
-    if (!user_id || !hostel_id || !payment_date) {
+    if (!user_id || !hostel_id || !payment_date || !payment_id) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
     }
 
@@ -802,7 +802,6 @@ function edit_confirm_checkout(req, res) {
         }
     }
 
-    var payment_id = req.body.payment_id || 'Cash';
 
     const sql1 = `SELECT * FROM hostel WHERE ID = ? AND Hostel_Id = ?`;
     connection.query(sql1, [user_id, hostel_id], (err, hostelData) => {
