@@ -2139,13 +2139,12 @@ function checkout_list(req, res) {
       }
 
       let completed = 0;
-      let responded = false;
 
       ch_list.forEach((check_list, index) => {
         const user_id = check_list.ID;
 
         const sql2 = `
-          SELECT re.id, re.invoice_number, ban.type, ban.benificiary_name, ban.id AS bank_id
+          SELECT re.id, re.invoice_number, ban.type, ban.benificiary_name, ban.id AS bank_id 
           FROM receipts AS re 
           LEFT JOIN bankings AS ban ON ban.id = re.payment_mode  
           WHERE re.user_id = ?
@@ -2153,167 +2152,60 @@ function checkout_list(req, res) {
 
         connection.query(sql2, [user_id], function (err, receipts) {
           if (err) {
-            if (!responded) {
-              responded = true;
-              return res.status(201).json({ statusCode: 201, message: "Error Getting Receipts", reason: err.message });
-            }
+            return res.status(201).json({ statusCode: 201, message: "Error Getting Receipts", reason: err.message });
           }
 
           if (receipts.length > 0) {
             const receipt = receipts[0];
+
             ch_list[index].bank_type = receipt.type || "";
             ch_list[index].bank_id = receipt.bank_id || 0;
             ch_list[index].benificiary_name = receipt.benificiary_name || "";
 
             if (receipt.invoice_number == 0) {
               const receipt_id = receipt.id;
-              const sql3 = "SELECT * FROM checkout_deductions WHERE receipt_id = ?";
 
+              const sql3 = "SELECT * FROM checkout_deductions WHERE receipt_id = ?";
               connection.query(sql3, [receipt_id], function (err, deductions) {
                 if (err) {
-                  if (!responded) {
-                    responded = true;
-                    return res.status(201).json({ statusCode: 201, message: "Error Getting Deductions", reason: err.message });
-                  }
+                  return res.status(201).json({ statusCode: 201, message: "Error Getting Deductions", reason: err.message });
                 }
 
                 ch_list[index].amenities = deductions || [];
                 completed++;
-                if (completed === ch_list.length && !responded) {
-                  responded = true;
+
+                if (completed === ch_list.length) {
                   return res.status(200).json({ statusCode: 200, message: "Check-Out Details", checkout_details: ch_list });
                 }
               });
             } else {
               ch_list[index].amenities = [];
               completed++;
-              if (completed === ch_list.length && !responded) {
-                responded = true;
+
+              if (completed === ch_list.length) {
                 return res.status(200).json({ statusCode: 200, message: "Check-Out Details", checkout_details: ch_list });
               }
             }
-
           } else {
-            // No receipts
+            // Handle case where no receipts found
             ch_list[index].bank_type = "";
             ch_list[index].bank_id = 0;
             ch_list[index].benificiary_name = "";
             ch_list[index].amenities = [];
             completed++;
 
-            if (completed === ch_list.length && !responded) {
-              responded = true;
+            if (completed === ch_list.length) {
               return res.status(200).json({ statusCode: 200, message: "Check-Out Details", checkout_details: ch_list });
             }
           }
         });
       });
     });
-
   } else {
     return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
   }
 }
 
-
-// function checkout_list(req, res) {
-//   const created_by = req.user_details.id;
-//   const today = new Date();
-//   const current_date = today.toISOString().slice(0, 10);
-//   const role_permissions = req.role_permissions;
-//   const is_admin = req.is_admin;
-//   const hostel_id = req.body.hostel_id;
-
-//   if (!hostel_id) {
-//     return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" });
-//   }
-
-//   if (is_admin == 1 || (role_permissions[6] && role_permissions[6].per_view == 1)) {
-//     const sql1 = `
-//       SELECT hs.Hostel_Id, hs.ID, hs.HostelName, hs.Name, hs.checkout_comment, 
-//         DATE_FORMAT(hs.CheckoutDate, '%Y-%m-%d') AS CheckoutDate,
-//         hs.profile AS user_profile,
-//         DATEDIFF(hs.checkoutDate, ?) AS notice_period,
-//         hos_de.profile, hs.Floor, hs.Bed,
-//         DATE_FORMAT(hs.req_date, '%Y-%m-%d') AS req_date,
-//         hs.isActive, hs.Phone, hf.floor_name AS floor_name,
-//         hosroom.Room_Id AS room_name, bed.bed_no AS bed_name
-//       FROM hostel AS hs 
-//       JOIN hosteldetails AS hos_de ON hos_de.id = hs.Hostel_Id 
-//       LEFT JOIN Hostel_Floor AS hf ON hf.floor_id = hs.Floor AND hf.hostel_id = hs.Hostel_Id 
-//       LEFT JOIN hostelrooms AS hosroom ON hosroom.id = hs.Rooms 
-//       LEFT JOIN bed_details AS bed ON bed.id = hs.Bed 
-//       WHERE hs.Hostel_Id = ? AND hs.CheckoutDate IS NOT NULL 
-//       ORDER BY hs.CheckoutDate DESC
-//     `;
-
-//     connection.query(sql1, [current_date, hostel_id], function (err, ch_list) {
-//       if (err) {
-//         return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message });
-//       }
-
-//       if (!ch_list.length) {
-//         return res.status(200).json({ statusCode: 200, message: "No Check-Out Records Found", checkout_details: [] });
-//       }
-
-//       let completed = 0;
-
-//       ch_list.forEach((check_list, index) => {
-//         const user_id = check_list.ID;
-
-//         const sql2 = "SELECT re.id,re.invoice_number,ban.type,ban.benificiary_name,ban.id AS bank_id FROM receipts AS re LEFT JOIN bankings AS ban ON ban.id=re.payment_mode  WHERE re.user_id = ?";
-//         connection.query(sql2, [user_id], function (err, receipts) {
-//           if (err) {
-//             return res.status(201).json({ statusCode: 201, message: "Error Getting Receipts", reason: err.message });
-//           }
-
-//           if (receipts.length > 0) {
-
-//             if (receipts[0].invoice_number == 0) {
-
-//               const receipt_id = receipts[0].id;
-
-//               ch_list[index].bank_type = receipts[0].type || "";
-//               ch_list[index].bank_id = receipts[0].bank_id || 0;
-//               ch_list[index].benificiary_name = receipts[0].benificiary_name || "";
-//               // ch_list.bank_type = bank_type;
-
-//               const sql3 = "SELECT * FROM checkout_deductions WHERE receipt_id = ?";
-//               connection.query(sql3, [receipt_id], function (err, deductions) {
-//                 if (err) {
-//                   return res.status(201).json({ statusCode: 201, message: "Error Getting Deductions", reason: err.message });
-//                 }
-
-//                 ch_list[index].amenities = deductions || [];
-//                 completed++;
-
-//                 if (completed === ch_list.length) {
-//                   return res.status(200).json({ statusCode: 200, message: "Check-Out Details", checkout_details: ch_list });
-//                 }
-//               });
-//             } else {
-
-//               ch_list[index].bank_type = receipts[0].type || "";
-//               ch_list[index].bank_id = receipts[0].bank_id || 0;
-//               ch_list[index].benificiary_name = receipts[0].benificiary_name || "";
-//               ch_list[index].amenities = [];
-//               completed++;
-
-//               if (completed === ch_list.length) {
-//                 return res.status(200).json({ statusCode: 200, message: "Check-Out Details", checkout_details: ch_list });
-//               }
-//             }
-
-//           } else {
-
-//           }
-//         });
-//       });
-//     });
-//   } else {
-//     return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
-//   }
-// }
 
 function delete_check_out(req, res) {
 
