@@ -2143,7 +2143,7 @@ function checkout_list(req, res) {
       ch_list.forEach((check_list, index) => {
         const user_id = check_list.ID;
 
-        const sql2 = "SELECT id FROM receipts WHERE user_id = ? AND (invoice_number IS NULL OR invoice_number = '' OR invoice_number = '0')";
+        const sql2 = "SELECT re.id,ban.type,ban.benificiary_name FROM receipts AS re LEFT JOIN bankings AS ban ON ban.id=re.payment_mode  WHERE re.user_id = ? AND (re.invoice_number IS NULL OR re.invoice_number = '' OR re.invoice_number = '0')";
         connection.query(sql2, [user_id], function (err, receipts) {
           if (err) {
             return res.status(201).json({ statusCode: 201, message: "Error Getting Receipts", reason: err.message });
@@ -2151,6 +2151,10 @@ function checkout_list(req, res) {
 
           if (receipts.length > 0) {
             const receipt_id = receipts[0].id;
+
+            ch_list[index].bank_type = receipts[0].type || "";
+            ch_list[index].benificiary_name = receipts[0].benificiary_name || "";
+            // ch_list.bank_type = bank_type;
 
             const sql3 = "SELECT * FROM checkout_deductions WHERE receipt_id = ?";
             connection.query(sql3, [receipt_id], function (err, deductions) {
