@@ -783,7 +783,7 @@ function recuring_bill_users(req, res) {
 }
 
 function edit_confirm_checkout(req, res) {
-
+    
     var { payment_date, reasons, user_id, hostel_id, comments, payment_id } = req.body;
 
     var created_by = req.user_details.id;
@@ -791,17 +791,13 @@ function edit_confirm_checkout(req, res) {
     if (!user_id || !hostel_id || !payment_date || !payment_id) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
     }
-
-    if (!Array.isArray(reasons) || reasons.length === 0) {
-        return res.status(201).json({ statusCode: 201, message: "Missing Reason Details" });
-    } else {
+    if (Array.isArray(reasons) && reasons.length > 0) {
         for (let reson of reasons) {
             if (!reson.reason || !reson.amount) {
                 return res.status(201).json({ statusCode: 201, message: "Missing Required Fields in Reason Details" });
             }
         }
     }
-
 
     const sql1 = `SELECT * FROM hostel WHERE ID = ? AND Hostel_Id = ?`;
     connection.query(sql1, [user_id, hostel_id], (err, hostelData) => {
@@ -816,8 +812,7 @@ function edit_confirm_checkout(req, res) {
         var new_hosdetails = hostelData[0];
 
         const advance_amount = Number(new_hosdetails.AdvanceAmount);
-
-        const totalAmount = reasons.reduce((sum, r) => sum + Number(r.amount), 0);
+        const totalAmount = Array.isArray(reasons) && reasons.length > 0 ? reasons.reduce((sum, r) => sum + Number(r.amount), 0) : 0;
 
         const advance_return = advance_amount - totalAmount;
 
@@ -825,35 +820,88 @@ function edit_confirm_checkout(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Advance Amount is Less than Total Balance Due" });
         }
 
-        var sql2 = "SELECT id FROM receipts WHERE user_id = ? AND(invoice_number IS NULL OR invoice_number = '' OR invoice_number = '0')";
+        var sql2 = "SELECT id,payment_mode,amount_received FROM receipts WHERE user_id = ? AND (invoice_number IS NULL OR invoice_number = '' OR invoice_number = '0')";
         connection.query(sql2, user_id, function (err, receipt_data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to fetch Receipt details", reason: err.message });
             } else if (receipt_data.length != 0) {
 
                 var receipt_id = receipt_data[0].id;
+                var old_bank_id = receipt_data[0].payment_mode;
 
-                console.log(receipt_id, "receipt_id");
+                var last_amount=Number(receipt_data[0].amount_received);
 
-                var sql5 = "UPDATE receipts SET amount_received=?,payment_date=? WHERE id=?";
-                connection.query(sql5, [advance_return, payment_date, receipt_id], function (err, up_rec) {
-                    if (err) {
-                        return res.status(201).json({ statusCode: 201, message: "Unable to Update Receipt details", reason: err.message });
-                    } else {
+                var sql22="SELECT * FROM bankings WHERE id=? AND status=1";
+                connection.query(sql22,[payment_id],function(err,bank_data){
+                    if(err){
+                        return res.status(201).json({ statusCode: 201, message: "Unable to fetch Bank details", reason: err.message });
+                    }
 
-                        var sql3 = "DELETE FROM checkout_deductions WHERE receipt_id=?";
-                        connection.query(sql3, [receipt_id], function (err, del_receipt) {
+                    if(bank_data.length == 0){
+                        return res.status(201).json({ statusCode: 201, message: "Invalid and Inactive Bank details", reason: err.message });
+                    }
+
+                    var currentbankamount=Number(bank_data[0].balance);
+                    var check_amount = currentbankamount + last_amount;
+
+                    if (check_amount >= Number(advance_return)) {
+
+                        var new_amount=check_amount - Number(advance_return)
+
+                        var sql5 = "UPDATE receipts SET amount_received=?,payment_date=?,payment_mode=? WHERE id=?";
+                        connection.query(sql5, [advance_return, payment_date,payment_id, receipt_id], function (err, up_rec) {
                             if (err) {
-                                return res.status(201).json({ statusCode: 201, message: "Unable to Delete Receipt details", reason: err.message });
+                                return res.status(201).json({ statusCode: 201, message: "Unable to Update Receipt details", reason: err.message });
                             } else {
-                                const values = reasons.map(r => [r.reason, r.amount, user_id, receipt_id, created_by]);
-                                console.log(values);
+                               
+                                if (Array.isArray(reasons) && reasons.length > 0) {
+                                    var sql3 = "DELETE FROM checkout_deductions WHERE receipt_id=?";
+                                    connection.query(sql3, [receipt_id], function (err, del_receipt) {
+                                        if (err) {
+                                            return res.status(201).json({ statusCode: 201, message: "Unable to Delete Receipt details", reason: err.message });
+                                        } else {
+                                            const values = reasons.map(r => [r.reason, r.amount, user_id, receipt_id, created_by]);
+        
+                                            var sql4 = "INSERT INTO checkout_deductions (reason,amount,user_id,receipt_id,created_by) VALUES ?"
+                                            connection.query(sql4, [values], function (err, ch_res) {
+                                                if (err) {
+                                                    return res.status(201).json({ statusCode: 201, message: "Unable to add Receipt details", reason: err.message });
+                                                }
+        
+                                               
+                                                updateHostel();
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    
+                                    updateHostel();
+                                }
+        
+                                function updateHostel() {
 
-                                var sql4 = "INSERT INTO checkout_deductions (reason,amount,user_id,receipt_id,created_by) VALUES ?"
-                                connection.query(sql4, [values], function (err, ch_res) {
-                                    if (err) {
-                                        console.log(err);
-                                        return res.status(201).json({ statusCode: 201, message: "Unable to add Receipt details", reason: err.message });
+                                    if (payment_id) {
+                                        // Adjust the old bank balance
+                                        if (old_bank_id) {
+                                            var sql5 = "UPDATE bankings SET balance = balance + ? WHERE id = ?";
+                                            connection.query(sql5, [last_amount, old_bank_id], function (err) {
+                                                if (err) console.log("Error updating old bank balance:", err);
+                                            });
+                                        }
+    
+                                        // Adjust the new bank balance
+                                        if (payment_id) {
+                                            var sql6 = "UPDATE bankings SET balance =  ? WHERE id = ?";
+                                            connection.query(sql6, [new_amount, payment_id], function (err) {
+                                                if (err) console.log("Error updating new bank balance:", err);
+                                            });
+    
+                                            // Update the bank transactions
+                                            var sql7 = "UPDATE bank_transactions SET amount = ?, date = ?, bank_id = ? WHERE edit_id = ?";
+                                            connection.query(sql7, [advance_return, payment_date, payment_id, receipt_id], function (err) {
+                                                if (err) console.log("Error updating bank transactions:", err);
+                                            });
+                                        }
                                     }
 
                                     var sql6 = "UPDATE hostel SET return_advance=?,checkout_comment=? WHERE ID=?";
@@ -863,18 +911,22 @@ function edit_confirm_checkout(req, res) {
                                         } else {
                                             return res.status(200).json({ message: "Changes saved successfully." });
                                         }
-
-                                    })
-                                })
+                                    });
+                                }
                             }
                         })
+
+                    }else{
+                        return res.status(201).json({ statusCode: 201, message: "Insufficient Bank Balance" });
                     }
+
                 })
             } else {
-                return res.status(201).json({ statusCode: 201, message: "Not Found Receipt details", reason: err.message });
+                return res.status(201).json({ statusCode: 201, message: "Not Found Receipt details", reason: err?.message || "No matching receipt" });
             }
-        })
+        });
     });
 }
+
 
 module.exports = { add_booking, assign_booking, add_confirm_checkout, upload_doc, delete_user, edit_customer_reading, delete_reading, recuring_bill_users, edit_confirm_checkout }

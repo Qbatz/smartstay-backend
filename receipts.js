@@ -317,10 +317,15 @@ exports.edit_receipt = (req, res) => {
                                     return res.status(201).json({ message: "Error to Update Transaction Details", reason: trans_err.message, statusCode: 201 });
                                 }
 
+                                var sql5="UPDATE hostel SET return_advance=? WHERE ID=?";
+                                connection.query(sql5,[amount,user_id],function(err,up_res) {
+                                    if (err) {
+                                    return res.status(201).json({ message: "Error to Update Return Advance Details", reason: trans_err.message, statusCode: 201 });
+                                }
                                 if (payment_mode) {
                                     // Adjust the old bank balance
                                     if (old_bank_id) {
-                                        var sql5 = "UPDATE bankings SET balance = balance - ? WHERE id = ?";
+                                        var sql5 = "UPDATE bankings SET balance = balance + ? WHERE id = ?";
                                         connection.query(sql5, [old_amount, old_bank_id], function (err) {
                                             if (err) console.log("Error updating old bank balance:", err);
                                         });
@@ -342,6 +347,7 @@ exports.edit_receipt = (req, res) => {
                                 }
 
                                 return res.status(200).json({ message: "Receipt updated successfully!", statusCode: 200 });
+                                })
                             });
                         }
                     });

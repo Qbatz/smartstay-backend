@@ -2140,66 +2140,60 @@ function checkout_list(req, res) {
 
       let completed = 0;
 
-      ch_list.forEach((check_list, index) => {
-        const user_id = check_list.ID;
+     Promise.all(
+  ch_list.map((check_list, index) => {
+    const user_id = check_list.ID;
 
-        const sql2 = `
-          SELECT re.id, re.invoice_number, ban.type, ban.benificiary_name, ban.id AS bank_id 
-          FROM receipts AS re 
-          LEFT JOIN bankings AS ban ON ban.id = re.payment_mode  
-          WHERE re.user_id = ?
-        `;
+    return new Promise((resolve, reject) => {
+      const sql2 = `
+        SELECT re.id, re.invoice_number, ban.type, ban.benificiary_name, ban.id AS bank_id 
+        FROM receipts AS re 
+        LEFT JOIN bankings AS ban ON ban.id = re.payment_mode  
+        WHERE re.user_id = ? ORDER by id DESC
+      `;
 
-        connection.query(sql2, [user_id], function (err, receipts) {
-          if (err) {
-            return res.status(201).json({ statusCode: 201, message: "Error Getting Receipts", reason: err.message });
-          }
+      connection.query(sql2, [user_id], (err, receipts) => {
+        if (err) return reject({ statusCode: 201, message: "Error Getting Receipts", reason: err.message });
 
-          if (receipts.length > 0) {
-            const receipt = receipts[0];
+        if (receipts.length > 0) {
+          const receipt = receipts[0];
 
-            ch_list[index].bank_type = receipt.type || "";
-            ch_list[index].bank_id = receipt.bank_id || 0;
-            ch_list[index].benificiary_name = receipt.benificiary_name || "";
+          check_list.bank_type = receipt.type || "";
+          check_list.bank_id = receipt.bank_id || 0;
+          check_list.benificiary_name = receipt.benificiary_name || "";
 
-            if (receipt.invoice_number == 0) {
-              const receipt_id = receipt.id;
+          if (receipt.invoice_number == 0) {
+            const receipt_id = receipt.id;
+            const sql3 = "SELECT * FROM checkout_deductions WHERE receipt_id = ?";
 
-              const sql3 = "SELECT * FROM checkout_deductions WHERE receipt_id = ?";
-              connection.query(sql3, [receipt_id], function (err, deductions) {
-                if (err) {
-                  return res.status(201).json({ statusCode: 201, message: "Error Getting Deductions", reason: err.message });
-                }
+            connection.query(sql3, [receipt_id], (err, deductions) => {
+              if (err) return reject({ statusCode: 201, message: "Error Getting Deductions", reason: err.message });
 
-                ch_list[index].amenities = deductions || [];
-                completed++;
-
-                if (completed === ch_list.length) {
-                  return res.status(200).json({ statusCode: 200, message: "Check-Out Details", checkout_details: ch_list });
-                }
-              });
-            } else {
-              ch_list[index].amenities = [];
-              completed++;
-
-              if (completed === ch_list.length) {
-                return res.status(200).json({ statusCode: 200, message: "Check-Out Details", checkout_details: ch_list });
-              }
-            }
+              check_list.amenities = deductions || [];
+              resolve(check_list);
+            });
           } else {
-            // Handle case where no receipts found
-            ch_list[index].bank_type = "";
-            ch_list[index].bank_id = 0;
-            ch_list[index].benificiary_name = "";
-            ch_list[index].amenities = [];
-            completed++;
-
-            if (completed === ch_list.length) {
-              return res.status(200).json({ statusCode: 200, message: "Check-Out Details", checkout_details: ch_list });
-            }
+            check_list.amenities = [];
+            resolve(check_list);
           }
-        });
+        } else {
+          check_list.bank_type = "";
+          check_list.bank_id = 0;
+          check_list.benificiary_name = "";
+          check_list.amenities = [];
+          resolve(check_list);
+        }
       });
+    });
+  })
+)
+  .then((updatedList) => {
+    res.status(200).json({ statusCode: 200, message: "Check-Out Details", checkout_details: updatedList });
+  })
+  .catch((error) => {
+    res.status(201).json(error);
+  });
+
     });
   } else {
     return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
