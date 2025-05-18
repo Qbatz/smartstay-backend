@@ -2983,6 +2983,290 @@ function add_recuring_bill(req, res) {
     }
 }
 
+//Add and Edit for recurringBills
+function addRecurringBills(req, res) {
+  const {
+    recure_id,
+    user_id,
+    recurringName,
+    billFrequency,
+    calculationFromDate,
+    calculationToDate,
+    billingDateOfMonth,
+    dueDateOfMonth,
+    isAutoSend,
+    remainderDates,
+    billDeliveryChannels
+  } = req.body;
+
+  const role_permissions = req.role_permissions;
+  const is_admin = req.is_admin;
+
+  // Helper to validate day numbers (1 to 31)
+  const isValidDayNumber = (day) => {
+    const d = parseInt(day);
+    return d >= 1 && d <= 31;
+  };
+
+  if (!(is_admin === 1 || (role_permissions[11] && role_permissions[11].per_create === 1))) {
+    return res.status(208).json({
+      statusCode: 208,
+      message: "Permission Denied. Please contact your administrator for access."
+    });
+  }
+
+  if (!user_id) {
+    return res.status(400).json({ statusCode: 400, message: "Missing Mandatory Fields: user_id" });
+  }
+
+  // Validate day fields
+  if (
+    !isValidDayNumber(calculationFromDate) ||
+    !isValidDayNumber(calculationToDate) ||
+    !isValidDayNumber(billingDateOfMonth) ||
+    !isValidDayNumber(dueDateOfMonth)
+  ) {
+    return res.status(400).json({
+      statusCode: 400,
+      message: "Invalid day number for calculation or billing dates (must be between 1 and 31)"
+    });
+  }
+
+  const created_by = req.user_details.id;
+
+  const sqlGetUserDetails = `
+    SELECT * FROM hosteldetails AS hstl
+    JOIN hostel AS hos ON hos.Hostel_Id = hstl.id
+    WHERE hos.id = ? AND hos.isActive = 1 AND hstl.isActive = 1;
+  `;
+
+  connection.query(sqlGetUserDetails, [user_id], (err, user_details) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ statusCode: 500, message: "Unable to get user details" });
+    }
+
+    if (user_details.length === 0) {
+      return res.status(404).json({ statusCode: 404, message: "Invalid User Details" });
+    }
+
+    const user_data = user_details[0];
+
+    // Calculate total recurring amount from eb_settings and amenities
+    const recurringAmountQuery = `
+      SELECT 
+        COALESCE(eb.total_eb_amount, 0) AS total_eb_amount,
+        COALESCE(am.total_amenity_amount, 0) AS total_amenity_amount,
+        (COALESCE(eb.total_eb_amount, 0) + COALESCE(am.total_amenity_amount, 0)) AS total_recurring_amount
+      FROM 
+        (SELECT id AS hostel_id FROM hosteldetails WHERE id = ?) AS h
+      LEFT JOIN (
+        SELECT hostel_id, SUM(amount) AS total_eb_amount
+        FROM eb_settings
+        WHERE recuring = 1 AND status = 1
+        GROUP BY hostel_id
+      ) AS eb ON eb.hostel_id = h.hostel_id
+      LEFT JOIN (
+        SELECT Hostel_Id, SUM(Amount) AS total_amenity_amount
+        FROM Amenities
+        WHERE recuring = 1 AND Status = 1
+        GROUP BY Hostel_Id
+      ) AS am ON am.Hostel_Id = h.hostel_id;
+    `;
+
+    connection.query(recurringAmountQuery, [user_data.Hostel_Id], (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ statusCode: 500, message: "Error calculating recurring amount" });
+      }
+
+      const total_am_amount = result[0]?.total_recurring_amount || 0;
+
+      const today = moment();
+
+      // Construct invoice date and due date using day numbers from request
+      const inv_date = parseInt(billingDateOfMonth);
+      let invoicedate = moment().set({ year: today.year(), month: today.month(), date: inv_date });
+
+      // If invoice date already passed this month, set to next month
+      if (today.date() > inv_date) {
+        invoicedate.add(1, 'month').set('date', inv_date);
+      }
+
+      const inv_day = invoicedate.format('YYYY-MM-DD');
+
+      const due_day_num = parseInt(dueDateOfMonth);
+      let dueDate = moment(invoicedate).set('date', due_day_num);
+
+      // If due date is before invoice date, push to next month
+      if (dueDate.isBefore(invoicedate)) {
+        dueDate.add(1, 'month').set('date', due_day_num);
+      }
+
+      const due_day = dueDate.format('YYYY-MM-DD');
+
+      // Convert arrays to JSON strings for DB storage
+      const remainderDatesJSON = JSON.stringify(remainderDates || []);
+      const billDeliveryChannelsJSON = JSON.stringify(billDeliveryChannels || []);
+
+      // You might want to calculate advance, rent, aminity, eb based on your logic - currently set to 1 as in your original code
+      const advance = 1;
+      const rent = 1;
+      const amen = 1;
+      const eb = 1;
+
+      if (recure_id) {
+        // Update existing recurring invoice
+        const updateRecurringSql = `
+          UPDATE recuring_inv_details
+          SET
+            invoice_date = ?,
+            due_date = ?,
+            advance = ?,
+            rent = ?,
+            aminity = ?,
+            eb = ?,
+            updated_by = ?,
+            updated_at = NOW(),
+            recurringName = ?,
+            billFrequency = ?,
+            calculationFromDate = ?,
+            calculationToDate = ?,
+            billingDateOfMonth = ?,
+            dueDateOfMonth = ?,
+            is_auto_send = ?,
+            remainder_dates = ?,
+            bill_delivery_channels = ?
+          WHERE id = ?
+        `;
+
+        const updateValues = [
+          inv_day,
+          due_day,
+          advance,
+          rent,
+          amen,
+          eb,
+          created_by,
+          recurringName,
+          billFrequency,
+          calculationFromDate,
+          calculationToDate,
+          billingDateOfMonth,
+          dueDateOfMonth,
+          parseInt(isAutoSend) || 0,
+          remainderDatesJSON,
+          billDeliveryChannelsJSON,
+          recure_id
+        ];
+
+        connection.query(updateRecurringSql, updateValues, (err) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).json({ statusCode: 500, message: "Unable to update recurring invoice details" });
+          }
+
+          return res.status(200).json({
+            statusCode: 200,
+            message: "Recurring Bill Setup Updated Successfully!"
+          });
+        });
+      } else {
+        // Check if recurring invoice already exists for user
+        const checkExistingSql = "SELECT * FROM recuring_inv_details WHERE user_id = ? AND status = 1";
+        connection.query(checkExistingSql, [user_id], (err, recure_data) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).json({ statusCode: 500, message: "Unable to get invoice details" });
+          }
+
+          if (recure_data.length > 0) {
+            return res.status(409).json({ statusCode: 409, message: "Recurring billing already setup for this user" });
+          }
+
+          // Insert invoice details
+          const insertInvoiceSql = `
+            INSERT INTO invoicedetails 
+            (Name, PhoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, DueDate, Date, Invoices, Status, User_Id, Amnities_deduction_Amount, Bed, BalanceDue, action, invoice_type, hos_user_id, invoice_status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 2)
+          `;
+
+          const invoiceValues = [
+            user_data.Name,
+            user_data.Phone,
+            user_data.Email,
+            user_data.HostelName,
+            user_data.Hostel_Id,
+            user_data.Floor,
+            user_data.Rooms,
+            total_am_amount,
+            due_day,
+            inv_day,
+            "null",
+            'pending',
+            user_data.User_Id,
+            0,
+            user_data.Bed,
+            total_am_amount,
+            'recuring',
+            2,
+            user_id,
+          ];
+
+          connection.query(insertInvoiceSql, invoiceValues, (err) => {
+            if (err) {
+              console.error(err);
+              return res.status(500).json({ statusCode: 500, message: "Unable to add invoice details" });
+            }
+
+            // Insert recurring invoice details with additional fields
+            const insertRecurringSql = `
+              INSERT INTO recuring_inv_details 
+              (user_id, invoice_date, due_date, advance, rent, aminity, eb, status, created_by,
+               recurringName, billFrequency, calculationFromDate, calculationToDate, 
+               billingDateOfMonth, dueDateOfMonth, is_auto_send, remainder_dates, bill_delivery_channels)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+
+            const recurringValues = [
+              user_id,
+              inv_day,
+              due_day,
+              advance,
+              rent,
+              amen,
+              eb,
+              1, // status active
+              created_by,
+              recurringName,
+              billFrequency,
+              calculationFromDate,
+              calculationToDate,
+              billingDateOfMonth,
+              dueDateOfMonth,
+              parseInt(isAutoSend) || 0,
+              remainderDatesJSON,
+              billDeliveryChannelsJSON
+            ];
+
+            connection.query(insertRecurringSql, recurringValues, (err) => {
+              if (err) {
+                console.error(err);
+                return res.status(500).json({ statusCode: 500, message: "Unable to add recurring invoice details" });
+              }
+
+              return res.status(200).json({
+                statusCode: 200,
+                message: "Recurring Bill Setup Added Successfully!"
+              });
+            });
+          });
+        });
+      }
+    });
+  });
+}
+
 function get_recuring_amount(req, res) {
 
     var { user_id, hostel_id } = req.body;
@@ -3654,4 +3938,4 @@ function advance_invoice(req, res) {
     })
 }
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice, customer_readings, add_recuring_bill, get_recuring_amount, all_recuring_bills, delete_recuring_bill, update_recuring_bill, edit_eb_readings, edit_manual_invoice, delete_manual_invoice, advance_invoice }
+module.exports = { addRecurringBills,calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice, customer_readings, add_recuring_bill, get_recuring_amount, all_recuring_bills, delete_recuring_bill, update_recuring_bill, edit_eb_readings, edit_manual_invoice, delete_manual_invoice, advance_invoice }

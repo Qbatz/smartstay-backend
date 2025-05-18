@@ -26,6 +26,8 @@ const app = express()
 const userQueries = require('./UserQueries');
 const accountManagement = require('./AccountManagementQueries')
 const invoiceQueries = require('./InvoiceQueries')
+const recuringFrequencyQueries = require('./routes/frequencyTypes')
+const notificationTypes = require('./routes/notificationTypes')
 const profileQueries = require('./ProfileQueries')
 const complianceQueries = require('./ComplianceQueries')
 const pgQueries = require('./PgQueries')
@@ -1034,6 +1036,10 @@ app.post('/add_recuring_bill', (req, res) => {
     invoiceQueries.add_recuring_bill(req, res)
 });
 
+app.post('/add-recuringBill', (req, res) => {
+    invoiceQueries.addRecurringBills(req, res)
+});
+
 app.post('/all_recuring_bills', (req, res) => {
     invoiceQueries.all_recuring_bills(req, res)
 });
@@ -1293,6 +1299,14 @@ app.get('/wallet/details', receipts.wallet_details)
 app.get('/get_receipt_details/:receipt_id', receiptPdf.get_receipt_detailsbyid)
 
 app.get('/get_bill_details/:bill_id', receiptPdf.get_bill_detailsbyid)
+
+//New changes for the Invoice and Recurring
+app.get('/frequency-types', recuringFrequencyQueries.getFrequencyTypes);
+
+app.post('/frequency-types', recuringFrequencyQueries.addFrequencyType);
+
+app.get('/notification-types', notificationTypes.getNotificationTypes);
+app.post('/notification-types', notificationTypes.addNotificationType);
 
 
 // **************************** Start Cashfree Subscription ****************************
