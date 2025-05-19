@@ -3184,50 +3184,6 @@ function addRecurringBills(req, res) {
             return res.status(409).json({ statusCode: 409, message: "Recurring billing already setup for this user" });
           }
 
-          // Insert invoice details
-          const insertInvoiceSql = `
-            INSERT INTO invoicedetails 
-            (Name, PhoneNo, EmailID, Hostel_Name, Hostel_Id, Floor_Id, Room_No, Amount, DueDate, Date, Invoices, Status, User_Id, Amnities_deduction_Amount, Bed, BalanceDue, action, invoice_type, hos_user_id, invoice_status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 2)
-          `;
-
-          const invoiceValues = [
-            user_data.Name,
-            user_data.Phone,
-            user_data.Email,
-            user_data.HostelName,
-            user_data.Hostel_Id,
-            user_data.Floor,
-            user_data.Rooms,
-            total_am_amount,
-            due_day,
-            inv_day,
-            "null",
-            'pending',
-            user_data.User_Id,
-            0,
-            user_data.Bed,
-            total_am_amount,
-            'recuring',
-            2,
-            user_id,
-          ];
-
-          connection.query(insertInvoiceSql, invoiceValues, (err) => {
-            if (err) {
-              console.error(err);
-              return res.status(500).json({ statusCode: 500, message: "Unable to add invoice details" });
-            }
-
-            // Insert recurring invoice details with additional fields
-            const insertRecurringSql = `
-              INSERT INTO recuring_inv_details 
-              (user_id, invoice_date, due_date, advance, rent, aminity, eb, status, created_by,
-               recurringName, billFrequency, calculationFromDate, calculationToDate, 
-               billingDateOfMonth, dueDateOfMonth, is_auto_send, remainder_dates, bill_delivery_channels)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `;
-
             const recurringValues = [
               user_id,
               inv_day,
@@ -3259,10 +3215,13 @@ function addRecurringBills(req, res) {
                 statusCode: 200,
                 message: "Recurring Bill Setup Added Successfully!"
               });
+
             });
-          });
+        
+
+          
         });
-      }
+    }
     });
   });
 }
