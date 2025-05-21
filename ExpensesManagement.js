@@ -39,162 +39,158 @@ function AddExpense(request, response) {
     // console.log("createdate", createdate);
     if (reqData) {
 
-        if (reqData.id != null && reqData.id != undefined && reqData.id != '') {
+     if (reqData.id) {
+        if (is_admin === 1 || (role_permissions[14] && role_permissions[14].per_edit === 1)) {
+            // Fetch old expense data to get old bank and amount
+            let sql1 = "SELECT * FROM expenses WHERE id=?";
+            connection.query(sql1, [reqData.id], function (err, ex_data) {
+                if (err) {
+                    console.error(err);
+                    return response.status(201).json({ message: "Unable to Get Expenses Data" });
+                }
+                if (ex_data.length === 0) {
+                    return response.status(201).json({ message: "Invalid Expense Details" });
+                }
 
-            if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_edit == 1)) {
+                let old_bank = ex_data[0].bank_id;
+                let last_amount = Number(ex_data[0].purchase_amount);
 
-                var sql1 = "SELECT * FROM expenses WHERE id=?";
-                connection.query(sql1, [reqData.id], function (err, ex_data) {
-                    if (err) {
-                        response.status(201).json({ message: "Unable to Get Expenses Data" });
-                    } else if (ex_data.length != 0) {
+                let new_bank_id = reqData.bank_id ? reqData.bank_id : 0;
 
-                        var old_bank = ex_data[0].bank_id;
-                        var last_amount = ex_data[0].purchase_amount;
+                // Update expense record
+                let updateQuery = `
+                    UPDATE expenses SET 
+                    vendor_id = ?, 
+                    asset_id = ?, 
+                    category_id = ?, 
+                    purchase_date = ?, 
+                    unit_count = ?, 
+                    unit_amount = ?, 
+                    purchase_amount = ?, 
+                    description = ?, 
+                    created_by = ?, 
+                    createdate = ?, 
+                    payment_mode = ?, 
+                    hostel_id = ?, 
+                    bank_id = ? 
+                    WHERE id = ?`;
 
-                        if (!reqData.bank_id) {
-                            var new_bank_id = 0
-                        } else {
-                            var new_bank_id = reqData.bank_id;
-                        }
+                let updateValues = [
+                    reqData.vendor_id,
+                    reqData.asset_id,
+                    reqData.category_id,
+                    purchase_date,
+                    reqData.unit_count,
+                    reqData.unit_amount,
+                    purchase_amount,
+                    reqData.description,
+                    createdBy,
+                    createdate,
+                    reqData.payment_mode,
+                    hostel_id,
+                    new_bank_id,
+                    reqData.id
+                ];
 
-                        let query = `UPDATE expenses SET vendor_id = '${reqData.vendor_id}',asset_id = '${reqData.asset_id}',category_id = ${reqData.category_id},purchase_date = '${purchase_date}',unit_count = ${reqData.unit_count},unit_amount = ${reqData.unit_amount},purchase_amount = ${purchase_amount},description = '${reqData.description}',created_by = ${createdBy},createdate = '${createdate}',payment_mode = '${reqData.payment_mode}',hostel_id ='${reqData.hostel_id}',bank_id='${new_bank_id}' WHERE id = ${reqData.id};`
-                        connection.query(query, function (updateErr, updateData) {
-                            if (updateErr) {
-                                console.log(updateErr);
-                                response.status(201).json({ message: "Internal Server Error" });
-                            } else {
-
-                                var sql1 = "SELECT * FROM transactions WHERE invoice_id=? AND description='Expenses'";
-                                connection.query(sql1, [reqData.id], function (err, trans_data) {
-                                    if (err) {
-                                        console.log(err, "Update Trans Err");
-                                    } else if (trans_data.length != 0) {
-
-                                        var sql2 = "UPDATE transactions SET amount=?,payment_type=?,payment_date=? WHERE invoice_id=?";
-                                        connection.query(sql2, [purchase_amount, reqData.payment_mode, purchase_date, reqData.id], function (err, up_trans) {
-                                            if (err) {
-                                                console.log(err, "Up_trans Err");
-                                            } else {
-
-                                                if (reqData.payment_mode) {
-
-                                                    var edit_id = reqData.id;
-
-                                                    var sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
-                                                    connection.query(sql5, [reqData.bank_id], function (err, sel_res) {
-                                                        console.log(sel_res);
-                                                        if (err) {
-                                                            console.log(err);
-                                                        } else if (sel_res.length != 0) {
-
-                                                            const balance_amount = parseInt(sel_res[0].balance);
-
-                                                            if (balance_amount && balance_amount != 0) {
-
-                                                                if (purchase_amount > balance_amount) {
-                                                                    console.log("Purchase Amont is Greater than Balance Amount");
-
-                                                                } else {
-
-                                                                    var sql6 = "SELECT * FROM bank_transactions WHERE edit_id=? AND `desc`='Expenses' AND status=1";
-                                                                    connection.query(sql6, [edit_id], function (err, show_data) {
-                                                                        if (err) {
-                                                                            console.log(err, "Unable to check edit id");
-                                                                        } else if (show_data.length != 0) {
-
-                                                                            // var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,desc,type,status,createdby,edit_id) VALUES (?,?,?,?,?,?,?,?)";
-                                                                            var sql4 = "UPDATE bank_transactions SET bank_id=?,date=?,amount=? WHERE edit_id=?";
-                                                                            connection.query(sql4, [reqData.payment_mode, purchase_date, purchase_amount, edit_id], function (err, ins_data) {
-                                                                                if (err) {
-                                                                                    console.log(err, "Insert Transactions Error");
-                                                                                } else {
-
-                                                                                    var new_amount = parseInt(balance_amount) + parseInt(last_amount) - parseInt(purchase_amount);
-
-                                                                                    var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
-                                                                                    connection.query(sql5, [new_amount, reqData.payment_mode], function (err, up_date) {
-                                                                                        if (err) {
-                                                                                            console.log(err, "Update Amount Error");
-                                                                                        }
-                                                                                    })
-
-                                                                                    if (old_bank == reqData.payment_mode) {
-
-                                                                                        console.log("Updated All Process 1");
-
-                                                                                    } else {
-
-                                                                                        var sql7 = "SELECT * FROM bankings WHERE id=?";
-                                                                                        connection.query(sql7, [old_bank], function (err, old_bank_data) {
-                                                                                            if (err) {
-                                                                                                console.log(err);
-                                                                                            } else if (old_bank_data.length != 0) {
-
-                                                                                                var total_amount = parseInt(old_bank_data[0].balance) + parseInt(last_amount);
-
-                                                                                                var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
-                                                                                                connection.query(sql5, [total_amount, old_bank], function (err, up_res) {
-                                                                                                    if (err) {
-                                                                                                        console.log(err);
-                                                                                                        // return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
-                                                                                                    } else {
-
-                                                                                                        var remain_amount = parseInt(balance_amount) - parseInt(purchase_amount);
-
-                                                                                                        // Update New Bank amount
-                                                                                                        connection.query(sql5, [remain_amount, reqData.payment_mode], function (err, ins_res) {
-                                                                                                            if (err) {
-                                                                                                                console.log(err);
-                                                                                                                // return res.status(201).json({ statusCode: 201, message: "Unable to Update Balance Amount Details" })
-                                                                                                            } else {
-                                                                                                                console.log("Updated All Process");
-
-                                                                                                                // return res.status(200).json({ statusCode: 200, message: "Save Changes Successfully!" })
-                                                                                                            }
-                                                                                                        })
-                                                                                                    }
-                                                                                                })
-                                                                                            } else {
-                                                                                                console.log("Invalid Bank");
-                                                                                                // return res.status(201).json({ statusCode: 201, message: "Invalid Bank Details" })
-                                                                                            }
-                                                                                        })
-
-                                                                                    }
-                                                                                }
-                                                                            })
-
-                                                                        } else {
-                                                                            console.log("Invalid Transactions ID");
-                                                                        }
-                                                                    })
-                                                                }
-                                                            }
-                                                        } else {
-                                                            console.log("Invalid Bank Id");
-                                                        }
-                                                    })
-                                                }
-                                            }
-                                        })
-                                    } else {
-                                        console.log("Invalid Id Or Not Added in the ID");
-                                    }
-                                })
-                                response.status(200).json({ message: "Data Updated successfully" });
-                            }
-                        })
-                    } else {
-                        response.status(201).json({ message: "Invalid Expense Details" });
+                connection.query(updateQuery, updateValues, function (updateErr) {
+                    if (updateErr) {
+                        console.error(updateErr);
+                        return response.status(201).json({ message: "Internal Server Error" });
                     }
-                })
 
-            } else {
-                response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
-            }
+                    // Update related transaction entry
+                    let transSql = "SELECT * FROM transactions WHERE invoice_id=? AND description='Expenses'";
+                    connection.query(transSql, [reqData.id], function (transErr, trans_data) {
+                        if (transErr) {
+                            console.error(transErr);
+                            // Not sending error response here to allow main update success
+                        } else if (trans_data.length > 0) {
+                            let updateTransSql = "UPDATE transactions SET amount=?, payment_type=?, payment_date=? WHERE invoice_id=?";
+                            connection.query(updateTransSql, [purchase_amount, reqData.payment_mode, purchase_date, reqData.id], function (transUpdateErr) {
+                                if (transUpdateErr) {
+                                    console.error(transUpdateErr);
+                                }
+                            });
+                        }
+                    });
 
-        } 
+                    // Update bank_transactions and bank balance only if payment_mode exists
+                    if (reqData.payment_mode) {
+                        let edit_id = reqData.id;
+
+                        // Get current bank info for new bank
+                        connection.query("SELECT * FROM bankings WHERE id=? AND status=1", [reqData.payment_mode], function (bankErr, bank_res) {
+                            if (bankErr) {
+                                console.error(bankErr);
+                                return response.status(201).json({ message: "Error fetching bank data" });
+                            }
+                            if (bank_res.length === 0) {
+                                return response.status(201).json({ message: "Invalid Bank Id" });
+                            }
+
+                            let balance_amount = Number(bank_res[0].balance);
+
+                            // Check if bank_transactions entry exists for this expense
+                            connection.query("SELECT * FROM bank_transactions WHERE edit_id=? AND `desc`='Expenses' AND status=1", [edit_id], function (btErr, btData) {
+                                if (btErr) {
+                                    console.error(btErr);
+                                    return response.status(201).json({ message: "Error fetching bank transactions" });
+                                }
+
+                                if (btData.length > 0) {
+                                    // Update existing bank transaction record
+                                    let updateBTsql = "UPDATE bank_transactions SET bank_id=?, date=?, amount=? WHERE edit_id=?";
+                                    connection.query(updateBTsql, [reqData.payment_mode, purchase_date, purchase_amount, edit_id], function (updateBTErr) {
+                                        if (updateBTErr) {
+                                            console.error(updateBTErr);
+                                        } else {
+                                            // Calculate new balances
+
+                                            // If bank changed, revert old bank balance by adding last_amount back
+                                            if (old_bank !== reqData.payment_mode) {
+                                                // Revert old bank balance
+                                                connection.query("SELECT * FROM bankings WHERE id=?", [old_bank], function (oldBankErr, oldBankData) {
+                                                    if (oldBankErr) {
+                                                        console.error(oldBankErr);
+                                                    } else if (oldBankData.length > 0) {
+                                                        let oldBankBalance = Number(oldBankData[0].balance);
+                                                        let updatedOldBankBalance = oldBankBalance + last_amount;
+
+                                                        connection.query("UPDATE bankings SET balance=? WHERE id=?", [updatedOldBankBalance, old_bank], function (updateOldBankErr) {
+                                                            if (updateOldBankErr) {
+                                                                console.error(updateOldBankErr);
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            }
+
+                                            // Update new bank balance subtracting new purchase_amount
+                                            let newBankBalance = balance_amount + last_amount - purchase_amount;
+
+                                            connection.query("UPDATE bankings SET balance=? WHERE id=?", [newBankBalance, reqData.payment_mode], function (updateNewBankErr) {
+                                                if (updateNewBankErr) {
+                                                    console.error(updateNewBankErr);
+                                                }
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    // No bank transaction entry found for this edit_id (should not happen)
+                                    console.warn("Bank transaction entry not found for update.");
+                                }
+                            });
+                        });
+                    }
+
+                    return response.status(200).json({ message: "Data Updated successfully" });
+                });
+            });
+
+        } else {
+            return response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+        }
+    }
         // else {
 
         //     if (is_admin == 1 || (role_permissions[14] && role_permissions[14].per_create == 1)) {
