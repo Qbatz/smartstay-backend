@@ -27,13 +27,15 @@ const userQueries = require('./UserQueries');
 const accountManagement = require('./AccountManagementQueries')
 const invoiceQueries = require('./InvoiceQueries')
 const recuringFrequencyQueries = require('./routes/frequencyTypes')
-const notificationTypes = require('./routes/notificationTypes')
 const profileQueries = require('./ProfileQueries')
 const complianceQueries = require('./ComplianceQueries')
 const pgQueries = require('./PgQueries')
 const vendorQueries = require('./vendorQueries')
 const expensesManagement = require('./ExpensesManagement')
 var billings = require('./zoho_billing/billings');
+
+const masterDataQueries = require('./routes/masterData')
+const settingsQueries = require('./routes/settings');
 
 
 const multer = require('multer');
@@ -1036,10 +1038,6 @@ app.post('/add_recuring_bill', (req, res) => {
     invoiceQueries.add_recuring_bill(req, res)
 });
 
-app.post('/add-recuringBill', (req, res) => {
-    invoiceQueries.addRecurringBills(req, res)
-});
-
 app.post('/all_recuring_bills', (req, res) => {
     invoiceQueries.all_recuring_bills(req, res)
 });
@@ -1305,8 +1303,21 @@ app.get('/frequency-types', recuringFrequencyQueries.getFrequencyTypes);
 
 app.post('/frequency-types', recuringFrequencyQueries.addFrequencyType);
 
-app.get('/notification-types', notificationTypes.getNotificationTypes);
-app.post('/notification-types', notificationTypes.addNotificationType);
+app.get('/master-types', masterDataQueries.getMasterTypes);
+
+app.post('/invoice-settings', upload.fields(
+  [{ name: 'paymentReference', maxCount: 3 }, { name: 'signature', maxCount: 1 }]
+), (req, res) => {
+  console.log('req.body:', req.body);
+  console.log('req.files:', req.files);
+  
+  settingsQueries.addOrEditInvoiceSettings(req, res);
+});
+
+app.post('/add-recuringBill', (req, res) => {
+    invoiceQueries.addRecurringBills(req, res)
+});
+
 
 
 // **************************** Start Cashfree Subscription ****************************
