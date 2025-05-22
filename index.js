@@ -1306,12 +1306,12 @@ app.post('/frequency-types', recuringFrequencyQueries.addFrequencyType);
 app.get('/master-types', masterDataQueries.getMasterTypes);
 
 app.post('/invoice-settings', upload.fields(
-  [{ name: 'paymentReference', maxCount: 3 }, { name: 'signature', maxCount: 1 }]
+    [{ name: 'signature', maxCount: 1 },
+    { name: "privacyPolicy", maxCount: 1 }
+
+    ]
 ), (req, res) => {
-  console.log('req.body:', req.body);
-  console.log('req.files:', req.files);
-  
-  settingsQueries.addOrEditInvoiceSettings(req, res);
+    settingsQueries.addOrEditInvoiceSettings(req, res);
 });
 
 app.post('/add-recuringBill', (req, res) => {

@@ -9,9 +9,9 @@ const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 const AWS_REGION = process.env.AWS_REGION;
 
 AWS.config.update({
-    accessKeyId: AWS_ACCESS_KEY_ID,
-    secretAccessKey: AWS_SECRET_ACCESS_KEY,
-    region: AWS_REGION
+  accessKeyId: AWS_ACCESS_KEY_ID,
+  secretAccessKey: AWS_SECRET_ACCESS_KEY,
+  region: AWS_REGION
 });
 const s3 = new AWS.S3();
 
@@ -20,7 +20,6 @@ async function addOrEditInvoiceSettings(req, res) {
     const timestamp = Date.now();
     const bucketName = process.env.AWS_BUCKET_NAME;
     const folderName = "Hostel-Payments/";
-
 
     const {
       hostelId,
@@ -37,7 +36,7 @@ async function addOrEditInvoiceSettings(req, res) {
       return res.status(400).json({ success: false, message: "hostelId is required" });
     }
 
-
+    // Parse paymentMethods safely
     let parsedPaymentMethods = [];
     try {
       parsedPaymentMethods = Array.isArray(paymentMethods)
@@ -49,58 +48,56 @@ async function addOrEditInvoiceSettings(req, res) {
 
     const paymentMethodStr = parsedPaymentMethods.join(",");
 
-   
+    // Files from multer
     const files = req.files || {};
-    const paymentFiles = files["paymentReference"] || [];
     const signatureFile = files["signature"]?.[0] || null;
+    const privacyPolicyFile = files["privacyPolicy"]?.[0] || null;
 
-   
-    const insertInvoiceSQL = `
-      INSERT INTO InvoiceSettings 
-        (hostel_Id, prefix, suffix, bankingId, tax, notes, isAgreed, paymentMethods)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE 
-        prefix = VALUES(prefix),
-        suffix = VALUES(suffix),
-        bankingId = VALUES(bankingId),
-        tax = VALUES(tax),
-        notes = VALUES(notes),
-        isAgreed = VALUES(isAgreed),
-        paymentMethods = VALUES(paymentMethods)
-    `;
-
-    const [result] = await db.promise().query(insertInvoiceSQL, [
-      hostelId,
-      prefix,
-      suffix,
-      bankingId,
-      tax,
-      notes,
-      isAgreed,
-      paymentMethodStr,
-    ]);
-
-    const invoiceId = result.insertId || hostelId;
-
-    // Remove old files if new reference files exist
-    if (paymentFiles.length > 0) {
-      await db.promise().query("DELETE FROM HostelPaymentFiles WHERE invoice_id = ?", [invoiceId]);
+    // Read privacyPolicy content from buffer (multer memory storage)
+    let privacyHtml = null;
+    if (privacyPolicyFile) {
+      try {
+        privacyHtml = privacyPolicyFile.buffer.toString("utf-8");
+      } catch (readErr) {
+        return res.status(500).json({
+          success: false,
+          message: "Failed to read privacy policy file (buffer)",
+        });
+      }
     }
 
-    // Upload and insert payment reference files
-    for (const file of paymentFiles) {
-      const fileName = `${invoiceId}_${timestamp}_${file.originalname}`;
-      // const fileUrl = await uploadImage.uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, file);
+    // Check if record exists for this hostelId
+    const [existingRows] = await db.promise().query(
+      "SELECT * FROM InvoiceSettings WHERE hostel_Id = ?",
+      [hostelId]
+    );
 
+    if (existingRows.length > 0) {
+      // Update existing record
       await db.promise().query(
-        "INSERT INTO HostelPaymentFiles (invoice_id, file_url, file_type) VALUES (?, ?, ?)",
-        [invoiceId, fileName, "reference"]
+        `UPDATE InvoiceSettings SET
+          prefix = ?, suffix = ?, bankingId = ?, tax = ?, notes = ?, isAgreed = ?,
+          paymentMethods = ?, privacyPolicyHtml = ?
+         WHERE hostel_Id = ?`,
+        [prefix, suffix, bankingId, tax, notes, isAgreed, paymentMethodStr, privacyHtml, hostelId]
+      );
+    } else {
+      // Insert new record
+      await db.promise().query(
+        `INSERT INTO InvoiceSettings
+          (hostel_Id, prefix, suffix, bankingId, tax, notes, isAgreed, paymentMethods, privacyPolicyHtml)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [hostelId, prefix, suffix, bankingId, tax, notes, isAgreed, paymentMethodStr, privacyHtml]
       );
     }
 
-    // Upload and insert signature file
+    // Use hostelId as invoiceId since insertId may not be reliable here
+    const invoiceId = hostelId;
+
+    // Upload and insert signature file (if exists)
     if (signatureFile) {
       const fileName = `${invoiceId}_${timestamp}_${signatureFile.originalname}`;
+  
       // const signatureUrl = await uploadImage.uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, signatureFile);
 
       await db.promise().query(
@@ -121,6 +118,7 @@ async function addOrEditInvoiceSettings(req, res) {
     });
   }
 }
+
 
 
 
