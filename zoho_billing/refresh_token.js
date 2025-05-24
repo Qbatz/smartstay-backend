@@ -55,6 +55,10 @@ const refreshToken = () => {
             } else {
                 try {
                     const parsedBody = JSON.parse(body);
+
+                    console.log(parsedBody);
+                    
+
                     const newAccessToken = parsedBody.access_token;
                     console.log(newAccessToken, "New Access Token");
                     

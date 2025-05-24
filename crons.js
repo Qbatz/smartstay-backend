@@ -4,10 +4,10 @@ const request = require('request')
 const billings = require('./zoho_billing/billings')
 const connection = require('./config/connection')
 
-nodeCron.schedule('0 2 * * *', () => {
-    // nodeCron.schedule('* * * * * *', () => {
-    billings.check_trail_end();
-});
+// nodeCron.schedule('0 2 * * *', () => {
+//     // nodeCron.schedule('* * * * * *', () => {
+//     billings.check_trail_end();
+// });
 
 nodeCron.schedule('0 2 * * *', () => {
     billings.checkAllSubscriptions();

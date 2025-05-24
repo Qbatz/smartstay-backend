@@ -1250,7 +1250,7 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
         FROM hostel h
         LEFT JOIN reassign_userdetails r 
             ON h.id = r.user_id
-        WHERE h.Hostel_Id = ${atten.hostel_id}`;
+        WHERE h.Hostel_Id = ${atten.hostel_id} AND h.Floor IS NOT NULL`;
 
     }
 
