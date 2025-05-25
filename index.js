@@ -891,6 +891,11 @@ app.post('/get_invoice_id', (req, res) => {
     userQueries.get_invoice_id(req, res)
 });
 
+//New Changes
+app.post('/get-InvoiceId', (req, res) => {
+    userQueries.getInvoiceIDNew(req, res)
+});
+
 // Get Rent, Eb and Amenity Amount
 app.post('/get_user_amounts', (req, res) => {
     userQueries.get_user_amounts(req, res)
@@ -1306,9 +1311,7 @@ app.post('/frequency-types', recuringFrequencyQueries.addFrequencyType);
 app.get('/master-types', masterDataQueries.getMasterTypes);
 
 app.post('/invoice-settings', upload.fields(
-    [{ name: 'signature', maxCount: 1 },
-    { name: "privacyPolicy", maxCount: 1 }
-
+    [{ name: 'signature', maxCount: 1 }
     ]
 ), (req, res) => {
     settingsQueries.addOrEditInvoiceSettings(req, res);

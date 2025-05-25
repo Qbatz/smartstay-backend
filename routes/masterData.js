@@ -11,7 +11,7 @@ function getMasterTypes(req, res) {
 
   const sql = `
     SELECT id, name, content_type, description
-    FROM smart_stay_qa.MasterTypes 
+    FROM MasterTypes 
     WHERE content_type = ? 
     ORDER BY id ASC
   `;
