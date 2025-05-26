@@ -628,8 +628,12 @@ async function webhook_status(req, res) {
                                 var hostel_count = sql1_res[0].hostel_count;
                                 var selectedhostel = sql1_res[0].selected_hostels;
 
-                                var sql2 = "INSERT INTO subscription_details (customer_id,user_id,plan_start,plan_end,amount,plan_type,hostel_count,selected_hostels,status) VALUES (?,?,?,?,?,?,?,?,?)";
-                                connection.query(sql2, customer_id, user_id, plan_start, plan_end, amount, 'live', hostel_count, selectedhostel, 1, function (error, results, fields) {
+                                var ol_plancode = sql1_res[0].plan_code;
+
+                                console.log("ol_plancode",ol_plancode);
+
+                                var sql2 = "INSERT INTO subscription_details (customer_id,user_id,plan_start,plan_end,amount,plan_type,hostel_count,selected_hostels,status,plan_code) VALUES (?,?,?,?,?,?,?,?,?,?)";
+                                connection.query(sql2, [customer_id, user_id, plan_start, plan_end, amount, 'live', hostel_count, selectedhostel, 1, ol_plancode], function (error, results, fields) {
                                     if (error) {
                                         console.error('Error Subscription Details executing query:', error);
                                     }
@@ -643,7 +647,8 @@ async function webhook_status(req, res) {
 
                                             var old_wallet = wal_data[0].amount;
 
-                                            var new_wallet = old_wallet - wallet_amount
+                                            var new_wallet = old_wallet - wallet_amount;
+
 
                                             var row_id = wal_data[0].id;
                                             var sql5 = "UPDATE wallet SET amount=? WHERE id=?";
@@ -677,7 +682,7 @@ async function webhook_status(req, res) {
                                         }
 
                                         var sql2 = "UPDATE createaccount SET plan_status=1,plan_code=?,customer_id=? WHERE id=?";
-                                        connection.query(sql2, [plan_code, user_id, customer_id], function (err, up_date) {
+                                        connection.query(sql2, [plan_code, customer_id, user_id], function (err, up_date) {
                                             if (err) {
                                                 console.log(err);
                                             } else {

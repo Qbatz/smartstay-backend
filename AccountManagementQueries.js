@@ -630,7 +630,7 @@ function get_user_details(connection, request, response) {
 
             if (user_type === 'admin') {
 
-                var sql2 = "SELECT * FROM subscription_details WHERE user_id=? AND status=1 ORDER BY id DESC LIMIT 1"
+                var sql2 = "SELECT sd.*, ma.payment_method FROM subscription_details AS sd LEFT JOIN manage_plan_details AS ma ON ma.user_id = sd.user_id AND ma.plan_start_date = sd.plan_start WHERE sd.user_id = ? AND sd.status = 1 ORDER BY sd.id DESC LIMIT 1; "
                 connection.query(sql2, [created_by], function (err, plan_data) {
                     if (err) {
                         return response.status(201).json({ message: "Error to Get Plan Details", statusCode: 201 });
