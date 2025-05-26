@@ -644,6 +644,7 @@ function get_user_details(connection, request, response) {
                 // })
 
                 const sql2 = `SELECT * FROM subscription_details WHERE user_id = ? AND status = 1 ORDER BY id DESC LIMIT 1`;
+
                 connection.query(sql2, [created_by], function (err, plan_data) {
                     if (err) {
                         return response.status(500).json({ message: "Error to Get Plan Details", statusCode: 500 });

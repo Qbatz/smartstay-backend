@@ -727,7 +727,7 @@ async function webhook_status(req, res) {
                                 var customer_id = sql1_res[0].customer_id;
 
                                 sql1_res.forEach((row) => {
-
+                             
                                     var hostel_count = row.hostel_count;
                                     var selectedhostel = row.selected_hostels;
                                     var hostel_id = row.hostel_id;
@@ -752,6 +752,7 @@ async function webhook_status(req, res) {
 
                                         var sql5 = "UPDATE wallet SET amount=? WHERE id=?";
                                         connection.query(sql5, [new_wallet, row_id], function (err) {
+
                                             if (err) {
                                                 console.log("Wallet error", err);
                                             } else {
