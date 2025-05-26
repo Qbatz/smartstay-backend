@@ -82,7 +82,11 @@ const queries = [
 
     "ALTER TABLE `subscription_details` ADD COLUMN `hosted_page_id` VARCHAR(255) NULL AFTER `selected_hostels`;",
 
-    "ALTER TABLE `manage_plan_details` ADD COLUMN `user_id` BIGINT(20) NULL AFTER `customer_id`;"
+    "ALTER TABLE `manage_plan_details` ADD COLUMN `user_id` BIGINT(20) NULL AFTER `customer_id`;",
+
+    "ALTER TABLE `subscription_details` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `user_id`;",
+
+    "ALTER TABLE `hosteldetails` ADD COLUMN `plan_status` INT NULL DEFAULT 1 AFTER `due_date`;"
 ];
 
 queries.forEach(executeQuery);
