@@ -777,7 +777,7 @@ app.post("/all_reports", (req, res) => {
 
 //================= Zoho Billing API =======================//
 
-app.get('/invoice_details', (req, res) => {
+app.get('/invoice_details/:customer_id', (req, res) => {
     billings.invoice_details(req, res)
 })
 

@@ -144,14 +144,16 @@ async function check_trail_end() {
 
 async function invoice_details(req, res) {
 
-    var customer_id = req.body.customer_id;
+    var customer_id = req.params.customer_id;
 
     if (!customer_id) {
         return res.status(201).json({ statusCode: 201, message: "Please Add Customer Details" })
     }
 
-    var apiEndpoint = " https://www.zohoapis.in/billing/v1/invoices?customer_id=" + customer_id;
+    var apiEndpoint = "https://www.zohoapis.in/billing/v1/invoices?customer_id=" + customer_id;
     var method = 'GET'
+
+    console.log(apiEndpoint);
 
     var input_body = 0;
 
@@ -724,19 +726,26 @@ async function webhook_status(req, res) {
 
                                 var user_id = get_data[0].id;
                                 var wallet_amount = sql1_res[0].wallet_amount;
-                                var customer_id = sql1_res[0].customer_id;
+                                // var customer_id = sql1_res[0].customer_id;
 
                                 sql1_res.forEach((row) => {
-                             
+
                                     var hostel_count = row.hostel_count;
                                     var selectedhostel = row.selected_hostels;
                                     var hostel_id = row.hostel_id;
 
-                                    var sql2 = "INSERT INTO subscription_details (customer_id, user_id, plan_start, plan_end, amount, plan_type, hostel_count, selected_hostels, status, hostel_id) VALUES (?,?,?,?,?,?,?,?,?,?)";
-                                    connection.query(sql2, [customer_id, user_id, plan_start, plan_end, amount, 'live', hostel_count, selectedhostel, 1, hostel_id], function (error, results) {
+                                    var sql2 = "INSERT INTO subscription_details (customer_id, user_id, plan_start, plan_end, amount, plan_type, hostel_count, selected_hostels, status, hostel_id,plan_code) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+                                    connection.query(sql2, [customer_id, user_id, plan_start, plan_end, amount, 'live', hostel_count, selectedhostel, 1, hostel_id, plan_code], function (error, results) {
                                         if (error) {
                                             console.error('Error inserting subscription_details:', error);
                                         }
+
+                                        var sql3 = "UPDATE hosteldetails SET plan_status=1 WHERE id=?";
+                                        connection.query(sql3, [hostel_id], function (error, hos_res) {
+                                            if (error) {
+                                                console.error('Error inserting hostel Details:', error);
+                                            }
+                                        })
                                     });
                                 });
 
@@ -775,8 +784,8 @@ async function webhook_status(req, res) {
                                 // Update manage_plan_details status for all matched rows
                                 sql1_res.forEach((row) => {
                                     var up_id = row.id;
-                                    var sql2 = "UPDATE manage_plan_details SET plan_name=?, plan_start_date=?, plan_end_date=?, payment_method=?, payment_id=?, invoice_id=?, event_id=?, interval_unit=?, status=1 WHERE id=?";
-                                    connection.query(sql2, [plan_name, plan_start, plan_end, payment_mode, paymentId, payment_details[0].invoice_id, event_id, plan_interval_unit, up_id
+                                    var sql2 = "UPDATE manage_plan_details SET sustomer_id=?,plan_name=?, plan_start_date=?, plan_end_date=?, payment_method=?, payment_id=?, invoice_id=?, event_id=?, interval_unit=?, status=1 WHERE id=?";
+                                    connection.query(sql2, [customer_id, plan_name, plan_start, plan_end, payment_mode, paymentId, payment_details[0].invoice_id, event_id, plan_interval_unit, up_id
                                     ]);
                                 });
 
