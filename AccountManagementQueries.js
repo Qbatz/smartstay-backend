@@ -630,18 +630,62 @@ function get_user_details(connection, request, response) {
 
             if (user_type === 'admin') {
 
-                var sql2 = "SELECT sd.*, ma.payment_method FROM subscription_details AS sd LEFT JOIN manage_plan_details AS ma ON ma.user_id = sd.user_id AND ma.plan_start_date = sd.plan_start WHERE sd.user_id = ? AND sd.status = 1 ORDER BY sd.id DESC LIMIT 1; "
+                // var sql2 = "SELECT * FROM subscription_details WHERE user_id=? AND status=1 ORDER BY id DESC LIMIT 1"
+                // connection.query(sql2, [created_by], function (err, plan_data) {
+                //     if (err) {
+                //         return response.status(201).json({ message: "Error to Get Plan Details", statusCode: 201 });
+                //     }
+
+                //     if (plan_data.length != 0) {
+                //         return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: plan_data });
+                //     }
+
+                //     return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: plan_data });
+                // })
+
+                const sql2 = `SELECT * FROM subscription_details WHERE user_id = ? AND status = 1 ORDER BY id DESC LIMIT 1`;
+
                 connection.query(sql2, [created_by], function (err, plan_data) {
                     if (err) {
-                        return response.status(201).json({ message: "Error to Get Plan Details", statusCode: 201 });
+                        return response.status(500).json({ message: "Error to Get Plan Details", statusCode: 500 });
                     }
 
-                    if (plan_data.length != 0) {
-                        return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: plan_data });
+                    if (!plan_data.length) {
+                        return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: [] });
                     }
 
-                    return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: plan_data });
-                })
+                    const latestPlan = plan_data[0];
+                    const hostelIds = latestPlan.selected_hostels ? latestPlan.selected_hostels.split(',') : [];
+
+                    // If no hostels selected, return plan with empty hostel_details
+                    if (hostelIds.length === 0 || hostelIds[0] === "0") {
+                        latestPlan.hostel_details = [];
+                        return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: [latestPlan] });
+                    }
+
+                    const placeholders = hostelIds.map(() => '?').join(',');
+                    const sqlHostels = `SELECT id, name FROM hostel WHERE id IN (${placeholders})`;
+
+                    connection.query(sqlHostels, hostelIds, (err, hostels) => {
+                        if (err) {
+                            latestPlan.hostel_details = [];
+
+                            return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: [latestPlan] });
+                        }
+
+                        latestPlan.hostel_details = hostels.map(h => ({
+                            id: h.id,
+                            name: h.name,
+                            plan_start: latestPlan.plan_start,
+                            plan_end: latestPlan.plan_end,
+                            plan_status: latestPlan.status,
+                            plan_code: latestPlan.plan_code
+                        }));
+
+                        return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: [latestPlan] });
+                    });
+                });
+
             } else {
 
                 var sql2 = `SELECT rp.*, per.permission_name, ro.role_name FROM role_permissions AS rp JOIN permissions AS per ON rp.permission_id = per.id JOIN roles AS ro ON ro.id = rp.role_id WHERE rp.role_id = ?`;

@@ -389,7 +389,7 @@ async function createPG(reqHostel, res, req) {
 
         if (is_admin == 1 || (role_permissions[3] && role_permissions[3].per_create == 1)) {
 
-            var hostel_count = req.user_details.hostel_count;
+            // var hostel_count = req.user_details.hostel_count;
 
             const sqlCount = "SELECT COUNT(id) AS hos_count FROM hosteldetails WHERE created_By=? AND isActive=1";
             connection.query(sqlCount, [created_by], function (error, result) {
@@ -412,9 +412,9 @@ async function createPG(reqHostel, res, req) {
 
                     console.log("hos_count :", hos_count);
 
-                    if (hos_count >= hostel_count) {
-                        return res.status(201).json({ statusCode: 201, message: "Upgrade your plan to add more hostels" });
-                    }
+                    // if (hos_count >= hostel_count) {
+                    //     return res.status(201).json({ statusCode: 201, message: "Upgrade your plan to add more hostels" });
+                    // }
 
                     const sql1 = "INSERT INTO hosteldetails(Name,hostel_PhoneNo,email_id,Address,area,landmark,pin_code,city,state,created_By,isHostelBased,profile,image1,image2,image3,image4) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
                     connection.query(sql1, [hostel_name, hostel_phone, hostel_email, hostel_location, area, landmark, pin_code, city, state, created_by, 0, profile_url, image1_url, image2_url, image3_url, image4_url], function (error, data) {

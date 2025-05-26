@@ -239,7 +239,7 @@ async function new_subscription(req, res) {
 
         var { user_id, customer_id, plan_code, hostel_ids, hostel_count, amount, comments } = req.body;
 
-        if (!user_id || !plan_code) {
+        if (!user_id || !plan_code || !hostel_ids) {
             return res.status(201).json({ message: "Missing or Invalid Parameters" });
         }
 
@@ -367,13 +367,25 @@ async function new_subscription(req, res) {
                         hostel_ids = 0;
                     }
 
+                    if (hostel_ids && Array.isArray(hostel_ids) && hostel_ids.length > 0) {
 
-                    var sql3 = "INSERT INTO manage_plan_details (hosted_page_id,customer_id,user_id,plan_code,total_amount,wallet_amount,hostel_count,selected_hostels,comments) VALUES (?,?,?,?,?,?,?,?,?)";
-                    connection.query(sql3, [hosted_page_id, customer_id, user_id, plan_code, amount, wallet_amount, hostel_count, hostel_ids, comments], function (err, ins_sql3) {
-                        if (err) {
-                            console.error("Error saving hostels:", err);
-                        }
-                    })
+                        hostel_ids.forEach((hostel_id) => {
+                            var sql3 = `INSERT INTO manage_plan_details (hosted_page_id, customer_id, user_id, plan_code, total_amount, wallet_amount, hostel_count, selected_hostels, comments, hostel_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+                            connection.query(sql3, [hosted_page_id, customer_id, user_id, plan_code, amount, wallet_amount, hostel_count, JSON.stringify(hostel_ids), comments, hostel_id], function (err, ins_sql3) {
+                                if (err) {
+                                    console.error("Error saving hostel ID", hostel_id, ":", err);
+                                }
+                            });
+                        });
+                    }
+
+
+                    // var sql3 = "INSERT INTO manage_plan_details (hosted_page_id,customer_id,user_id,plan_code,total_amount,wallet_amount,hostel_count,selected_hostels,comments) VALUES (?,?,?,?,?,?,?,?,?)";
+                    // connection.query(sql3, [hosted_page_id, customer_id, user_id, plan_code, amount, wallet_amount, hostel_count, hostel_ids, comments], function (err, ins_sql3) {
+                    //     if (err) {
+                    //         console.error("Error saving hostels:", err);
+                    //     }
+                    // })
 
                     return res.status(200).json({ statusCode: 200, message: api_data.message, data: api_data.hostedpage, selected_hostels: hostels });
                 } else {
@@ -608,6 +620,94 @@ async function webhook_status(req, res) {
                 //         console.error('Error executing query:', error);
                 //     }
 
+                // var sql1 = "SELECT * FROM manage_plan_details WHERE hosted_page_id=? AND status=2";
+                // connection.query(sql1, [hosted_page_id], function (err, sql1_res) {
+                //     if (err) {
+                //         console.log(err.message);
+                //     } else if (sql1_res.length != 0) {
+
+                //         var user_id = sql1_res[0].user_id;
+
+                //         var sql3 = "SELECT * FROM createaccount WHERE id=?";
+                //         connection.query(sql3, [user_id], function (err, get_data) {
+                //             if (err) {
+                //                 console.log("Unbale to get user details");
+                //             } else if (get_data.length != 0) {
+
+                //                 var user_id = get_data[0].id;
+
+                //                 var wallet_amount = sql1_res[0].wallet_amount;
+                //                 var hostel_count = sql1_res[0].hostel_count;
+                //                 var selectedhostel = sql1_res[0].selected_hostels;
+
+                //                 var sql2 = "INSERT INTO subscription_details (customer_id,user_id,plan_start,plan_end,amount,plan_type,hostel_count,selected_hostels,status) VALUES (?,?,?,?,?,?,?,?,?)";
+                //                 connection.query(sql2, customer_id, user_id, plan_start, plan_end, amount, 'live', hostel_count, selectedhostel, 1, function (error, results, fields) {
+                //                     if (error) {
+                //                         console.error('Error Subscription Details executing query:', error);
+                //                     }
+
+                //                     // Update Wallet Amount;
+                //                     var sql4 = "SELECT * FROM wallet WHERE user_id=? AND is_active=1";
+                //                     connection.query(sql4, [user_id], function (err, wal_data) {
+                //                         if (err) {
+                //                             console.log("Wallet error", err);
+                //                         } else if (wal_data.length != 0 && wallet_amount) {
+
+                //                             var old_wallet = wal_data[0].amount;
+
+                //                             var new_wallet = old_wallet - wallet_amount
+
+                //                             var row_id = wal_data[0].id;
+                //                             var sql5 = "UPDATE wallet SET amount=? WHERE id=?";
+                //                             connection.query(sql5, [new_wallet, row_id], function (err, data) {
+                //                                 if (err) {
+                //                                     console.log("Wallet error", err);
+                //                                 } else {
+                //                                     var logs = "Subscribe Your Wallet Amount for " + " " + wallet_amount
+                //                                     var sql6 = "INSERT INTO wallet_logs (logs,used_by) VALUES (?,?)";
+                //                                     connection.query(sql6, [logs, user_id], function (err, ins_err) {
+                //                                         if (err) {
+                //                                             console.log("Wallet error", err);
+                //                                         } else {
+                //                                             console.log("Wallet Updated");
+
+                //                                         }
+                //                                     })
+                //                                 }
+                //                             })
+                //                         } else {
+                //                             console.log("No Wallet Added");
+                //                         }
+                //                     })
+
+                //                     var up_id = sql1_res[0].id;
+
+                //                     var sql2 = "UPDATE manage_plan_details SET plan_name=?,plan_start_date=?,plan_end_date=?,payment_method=?,payment_id=?,invoice_id=?,event_id=?,interval_unit=?,status=1 WHERE id=?";
+                //                     connection.query(sql2, [plan_name, plan_start, plan_end, payment_mode, paymentId, payment_details[0].invoice_id, event_id, plan_interval_unit, up_id], function (err, upsql_res) {
+                //                         if (err) {
+                //                             console.log(err.message);
+                //                         }
+
+                //                         var sql2 = "UPDATE createaccount SET plan_status=1,plan_code=?,customer_id=? WHERE id=?";
+                //                         connection.query(sql2, [plan_code, user_id, customer_id], function (err, up_date) {
+                //                             if (err) {
+                //                                 console.log(err);
+                //                             } else {
+                //                                 console.log('Subscription history inserted:', results);
+                //                             }
+                //                         })
+                //                     })
+                //                 })
+                //             } else {
+                //                 console.log("Invalid Created account");
+                //             }
+                //         })
+                //     } else {
+                //         console.log("Invalid Hosted Payment Id");
+                //     }
+                // })
+
+
                 var sql1 = "SELECT * FROM manage_plan_details WHERE hosted_page_id=? AND status=2";
                 connection.query(sql1, [hosted_page_id], function (err, sql1_res) {
                     if (err) {
@@ -619,86 +719,87 @@ async function webhook_status(req, res) {
                         var sql3 = "SELECT * FROM createaccount WHERE id=?";
                         connection.query(sql3, [user_id], function (err, get_data) {
                             if (err) {
-                                console.log("Unbale to get user details");
+                                console.log("Unable to get user details");
                             } else if (get_data.length != 0) {
 
                                 var user_id = get_data[0].id;
-
                                 var wallet_amount = sql1_res[0].wallet_amount;
-                                var hostel_count = sql1_res[0].hostel_count;
-                                var selectedhostel = sql1_res[0].selected_hostels;
+                                var customer_id = sql1_res[0].customer_id;
 
-                                var ol_plancode = sql1_res[0].plan_code;
+                                sql1_res.forEach((row) => {
+                             
+                                    var hostel_count = row.hostel_count;
+                                    var selectedhostel = row.selected_hostels;
+                                    var hostel_id = row.hostel_id;
 
-                                console.log("ol_plancode",ol_plancode);
-
-                                var sql2 = "INSERT INTO subscription_details (customer_id,user_id,plan_start,plan_end,amount,plan_type,hostel_count,selected_hostels,status,plan_code) VALUES (?,?,?,?,?,?,?,?,?,?)";
-                                connection.query(sql2, [customer_id, user_id, plan_start, plan_end, amount, 'live', hostel_count, selectedhostel, 1, ol_plancode], function (error, results, fields) {
-                                    if (error) {
-                                        console.error('Error Subscription Details executing query:', error);
-                                    }
-
-                                    // Update Wallet Amount;
-                                    var sql4 = "SELECT * FROM wallet WHERE user_id=? AND is_active=1";
-                                    connection.query(sql4, [user_id], function (err, wal_data) {
-                                        if (err) {
-                                            console.log("Wallet error", err);
-                                        } else if (wal_data.length != 0 && wallet_amount) {
-
-                                            var old_wallet = wal_data[0].amount;
-
-                                            var new_wallet = old_wallet - wallet_amount;
-
-
-                                            var row_id = wal_data[0].id;
-                                            var sql5 = "UPDATE wallet SET amount=? WHERE id=?";
-                                            connection.query(sql5, [new_wallet, row_id], function (err, data) {
-                                                if (err) {
-                                                    console.log("Wallet error", err);
-                                                } else {
-                                                    var logs = "Subscribe Your Wallet Amount for " + " " + wallet_amount
-                                                    var sql6 = "INSERT INTO wallet_logs (logs,used_by) VALUES (?,?)";
-                                                    connection.query(sql6, [logs, user_id], function (err, ins_err) {
-                                                        if (err) {
-                                                            console.log("Wallet error", err);
-                                                        } else {
-                                                            console.log("Wallet Updated");
-
-                                                        }
-                                                    })
-                                                }
-                                            })
-                                        } else {
-                                            console.log("No Wallet Added");
+                                    var sql2 = "INSERT INTO subscription_details (customer_id, user_id, plan_start, plan_end, amount, plan_type, hostel_count, selected_hostels, status, hostel_id) VALUES (?,?,?,?,?,?,?,?,?,?)";
+                                    connection.query(sql2, [customer_id, user_id, plan_start, plan_end, amount, 'live', hostel_count, selectedhostel, 1, hostel_id], function (error, results) {
+                                        if (error) {
+                                            console.error('Error inserting subscription_details:', error);
                                         }
-                                    })
+                                    });
+                                });
 
-                                    var up_id = sql1_res[0].id;
+                                // Update Wallet
+                                var sql4 = "SELECT * FROM wallet WHERE user_id=? AND is_active=1";
+                                connection.query(sql4, [user_id], function (err, wal_data) {
+                                    if (err) {
+                                        console.log("Wallet error", err);
+                                    } else if (wal_data.length != 0 && wallet_amount) {
+                                        var old_wallet = wal_data[0].amount;
+                                        var new_wallet = old_wallet - wallet_amount;
+                                        var row_id = wal_data[0].id;
 
-                                    var sql2 = "UPDATE manage_plan_details SET plan_name=?,plan_start_date=?,plan_end_date=?,payment_method=?,payment_id=?,invoice_id=?,event_id=?,interval_unit=?,status=1 WHERE id=?";
-                                    connection.query(sql2, [plan_name, plan_start, plan_end, payment_mode, paymentId, payment_details[0].invoice_id, event_id, plan_interval_unit, up_id], function (err, upsql_res) {
-                                        if (err) {
-                                            console.log(err.message);
-                                        }
+                                        var sql5 = "UPDATE wallet SET amount=? WHERE id=?";
+                                        connection.query(sql5, [new_wallet, row_id], function (err) {
 
-                                        var sql2 = "UPDATE createaccount SET plan_status=1,plan_code=?,customer_id=? WHERE id=?";
-                                        connection.query(sql2, [plan_code, customer_id, user_id], function (err, up_date) {
                                             if (err) {
-                                                console.log(err);
+                                                console.log("Wallet error", err);
                                             } else {
-                                                console.log('Subscription history inserted:', results);
+                                                var logs = "Subscribe Your Wallet Amount for " + wallet_amount;
+                                                var sql6 = "INSERT INTO wallet_logs (logs, used_by) VALUES (?, ?)";
+                                                connection.query(sql6, [logs, user_id], function (err) {
+                                                    if (err) {
+                                                        console.log("Wallet error", err);
+                                                    } else {
+                                                        console.log("Wallet Updated");
+                                                    }
+                                                });
                                             }
-                                        })
-                                    })
-                                })
+                                        });
+                                    } else {
+                                        console.log("No Wallet Added");
+                                    }
+                                });
+
+                                // Update manage_plan_details status for all matched rows
+                                sql1_res.forEach((row) => {
+                                    var up_id = row.id;
+                                    var sql2 = "UPDATE manage_plan_details SET plan_name=?, plan_start_date=?, plan_end_date=?, payment_method=?, payment_id=?, invoice_id=?, event_id=?, interval_unit=?, status=1 WHERE id=?";
+                                    connection.query(sql2, [plan_name, plan_start, plan_end, payment_mode, paymentId, payment_details[0].invoice_id, event_id, plan_interval_unit, up_id
+                                    ]);
+                                });
+
+                                // Update createaccount status
+                                var sql2 = "UPDATE createaccount SET plan_status=1, plan_code=?, customer_id=? WHERE id=?";
+                                connection.query(sql2, [plan_code, customer_id, user_id], function (err) {
+                                    if (err) {
+                                        console.log(err);
+                                    } else {
+                                        console.log('Subscription history inserted and plan updated.');
+                                    }
+                                });
+
                             } else {
                                 console.log("Invalid Created account");
                             }
-                        })
+                        });
                     } else {
                         console.log("Invalid Hosted Payment Id");
                     }
-                })
+                });
+
+
                 // })
             }
         }
