@@ -29,6 +29,7 @@ module.exports = (req, res, next) => {
         '/customers/login',
         '/customers/verify_otp',
         '/get_invoice_id',
+        '/get-InvoiceId',
         '/billing/new_hosted_page',
         '/reviews/all_review',
         // '/invoice_redirect/:invoiceUrl'
