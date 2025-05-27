@@ -643,60 +643,114 @@ function get_user_details(connection, request, response) {
                 //     return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: plan_data });
                 // })
 
+                // const sql2 = `SELECT * FROM subscription_details WHERE user_id = ? AND status = 1 ORDER BY id DESC LIMIT 1`;
+                // connection.query(sql2, [created_by], function (err, plan_data) {
+                //     if (err) return response.status(201).json({ message: "Error to Get Plan Details", statusCode: 201 });
+
+                //     if (!plan_data.length) return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: [] });
+
+                //     const latestPlan = plan_data[0];
+
+                //     let hostelIds = [];
+                //     try { hostelIds = JSON.parse(latestPlan.selected_hostels); if (!Array.isArray(hostelIds)) hostelIds = []; } catch (e) { hostelIds = []; }
+
+                //     if (hostelIds.length === 0) {
+                //         latestPlan.hostel_details = [];
+                //         return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: [latestPlan] });
+                //     }
+
+                //     const placeholders = hostelIds.map(() => '?').join(',');
+                //     const sqlHostels = `SELECT id, name FROM hosteldetails WHERE id IN (${placeholders})`;
+                //     const sqlPlans = `SELECT * FROM subscription_details WHERE user_id = ? AND status = 1 AND hostel_id IN (${placeholders})`;
+
+                //     // Fetch hostels and plan info in parallel
+                //     connection.query(sqlHostels, hostelIds, (err, hostels) => {
+                //         if (err) return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: [latestPlan] });
+
+                //         connection.query(sqlPlans, [created_by, ...hostelIds], (err2, hostelPlans) => {
+                //             if (err2) return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: [latestPlan] });
+
+                //             // Map hostel_id -> plan
+                //             const planMap = {};
+                //             hostelPlans.forEach(plan => {
+                //                 planMap[plan.hostel_id] = plan;
+                //             });
+
+                //             // Merge hostels with plan data
+                //             latestPlan.hostel_details = hostels.map(h => {
+                //                 const plan = planMap[h.id];
+                //                 return {
+                //                     id: h.id,
+                //                     name: h.name,
+                //                     plan_start: plan ? plan.plan_start : "",
+                //                     plan_end: plan ? plan.plan_end : "",
+                //                     plan_status: plan ? plan.status : 0,
+                //                     plan_code: plan ? plan.plan_code : ""
+                //                 };
+                //             });
+
+                //             return response.status(200).json({
+                //                 message: "User Details",
+                //                 statusCode: 200,
+                //                 user_details: filtered_user,
+                //                 is_owner: 1,
+                //                 role_permissions: [],
+                //                 plan_data: [latestPlan]
+                //             });
+                //         });
+                //     });
+                // });
+
                 const sql2 = `SELECT * FROM subscription_details WHERE user_id = ? AND status = 1 ORDER BY id DESC LIMIT 1`;
                 connection.query(sql2, [created_by], function (err, plan_data) {
-                    if (err) return response.status(201).json({ message: "Error to Get Plan Details", statusCode: 201 });
+                    if (err) return response.status(500).json({ message: "Error fetching plan", statusCode: 500 });
 
-                    if (!plan_data.length) return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: [] });
-
-                    const latestPlan = plan_data[0];
-
-                    let hostelIds = [];
-                    try { hostelIds = JSON.parse(latestPlan.selected_hostels); if (!Array.isArray(hostelIds)) hostelIds = []; } catch (e) { hostelIds = []; }
-
-                    if (hostelIds.length === 0) {
-                        latestPlan.hostel_details = [];
-                        return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: [latestPlan] });
+                    if (!plan_data.length) {
+                        return response.status(200).json({
+                            message: "User Details",
+                            statusCode: 200,
+                            user_details: filtered_user,
+                            is_owner: 1,
+                            role_permissions: [],
+                            plan_data: []
+                        });
                     }
 
-                    const placeholders = hostelIds.map(() => '?').join(',');
-                    const sqlHostels = `SELECT id, name FROM hostel WHERE id IN (${placeholders})`;
-                    const sqlPlans = `SELECT * FROM subscription_details WHERE user_id = ? AND status = 1 AND hostel_id IN (${placeholders})`;
+                    const latestPlan = plan_data[0];
+                    let selectedHostels = [];
+                    try {
+                        selectedHostels = JSON.parse(latestPlan.selected_hostels);
+                        if (!Array.isArray(selectedHostels)) selectedHostels = [];
+                    } catch (e) {
+                        selectedHostels = [];
+                    }
 
-                    // Fetch hostels and plan info in parallel
-                    connection.query(sqlHostels, hostelIds, (err, hostels) => {
-                        if (err) return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: [latestPlan] });
+                    const sql3 = `SELECT hs.id AS hostel_id, hs.Name AS hostel_name,sd.plan_code, sd.plan_start, sd.plan_end, sd.status AS plan_status FROM hosteldetails hs LEFT JOIN (SELECT * FROM subscription_details WHERE status = 1 AND user_id = ?) sd ON hs.id = sd.hostel_id WHERE hs.created_By = ? AND hs.isActive = 1`;
+                    connection.query(sql3, [created_by, created_by], function (err, hostel_data) {
+                        if (err) {
+                            console.log(err);
+                            return response.status(201).json({ message: "Error fetching hostel info", statusCode: 201 });
+                        }
 
-                        connection.query(sqlPlans, [created_by, ...hostelIds], (err2, hostelPlans) => {
-                            if (err2) return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: [latestPlan] });
+                        // Map to formatted structure
+                        const hostel_details = hostel_data.map(row => ({
+                            id: row.hostel_id,
+                            name: row.hostel_name || "",
+                            plan_start: row.plan_start || "",
+                            plan_end: row.plan_end || "",
+                            plan_status: row.plan_status || 0,
+                            plan_code: row.plan_code || ""
+                        }));
 
-                            // Map hostel_id -> plan
-                            const planMap = {};
-                            hostelPlans.forEach(plan => {
-                                planMap[plan.hostel_id] = plan;
-                            });
+                        latestPlan.hostel_details = hostel_details;
 
-                            // Merge hostels with plan data
-                            latestPlan.hostel_details = hostels.map(h => {
-                                const plan = planMap[h.id];
-                                return {
-                                    id: h.id,
-                                    name: h.name,
-                                    plan_start: plan ? plan.plan_start : "",
-                                    plan_end: plan ? plan.plan_end : "",
-                                    plan_status: plan ? plan.status : 0,
-                                    plan_code: plan ? plan.plan_code : ""
-                                };
-                            });
-
-                            return response.status(200).json({
-                                message: "User Details",
-                                statusCode: 200,
-                                user_details: filtered_user,
-                                is_owner: 1,
-                                role_permissions: [],
-                                plan_data: [latestPlan]
-                            });
+                        return response.status(200).json({
+                            message: "User Details",
+                            statusCode: 200,
+                            user_details: filtered_user,
+                            is_owner: 1,
+                            role_permissions: [],
+                            plan_data: [latestPlan]
                         });
                     });
                 });
