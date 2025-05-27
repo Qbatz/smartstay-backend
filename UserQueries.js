@@ -1499,6 +1499,112 @@ function get_invoice_id(req, res) {
 }
 
 
+function getInvoiceIDNew(req, res) {
+  const user_id = req.body.user_id;
+  if (!user_id) {
+    return res.status(400).json({ statusCode: 400, message: "Missing Mandatory Fields" });
+  }
+
+  const sql_1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
+  connection.query(sql_1, [user_id], function (err, user_data) {
+    if (err || user_data.length === 0) {
+      return res.status(400).json({ statusCode: 400, message: "Invalid User Details" });
+    }
+
+    const hostel_id = user_data[0].Hostel_Id;
+
+    const sql1 = "SELECT * FROM hosteldetails WHERE id=? AND isActive=1";
+    connection.query(sql1, [hostel_id], function (err, hos_details) {
+      if (err || hos_details.length === 0) {
+        return res.status(400).json({ statusCode: 400, message: "Invalid Hostel Details" });
+      }
+
+      
+      getPrefixAndSuffix(hostel_id, (err, settings) => {
+        if (err) {
+          return res.status(500).json({ statusCode: 500, message: "Prefix/Suffix Error" });
+        }
+
+        let prefix = settings.prefix || hos_details[0].Name || "INV";
+        let suffix = settings.suffix || "001";
+
+        prefix = prefix.replace(/\s+/g, '-'); // Format prefix
+
+        const sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? AND action != 'advance' ORDER BY id DESC LIMIT 1";
+        connection.query(sql2, [hostel_id], function (err, inv_data) {
+          if (err) {
+            return res.status(500).json({ statusCode: 500, message: "Unable to Get Invoice Details" });
+          }
+
+          let newInvoiceNumber;
+
+          if (inv_data.length > 0) {
+            const lastInvoice = inv_data[0].Invoices || "";
+            const lastPrefix = lastInvoice.replace(/-\d+$/, '');
+            const lastSuffix = lastInvoice.match(/-(\d+)$/)?.[1] || "001";
+
+            if (prefix !== lastPrefix) {
+              newInvoiceNumber = `${prefix}-001`;
+            } else {
+              const newSuffix = (parseInt(lastSuffix) + 1).toString().padStart(3, '0');
+              newInvoiceNumber = `${prefix}-${newSuffix}`;
+            }
+          } else {
+            newInvoiceNumber = `${prefix}-001`;
+          }
+
+          
+          check_inv_validation1(newInvoiceNumber, hostel_id, res);
+        });
+      });
+    });
+  });
+
+  
+  function getPrefixAndSuffix(hostelId, callback) {
+    const query = 'SELECT prefix, suffix FROM InvoiceSettings WHERE hostel_Id = ?';
+    connection.query(query, [hostelId], (err, results) => {
+      if (err) return callback(err, null);
+      if (results.length > 0) {
+        callback(null, {
+          prefix: results[0].prefix?.trim() || '',
+          suffix: results[0].suffix?.trim() || ''
+        });
+      } else {
+        callback(null, { prefix: '', suffix: '' });
+      }
+    });
+  }
+
+  
+  function check_inv_validation1(invoice_number, hostel_id, res) {
+    const ch_query = "SELECT * FROM invoicedetails WHERE Invoices=? AND invoice_status=1";
+    connection.query(ch_query, [invoice_number], function (err, data) {
+      if (err) {
+        return res.status(500).json({ statusCode: 500, message: "Check Invoice Query Error" });
+      }
+
+      if (data.length > 0) {
+        const invoicePrefix = invoice_number.replace(/-\d+$/, '');
+        const lastNumber = invoice_number.match(/-(\d+)$/)?.[1] || "001";
+        const newNumber = (parseInt(lastNumber) + 1).toString().padStart(3, '0');
+
+        const newInvoiceNumber = `${invoicePrefix}-${newNumber}`;
+        check_inv_validation1(newInvoiceNumber, hostel_id, res); // Recursive check
+      } else {
+        return res.status(200).json({
+          statusCode: 200,
+          message: "Generated Invoice Number",
+          invoice_number,
+          hostel_id
+        });
+      }
+    });
+  }
+}
+
+
+
 function get_user_amounts(req, res) {
 
   var { user_id, start_date, end_date } = req.body;
@@ -2318,5 +2424,6 @@ module.exports = {
   delete_check_out,
   available_checkout_users,
   available_beds,
-  get_confirm_checkout
+  get_confirm_checkout,
+  getInvoiceIDNew
 };

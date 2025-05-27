@@ -2983,6 +2983,192 @@ function add_recuring_bill(req, res) {
     }
 }
 
+
+function addRecurringBills(req, res) {
+    const {
+        recure_id,
+        hostel_id,
+        recurringName,
+        billFrequency,
+        calculationFromDate,
+        calculationToDate,
+        billingDateOfMonth,
+        dueDateOfMonth,
+        isAutoSend,
+        remainderDates,
+        billDeliveryChannels
+    } = req.body;
+
+    const role_permissions = req.role_permissions;
+    const is_admin = req.is_admin;
+
+    // Define the validator early!
+    const isValidDayNumber = (day) => {
+        const d = parseInt(day, 10);
+        return d >= 1 && d <= 31;
+    };
+
+    // Permission check
+    if (!(is_admin === 1 || (role_permissions[11] && role_permissions[11].per_create === 1))) {
+        return res.status(208).json({
+            statusCode: 208,
+            message: "Permission Denied. Please contact your administrator for access."
+        });
+    }
+
+    if (!hostel_id) {
+        return res.status(400).json({ statusCode: 400, message: "Missing Mandatory Field: hostel_id" });
+    }
+
+    // Validate all day number fields
+    if (
+        !isValidDayNumber(calculationFromDate) ||
+        !isValidDayNumber(calculationToDate) ||
+        !isValidDayNumber(billingDateOfMonth) ||
+        !isValidDayNumber(dueDateOfMonth)
+    ) {
+        return res.status(400).json({
+            statusCode: 400,
+            message: "Invalid day number(s). Days must be between 1 and 31."
+        });
+    }
+
+
+    const now = moment();
+    const year = now.year();
+    const month = now.month();
+
+    const createValidDate = (day) => {
+        const maxDay = moment({ year, month }).daysInMonth();
+        const validDay = Math.min(day, maxDay);
+        return moment({ year, month, day: validDay }).format('YYYY-MM-DD');
+    };
+
+    const calcFromDateFull = createValidDate(parseInt(calculationFromDate, 10));
+    const calcToDateFull = createValidDate(parseInt(calculationToDate, 10));
+
+
+    const remainderDatesStr = Array.isArray(remainderDates) ? remainderDates.join(',') : (remainderDates || '');
+    const billDeliveryChannelsStr = Array.isArray(billDeliveryChannels) ? billDeliveryChannels.join(',') : (billDeliveryChannels || '');
+
+    const created_by = req.user_details.id;
+
+
+    const checkHostelSql = "SELECT id FROM hosteldetails WHERE id = ? AND isActive = 1";
+    connection.query(checkHostelSql, [hostel_id], (err, hostelResults) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ statusCode: 500, message: "Database error while verifying hostel." });
+        }
+
+        if (hostelResults.length === 0) {
+            return res.status(404).json({
+                statusCode: 404,
+                message: "Hostel not found or inactive"
+            });
+        }
+
+        if (recure_id) {
+            const updateSql = `
+        UPDATE RecurringBilling
+        SET
+          recurringName = ?,
+          billFrequency = ?,
+          calculationFromDate = ?,
+          calculationToDate = ?,
+          billingDateOfMonth = ?,
+          dueDateOfMonth = ?,
+          isAutoSend = ?,
+          remainderDates = ?,
+          billDeliveryChannels = ?,
+           status = ?,
+          updated_at = NOW()
+        WHERE recure_id = ?
+      `;
+
+            const updateValues = [
+                recurringName,
+                billFrequency,
+                calculationFromDate,
+                calculationToDate,
+                billingDateOfMonth,
+                dueDateOfMonth,
+                parseInt(isAutoSend) || 0,
+                remainderDatesStr,
+                billDeliveryChannelsStr,
+                1,
+                recure_id
+            ];
+
+            connection.query(updateSql, updateValues, (err) => {
+                if (err) {
+                    console.error(err);
+                    return res.status(500).json({ statusCode: 500, message: "Unable to update recurring billing." });
+                }
+
+                return res.status(200).json({
+                    statusCode: 200,
+                    message: "Recurring Bill Setup Updated Successfully!"
+                });
+            });
+
+        } else {
+            // Insert new record after checking existence
+            const checkExistsSql = "SELECT * FROM RecurringBilling WHERE hostel_id = ?";
+            connection.query(checkExistsSql, [hostel_id], (err, existingRecords) => {
+                if (err) {
+                    console.error(err);
+                    return res.status(500).json({ statusCode: 500, message: "Database error while checking existing billing." });
+                }
+
+                if (existingRecords.length > 0) {
+                    return res.status(409).json({
+                        statusCode: 409,
+                        message: "Recurring billing already setup for this hostel"
+                    });
+                }
+
+                const insertSql = `
+          INSERT INTO RecurringBilling (
+            hostel_id, recurringName, billFrequency, calculationFromDate, calculationToDate,
+            billingDateOfMonth, dueDateOfMonth, isAutoSend, remainderDates, billDeliveryChannels,status, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        `;
+
+                const insertValues = [
+                    hostel_id,
+                    recurringName,
+                    billFrequency,
+                    calculationFromDate,
+                    calculationToDate,
+                    billingDateOfMonth,
+                    dueDateOfMonth,
+                    parseInt(isAutoSend) || 0,
+                    remainderDatesStr,
+                    billDeliveryChannelsStr,
+                    1
+                ];
+
+                connection.query(insertSql, insertValues, (err) => {
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).json({ statusCode: 500, message: "Unable to add recurring billing." });
+                    }
+
+                    return res.status(200).json({
+                        statusCode: 200,
+                        message: "Recurring Bill Setup Added Successfully!"
+                    });
+                });
+            });
+        }
+    });
+}
+
+
+
+
+
 function get_recuring_amount(req, res) {
 
     var { user_id, hostel_id } = req.body;
@@ -3654,4 +3840,4 @@ function advance_invoice(req, res) {
     })
 }
 
-module.exports = { calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice, customer_readings, add_recuring_bill, get_recuring_amount, all_recuring_bills, delete_recuring_bill, update_recuring_bill, edit_eb_readings, edit_manual_invoice, delete_manual_invoice, advance_invoice }
+module.exports = { addRecurringBills, calculateAndInsertInvoice, getInvoiceList, InvoicePDf, EbAmount, getEBList, getEbStart, CheckOutInvoice, getInvoiceListForAll, InsertManualInvoice, UpdateInvoice, UpdateAmenitiesHistory, GetAmenitiesHistory, add_manual_invoice, customer_readings, add_recuring_bill, get_recuring_amount, all_recuring_bills, delete_recuring_bill, update_recuring_bill, edit_eb_readings, edit_manual_invoice, delete_manual_invoice, advance_invoice }
