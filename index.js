@@ -36,6 +36,7 @@ var billings = require('./zoho_billing/billings');
 
 const masterDataQueries = require('./routes/masterData')
 const settingsQueries = require('./routes/settings');
+const kycQueries = require('./routes/kycVerification');
 
 
 const multer = require('multer');
@@ -1319,6 +1320,12 @@ app.post('/invoice-settings', upload.fields(
 
 app.post('/add-recuringBill', (req, res) => {
     invoiceQueries.addRecurringBills(req, res)
+});
+
+app.post('/verify-kyc', (req, res) => {
+
+  const customer_id = req.body.customer_id;
+ kycQueries.verifyAndStoreKyc(req, res,customer_id)
 });
 
 
