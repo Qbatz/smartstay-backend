@@ -23,6 +23,8 @@ async function verifyAndStoreKyc(req, res, customer_id) {
       return res.status(400).json({ success: false, message: 'Invalid phone number format' });
     }
 
+   const email = (hostel.Email || '').trim().toLowerCase();
+
     // if (!isValidEmail) {
       // return res.status(400).json({ success: false, message: 'Invalid email format' });
     // }
@@ -32,8 +34,8 @@ const cleanedPhone = cleanPhoneNumber(hostel.Phone.toString());
       notify_customer: true,
       customer_notification_mode: 'SMS',
       customer_name: hostel.Name,
-      template_name: 'SMARTSTAY-WORKFLOW',
-      identifier: 'robinisacsharon@gmail.com',
+      template_name: process.env.KYC_TEMPLATE_NAME,
+      identifier: email.toString,
       type: 'geo_location',
       generate_access_token: true
     };
