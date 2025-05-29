@@ -8,10 +8,14 @@ function generateInvoice(invoiceDetails, outputPath) {
     const pageWidth = doc.page.width;
 
     // === Header Background ===
-    doc.rect(0, 0, pageWidth, 130).fill('#1E45E1');
+    doc.rect(0, 0, pageWidth, 90).fill('#1E45E1');
+   
 
     // === Logo & Tagline ===
     // doc.image('logo.png', 50, 30, { width: 40 }); // Replace with your actual logo
+     doc.image('./Asset/Group@2x.png', 10, 30, { width: 35,height:35 });
+    doc.image('./Asset/Rectangleblue.png', 35, 215, { width: 8,height:8 });
+doc.image('./Asset/location 03.png', 35, 232, { width: 10,height:10 });
     doc
         .fillColor('white')
         .fontSize(18)
