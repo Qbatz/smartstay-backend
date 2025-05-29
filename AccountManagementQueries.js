@@ -400,13 +400,6 @@ function createnewAccount(request, response) {
                     var confirm_pass = reqBodyData.confirm_password;
                     var currentDate = new Date();
 
-                    var futureDate = new Date(currentDate);
-                    futureDate.setDate(futureDate.getDate() + 30);
-                    var formattedFutureDate = futureDate.toISOString().split('T')[0];
-
-                    console.log('Current Date:', currentDate.toISOString().split('T')[0]);
-                    console.log('30 Days After:', formattedFutureDate);
-
                     var plan_code = 'one_day'
 
                     if (reqBodyData.password === confirm_pass) {
@@ -415,133 +408,129 @@ function createnewAccount(request, response) {
 
                         var currentDate = new Date().toISOString().split('T')[0];
 
-                        // var apiEndpoint = 'https://www.zohoapis.in/billing/v1/subscriptions';
-                        // var method = "POST";
+                        var apiEndpoint = 'https://www.zohoapis.in/billing/v1/subscriptions';
+                        var method = "POST";
 
-                        // var last_name = reqBodyData.last_name || ''
+                        var last_name = reqBodyData.last_name || ''
 
-                        // var inbut_body = {
-                        //     plan: {
-                        //         plan_code: plan_code
-                        //     },
-                        //     customer: {
-                        //         display_name: reqBodyData.first_name + ' ' + last_name,
-                        //         first_name: reqBodyData.first_name,
-                        //         last_name: last_name,
-                        //         email: reqBodyData.emailId,
-                        //         mobile: reqBodyData.mobileNo
-                        //     },
-                        //     start_date: currentDate,
-                        //     notes: "New User Subscribtion"
-                        // };
+                        var inbut_body = {
+                            plan: {
+                                plan_code: plan_code
+                            },
+                            customer: {
+                                display_name: reqBodyData.first_name + ' ' + last_name,
+                                first_name: reqBodyData.first_name,
+                                last_name: last_name,
+                                email: reqBodyData.emailId,
+                                mobile: reqBodyData.mobileNo
+                            },
+                            start_date: currentDate,
+                            notes: "New Trail Subscribtion"
+                        };
 
-                        // apiResponse(apiEndpoint, method, inbut_body).then(api_data => {
-                        //     console.log('API Response:', api_data);
+                        apiResponse(apiEndpoint, method, inbut_body).then(api_data => {
+                            console.log('API Response:', api_data);
 
-                        //     if (api_data.code == 0) {
+                            if (api_data.code == 0) {
 
-                        //         var subscription_response = api_data.subscription;
-                        // var plan_code = plan_code;
-                        // var customer_id = subscription_response.customer.customer_id;
-                        // var subscription_id = subscription_response.subscription_id;
-                        // var plan_duration = subscription_response.trial_remaining_days;
+                                var subscription_response = api_data.subscription;
+                                var customer_id = subscription_response.customer.customer_id;
+                                var subscription_id = subscription_response.subscription_id;
+                                var plan_duration = subscription_response.trial_remaining_days;
+                                var plan_code = subscription_response.plan.plan_code;
 
-                        var customer_id = 0;
-                        var subscription_id = 0;
+                                var futureDate = new Date(currentDate);
+                                futureDate.setDate(futureDate.getDate() + Number(plan_duration));
+                                var formattedFutureDate = futureDate.toISOString().split('T')[0];
 
-                        if (reference_id && reference_id != 0) {
+                                if (reference_id && reference_id != 0) {
 
-                            var sql3 = "SELECT * FROM referral_codes WHERE referral_code=? AND is_active=1";
-                            connection.query(sql3, [reference_id], function (err, ref_res) {
-                                if (err) {
-                                    console.log("Error for Reference", err);
-                                    return response.status(201).json({ message: 'Error to Get Reference Details' });
-                                } else if (ref_res.length != 0) {
+                                    var sql3 = "SELECT * FROM referral_codes WHERE referral_code=? AND is_active=1";
+                                    connection.query(sql3, [reference_id], function (err, ref_res) {
+                                        if (err) {
+                                            console.log("Error for Reference", err);
+                                            return response.status(201).json({ message: 'Error to Get Reference Details' });
+                                        } else if (ref_res.length != 0) {
 
-                                    var full_name = reqBodyData.first_name + " " + reqBodyData.last_name
-                                    var ref_id = ref_res[0].id;
-                                    var logs = full_name + " Added for Receipt Id"
+                                            var full_name = reqBodyData.first_name + " " + reqBodyData.last_name
+                                            var ref_id = ref_res[0].id;
+                                            var logs = full_name + " Added for Receipt Id"
 
-                                    var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status,reference_id,is_credited) VALUES (?,?,?,?,?,?,?,?,1,?,0)"
-                                    connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, 'free_plan', ref_id], function (error, result) {
+                                            var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status,reference_id,is_credited) VALUES (?,?,?,?,?,?,?,?,1,?,0)"
+                                            connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, 'free_plan', ref_id], function (error, result) {
+                                                if (error) {
+                                                    console.log(error);
+                                                    return response.status(201).json({ message: 'Database error' });
+                                                } else {
+                                                    var user_id = result.insertId;
+
+                                                    var sql4 = "INSERT INTO wallet_logs (logs,ref_id,used_by,status) VALUES (?,?,?,?)";
+                                                    connection.query(sql4, [logs, ref_id, user_id, 1], function (err, wall_data) {
+                                                        if (err) {
+                                                            console.log(error);
+                                                        }
+                                                    })
+                                                    // return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
+
+                                                    var sql12 = "INSERT INTO subscription_details (customer_id,user_id,plan_start,plan_end,amount,plan_type,plan_code,hostel_count,selected_hostels,status) VALUES ?";
+                                                    var params = [customer_id, user_id, currentDate, futureDate, 0, 'trail', plan_code, 2, 0, 1]
+                                                    connection.query(sql12, params, function (err, ins_data) {
+                                                        if (err) {
+                                                            return response.status(201).json({ message: 'Error to Add Subscription Details' });
+                                                        }
+
+                                                        var sql4 = "INSERT INTO wallet (amount,user_id,is_active) VALUES (?,?,?)";
+                                                        connection.query(sql4, [0, user_id, 1], function (err, wal_res) {
+                                                            if (err) {
+                                                                console.log("Unable to Add Wallet Details");
+                                                            }
+
+                                                            return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
+                                                        })
+                                                    })
+                                                }
+                                            });
+
+                                        } else {
+                                            return response.status(201).json({ message: 'Invalid Reference Details' });
+                                        }
+                                    })
+
+                                } else {
+
+                                    var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status) VALUES (?,?,?,?,?,?,?,?,1)"
+                                    connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, plan_code], function (error, result) {
                                         if (error) {
                                             console.log(error);
                                             return response.status(201).json({ message: 'Database error' });
                                         } else {
                                             var user_id = result.insertId;
 
-                                            var sql4 = "INSERT INTO wallet_logs (logs,ref_id,used_by,status) VALUES (?,?,?,?)";
-                                            connection.query(sql4, [logs, ref_id, user_id, 1], function (err, wall_data) {
-                                                if (err) {
-                                                    console.log(error);
-                                                }
-                                            })
-                                            // return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
-
-                                            var sql2 = "INSERT INTO trial_plan_details (plan_code,user_id,customer_id,subscription_id,plan_status,plan_duration,startdate,end_date) VALUES (?,?,?,?,?,?,?,?)";
-                                            connection.query(sql2, [plan_code, user_id, customer_id, subscription_id, 1, 30, currentDate, formattedFutureDate], (err, ins_data) => {
+                                            var sql12 = "INSERT INTO subscription_details (customer_id,user_id,plan_start,plan_end,amount,plan_type,plan_code,hostel_count,selected_hostels,status) VALUES (?)";
+                                            var params = [customer_id, user_id, currentDate, formattedFutureDate, 0, 'trail', plan_code, 2, 0, 1]
+                                            connection.query(sql12, [params], function (err, ins_data) {
                                                 if (err) {
                                                     console.log(err);
-                                                    return response.status(201).json({ message: "Unable to Add Subscribtion History", statusCode: 201 })
-                                                } else {
-
-                                                    var sql4 = "INSERT INTO wallet (amount,user_id,is_active) VALUES (?,?,?)";
-                                                    connection.query(sql4, [0, user_id, 1], function (err, wal_res) {
-                                                        if (err) {
-                                                            console.log("Unable to Add Wallet Details");
-                                                            // return response.status(201).json({ message: "Unable to Add Wallet Details", statusCode: 201 })
-                                                        }
-
-                                                        return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
-                                                    })
+                                                    return response.status(201).json({ message: 'Error to Add Subscription Details' });
                                                 }
+
+                                                var sql4 = "INSERT INTO wallet (amount,user_id,is_active) VALUES (?,?,?)";
+                                                connection.query(sql4, [0, user_id, 1], function (err, wal_res) {
+                                                    if (err) {
+                                                        console.log("Unable to Add Wallet Details");
+                                                    }
+
+                                                    return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
+                                                })
                                             })
                                         }
                                     });
-
-
-                                } else {
-                                    return response.status(201).json({ message: 'Invalid Reference Details' });
                                 }
-                            })
 
-                        } else {
-
-                            var sql13 = "INSERT INTO createaccount (first_name,last_name, mobileNo, email_Id, password,customer_id,subscription_id,plan_code,plan_status) VALUES (?,?,?,?,?,?,?,?,1)"
-                            connection.query(sql13, [reqBodyData.first_name, reqBodyData.last_name, reqBodyData.mobileNo, reqBodyData.emailId, hash_password, customer_id, subscription_id, plan_code], function (error, result) {
-                                if (error) {
-                                    console.log(error);
-                                    return response.status(201).json({ message: 'Database error' });
-                                } else {
-                                    var user_id = result.insertId;
-
-                                    // var sql2 = "INSERT INTO trial_plan_details (plan_code,user_id,customer_id,subscription_id,plan_status,plan_duration,startdate,end_date) VALUES (?,?,?,?,?,?,?,?)";
-                                    // connection.query(sql2, [plan_code, user_id, customer_id, subscription_id, 1, 30, currentDate, formattedFutureDate], (err, ins_data) => {
-                                    //     if (err) {
-                                    //         console.log(err);
-                                    //         return response.status(201).json({ message: "Unable to Add Subscribtion History", statusCode: 201 })
-                                    //     } else {
-                                    // return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
-                                    var sql4 = "INSERT INTO wallet (amount,user_id,is_active) VALUES (?,?,?)";
-                                    connection.query(sql4, [0, user_id, 1], function (err, wal_res) {
-                                        if (err) {
-                                            console.log("Unable to Add Wallet Details");
-                                        }
-
-                                        return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
-                                    })
-                                    // }
-                                    // })
-                                }
-                            });
-                        }
-
-                        //     } else {
-                        //         response.status(210).json({ message: api_data, statusCode: 210 });
-                        //     }
-
-
-                        // })
+                            } else {
+                                return response.status(210).json({ message: api_data, statusCode: 210 });
+                            }
+                        })
                     } else {
                         return response.status(201).json({ message: 'Password and Confirm Password Not Same' });
                     }
@@ -570,7 +559,7 @@ function createnewAccount(request, response) {
 
 // Generate JWT Token
 const generateToken = (user, plan_details) => {
-    return jwt.sign({ id: user.id, sub: user.id, user_type: user.user_type, username: user.Name, role_id: user.role_id, plan_code: plan_details.plan_code, plan_status: user.plan_status, start_date: plan_details.startdate, end_date: plan_details.end_date, hostel_count: user.hostel_count }, process.env.JWT_SECRET, { expiresIn: '30m' });
+    return jwt.sign({ id: user.id, sub: user.id, user_type: user.user_type, username: user.Name, role_id: user.role_id, plan_code: plan_details.plan_code, plan_status: user.plan_status }, process.env.JWT_SECRET, { expiresIn: '30m' });
 };
 
 // Login API
@@ -590,37 +579,24 @@ function loginAccount(connection, response, email_Id, password) {
                             response.status(203).json({ message: "OTP sent successfully", statusCode: 203 });
                         } else {
 
-                            var plan_code = data[0].plan_code;
-                            var user_id = data[0].id;
-
-                            if (plan_code == 'free_plan') {
-                                var sql2 = "SELECT * FROM trial_plan_details WHERE user_id=? ORDER BY id DESC";
-                            } else {
-                                var sql2 = "SELECT * FROM subscribtion_history WHERE customer_id=? ORDER BY id DESC";
-                            }
-                            connection.query(sql2, [user_id], function (err, Data) {
+                            var sql2 = "SELECT * FROM subscription_details WHERE user_id=? AND status=1 ORDER BY id DESC LIMIT 1 ";
+                            connection.query(sql2, [LoginId], function (err, plan_data) {
                                 if (err) {
-                                    response.status(201).json({ message: "Error to Get Plan Details", statusCode: 201 });
-                                } else if (Data.length != 0) {
-                                    var plan_details = Data[0]
-                                    const token = generateToken(data[0], plan_details); // token is generated
-                                    response.status(200).json({ message: "Login successful", statusCode: 200, token: token });
-                                } else {
-                                    var plan_details = {
-                                        startdate: 0,
-                                        end_date: 0
-                                    }
-                                    const token = generateToken(data[0], plan_details); // token is generated
-                                    response.status(200).json({ message: "Login successful", statusCode: 200, token: token });
+                                    return response.status(201).json({ message: "Error to Get Plan Details", statusCode: 201 });
                                 }
+
+                                if (plan_data.length != 0) {
+                                    var plan_details = plan_data[0]
+                                    const token = generateToken(data[0], plan_details);
+                                    return response.status(200).json({ message: "Login successful", statusCode: 200, token: token });
+                                }
+
+                                var plan_details = {
+                                    plan_code: 'one_day',
+                                }
+                                const token = generateToken(data[0], plan_details);
+                                return response.status(200).json({ message: "Login successful", statusCode: 200, token: token });
                             })
-
-                            // const token = generateToken(data[0]); // token is generated
-
-                            // var temp = data[0];
-                            // temp['token'] = token;
-                            // data[0] = temp;
-                            // response.status(200).json({ message: "Login successful", statusCode: 200, token: token });
                         }
                     } else {
                         response.status(202).json({ message: "Enter Valid Password", statusCode: 202 });
@@ -641,44 +617,145 @@ function get_user_details(connection, request, response) {
 
     const created_by = request.user_details.id;
 
-    // console.log(request.show_ids);
-
     var sql1 = "SELECT * FROM createaccount WHERE id = ?;";
     connection.query(sql1, [created_by], function (sel_err, sel_res) {
         if (sel_err) {
             return response.status(201).json({ message: "Unable to Get User Details" });
         } else if (sel_res.length > 0) {
+
             var user_type = sel_res[0].user_type;
             var role_id = sel_res[0].role_id;
 
+            const { password, createdat, ...filtered_user } = sel_res[0];
+
             if (user_type === 'admin') {
 
-                var customer_id = request.customer_id;
-                var plan_code = request.plan_code;
+                // var sql2 = "SELECT * FROM subscription_details WHERE user_id=? AND status=1 ORDER BY id DESC LIMIT 1"
+                // connection.query(sql2, [created_by], function (err, plan_data) {
+                //     if (err) {
+                //         return response.status(201).json({ message: "Error to Get Plan Details", statusCode: 201 });
+                //     }
 
-                if (!plan_code || plan_code == 'free_plan') {
+                //     if (plan_data.length != 0) {
+                //         return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: plan_data });
+                //     }
 
-                    var sql1 = "SELECT * FROM trial_plan_details WHERE customer_id=?";
-                    connection.query(sql1, customer_id, function (err, plan_data) {
+                //     return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: plan_data });
+                // })
+
+                // const sql2 = `SELECT * FROM subscription_details WHERE user_id = ? AND status = 1 ORDER BY id DESC LIMIT 1`;
+                // connection.query(sql2, [created_by], function (err, plan_data) {
+                //     if (err) return response.status(201).json({ message: "Error to Get Plan Details", statusCode: 201 });
+
+                //     if (!plan_data.length) return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: [] });
+
+                //     const latestPlan = plan_data[0];
+
+                //     let hostelIds = [];
+                //     try { hostelIds = JSON.parse(latestPlan.selected_hostels); if (!Array.isArray(hostelIds)) hostelIds = []; } catch (e) { hostelIds = []; }
+
+                //     if (hostelIds.length === 0) {
+                //         latestPlan.hostel_details = [];
+                //         return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: [latestPlan] });
+                //     }
+
+                //     const placeholders = hostelIds.map(() => '?').join(',');
+                //     const sqlHostels = `SELECT id, name FROM hosteldetails WHERE id IN (${placeholders})`;
+                //     const sqlPlans = `SELECT * FROM subscription_details WHERE user_id = ? AND status = 1 AND hostel_id IN (${placeholders})`;
+
+                //     // Fetch hostels and plan info in parallel
+                //     connection.query(sqlHostels, hostelIds, (err, hostels) => {
+                //         if (err) return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: [latestPlan] });
+
+                //         connection.query(sqlPlans, [created_by, ...hostelIds], (err2, hostelPlans) => {
+                //             if (err2) return response.status(200).json({ message: "User Details", statusCode: 200, user_details: filtered_user, is_owner: 1, role_permissions: [], plan_data: [latestPlan] });
+
+                //             // Map hostel_id -> plan
+                //             const planMap = {};
+                //             hostelPlans.forEach(plan => {
+                //                 planMap[plan.hostel_id] = plan;
+                //             });
+
+                //             // Merge hostels with plan data
+                //             latestPlan.hostel_details = hostels.map(h => {
+                //                 const plan = planMap[h.id];
+                //                 return {
+                //                     id: h.id,
+                //                     name: h.name,
+                //                     plan_start: plan ? plan.plan_start : "",
+                //                     plan_end: plan ? plan.plan_end : "",
+                //                     plan_status: plan ? plan.status : 0,
+                //                     plan_code: plan ? plan.plan_code : ""
+                //                 };
+                //             });
+
+                //             return response.status(200).json({
+                //                 message: "User Details",
+                //                 statusCode: 200,
+                //                 user_details: filtered_user,
+                //                 is_owner: 1,
+                //                 role_permissions: [],
+                //                 plan_data: [latestPlan]
+                //             });
+                //         });
+                //     });
+                // });
+
+                const sql2 = `SELECT * FROM subscription_details WHERE user_id = ? AND status = 1 ORDER BY id DESC LIMIT 1`;
+                connection.query(sql2, [created_by], function (err, plan_data) {
+                    if (err) return response.status(500).json({ message: "Error fetching plan", statusCode: 500 });
+
+                    if (!plan_data.length) {
+                        return response.status(200).json({
+                            message: "User Details",
+                            statusCode: 200,
+                            user_details: filtered_user,
+                            is_owner: 1,
+                            role_permissions: [],
+                            plan_data: []
+                        });
+                    }
+
+                    const latestPlan = plan_data[0];
+                    let selectedHostels = [];
+                    try {
+                        selectedHostels = JSON.parse(latestPlan.selected_hostels);
+                        if (!Array.isArray(selectedHostels)) selectedHostels = [];
+                    } catch (e) {
+                        selectedHostels = [];
+                    }
+
+                    const sql3 = `SELECT hs.id AS hostel_id, hs.Name AS hostel_name,sd.plan_code, sd.plan_start, sd.plan_end, sd.status AS plan_status FROM hosteldetails hs LEFT JOIN (SELECT * FROM subscription_details WHERE status = 1 AND user_id = ?) sd ON hs.id = sd.hostel_id WHERE hs.created_By = ? AND hs.isActive = 1`;
+                    connection.query(sql3, [created_by, created_by], function (err, hostel_data) {
                         if (err) {
-                            return response.status(201).json({ statusCode: 201, message: "Error to Get Plan Details" })
+                            console.log(err);
+                            return response.status(201).json({ message: "Error fetching hostel info", statusCode: 201 });
                         }
 
-                        return response.status(200).json({ message: "User Details", user_details: sel_res[0], is_owner: 1, role_permissions: [], plan_data: plan_data });
-                    })
-                } else {
+                        // Map to formatted structure
+                        const hostel_details = hostel_data.map(row => ({
+                            id: row.hostel_id,
+                            name: row.hostel_name || "",
+                            plan_start: row.plan_start || "",
+                            plan_end: row.plan_end || "",
+                            plan_status: row.plan_status || 0,
+                            plan_code: row.plan_code || ""
+                        }));
 
-                    var sql1 = "SELECT * FROM manage_plan_details WHERE customer_id=? AND status != 2 ORDER BY id DESC LIMIT 1;"
-                    connection.query(sql1, [customer_id], function (err, plan_data) {
-                        if (err) {
-                            return response.status(201).json({ statusCode: 201, message: "Error to Get Plan Details" })
-                        }
+                        latestPlan.hostel_details = hostel_details;
 
-                        return response.status(200).json({ message: "User Details", user_details: sel_res[0], is_owner: 1, role_permissions: [], plan_data: plan_data });
-                    })
-                }
-                // Admin Details
-                // response.status(200).json({ message: "User Details", user_details: sel_res[0], is_owner: 1, role_permissions: [] });
+                        return response.status(200).json({
+                            message: "User Details",
+                            statusCode: 200,
+                            user_details: filtered_user,
+                            is_owner: 1,
+                            role_permissions: [],
+                            plan_data: [latestPlan]
+                        });
+                    });
+                });
+
+
             } else {
 
                 var sql2 = `SELECT rp.*, per.permission_name, ro.role_name FROM role_permissions AS rp JOIN permissions AS per ON rp.permission_id = per.id JOIN roles AS ro ON ro.id = rp.role_id WHERE rp.role_id = ?`;
@@ -687,7 +764,7 @@ function get_user_details(connection, request, response) {
                         console.log(err);
                         return response.status(201).json({ message: "Unable to Get Role Permissions" });
                     } else {
-                        response.status(200).json({ message: "User Details", user_details: sel_res[0], is_owner: 0, role_permissions: data });
+                        response.status(200).json({ message: "User Details", user_details: filtered_user, is_owner: 0, role_permissions: data });
                     }
                 });
             }

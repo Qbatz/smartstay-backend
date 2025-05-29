@@ -26,12 +26,16 @@ const app = express()
 const userQueries = require('./UserQueries');
 const accountManagement = require('./AccountManagementQueries')
 const invoiceQueries = require('./InvoiceQueries')
+const recuringFrequencyQueries = require('./routes/frequencyTypes')
 const profileQueries = require('./ProfileQueries')
 const complianceQueries = require('./ComplianceQueries')
 const pgQueries = require('./PgQueries')
 const vendorQueries = require('./vendorQueries')
 const expensesManagement = require('./ExpensesManagement')
 var billings = require('./zoho_billing/billings');
+
+const masterDataQueries = require('./routes/masterData')
+const settingsQueries = require('./routes/settings');
 
 
 const multer = require('multer');
@@ -777,7 +781,7 @@ app.post("/all_reports", (req, res) => {
 
 //================= Zoho Billing API =======================//
 
-app.get('/invoice_details', (req, res) => {
+app.get('/invoice_details/:customer_id', (req, res) => {
     billings.invoice_details(req, res)
 })
 
@@ -885,6 +889,11 @@ app.post('/delete_manual_invoice', (req, res) => {
 // Show Invoice Id
 app.post('/get_invoice_id', (req, res) => {
     userQueries.get_invoice_id(req, res)
+});
+
+//New Changes
+app.post('/get-InvoiceId', (req, res) => {
+    userQueries.getInvoiceIDNew(req, res)
 });
 
 // Get Rent, Eb and Amenity Amount
@@ -1293,6 +1302,25 @@ app.get('/wallet/details', receipts.wallet_details)
 app.get('/get_receipt_details/:receipt_id', receiptPdf.get_receipt_detailsbyid)
 
 app.get('/get_bill_details/:bill_id', receiptPdf.get_bill_detailsbyid)
+
+//New changes for the Invoice and Recurring
+app.get('/frequency-types', recuringFrequencyQueries.getFrequencyTypes);
+
+app.post('/frequency-types', recuringFrequencyQueries.addFrequencyType);
+
+app.get('/master-types', masterDataQueries.getMasterTypes);
+
+app.post('/invoice-settings', upload.fields(
+    [{ name: 'signature', maxCount: 1 }
+    ]
+), (req, res) => {
+    settingsQueries.addOrEditInvoiceSettings(req, res);
+});
+
+app.post('/add-recuringBill', (req, res) => {
+    invoiceQueries.addRecurringBills(req, res)
+});
+
 
 
 // **************************** Start Cashfree Subscription ****************************

@@ -1499,6 +1499,112 @@ function get_invoice_id(req, res) {
 }
 
 
+function getInvoiceIDNew(req, res) {
+  const user_id = req.body.user_id;
+  if (!user_id) {
+    return res.status(400).json({ statusCode: 400, message: "Missing Mandatory Fields" });
+  }
+
+  const sql_1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1";
+  connection.query(sql_1, [user_id], function (err, user_data) {
+    if (err || user_data.length === 0) {
+      return res.status(400).json({ statusCode: 400, message: "Invalid User Details" });
+    }
+
+    const hostel_id = user_data[0].Hostel_Id;
+
+    const sql1 = "SELECT * FROM hosteldetails WHERE id=? AND isActive=1";
+    connection.query(sql1, [hostel_id], function (err, hos_details) {
+      if (err || hos_details.length === 0) {
+        return res.status(400).json({ statusCode: 400, message: "Invalid Hostel Details" });
+      }
+
+      
+      getPrefixAndSuffix(hostel_id, (err, settings) => {
+        if (err) {
+          return res.status(500).json({ statusCode: 500, message: "Prefix/Suffix Error" });
+        }
+
+        let prefix = settings.prefix || hos_details[0].Name || "INV";
+        let suffix = settings.suffix || "001";
+
+        prefix = prefix.replace(/\s+/g, '-'); // Format prefix
+
+        const sql2 = "SELECT * FROM invoicedetails WHERE Hostel_Id=? AND action != 'advance' ORDER BY id DESC LIMIT 1";
+        connection.query(sql2, [hostel_id], function (err, inv_data) {
+          if (err) {
+            return res.status(500).json({ statusCode: 500, message: "Unable to Get Invoice Details" });
+          }
+
+          let newInvoiceNumber;
+
+          if (inv_data.length > 0) {
+            const lastInvoice = inv_data[0].Invoices || "";
+            const lastPrefix = lastInvoice.replace(/-\d+$/, '');
+            const lastSuffix = lastInvoice.match(/-(\d+)$/)?.[1] || "001";
+
+            if (prefix !== lastPrefix) {
+              newInvoiceNumber = `${prefix}-001`;
+            } else {
+              const newSuffix = (parseInt(lastSuffix) + 1).toString().padStart(3, '0');
+              newInvoiceNumber = `${prefix}-${newSuffix}`;
+            }
+          } else {
+            newInvoiceNumber = `${prefix}-001`;
+          }
+
+          
+          check_inv_validation1(newInvoiceNumber, hostel_id, res);
+        });
+      });
+    });
+  });
+
+  
+  function getPrefixAndSuffix(hostelId, callback) {
+    const query = 'SELECT prefix, suffix FROM InvoiceSettings WHERE hostel_Id = ?';
+    connection.query(query, [hostelId], (err, results) => {
+      if (err) return callback(err, null);
+      if (results.length > 0) {
+        callback(null, {
+          prefix: results[0].prefix?.trim() || '',
+          suffix: results[0].suffix?.trim() || ''
+        });
+      } else {
+        callback(null, { prefix: '', suffix: '' });
+      }
+    });
+  }
+
+  
+  function check_inv_validation1(invoice_number, hostel_id, res) {
+    const ch_query = "SELECT * FROM invoicedetails WHERE Invoices=? AND invoice_status=1";
+    connection.query(ch_query, [invoice_number], function (err, data) {
+      if (err) {
+        return res.status(500).json({ statusCode: 500, message: "Check Invoice Query Error" });
+      }
+
+      if (data.length > 0) {
+        const invoicePrefix = invoice_number.replace(/-\d+$/, '');
+        const lastNumber = invoice_number.match(/-(\d+)$/)?.[1] || "001";
+        const newNumber = (parseInt(lastNumber) + 1).toString().padStart(3, '0');
+
+        const newInvoiceNumber = `${invoicePrefix}-${newNumber}`;
+        check_inv_validation1(newInvoiceNumber, hostel_id, res); // Recursive check
+      } else {
+        return res.status(200).json({
+          statusCode: 200,
+          message: "Generated Invoice Number",
+          invoice_number,
+          hostel_id
+        });
+      }
+    });
+  }
+}
+
+
+
 function get_user_amounts(req, res) {
 
   var { user_id, start_date, end_date } = req.body;
@@ -2073,7 +2179,7 @@ function get_confirm_checkout(req, res) {
         comments: data[0].checkout_comment
       }
 
-      var sql2 = "SELECT * FROM invoicedetails WHERE hos_user_id=?";
+      var sql2 = "SELECT * FROM invoicedetails WHERE hos_user_id=? AND invoice_status=1";
       connection.query(sql2, [id], function (err, inv_data) {
         if (err) {
           return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message })
@@ -2140,59 +2246,59 @@ function checkout_list(req, res) {
 
       let completed = 0;
 
-     Promise.all(
-  ch_list.map((check_list, index) => {
-    const user_id = check_list.ID;
+      Promise.all(
+        ch_list.map((check_list, index) => {
+          const user_id = check_list.ID;
 
-    return new Promise((resolve, reject) => {
-      const sql2 = `
+          return new Promise((resolve, reject) => {
+            const sql2 = `
         SELECT re.id, re.invoice_number, ban.type, ban.benificiary_name, ban.id AS bank_id 
         FROM receipts AS re 
         LEFT JOIN bankings AS ban ON ban.id = re.payment_mode  
         WHERE re.user_id = ? ORDER by id DESC
       `;
 
-      connection.query(sql2, [user_id], (err, receipts) => {
-        if (err) return reject({ statusCode: 201, message: "Error Getting Receipts", reason: err.message });
+            connection.query(sql2, [user_id], (err, receipts) => {
+              if (err) return reject({ statusCode: 201, message: "Error Getting Receipts", reason: err.message });
 
-        if (receipts.length > 0) {
-          const receipt = receipts[0];
+              if (receipts.length > 0) {
+                const receipt = receipts[0];
 
-          check_list.bank_type = receipt.type || "";
-          check_list.bank_id = receipt.bank_id || 0;
-          check_list.benificiary_name = receipt.benificiary_name || "";
+                check_list.bank_type = receipt.type || "";
+                check_list.bank_id = receipt.bank_id || 0;
+                check_list.benificiary_name = receipt.benificiary_name || "";
 
-          if (receipt.invoice_number == 0) {
-            const receipt_id = receipt.id;
-            const sql3 = "SELECT * FROM checkout_deductions WHERE receipt_id = ?";
+                if (receipt.invoice_number == 0) {
+                  const receipt_id = receipt.id;
+                  const sql3 = "SELECT * FROM checkout_deductions WHERE receipt_id = ?";
 
-            connection.query(sql3, [receipt_id], (err, deductions) => {
-              if (err) return reject({ statusCode: 201, message: "Error Getting Deductions", reason: err.message });
+                  connection.query(sql3, [receipt_id], (err, deductions) => {
+                    if (err) return reject({ statusCode: 201, message: "Error Getting Deductions", reason: err.message });
 
-              check_list.amenities = deductions || [];
-              resolve(check_list);
+                    check_list.amenities = deductions || [];
+                    resolve(check_list);
+                  });
+                } else {
+                  check_list.amenities = [];
+                  resolve(check_list);
+                }
+              } else {
+                check_list.bank_type = "";
+                check_list.bank_id = 0;
+                check_list.benificiary_name = "";
+                check_list.amenities = [];
+                resolve(check_list);
+              }
             });
-          } else {
-            check_list.amenities = [];
-            resolve(check_list);
-          }
-        } else {
-          check_list.bank_type = "";
-          check_list.bank_id = 0;
-          check_list.benificiary_name = "";
-          check_list.amenities = [];
-          resolve(check_list);
-        }
-      });
-    });
-  })
-)
-  .then((updatedList) => {
-    res.status(200).json({ statusCode: 200, message: "Check-Out Details", checkout_details: updatedList });
-  })
-  .catch((error) => {
-    res.status(201).json(error);
-  });
+          });
+        })
+      )
+        .then((updatedList) => {
+          res.status(200).json({ statusCode: 200, message: "Check-Out Details", checkout_details: updatedList });
+        })
+        .catch((error) => {
+          res.status(201).json(error);
+        });
 
     });
   } else {
@@ -2318,5 +2424,6 @@ module.exports = {
   delete_check_out,
   available_checkout_users,
   available_beds,
-  get_confirm_checkout
+  get_confirm_checkout,
+  getInvoiceIDNew
 };
