@@ -13,7 +13,7 @@ function generateInvoice(invoiceDetails, outputPath) {
     // === Logo & Tagline ===
     // doc.image('logo.png', 50, 30, { width: 40 }); // Replace with your actual logo
     doc.image('./Asset/receiptlogo.png', 10, 30, { width: 40,height:40 });
-      doc.image('./Asset/Rectangle 77.png', 35, 215, { width: 8,height:8 });
+        doc.image('./Asset/Rectangle 77.png', 35, 215, { width: 8,height:8 });
 doc.image('./Asset/Subtract.png', 35, 232, { width: 10,height:10 });
     doc
         .fillColor('white')
@@ -39,7 +39,7 @@ doc.image('./Asset/Subtract.png', 35, 232, { width: 10,height:10 });
         .fillColor('black')
         .fontSize(14)
         .font('Helvetica-Bold')
-        .text('Security Deposit Receipt', 0, 150, { align: 'center' });
+        .text('Payment Receipt', 0, 150, { align: 'center' });
 
     // === Bill To & Invoice Info ===
     const leftX = 50;
@@ -66,54 +66,59 @@ doc.image('./Asset/Subtract.png', 35, 232, { width: 10,height:10 });
   doc
   .font('Helvetica')
   .fillColor('grey')
-  .text('Invoice No:', rightX + 90, infoY)
+  .text('Receipt No:', rightX + 90, infoY)
   .font('Helvetica')
    .fillColor('black')
   .text(invoiceDetails.invoiceNo, rightX + 150, infoY)
   .font('Helvetica')
   .fillColor('grey')
-  .text('Invoice Date:', rightX + 90, infoY + lineHeight)
+  .text('Invoice Ref:', rightX + 90, infoY + lineHeight)
   .font('Helvetica')
    .fillColor('black')
   .text(invoiceDetails.date, rightX + 160, infoY + lineHeight)
   .font('Helvetica')
   .fillColor('grey')
-  .text('Due Date:', rightX + 90, infoY + lineHeight * 2)
+  .text('Date:', rightX + 90, infoY + lineHeight * 2)
   .font('Helvetica')
    .fillColor('black')
-  .text(invoiceDetails.dueDate, rightX + 160, infoY + lineHeight * 2);
+  .text(invoiceDetails.dueDate, rightX + 160, infoY + lineHeight * 2)
+  .font('Helvetica')
+  .fillColor('grey')
+  .text('PaymentMode:', rightX + 90, infoY + lineHeight * 3)
+  .font('Helvetica')
+   .fillColor('black')
+  .text(invoiceDetails.paymentMode, rightX + 160, infoY + lineHeight * 3)
 
-  // Amount Received Box
-// Amount Received Box
+ 
 
 const subtotal = invoiceDetails.items.reduce((sum, i) => sum + i.amount, 0);
 const tax = invoiceDetails.tax || 0;
 const total = subtotal + tax;
-const boxX = 360;
-const boxY = 270;
-doc
-  .roundedRect(boxX, boxY, 200, 60, 5,)
-  .strokeColor('#00B14F')
-  .lineWidth(1)
-  .stroke();
+// const boxX = 360;
+// const boxY = 270;
+// doc
+//   .roundedRect(boxX, boxY, 200, 60, 5,)
+//   .strokeColor('#00B14F')
+//   .lineWidth(1)
+//   .stroke();
 
-doc
-  .fontSize(14)
-  .fillColor('#00B14F')
-  .font('Helvetica-Bold')
-  .text(` ${total.toFixed(2)}`, boxX - 30, boxY + 5, { align: 'center' });
+// doc
+//   .fontSize(14)
+//   .fillColor('#00B14F')
+//   .font('Helvetica-Bold')
+//   .text(` ${total.toFixed(2)}`, boxX - 30, boxY + 5, { align: 'center' });
 
-doc
-  .fontSize(10)
-  .fillColor('#555555')
-  .font('Helvetica-Oblique')
-  .text('Nine Thousand and Nine Fifty\nRupees Only', boxX - 10, boxY + 25, { align: 'center' });
+// doc
+//   .fontSize(10)
+//   .fillColor('#555555')
+//   .font('Helvetica-Oblique')
+//   .text('Nine Thousand and Nine Fifty\nRupees Only', boxX - 10, boxY + 25, { align: 'center' });
 
-doc
-  .fontSize(8)
-  .fillColor('black')
-  .font('Helvetica')
-  .text('Amount received', boxX - 80, boxY + 20);
+// doc
+//   .fontSize(8)
+//   .fillColor('black')
+//   .font('Helvetica')
+//   .text('Amount received', boxX - 80, boxY + 20);
 
 
 
@@ -164,11 +169,11 @@ doc
   .text('Sub Total', leftX + 300, y)
   .text(`Rs. ${subtotal.toFixed(2)}`, leftX + 400, y);
 
-y += 20;
+// y += 20;
 
-doc
-  .text('Tax', leftX + 300, y)
-  .text(`Rs. ${tax.toFixed(2)}`, leftX + 400, y);
+// doc
+//   .text('Tax', leftX + 300, y)
+//   .text(`Rs. ${tax.toFixed(2)}`, leftX + 400, y);
 
 y += 20;
 
@@ -186,7 +191,7 @@ doc
         .fillColor('#00A32E')
         .font('Helvetica-Bold')
         .fontSize(11)
-        .text('ACCOUNT DETAILS', leftX, y);
+        .text('PAYMENT DETAILS', leftX, y);
     y += 20;
 
     doc
@@ -205,11 +210,11 @@ doc
      doc.image('./Asset/image 32.png', 430, 570, { width: 100,height:70 });
 
 
-      doc
-        .fontSize(9)
-        .fillColor('#00A32E')
-        .font('Helvetica')
-        .text(invoiceDetails.Thank || 'No refunds after due date.', 400, 650, leftX, y, { width: 300 });
+    //   doc
+    //     .fontSize(9)
+    //     .fillColor('#00A32E')
+    //     .font('Helvetica')
+    //     .text(invoiceDetails.Thank || 'No refunds after due date.', 400, 650, leftX, y, { width: 300 });
     y += 100;
     doc
         .fillColor('#00A32E')
@@ -259,9 +264,10 @@ const invoiceData = {
     phone: '+91 45682 98322',
     address: '8 8th Avenue Ext, Somewhereso Nagar,\nChennai, Tamilnadu - 600 066',
     hostelName: 'Royal Grand Hostel',
+    paymentMode:'cash',
     items: [
-        { sno: 1, desc: 'Advance', month: 'May 2025', amount: 7000 },
-        
+        { sno: 1, desc: 'Room Rent', month: 'May 2025', amount: 7000 },
+         { sno: 2, desc: 'Room Rent', month: 'May 2025', amount: 7000 }
     ],
     dueDate: '2025-05-25',
     tax: 0,
@@ -279,4 +285,4 @@ const invoiceData = {
     Thank : 'Thank you for choosing SmartStay. Your transaction is completed'
 };
 
-generateInvoice(invoiceData, 'invoice2.pdf');
+generateInvoice(invoiceData, 'invoice4.pdf');
