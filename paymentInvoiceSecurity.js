@@ -12,6 +12,7 @@ function generateInvoice(invoiceDetails, outputPath) {
 
     // === Logo & Tagline ===
     // doc.image('logo.png', 50, 30, { width: 40 }); // Replace with your actual logo
+    doc.image('./Asset/Group@2x.png', 10, 30, { width: 35,height:35 });
     doc
         .fillColor('white')
         .fontSize(18)
@@ -45,7 +46,8 @@ function generateInvoice(invoiceDetails, outputPath) {
     const lineGap = 18;
     const fontSize = 10;
     const lineHeight = fontSize + 6;
-
+doc.image('./Asset/Rectangleblue.png', 35, 215, { width: 8,height:8 });
+doc.image('./Asset/location 03.png', 35, 232, { width: 10,height:10 });
 
    doc
   .fontSize(10)
@@ -78,7 +80,12 @@ function generateInvoice(invoiceDetails, outputPath) {
   .text('Due Date:', rightX + 90, infoY + lineHeight * 2)
   .font('Helvetica')
    .fillColor('black')
-  .text(invoiceDetails.dueDate, rightX + 160, infoY + lineHeight * 2);
+  .text(invoiceDetails.dueDate, rightX + 160, infoY + lineHeight * 2)
+  .fillColor('grey')
+  .text('Joining Date:', rightX + 90, infoY + 50)
+  .font('Helvetica')
+   .fillColor('black')
+  .text(invoiceDetails.joiningDate, rightX + 160, infoY + 50);
 
     // === Table Header ===
     const tableY = 280;
@@ -89,8 +96,8 @@ function generateInvoice(invoiceDetails, outputPath) {
         .font('Helvetica-Bold')
         .fontSize(10)
         .text('S.No', leftX + 10, tableY + 7)
-        .text('Description', leftX + 60, tableY + 7)
-        .text('Month', leftX + 250, tableY + 7)
+        .text('Inv No', leftX + 60, tableY + 7)
+        .text('Description', leftX + 250, tableY + 7)
         .text('Amount (INR)', leftX + 400, tableY + 7);
 
     // === Table Rows ===
@@ -100,8 +107,8 @@ function generateInvoice(invoiceDetails, outputPath) {
     invoiceDetails.items.forEach((item, i) => {
         doc
             .text(item.sno, leftX + 10, y)
-            .text(item.desc, leftX + 60, y)
-            .text(item.month, leftX + 250, y)
+            .text(item.InvNo, leftX + 60, y)
+            .text(item.desc, leftX + 250, y)
             .text(`Rs. ${item.amount}`, leftX + 400, y);
         y += 25;
     });
@@ -212,10 +219,11 @@ const invoiceData = {
     address: '8 8th Avenue Ext, Somewhereso Nagar,\nChennai, Tamilnadu - 600 066',
     hostelName: 'Royal Grand Hostel',
     items: [
-        { sno: 1, desc: 'Room Rent', month: 'May 2025', amount: 7000 },
-         { sno: 2, desc: 'Room Rent', month: 'May 2025', amount: 7000 }
+        { sno: 1, desc: 'Room Rent', InvNo: 'INVC001', amount: 7000 },
+        
     ],
     dueDate: '2025-05-25',
+    joiningDate:'2025-05-25',
     tax: 0,
     bank: {
         accNo: '123456789876',

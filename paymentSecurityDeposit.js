@@ -13,6 +13,8 @@ function generateInvoice(invoiceDetails, outputPath) {
     // === Logo & Tagline ===
     // doc.image('logo.png', 50, 30, { width: 40 }); // Replace with your actual logo
     doc.image('./Asset/receiptlogo.png', 10, 30, { width: 40,height:40 });
+      doc.image('./Asset/Rectangle 77.png', 35, 215, { width: 8,height:8 });
+doc.image('./Asset/Subtract.png', 35, 232, { width: 10,height:10 });
     doc
         .fillColor('white')
         .fontSize(18)
@@ -37,7 +39,7 @@ function generateInvoice(invoiceDetails, outputPath) {
         .fillColor('black')
         .fontSize(14)
         .font('Helvetica-Bold')
-        .text('Payment Receipt', 0, 150, { align: 'center' });
+        .text('Security Deposit Receipt', 0, 150, { align: 'center' });
 
     // === Bill To & Invoice Info ===
     const leftX = 50;
@@ -258,8 +260,8 @@ const invoiceData = {
     address: '8 8th Avenue Ext, Somewhereso Nagar,\nChennai, Tamilnadu - 600 066',
     hostelName: 'Royal Grand Hostel',
     items: [
-        { sno: 1, desc: 'Room Rent', month: 'May 2025', amount: 7000 },
-         { sno: 2, desc: 'Room Rent', month: 'May 2025', amount: 7000 }
+        { sno: 1, desc: 'Advance', month: 'May 2025', amount: 7000 },
+        
     ],
     dueDate: '2025-05-25',
     tax: 0,
