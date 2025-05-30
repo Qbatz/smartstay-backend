@@ -2179,7 +2179,7 @@ function get_confirm_checkout(req, res) {
         comments: data[0].checkout_comment
       }
 
-      var sql2 = "SELECT * FROM invoicedetails WHERE hos_user_id=?";
+      var sql2 = "SELECT * FROM invoicedetails WHERE hos_user_id=? AND invoice_status=1";
       connection.query(sql2, [id], function (err, inv_data) {
         if (err) {
           return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message })

@@ -77,6 +77,18 @@ const queries = [
     "ALTER TABLE `checkout_deductions` ADD COLUMN `receipt_id` VARCHAR(45) NULL AFTER `user_id`;",
 
     "ALTER TABLE `customer_walk_in_details` ADD COLUMN `profile` VARCHAR(255) NULL DEFAULT 0 AFTER `comments`,CHANGE COLUMN `comments` `comments` VARCHAR(255) NULL DEFAULT NULL AFTER `isActive`,CHANGE COLUMN `created_At` `created_At` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP ;",
+
+    "CREATE TABLE `subscription_details` (`id` BIGINT(20) NOT NULL AUTO_INCREMENT,`customer_id` BIGINT(20) NULL,`user_id` BIGINT(20) NULL,`plan_start` DATE NULL,`plan_end` DATE NULL,`amount` DECIMAL(10, 2) NULL,`plan_type` VARCHAR(45) NULL,`plan_code` VARCHAR(255) NULL,`hostel_count` BIGINT(20) NULL DEFAULT 1,`selected_hostels` VARCHAR(255) NULL,`status` BIGINT(20) NULL,`createdat` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(`id`));",
+
+    "ALTER TABLE `subscription_details` ADD COLUMN `hosted_page_id` VARCHAR(255) NULL AFTER `selected_hostels`;",
+
+    "ALTER TABLE `manage_plan_details` ADD COLUMN `user_id` BIGINT(20) NULL AFTER `customer_id`;",
+
+    "ALTER TABLE `subscription_details` ADD COLUMN `hostel_id` BIGINT(20) NULL AFTER `user_id`;",
+
+    "ALTER TABLE `hosteldetails` ADD COLUMN `plan_status` INT NULL DEFAULT 1 AFTER `due_date`;",
+
+    "ALTER TABLE `manage_plan_details` ADD COLUMN `hostel_id` VARCHAR(45) NULL AFTER `hosted_page_id`;"
 ];
 
 queries.forEach(executeQuery);
