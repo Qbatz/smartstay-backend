@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const moment = require('moment');
 const pdf = require('html-pdf');
 const phantomjs = require('phantomjs-prebuilt');
+const axios = require('axios');
 
 require('dotenv').config();
 const fs = require('fs');
@@ -14,7 +15,7 @@ const uploadImage = require('./components/upload_image');
 const apiResponse = require('./zoho_billing/api_response');
 
 
-
+const WHATSAPP_ACCESS_TOKEN = process.env.TOKEN;
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 const AWS_REGION = process.env.AWS_REGION;
@@ -94,6 +95,52 @@ function getKeyFromUrl(url) {
     const urlParts = url.split('/');
     const key = urlParts.slice(3).join('/'); // Get everything after the bucket name
     return key;
+}
+
+const isValidPhoneNumber = (phoneNumber) => {
+    const regex = /^\+[1-9]{1}[0-9]{3,14}$/;
+    return regex.test(phoneNumber);
+};
+
+
+async function sendTemplateMessage(to, templateName, parameters = []) {
+    if (!isValidPhoneNumber(to)) {
+        console.error('Invalid phone number format:', to);
+        throw new Error('Invalid phone number format');
+    }
+
+    try {
+        const response = await axios.post(
+            'https://graph.facebook.com/v17.0/547806001759552/messages',
+            {
+                messaging_product: 'whatsapp',
+                to,
+                type: 'template',
+                template: {
+                    name: templateName,
+                    language: { code: 'en_IN' },
+                    components: [
+                        {
+                            type: 'body',
+                            parameters: parameters.map((valu) => ({ type: 'text', text: valu })),
+                        },
+                    ],
+                },
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+
+        console.log(`Template message '${templateName}' sent:`, response.data);
+        return response.data;
+    } catch (err) {
+        console.error(`Error sending template message '${templateName}':`, err.response?.data || err.message);
+        throw err;
+    }
 }
 
 function update_account_details(request, response) {
@@ -386,6 +433,19 @@ function createnewAccount(request, response) {
 
     var reference_id = request.body.reference_id;
 
+    let mobile_no = reqBodyData.mobileNo;
+
+    // Remove any spaces or dashes
+    mobile_no = mobile_no.replace(/\D/g, '');
+
+    // If it starts with '91' and is 12 digits total
+    if (mobile_no.startsWith('91') && mobile_no.length === 12) {
+        mobile_no = `+${mobile_no}`;
+    } else if (mobile_no.length === 10) {
+        mobile_no = `+91${mobile_no}`;
+    } else {
+        throw new Error('Invalid mobile number format');
+    }
     if (reqBodyData.mobileNo && reqBodyData.emailId && reqBodyData.first_name && reqBodyData.password && reqBodyData.confirm_password) {
 
         connection.query(`SELECT * FROM createaccount WHERE mobileNo='${reqBodyData.mobileNo}' OR email_Id='${reqBodyData.emailId}'`,
@@ -484,7 +544,11 @@ function createnewAccount(request, response) {
                                                             if (err) {
                                                                 console.log("Unable to Add Wallet Details");
                                                             }
-
+                                                            sendTemplateMessage(
+                                                                mobile_no,
+                                                                'signup_welcome_msg',
+                                                                [reqBodyData.first_name]
+                                                            );
                                                             return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
                                                         })
                                                     })
@@ -519,7 +583,11 @@ function createnewAccount(request, response) {
                                                     if (err) {
                                                         console.log("Unable to Add Wallet Details");
                                                     }
-
+                                                    sendTemplateMessage(
+                                                        mobile_no,
+                                                        'signup_welcome_msg',
+                                                        [reqBodyData.first_name]
+                                                    );
                                                     return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
                                                 })
                                             })
