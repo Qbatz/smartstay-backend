@@ -84,7 +84,7 @@ app.get('/webhook', (req, res) => {
     if (mode && token === WEBHOOK_VERIFY_TOKEN) {
         res.status(200).send(challenge);
     } else {
-        res.sendStatus(403);
+        res.status(201).json({ message: "Missing Token Details" });
     }
 });
 
@@ -159,10 +159,10 @@ async function sendTemplateMessage(to, templateName, parameters = []) {
             }
         );
 
-        console.log(`✅ Template message '${templateName}' sent:`, response.data);
+        console.log(`Template message '${templateName}' sent:`, response.data);
         return response.data;
     } catch (err) {
-        console.error(`❌ Error sending template message '${templateName}':`, err.response?.data || err.message);
+        console.error(`Error sending template message '${templateName}':`, err.response?.data || err.message);
         throw err;
     }
 }

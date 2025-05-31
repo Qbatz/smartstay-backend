@@ -654,7 +654,7 @@ function get_user_details(connection, request, response) {
                         selectedHostels = [];
                     }
 
-                    const sql3 = `SELECT hs.id AS hostel_id, hs.Name AS hostel_name,sd.plan_code, sd.plan_start, sd.plan_end, sd.status AS plan_status FROM hosteldetails hs LEFT JOIN (SELECT * FROM subscription_details WHERE status = 1 AND user_id = ?) sd ON hs.id = sd.hostel_id WHERE hs.created_By = ? AND hs.isActive = 1`;
+                    const sql3 = `SELECT hs.id AS hostel_id, hs.Name AS hostel_name,sd.plan_code, sd.plan_start, sd.plan_end, sd.status AS plan_status FROM hosteldetails hs LEFT JOIN (SELECT * FROM subscription_details WHERE status = 1 AND user_id = ?) sd ON hs.id = sd.hostel_id WHERE hs.created_By = ? AND hs.isActive = 1 GROUP BY hs.id`;
                     connection.query(sql3, [created_by, created_by], function (err, hostel_data) {
                         if (err) {
                             console.log(err);
