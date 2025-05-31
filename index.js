@@ -1455,6 +1455,17 @@ app.post('/invoice-settings', upload.fields(
     settingsQueries.addOrEditInvoiceSettings(req, res);
 });
 
+app.get('/getInvoice-settings/', (req, res) => {
+     const hostel_id = req.body.hostel_id;
+    settingsQueries.getInvoiceSettings(req, res,hostel_id);
+});
+
+app.get('/getRecurringBills/', (req, res) => {
+     const hostel_id = req.body.hostel_id;
+    settingsQueries.getRecurringBills(req, res,hostel_id);
+});
+
+
 app.post('/add-recuringBill', (req, res) => {
     invoiceQueries.addRecurringBills(req, res)
 });
