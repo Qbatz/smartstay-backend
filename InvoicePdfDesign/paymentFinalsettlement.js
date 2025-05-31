@@ -8,19 +8,22 @@ function generateInvoice(invoiceDetails, outputPath) {
     const pageWidth = doc.page.width;
 
     // === Header Background ===
-    doc.rect(0, 0, pageWidth, 90).fill('#00A32E');
+    doc.rect(0, 0, pageWidth, 90).fill('#1E45E1');
+   
 
     // === Logo & Tagline ===
     // doc.image('logo.png', 50, 30, { width: 40 }); // Replace with your actual logo
-    doc.image('./Asset/receiptlogo.png', 10, 30, { width: 40,height:40 });
+     doc.image('./Asset/Group@2x.png', 10, 30, { width: 35,height:35 });
+    doc.image('./Asset/Rectangleblue.png', 35, 215, { width: 8,height:8 });
+doc.image('./Asset/location 03.png', 35, 232, { width: 10,height:10 });
     doc
         .fillColor('white')
         .fontSize(18)
         .font('Helvetica-Bold')
-        .text('Smartstay', 60, 32)
+        .text('Smartstay', 50, 32)
         .fontSize(10)
         .font('Helvetica')
-        .text('Meet All Your Needs.', 60, 52);
+        .text('Meet All Your Needs.', 50, 52);
 
     // === Hostel Details Right ===
     doc
@@ -37,7 +40,7 @@ function generateInvoice(invoiceDetails, outputPath) {
         .fillColor('black')
         .fontSize(14)
         .font('Helvetica-Bold')
-        .text('Payment Receipt', 0, 150, { align: 'center' });
+        .text('Final Settlement Receipt', 0, 150, { align: 'center' });
 
     // === Bill To & Invoice Info ===
     const leftX = 50;
@@ -50,7 +53,7 @@ function generateInvoice(invoiceDetails, outputPath) {
 
    doc
   .fontSize(10)
-  .fillColor('#00A32E') // Blue color for label
+  .fillColor('#1E45E1') // Blue color for label
   .font('Helvetica-Bold')
   .text('Bill To:', leftX, infoY)
 
@@ -81,43 +84,9 @@ function generateInvoice(invoiceDetails, outputPath) {
    .fillColor('black')
   .text(invoiceDetails.dueDate, rightX + 160, infoY + lineHeight * 2);
 
-  // Amount Received Box
-// Amount Received Box
-
-const subtotal = invoiceDetails.items.reduce((sum, i) => sum + i.amount, 0);
-const tax = invoiceDetails.tax || 0;
-const total = subtotal + tax;
-const boxX = 360;
-const boxY = 270;
-doc
-  .roundedRect(boxX, boxY, 200, 60, 5,)
-  .strokeColor('#00B14F')
-  .lineWidth(1)
-  .stroke();
-
-doc
-  .fontSize(14)
-  .fillColor('#00B14F')
-  .font('Helvetica-Bold')
-  .text(` ${total.toFixed(2)}`, boxX - 30, boxY + 5, { align: 'center' });
-
-doc
-  .fontSize(10)
-  .fillColor('#555555')
-  .font('Helvetica-Oblique')
-  .text('Nine Thousand and Nine Fifty\nRupees Only', boxX - 10, boxY + 25, { align: 'center' });
-
-doc
-  .fontSize(8)
-  .fillColor('black')
-  .font('Helvetica')
-  .text('Amount received', boxX - 80, boxY + 20);
-
-
-
     // === Table Header ===
-    const tableY = 350;
-    doc.roundedRect(leftX, tableY, pageWidth - 100, 25, 5).fill('#00A32E');
+    const tableY = 280;
+    doc.roundedRect(leftX, tableY, pageWidth - 100, 25, 5).fill('#4768EA');
 
     doc
         .fillColor('white')
@@ -125,7 +94,7 @@ doc
         .fontSize(10)
         .text('S.No', leftX + 10, tableY + 7)
         .text('Description', leftX + 60, tableY + 7)
-        .text('Month', leftX + 250, tableY + 7)
+        // .text('Month', leftX + 250, tableY + 7)
         .text('Amount (INR)', leftX + 400, tableY + 7);
 
     // === Table Rows ===
@@ -136,81 +105,67 @@ doc
         doc
             .text(item.sno, leftX + 10, y)
             .text(item.desc, leftX + 60, y)
-            .text(item.month, leftX + 250, y)
+            // .text(item.month, leftX + 250, y)
             .text(`Rs. ${item.amount}`, leftX + 400, y);
         y += 25;
     });
 
     // === Summary ===
-    
-   
+    const subtotal = invoiceDetails.items.reduce((sum, i) => sum + i.amount, 0);
+    const tax = invoiceDetails.tax || 0;
+    const total = subtotal + tax;
    // === Summary Section with Quote ===
-y += 10;
 
-// Left column – Farewell message
-// doc
-//   .fillColor('#1E45E1')
-//   .fontSize(10)
-//   .font('Helvetica')
-//   .text('"Your comfort is our priority –\nSee you again at Smart Stay!"', leftX + 10, y + 10);
 
 // Right column – Subtotal, Tax, Total
 doc
   .fillColor('black')
   .fontSize(10)
   .font('Helvetica-Bold')
-  .text('Sub Total', leftX + 300, y)
+  .text('Advance Amount', leftX + 300, y)
   .text(`Rs. ${subtotal.toFixed(2)}`, leftX + 400, y);
 
-y += 20;
+// y += 20;
 
-doc
-  .text('Tax', leftX + 300, y)
-  .text(`Rs. ${tax.toFixed(2)}`, leftX + 400, y);
+// doc
+//   .text('Tax', leftX + 300, y)
+//   .text(`Rs. ${tax.toFixed(2)}`, leftX + 400, y);
 
 y += 20;
 
 doc
   .font('Helvetica-Bold')
-  .text('Total', leftX + 300, y)
+  .text('Refundable Total', leftX + 300, y)
   .fontSize(12)
   .fillColor('black')
   .text(`Rs. ${total.toFixed(2)}`, leftX + 400, y);
 
 
     // === Account Details ===
-    y += 120;
-    doc
-        .fillColor('#00A32E')
-        .font('Helvetica-Bold')
-        .fontSize(11)
-        .text('ACCOUNT DETAILS', leftX, y);
-    y += 20;
+    // y += 120;
+    // doc
+    //     .fillColor('#1E45E1')
+    //     .font('Helvetica-Bold')
+    //     .fontSize(11)
+    //     .text('ACCOUNT DETAILS', leftX, y);
+    // y += 20;
 
-    doc
-        .fillColor('black')
-        .font('Helvetica')
-        .fontSize(10)
-        .text(`Payment Mode   : ${invoiceDetails.bank.paymentmode}`, leftX, y)
-        .text(`Received By : ${invoiceDetails.bank.receivedby}`, leftX, y + 15)
-        .text(`Status   : ${invoiceDetails.bank.status}`, leftX, y + 30)
-        // .text(`UPI ID       : ${invoiceDetails.bank.upi}`, leftX, y + 45);
+    // doc
+    //     .fillColor('black')
+    //     .font('Helvetica')
+    //     .fontSize(10)
+    //     .text(`Account No   : ${invoiceDetails.bank.accNo}`, leftX, y)
+    //     .text(`IFSC Code    : ${invoiceDetails.bank.ifsc}`, leftX, y + 15)
+    //     .text(`Bank Name    : ${invoiceDetails.bank.bankName}`, leftX, y + 30)
+    //     .text(`UPI ID       : ${invoiceDetails.bank.upi}`, leftX, y + 45);
 
     // === QR Image ===
     // doc.image('qr.png', pageWidth - 120, y - 5, { width: 80 }); // Place your QR image here
 
     // === Terms and Signature ===
-     doc.image('./Asset/image 32.png', 430, 570, { width: 100,height:70 });
-
-
-      doc
-        .fontSize(9)
-        .fillColor('#00A32E')
-        .font('Helvetica')
-        .text(invoiceDetails.Thank || 'No refunds after due date.', 400, 650, leftX, y, { width: 300 });
     y += 100;
     doc
-        .fillColor('#00A32E')
+        .fillColor('#1E45E1')
         .font('Helvetica-Bold')
         .fontSize(10)
         .text('Acknowledgment', leftX, y);
@@ -222,11 +177,21 @@ doc
         .font('Helvetica')
         .text(invoiceDetails.terms || 'No refunds after due date.', leftX, y, { width: 300 });
 
+        y += 10;
+
+// Left column – Farewell message
+doc
+  .fillColor('#1E45E1')
+  .fontSize(10)
+  .font('Helvetica')
+  .text('"Your comfort is our priority –\nSee you again at Smart Stay!"', leftX + 10, y + 70);
+
     doc
         .fillColor('#3D3D3D')
         .fontSize(10)
         .font('Helvetica-Bold')
-        .text('Authorized Signature', pageWidth - 160, y + 10);
+        .text('Authorized Signature', pageWidth - 160, y);
+          doc.image('./Asset/paidfull (2).png', 430, 570, { width: 100,height:60 });
 
     // === Footer ===
     const footerY = 800;
@@ -234,7 +199,7 @@ doc
     const footerX = 20;
     const footerWidth = pageWidth - 40;
 
-    doc.roundedRect(footerX, footerY, footerWidth, footerHeight, 15).fill('#00A32E');
+    doc.roundedRect(footerX, footerY, footerWidth, footerHeight, 15).fill('#1E45E1');
 
     doc
         .fillColor('white')
@@ -264,17 +229,16 @@ const invoiceData = {
     dueDate: '2025-05-25',
     tax: 0,
     bank: {
-        paymentmode: 'Cash',
-        receivedby: 'Admin',
-        status: 'Paid',
-       
+        accNo: '123456789876',
+        bankName: 'Bank of India',
+        ifsc: 'BOI1234567',
+        upi: 'smartstay@upi'
     },
     contact: {
         email: 'contact@royalgrandhostel.in',
         phone: '+91 99999 58491'
     },
-    terms: 'This payment confirms your dues till the mentioned period. Final settlement during checkout will be calculated based on services utilized and advance paid.',
-    Thank : 'Thank you for choosing SmartStay. Your transaction is completed'
+    terms: 'This document confirms final settlement for the Tenant on 29/05/2025. All dues are cleared, and room has been vacated.'
 };
 
-generateInvoice(invoiceData, 'invoice2.pdf');
+generateInvoice(invoiceData, 'invoice5.pdf');

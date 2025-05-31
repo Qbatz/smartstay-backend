@@ -169,11 +169,11 @@ function generateUserId(firstName, user_id) {
 
 function assign_booking(req, res) {
 
-    var { id, floor, room, hostel_id, bed, join_date, ad_amount, rent_amount } = req.body;
+    var { id, floor, room, hostel_id, bed, join_date, ad_amount, rent_amount, area, landmark, pincode, city, state } = req.body;
 
     var created_by = req.user_details.id;
 
-    if (!id || !floor || !room || !hostel_id || !bed || !join_date || !ad_amount || !rent_amount) {
+    if (!id || !floor || !room || !hostel_id || !bed || !join_date || !ad_amount || !rent_amount || !pincode || !city || !state) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
     }
 
@@ -783,7 +783,7 @@ function recuring_bill_users(req, res) {
 }
 
 function edit_confirm_checkout(req, res) {
-    
+
     var { payment_date, reasons, user_id, hostel_id, comments, payment_id } = req.body;
 
     var created_by = req.user_details.id;
@@ -829,31 +829,31 @@ function edit_confirm_checkout(req, res) {
                 var receipt_id = receipt_data[0].id;
                 var old_bank_id = receipt_data[0].payment_mode;
 
-                var last_amount=Number(receipt_data[0].amount_received);
+                var last_amount = Number(receipt_data[0].amount_received);
 
-                var sql22="SELECT * FROM bankings WHERE id=? AND status=1";
-                connection.query(sql22,[payment_id],function(err,bank_data){
-                    if(err){
+                var sql22 = "SELECT * FROM bankings WHERE id=? AND status=1";
+                connection.query(sql22, [payment_id], function (err, bank_data) {
+                    if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to fetch Bank details", reason: err.message });
                     }
 
-                    if(bank_data.length == 0){
+                    if (bank_data.length == 0) {
                         return res.status(201).json({ statusCode: 201, message: "Invalid and Inactive Bank details", reason: err.message });
                     }
 
-                    var currentbankamount=Number(bank_data[0].balance);
+                    var currentbankamount = Number(bank_data[0].balance);
                     var check_amount = currentbankamount + last_amount;
 
                     if (check_amount >= Number(advance_return)) {
 
-                        var new_amount=check_amount - Number(advance_return)
+                        var new_amount = check_amount - Number(advance_return)
 
                         var sql5 = "UPDATE receipts SET amount_received=?,payment_date=?,payment_mode=? WHERE id=?";
-                        connection.query(sql5, [advance_return, payment_date,payment_id, receipt_id], function (err, up_rec) {
+                        connection.query(sql5, [advance_return, payment_date, payment_id, receipt_id], function (err, up_rec) {
                             if (err) {
                                 return res.status(201).json({ statusCode: 201, message: "Unable to Update Receipt details", reason: err.message });
                             } else {
-                               
+
                                 if (Array.isArray(reasons) && reasons.length > 0) {
                                     var sql3 = "DELETE FROM checkout_deductions WHERE receipt_id=?";
                                     connection.query(sql3, [receipt_id], function (err, del_receipt) {
@@ -861,23 +861,23 @@ function edit_confirm_checkout(req, res) {
                                             return res.status(201).json({ statusCode: 201, message: "Unable to Delete Receipt details", reason: err.message });
                                         } else {
                                             const values = reasons.map(r => [r.reason, r.amount, user_id, receipt_id, created_by]);
-        
+
                                             var sql4 = "INSERT INTO checkout_deductions (reason,amount,user_id,receipt_id,created_by) VALUES ?"
                                             connection.query(sql4, [values], function (err, ch_res) {
                                                 if (err) {
                                                     return res.status(201).json({ statusCode: 201, message: "Unable to add Receipt details", reason: err.message });
                                                 }
-        
-                                               
+
+
                                                 updateHostel();
                                             });
                                         }
                                     });
                                 } else {
-                                    
+
                                     updateHostel();
                                 }
-        
+
                                 function updateHostel() {
 
                                     if (payment_id) {
@@ -888,14 +888,14 @@ function edit_confirm_checkout(req, res) {
                                                 if (err) console.log("Error updating old bank balance:", err);
                                             });
                                         }
-    
+
                                         // Adjust the new bank balance
                                         if (payment_id) {
                                             var sql6 = "UPDATE bankings SET balance =  ? WHERE id = ?";
                                             connection.query(sql6, [new_amount, payment_id], function (err) {
                                                 if (err) console.log("Error updating new bank balance:", err);
                                             });
-    
+
                                             // Update the bank transactions
                                             var sql7 = "UPDATE bank_transactions SET amount = ?, date = ?, bank_id = ? WHERE edit_id = ?";
                                             connection.query(sql7, [advance_return, payment_date, payment_id, receipt_id], function (err) {
@@ -916,7 +916,7 @@ function edit_confirm_checkout(req, res) {
                             }
                         })
 
-                    }else{
+                    } else {
                         return res.status(201).json({ statusCode: 201, message: "Insufficient Bank Balance" });
                     }
 

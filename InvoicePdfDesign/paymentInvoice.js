@@ -9,9 +9,13 @@ function generateInvoice(invoiceDetails, outputPath) {
 
     // === Header Background ===
     doc.rect(0, 0, pageWidth, 90).fill('#1E45E1');
+   
 
     // === Logo & Tagline ===
     // doc.image('logo.png', 50, 30, { width: 40 }); // Replace with your actual logo
+     doc.image('./Asset/Group@2x.png', 10, 30, { width: 35,height:35 });
+    doc.image('./Asset/Rectangleblue.png', 35, 215, { width: 8,height:8 });
+doc.image('./Asset/location 03.png', 35, 232, { width: 10,height:10 });
     doc
         .fillColor('white')
         .fontSize(18)
@@ -36,7 +40,7 @@ function generateInvoice(invoiceDetails, outputPath) {
         .fillColor('black')
         .fontSize(14)
         .font('Helvetica-Bold')
-        .text('Security Deposit Invoice', 0, 150, { align: 'center' });
+        .text('Payment Invoice', 0, 150, { align: 'center' });
 
     // === Bill To & Invoice Info ===
     const leftX = 50;
@@ -113,8 +117,12 @@ function generateInvoice(invoiceDetails, outputPath) {
    // === Summary Section with Quote ===
 y += 10;
 
-
-
+// Left column – Farewell message
+doc
+  .fillColor('#1E45E1')
+  .fontSize(10)
+  .font('Helvetica')
+  .text('"Your comfort is our priority –\nSee you again at Smart Stay!"', leftX + 10, y + 10);
 
 // Right column – Subtotal, Tax, Total
 doc
@@ -230,4 +238,4 @@ const invoiceData = {
     terms: 'Tenants must pay all dues on or before the due date, maintain cleanliness, and follow PG rules; failure may lead to penalties or termination of stay.'
 };
 
-generateInvoice(invoiceData, 'invoice3.pdf');
+generateInvoice(invoiceData, 'invoice.pdf');

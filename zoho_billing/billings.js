@@ -71,6 +71,8 @@ async function checkAllSubscriptions() {
 
                 var planExpirationDate = new Date(subscription.plan_end);
 
+                var sub_upid = subscription.id;
+
                 if (planExpirationDate < currentDates) {
 
                     var currentDate = new Date().toISOString().split('T')[0];
@@ -80,21 +82,23 @@ async function checkAllSubscriptions() {
                     endDate.setDate(endDate.getDate() + 30);
                     var formattedEndDate = endDate.toISOString().split('T')[0];
 
-                    var sql2 = "UPDATE createaccount SET plan_status=0 WHERE id='" + subscription.user_id + "'";
-                    connection.query(sql2, function (err, up_res) {
+                    var sql3 = "UPDATE subscription_details SET status=0 WHERE id=?";
+                    connection.query(sql3, [sub_upid], function (err, data) {
                         if (err) {
                             console.log(err);
-                        } else {
-
-                            // var sql3 = "UPDATE manage_plan_details SET status=0 WHERE customer_id=?";
-                            // connection.query(sql3, [subscription.user_id], function (err, data) {
-                            //     if (err) {
-                            //         console.log(err);
-                            //     }
-                            // })
-                            console.log(`User ${subscription.customer_id}'s subscription has ended`);
                         }
                     })
+
+
+                    // var sql2 = "UPDATE createaccount SET plan_status=0 WHERE id='" + subscription.user_id + "'";
+                    // connection.query(sql2, function (err, up_res) {
+                    //     if (err) {
+                    //         console.log(err);
+                    //     } else {
+
+                    //         console.log(`User ${subscription.customer_id}'s subscription has ended`);
+                    //     }
+                    // })
                 } else {
                     console.log(`User ${subscription.customer_id}'s subscription is active`);
                 }

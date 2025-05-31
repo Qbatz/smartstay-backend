@@ -1,5 +1,7 @@
 const connection = require('./config/connection')
 const addNotification = require('./components/add_notification');
+const planMiddleware = require('./plan_middleware');
+
 
 function AddCompliance(connection, request, response) {
 
@@ -194,7 +196,7 @@ function GetComplianceList(connection, response, request) {
     }
 }
 
-function add_complainttypes(req, res) {
+async function add_complainttypes(req, res) {
 
     var user_id = req.user_details.id;
     var role_permissions = req.role_permissions;
@@ -214,24 +216,31 @@ function add_complainttypes(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Please Add Hostel Details" })
         }
 
-        var sql1 = "SELECT * FROM complaint_type WHERE complaint_name COLLATE latin1_general_ci = ? AND status=1 AND hostel_id ='" + hostel_id + "'";
-        connection.query(sql1, [complaint_name], (err, sel_data) => {
-            if (err) {
-                return res.status(201).json({ statusCode: 201, message: "Unable to Get Complaint Details" })
-            } else if (sel_data.length == 0) {
+        try {
+            await planMiddleware.check_plan(hostel_id);
+            
+            var sql1 = "SELECT * FROM complaint_type WHERE complaint_name COLLATE latin1_general_ci = ? AND status=1 AND hostel_id ='" + hostel_id + "'";
+            connection.query(sql1, [complaint_name], (err, sel_data) => {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Unable to Get Complaint Details" })
+                } else if (sel_data.length == 0) {
 
-                var sql2 = "INSERT INTO complaint_type (complaint_name,hostel_id,status,created_by) VALUES (?,?,1,?)";
-                connection.query(sql2, [complaint_name, hostel_id, user_id], (err, ins_data) => {
-                    if (err) {
-                        return res.status(201).json({ statusCode: 201, message: "Unable to Add Complaint Details" })
-                    } else {
-                        return res.status(200).json({ statusCode: 200, message: "Successfully Add Complaint Details" })
-                    }
-                })
-            } else {
-                return res.status(201).json({ statusCode: 201, message: "Complaint Type Already Exists" })
-            }
-        })
+                    var sql2 = "INSERT INTO complaint_type (complaint_name,hostel_id,status,created_by) VALUES (?,?,1,?)";
+                    connection.query(sql2, [complaint_name, hostel_id, user_id], (err, ins_data) => {
+                        if (err) {
+                            return res.status(201).json({ statusCode: 201, message: "Unable to Add Complaint Details" })
+                        } else {
+                            return res.status(200).json({ statusCode: 200, message: "Successfully Add Complaint Details" })
+                        }
+                    })
+                } else {
+                    return res.status(201).json({ statusCode: 201, message: "Complaint Type Already Exists" })
+                }
+            })
+        } catch (error) {
+            return res.status(error.statusCode).json(error);
+        }
+
     } else {
         res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
