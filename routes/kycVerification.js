@@ -1,4 +1,5 @@
 const db = require('../config/connection');
+const cron = require('node-cron')
 const kycService = require('../service/kycService');
 
 
@@ -110,6 +111,7 @@ const cleanedPhone = cleanPhoneNumber(hostel.Phone.toString());
     }
   });
 }
+
 function cleanPhoneNumber(rawPhone) {
  
   rawPhone = rawPhone.replace('+', '');
@@ -125,7 +127,114 @@ function cleanPhoneNumber(rawPhone) {
   throw new Error('Invalid phone number format');
 }
 
+async function fetchAndUpdateKycStatus(req, res, customer_id) {
+  try {
+    const [rows] = await db.promise().query(
+      'SELECT kyc_id FROM customer_kyc_verification WHERE customer_id = ?', 
+      [customer_id]
+    );
 
-module.exports = { verifyAndStoreKyc };
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'KYC ID not found for this customer', status: null });
+    }
+
+    const kyc_id = rows[0].kyc_id;
+    console.log("kyc_id:", kyc_id);
+
+    const kycResponse = await kycService.fetchKycApiResponse(kyc_id);
+    console.log("kyc_response:", JSON.stringify(kycResponse, null, 2));
+
+    const result = await insertOrUpdateKycData(customer_id, kycResponse);
+    
+    if (result.success) {
+      return res.status(200).json({ message: 'KYC status fetched and updated successfully', status: kycResponse.status });
+    } else {
+      return res.status(500).json({ message: 'KYC status fetched, but DB update failed', status: kycResponse.status });
+    }
+
+  } catch (error) {
+    console.error(`[KYC MAIN SERVICE ERROR] Customer ID ${customer_id}:`, error);
+    return res.status(500).json({ message: 'Failed to fetch or update KYC status', status: null });
+  }
+}
+
+async function insertOrUpdateKycData(customer_id, kycResponse) {
+  try {
+    const {
+      id,
+      created_at,
+      status,
+      reference_id,
+      transaction_id,
+      expire_in_days,
+      reminder_registered,
+      auto_approved,
+      template_id
+    } = kycResponse;
+
+    const query = `
+      INSERT INTO customer_kyc_verification (
+        customer_id, kyc_id, created_at, status, reference_id,
+        transaction_id, expire_in_days, reminder_registered,
+        auto_approved, template_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        kyc_id = VALUES(kyc_id),
+        created_at = VALUES(created_at),
+        status = VALUES(status),
+        reference_id = VALUES(reference_id),
+        transaction_id = VALUES(transaction_id),
+        expire_in_days = VALUES(expire_in_days),
+        reminder_registered = VALUES(reminder_registered),
+        auto_approved = VALUES(auto_approved),
+        template_id = VALUES(template_id),
+        updated_at = NOW()
+    `;
+
+    const values = [
+      customer_id,
+      id,
+      created_at,
+      status,
+      reference_id,
+      transaction_id,
+      expire_in_days,
+      reminder_registered ? 1 : 0,
+      auto_approved ? 1 : 0,
+      template_id
+    ];
+
+    await db.promise().query(query, values);
+
+    return { success: true };
+
+  } catch (error) {
+    console.error('[DB INSERT/UPDATE ERROR]', error);
+    return { success: false, error };
+  }
+}
+
+
+
+cron.schedule('0 12 * * *', async () => {
+  const clientIds = await getRequestedClientIds();
+  for (const clientId of clientIds) {
+    const kycResponse = kycService.fetchKycApiResponse(clientId);
+    const result = await insertOrUpdateKycData(clientId, kycResponse);
+  }
+});
+
+async function getRequestedClientIds() {
+  const [rows] = await db.promise().query(`
+    SELECT kyc_id
+    FROM customer_kyc_verification
+    WHERE status = 'requested'
+  `);
+  return rows.map(row => row.kyc_id);
+}
+
+
+
+module.exports = { verifyAndStoreKyc,fetchAndUpdateKycStatus };
 
 
