@@ -1379,11 +1379,6 @@ app.get('/getInvoice-settings/', (req, res) => {
     settingsQueries.getInvoiceSettings(req, res, hostel_id);
 });
 
-<<<<<<<<< Temporary merge branch 1
-app.post('/getRecurringBills/', (req, res) => {
-     const hostel_id = req.body.hostel_id;
-    settingsQueries.getRecurringBills(req, res,hostel_id);
-=========
 app.get('/getRecurringBills/:hostel_id', (req, res) => {
     const hostel_id = req.params.hostel_id;
     settingsQueries.getRecurringBills(req, res, hostel_id);
