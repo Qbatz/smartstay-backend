@@ -2,7 +2,6 @@ const request = require('request')
 const connection = require('../config/connection')
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const axios =require('axios')
 
 // exports.user_login = (req, res) => {
 
@@ -81,57 +80,41 @@ exports.user_login = (req, res) => {
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-    let Opt_Payload ={
-        "Account": {
-            "APIkey": process.env.SMS_APIKEY,
-            "SenderId":process.env.SMS_SENDERID,
-            "Channel": "2",
-            "DCS": "0"
-        },
-        "Messages": [
-            {
-                "Text": `Dear user, your SmartStay Login OTP is ${otp}. Use this OTP to verify your login. Do not share it with anyone. - SmartStay`,
-                "DLTTemplateId": process.env.SMS_DLTTEMPLATEID,
-                "Number": mob_no
-            }
-        ]
-    }
+    // try {
+    // axios.post(`https://www.smsgatewayhub.com/api/mt/SendSMS`, Opt_Payload).then((response) => {
+    //     if (response.data.MessageData !== null) {
+    var sql1 = "SELECT * FROM createaccount WHERE mobileNo=? AND user_status=1";
+    connection.query(sql1, [new_mob], function (err, ad_data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Error Fetching User Details", reason: err.message });
+        } else if (ad_data.length != 0) {
+            sendotp(otp, new_mob, expiresAt, 'admin', res);
+        } else {
 
-    try{
-        axios.post(`https://www.smsgatewayhub.com/api/mt/SendSMS`,Opt_Payload).then((response)=>{
-            if(response.data.MessageData !==null){
-                var sql1 = "SELECT * FROM createaccount WHERE mobileNo=? AND user_status=1";
-                connection.query(sql1, [new_mob], function (err, ad_data) {
-                    if (err) {
-                        return res.status(201).json({ statusCode: 201, message: "Error Fetching User Details", reason: err.message });
-                    } else if (ad_data.length != 0) {
-                        sendotp(otp, new_mob, expiresAt, 'admin', res);
-                    } else {
-            
-                        var sql2 = "SELECT * FROM hostel WHERE Phone=? AND isActive=1 AND Floor != 'undefined'";
-                        connection.query(sql2, [new_mob], function (err, us_data) {
-                            if (err) {
-                                return res.status(201).json({ statusCode: 201, message: "Error Fetching User Details", reason: err.message });
-                            } else if (us_data.length != 0) {
-                                sendotp(otp, new_mob, expiresAt, 'customer', res);
-                            } else {
-                                return res.status(201).json({ statusCode: 201, message: "Invalid Mobile Number" });
-                            }
-                        })
-                    }
-                })
-            }
-            else{
-                return res.status(201).json({ statusCode: 201, message: response.data.ErrorMessage });
-            }
-            
-        })
-    }
-    catch (e) {
-        console.log("e",e)
-    }
+            var sql2 = "SELECT * FROM hostel WHERE Phone=? AND isActive=1 AND Floor != 'undefined'";
+            connection.query(sql2, [new_mob], function (err, us_data) {
+                if (err) {
+                    return res.status(201).json({ statusCode: 201, message: "Error Fetching User Details", reason: err.message });
+                } else if (us_data.length != 0) {
+                    sendotp(otp, new_mob, expiresAt, 'customer', res);
+                } else {
+                    return res.status(201).json({ statusCode: 201, message: "Invalid Mobile Number" });
+                }
+            })
+        }
+    })
+    // }
+    //         else {
+    //     return res.status(201).json({ statusCode: 201, message: response.data.ErrorMessage });
+    // }
 
-   
+    // })
+    // }
+    // catch (e) {
+    //     console.log("e", e)
+    // }
+
+
 }
 
 function sendotp(otp, mob_no, expiresAt, role, res) {
@@ -142,8 +125,24 @@ function sendotp(otp, mob_no, expiresAt, role, res) {
             return res.status(201).json({ statusCode: 201, message: "Error Inserting Otp Details", reason: err.message });
         }
 
-        var api_url = "https://www.fast2sms.com/dev/bulkV2";
+        const api_url = 'https://www.smsgatewayhub.com/api/mt/SendSMS';
         var api_key = process.env.FASTSMAS_KEY;
+
+        let Opt_Payload = {
+            "Account": {
+                "APIkey": process.env.SMS_APIKEY,
+                "SenderId": process.env.SMS_SENDERID,
+                "Channel": "2",
+                "DCS": "0"
+            },
+            "Messages": [
+                {
+                    "Text": `Dear user, your SmartStay Login OTP is ${otp}. Use this OTP to verify your login. Do not share it with anyone. - SmartStay`,
+                    "DLTTemplateId": process.env.SMS_DLTTEMPLATEID,
+                    "Number": mob_no
+                }
+            ]
+        }
 
         const method = "POST";
 
@@ -155,11 +154,7 @@ function sendotp(otp, mob_no, expiresAt, role, res) {
                 'Content-Type': 'application/json'
             },
 
-            body: JSON.stringify({
-                "route": "otp",
-                "variables_values": otp,
-                "numbers": mob_no,
-            })
+            body: JSON.stringify(Opt_Payload)
         };
 
         request(options, (error, response, body) => {
