@@ -169,11 +169,11 @@ function generateUserId(firstName, user_id) {
 
 function assign_booking(req, res) {
 
-    var { id, floor, room, hostel_id, bed, join_date, ad_amount, rent_amount, area, landmark, pincode, city, state } = req.body;
+    var { id, floor, room, hostel_id, bed, join_date, ad_amount, rent_amount } = req.body;
 
     var created_by = req.user_details.id;
 
-    if (!id || !floor || !room || !hostel_id || !bed || !join_date || !ad_amount || !rent_amount || !pincode || !city || !state) {
+    if (!id || !floor || !room || !hostel_id || !bed || !join_date || !ad_amount || !rent_amount) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
     }
 
@@ -186,6 +186,12 @@ function assign_booking(req, res) {
             var booking_details = data[0];
             var mob_no = booking_details.phone_number;
             var email_id = booking_details.email_id || 'NA';
+
+            var area = booking_details.area;
+            var landmark = booking_details.landmark;
+            var pincode = booking_details.pin_code;
+            var city = booking_details.city;
+            var state = booking_details.state;
 
             if (email_id != 'NA') {
 
