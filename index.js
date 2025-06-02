@@ -1375,13 +1375,14 @@ app.post('/invoice-settings', upload.fields(
 });
 
 app.get('/getInvoice-settings/', (req, res) => {
-     const hostel_id = req.body.hostel_id;
-    settingsQueries.getInvoiceSettings(req, res,hostel_id);
+    const hostel_id = req.body.hostel_id;
+    settingsQueries.getInvoiceSettings(req, res, hostel_id);
 });
 
-app.post('/getRecurringBills/', (req, res) => {
-     const hostel_id = req.body.hostel_id;
-    settingsQueries.getRecurringBills(req, res,hostel_id);
+
+app.get('/getRecurringBills/:hostel_id', (req, res) => {
+    const hostel_id = req.params.hostel_id;
+    settingsQueries.getRecurringBills(req, res, hostel_id);
 });
 
 
@@ -1391,8 +1392,8 @@ app.post('/add-recuringBill', (req, res) => {
 
 app.post('/verify-kyc', (req, res) => {
 
-  const customer_id = req.body.customer_id;
- kycQueries.verifyAndStoreKyc(req, res,customer_id)
+    const customer_id = req.body.customer_id;
+    kycQueries.verifyAndStoreKyc(req, res, customer_id)
 });
 
 
