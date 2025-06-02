@@ -108,10 +108,10 @@ exports.add_receipt = (req, res) => {
                                     response.status(201).json({ message: "Unable to Add Transactions Details", });
                                 } else {
 
-                                    if (payment_mode == "Net Banking" && bank_id) {
+                                    if (payment_mode) {
 
                                         var sql5 = "SELECT * FROM bankings WHERE id=? AND status=1";
-                                        connection.query(sql5, [bank_id], function (err, sel_res) {
+                                        connection.query(sql5, [payment_mode], function (err, sel_res) {
                                             if (err) {
                                                 console.log(err);
                                             } else if (sel_res.length != 0) {
@@ -119,14 +119,14 @@ exports.add_receipt = (req, res) => {
                                                 const balance_amount = parseInt(sel_res[0].balance);
 
                                                 var sql4 = "INSERT INTO bank_transactions (bank_id,date,amount,`desc`,type,status,createdby,edit_id) VALUES (?,?,?,?,?,?,?,?)";
-                                                connection.query(sql4, [bank_id, payment_date, amount, 'receipt', 1, 1, created_by, id], function (err, ins_data) {
+                                                connection.query(sql4, [payment_mode, payment_date, amount, 'receipt', 1, 1, created_by, id], function (err, ins_data) {
                                                     if (err) {
                                                         console.log(err, "Insert Transactions Error");
                                                     } else {
                                                         var new_amount = parseInt(balance_amount) + parseInt(amount);
 
                                                         var sql5 = "UPDATE bankings SET balance=? WHERE id=?";
-                                                        connection.query(sql5, [new_amount, bank_id], function (err, up_date) {
+                                                        connection.query(sql5, [new_amount, payment_mode], function (err, up_date) {
                                                             if (err) {
                                                                 console.log(err, "Update Amount Error");
                                                             }
@@ -237,19 +237,23 @@ exports.get_all_receipts = (req, res) => {
 
 
 exports.edit_receipt = (req, res) => {
-
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
 
     var { id, user_id, invoice_number, amount, payment_date, payment_mode, notes, bank_id } = req.body;
 
     if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_edit == 1)) {
-
         if (!id || !user_id || !amount || !payment_date || !payment_mode) {
             return res.status(201).json({ message: "Missing required fields", statusCode: 201 });
         }
 
-        var sql1 = "SELECT *, inv.id AS inv_id, re.amount_received AS old_amount, re.payment_mode AS old_payment_mode, re.bank_id AS old_bank_id FROM receipts AS re LEFT JOIN invoicedetails AS inv ON inv.Invoices = re.invoice_number WHERE re.id = ? AND re.status = 1";
+        var sql1 = `
+            SELECT *, inv.id AS inv_id, re.amount_received AS old_amount, 
+                   re.payment_mode AS old_payment_mode, re.bank_id AS old_bank_id 
+            FROM receipts AS re 
+            LEFT JOIN invoicedetails AS inv ON inv.Invoices = re.invoice_number 
+            WHERE re.id = ? AND re.status = 1
+        `;
         connection.query(sql1, [id], function (err, data) {
             if (err) {
                 return res.status(201).json({ message: "Error to Get Receipts Details", reason: err.message, statusCode: 201 });
@@ -265,8 +269,7 @@ exports.edit_receipt = (req, res) => {
             var old_payment_mode = receipt.old_payment_mode;
             var old_bank_id = receipt.old_bank_id;
 
-            // Recalculate the BalanceDue and PaidAmount
-            var bal_amount = parseInt(receipt.BalanceDue) + parseInt(old_amount) - parseInt(amount);
+            var bal_amount = parseInt(receipt.BalanceDue) + old_amount - parseInt(amount);
             var new_paidamount = parseInt(receipt.PaidAmount) - old_amount + parseInt(amount);
 
             var sql12 = "SELECT * FROM bankings WHERE id=? AND status=1";
@@ -280,88 +283,211 @@ exports.edit_receipt = (req, res) => {
                 }
 
                 var bank_amount = Number(bank_data[0].balance);
+                var check_amount = bank_amount + Number(old_amount);
+                var new_bankamount = check_amount - Number(amount); // negative allowed
 
-                var check_amount = Number(bank_amount) + Number(old_amount);
+                // Update receipts
+                var sql2 = `
+                    UPDATE receipts 
+                    SET invoice_number = ?, amount_received = ?, payment_date = ?, 
+                        payment_mode = ?, notes = ?, bank_id = ? 
+                    WHERE id = ?
+                `;
+                connection.query(sql2, [invoice_number, amount, payment_date, payment_mode, notes, payment_mode, id], function (err, up_res) {
+                    if (err) {
+                        return res.status(201).json({ message: "Error to Update Receipts Details", reason: err.message, statusCode: 201 });
+                    }
 
-                if (check_amount >= Number(amount)) {
+                    if (invoice_number == 0) {
+                        return proceedToBankUpdate();
+                    }
 
-                    var new_bankamount = check_amount - Number(amount);
-
-                    // Update the receipts table
-                    var sql2 = "UPDATE receipts SET invoice_number = ?, amount_received = ?, payment_date = ?, payment_mode = ?, notes = ?, bank_id = ? WHERE id = ?";
-                    connection.query(sql2, [invoice_number, amount, payment_date, payment_mode, notes, payment_mode, id], function (err, up_res) {
-                        if (err) {
-                            return res.status(201).json({ message: "Error to Update Receipts Details", reason: err.message, statusCode: 201 });
+                    // Update invoice details
+                    var sql3 = "UPDATE invoicedetails SET BalanceDue = ?, PaidAmount = ?, Status = ? WHERE id = ?";
+                    connection.query(sql3, [bal_amount, new_paidamount, bal_amount > 0 ? "Pending" : "Paid", inv_id], function (up_err) {
+                        if (up_err) {
+                            return res.status(201).json({ message: "Error to Update Invoice Details", reason: up_err.message, statusCode: 201 });
                         }
 
-                        if (invoice_number == 0) {
-                            return proceedToBankUpdate();
-                        }
-
-                        // Update the invoicedetails table
-                        var sql3 = "UPDATE invoicedetails SET BalanceDue = ?, PaidAmount = ?, Status = ? WHERE id = ?";
-                        connection.query(sql3, [bal_amount, new_paidamount, bal_amount > 0 ? "Pending" : "Paid", inv_id], function (up_err) {
-                            if (up_err) {
-                                return res.status(201).json({ message: "Error to Update Invoice Details", reason: up_err.message, statusCode: 201 });
-                            }
-
-                            return proceedToBankUpdate()
-                        });
-
-                        function proceedToBankUpdate() {
-
-                            // Update the transactions table
-                            var sql4 = "UPDATE transactions SET amount = ?, payment_date = ?, payment_type = ? WHERE invoice_id = ? AND payment_type = ? AND amount = ?";
-                            connection.query(sql4, [amount, payment_date, payment_mode, invoice_number, old_payment_mode, old_amount], function (trans_err) {
-                                if (trans_err) {
-                                    return res.status(201).json({ message: "Error to Update Transaction Details", reason: trans_err.message, statusCode: 201 });
-                                }
-
-                                var sql5 = "UPDATE hostel SET return_advance=? WHERE ID=?";
-                                connection.query(sql5, [amount, user_id], function (err, up_res) {
-                                    if (err) {
-                                        return res.status(201).json({ message: "Error to Update Return Advance Details", reason: trans_err.message, statusCode: 201 });
-                                    }
-                                    if (payment_mode) {
-                                        // Adjust the old bank balance
-                                        if (old_bank_id) {
-                                            var sql5 = "UPDATE bankings SET balance = balance + ? WHERE id = ?";
-                                            connection.query(sql5, [old_amount, old_bank_id], function (err) {
-                                                if (err) console.log("Error updating old bank balance:", err);
-                                            });
-                                        }
-
-                                        // Adjust the new bank balance
-                                        if (payment_mode) {
-                                            var sql6 = "UPDATE bankings SET balance =  ? WHERE id = ?";
-                                            connection.query(sql6, [new_bankamount, payment_mode], function (err) {
-                                                if (err) console.log("Error updating new bank balance:", err);
-                                            });
-
-                                            // Update the bank transactions
-                                            var sql7 = "UPDATE bank_transactions SET amount = ?, date = ?, bank_id = ? WHERE edit_id = ?";
-                                            connection.query(sql7, [amount, payment_date, payment_mode, inv_id], function (err) {
-                                                if (err) console.log("Error updating bank transactions:", err);
-                                            });
-                                        }
-                                    }
-
-                                    return res.status(200).json({ message: "Receipt updated successfully!", statusCode: 200 });
-                                })
-                            });
-                        }
+                        return proceedToBankUpdate();
                     });
 
-                } else {
-                    return res.status(201).json({ statusCode: 201, message: "Insufficient Bank Balance" });
-                }
-            })
+                    function proceedToBankUpdate() {
+                        // Update transactions
+                        var sql4 = "UPDATE transactions SET amount = ?, payment_date = ?, payment_type = ? WHERE invoice_id = ? AND payment_type = ? AND amount = ?";
+                        connection.query(sql4, [amount, payment_date, payment_mode, invoice_number, old_payment_mode, old_amount], function (trans_err) {
+                            if (trans_err) {
+                                return res.status(201).json({ message: "Error to Update Transaction Details", reason: trans_err.message, statusCode: 201 });
+                            }
 
+                            // Update hostel return advance
+                            var sql5 = "UPDATE hostel SET return_advance = ? WHERE ID = ?";
+                            connection.query(sql5, [amount, user_id], function (err, up_res) {
+                                if (err) {
+                                    return res.status(201).json({ message: "Error to Update Return Advance Details", reason: err.message, statusCode: 201 });
+                                }
+
+
+                                if (payment_mode) {
+                                    if (old_bank_id) {
+                                        var sql6 = "UPDATE bankings SET balance = balance + ? WHERE id = ?";
+                                        connection.query(sql6, [old_amount, old_bank_id], function (err) {
+                                            if (err) console.log("Error updating old bank balance:", err);
+                                        });
+                                    }
+
+                                    var sql7 = "UPDATE bankings SET balance = ? WHERE id = ?";
+                                    connection.query(sql7, [new_bankamount, payment_mode], function (err) {
+                                        if (err) console.log("Error updating new bank balance:", err);
+                                    });
+
+                                    var sql8 = "UPDATE bank_transactions SET amount = ?, date = ?, bank_id = ? WHERE edit_id = ?";
+                                    connection.query(sql8, [amount, payment_date, payment_mode, inv_id], function (err) {
+                                        if (err) console.log("Error updating bank transactions:", err);
+                                    });
+                                }
+
+                                return res.status(200).json({ message: "Receipt updated successfully!", statusCode: 200 });
+                            });
+                        });
+                    }
+                });
+            });
         });
     } else {
         return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
     }
 };
+
+
+
+
+// exports.edit_receipt = (req, res) => {
+
+//     var role_permissions = req.role_permissions;
+//     var is_admin = req.is_admin;
+
+//     var { id, user_id, invoice_number, amount, payment_date, payment_mode, notes, bank_id } = req.body;
+
+//     if (is_admin == 1 || (role_permissions[10] && role_permissions[10].per_edit == 1)) {
+
+//         if (!id || !user_id || !amount || !payment_date || !payment_mode) {
+//             return res.status(201).json({ message: "Missing required fields", statusCode: 201 });
+//         }
+
+//         var sql1 = "SELECT *, inv.id AS inv_id, re.amount_received AS old_amount, re.payment_mode AS old_payment_mode, re.bank_id AS old_bank_id FROM receipts AS re LEFT JOIN invoicedetails AS inv ON inv.Invoices = re.invoice_number WHERE re.id = ? AND re.status = 1";
+//         connection.query(sql1, [id], function (err, data) {
+//             if (err) {
+//                 return res.status(201).json({ message: "Error to Get Receipts Details", reason: err.message, statusCode: 201 });
+//             }
+
+//             if (data.length == 0) {
+//                 return res.status(201).json({ message: "Invalid Receipts Details", statusCode: 201 });
+//             }
+
+//             var receipt = data[0];
+//             var inv_id = receipt.inv_id;
+//             var old_amount = parseInt(receipt.old_amount);
+//             var old_payment_mode = receipt.old_payment_mode;
+//             var old_bank_id = receipt.old_bank_id;
+
+//             // Recalculate the BalanceDue and PaidAmount
+//             var bal_amount = parseInt(receipt.BalanceDue) + parseInt(old_amount) - parseInt(amount);
+//             var new_paidamount = parseInt(receipt.PaidAmount) - old_amount + parseInt(amount);
+
+//             var sql12 = "SELECT * FROM bankings WHERE id=? AND status=1";
+//             connection.query(sql12, [payment_mode], function (err, bank_data) {
+//                 if (err) {
+//                     return res.status(201).json({ message: "Error to Get Bank Details", reason: err.message, statusCode: 201 });
+//                 }
+
+//                 if (bank_data.length == 0) {
+//                     return res.status(201).json({ message: "Invalid or Inactive Bank Details", statusCode: 201 });
+//                 }
+
+//                 var bank_amount = Number(bank_data[0].balance);
+
+//                 var check_amount = Number(bank_amount) + Number(old_amount);
+
+//                 if (check_amount >= Number(amount)) {
+
+//                     var new_bankamount = check_amount - Number(amount);
+
+//                     // Update the receipts table
+//                     var sql2 = "UPDATE receipts SET invoice_number = ?, amount_received = ?, payment_date = ?, payment_mode = ?, notes = ?, bank_id = ? WHERE id = ?";
+//                     connection.query(sql2, [invoice_number, amount, payment_date, payment_mode, notes, payment_mode, id], function (err, up_res) {
+//                         if (err) {
+//                             return res.status(201).json({ message: "Error to Update Receipts Details", reason: err.message, statusCode: 201 });
+//                         }
+
+//                         if (invoice_number == 0) {
+//                             return proceedToBankUpdate();
+//                         }
+
+//                         // Update the invoicedetails table
+//                         var sql3 = "UPDATE invoicedetails SET BalanceDue = ?, PaidAmount = ?, Status = ? WHERE id = ?";
+//                         connection.query(sql3, [bal_amount, new_paidamount, bal_amount > 0 ? "Pending" : "Paid", inv_id], function (up_err) {
+//                             if (up_err) {
+//                                 return res.status(201).json({ message: "Error to Update Invoice Details", reason: up_err.message, statusCode: 201 });
+//                             }
+
+//                             return proceedToBankUpdate()
+//                         });
+
+//                         function proceedToBankUpdate() {
+
+//                             // Update the transactions table
+//                             var sql4 = "UPDATE transactions SET amount = ?, payment_date = ?, payment_type = ? WHERE invoice_id = ? AND payment_type = ? AND amount = ?";
+//                             connection.query(sql4, [amount, payment_date, payment_mode, invoice_number, old_payment_mode, old_amount], function (trans_err) {
+//                                 if (trans_err) {
+//                                     return res.status(201).json({ message: "Error to Update Transaction Details", reason: trans_err.message, statusCode: 201 });
+//                                 }
+
+//                                 var sql5="UPDATE hostel SET return_advance=? WHERE ID=?";
+//                                 connection.query(sql5,[amount,user_id],function(err,up_res) {
+//                                     if (err) {
+//                                     return res.status(201).json({ message: "Error to Update Return Advance Details", reason: trans_err.message, statusCode: 201 });
+//                                 }
+//                                 if (payment_mode) {
+//                                     // Adjust the old bank balance
+//                                     if (old_bank_id) {
+//                                         var sql5 = "UPDATE bankings SET balance = balance + ? WHERE id = ?";
+//                                         connection.query(sql5, [old_amount, old_bank_id], function (err) {
+//                                             if (err) console.log("Error updating old bank balance:", err);
+//                                         });
+//                                     }
+
+//                                     // Adjust the new bank balance
+//                                     if (payment_mode) {
+//                                         var sql6 = "UPDATE bankings SET balance =  ? WHERE id = ?";
+//                                         connection.query(sql6, [new_bankamount, payment_mode], function (err) {
+//                                             if (err) console.log("Error updating new bank balance:", err);
+//                                         });
+
+//                                         // Update the bank transactions
+//                                         var sql7 = "UPDATE bank_transactions SET amount = ?, date = ?, bank_id = ? WHERE edit_id = ?";
+//                                         connection.query(sql7, [amount, payment_date, payment_mode, inv_id], function (err) {
+//                                             if (err) console.log("Error updating bank transactions:", err);
+//                                         });
+//                                     }
+//                                 }
+
+//                                 return res.status(200).json({ message: "Receipt updated successfully!", statusCode: 200 });
+//                                 })
+//                             });
+//                         }
+//                     });
+
+//                 } else {
+//                     return res.status(201).json({ statusCode: 201, message: "Insufficient Bank Balance" });
+//                 }
+//             })
+
+//         });
+//     } else {
+//         return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+//     }
+// };
 
 exports.delete_receipt = (req, res) => {
 

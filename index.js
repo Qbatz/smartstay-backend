@@ -36,6 +36,7 @@ var billings = require('./zoho_billing/billings');
 
 const masterDataQueries = require('./routes/masterData')
 const settingsQueries = require('./routes/settings');
+const kycQueries = require('./routes/kycVerification');
 
 
 const multer = require('multer');
@@ -70,11 +71,6 @@ app.listen(process.env.PORT, function () {
 })
 
 //Whatsapp_Clous_api
-
-const isValidPhoneNumber = (phoneNumber) => {
-    const regex = /^\+[1-9]{1}[0-9]{3,14}$/;
-    return regex.test(phoneNumber);
-};
 
 app.get('/webhook', (req, res) => {
     const mode = req.query['hub.mode'];
@@ -126,6 +122,7 @@ app.post('/webhook', async (req, res) => {
 
     res.status(200).send('Webhook processed');
 });
+
 
 async function sendTemplateMessage(to, templateName, parameters = []) {
     if (!isValidPhoneNumber(to)) {
@@ -202,6 +199,7 @@ app.post('/send-onboard-message', async (req, res) => {
         res.status(500).json({ error: 'Failed to send message' });
     }
 });
+
 
 // ExpensesManagement 
 
@@ -1454,8 +1452,30 @@ app.post('/invoice-settings', upload.fields(
     settingsQueries.addOrEditInvoiceSettings(req, res);
 });
 
+app.get('/getInvoice-settings/', (req, res) => {
+    const hostel_id = req.body.hostel_id;
+    settingsQueries.getInvoiceSettings(req, res, hostel_id);
+});
+
+app.get('/getRecurringBills/:hostel_id', (req, res) => {
+    const hostel_id = req.params.hostel_id;
+    settingsQueries.getRecurringBills(req, res, hostel_id);
+});
+
+
 app.post('/add-recuringBill', (req, res) => {
     invoiceQueries.addRecurringBills(req, res)
+});
+
+app.post('/verify-kyc', (req, res) => {
+
+    const customer_id = req.body.customer_id;
+    kycQueries.verifyAndStoreKyc(req, res, customer_id)
+});
+
+app.post('/getKycDetails', (req, res) => {
+  const customer_id = req.body.customer_id;
+ kycQueries.fetchAndUpdateKycStatus(req, res,customer_id)
 });
 
 
