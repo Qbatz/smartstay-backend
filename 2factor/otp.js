@@ -126,7 +126,6 @@ function sendotp(otp, mob_no, expiresAt, role, res) {
         }
 
         const api_url = 'https://www.smsgatewayhub.com/api/mt/SendSMS';
-        var api_key = process.env.FASTSMAS_KEY;
 
         let Opt_Payload = {
             "Account": {
@@ -150,7 +149,6 @@ function sendotp(otp, mob_no, expiresAt, role, res) {
             url: api_url,
             method: method,
             headers: {
-                Authorization: api_key,
                 'Content-Type': 'application/json'
             },
 
