@@ -36,36 +36,37 @@ const downloadImage = (imageUrl, localPath) => {
 
 const generateManualPDF = async (data, outputPath, filename, action) => {
     try {
-
-        console.log('====================================');
-        console.log(action);
-        console.log('====================================');
-
         if (action == 'advance') {
             await paymentInvoiceSecurity.generateInvoice(data, data[0], outputPath);
         } else {
             await paymentInvoice.generateInvoice(data, data[0], outputPath);
         }
 
+        const stats = fs.statSync(outputPath);
+        console.log(`PDF size before upload: ${stats.size} bytes`);
+
+        await new Promise(r => setTimeout(r, 1000));
+
         const inv_id = data[0].id;
+        const s3Url = await uploadToS3(outputPath, filename, inv_id);
 
-        // const s3Url = await uploadToS3(outputPath, filename, inv_id);
-
-        // if (s3Url) {
-        //     // fs.unlinkSync(outputPath); // Clean up local file after upload
-        //     return s3Url;
-        // } else {
-        //     throw new Error('S3 upload failed.');
-        // }
+        if (s3Url) {
+            fs.unlinkSync(outputPath); // Uncomment if you want to delete after upload
+            return s3Url;
+        } else {
+            throw new Error('S3 upload failed.');
+        }
     } catch (error) {
         console.error('Error generating PDF:', error);
         throw error;
     }
 };
 
+
 const uploadToS3 = async (filePath, filename, inv_id) => {
     try {
         const fileContent = fs.readFileSync(filePath);
+        console.log(`Read file ${filePath} - size: ${fileContent.length} bytes`);
 
         const key = `Invoice/${filename}`;
         var bucketName = process.env.AWS_BUCKET_NAME;
@@ -83,7 +84,9 @@ const uploadToS3 = async (filePath, filename, inv_id) => {
         return data.Location;
     } catch (err) {
         console.error('Error uploading PDF:', err);
+        throw err;  // Important: propagate error
     }
 };
+
 
 module.exports = { downloadImage, generateManualPDF };

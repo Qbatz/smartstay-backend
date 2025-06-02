@@ -88,7 +88,9 @@ const queries = [
 
     "ALTER TABLE `hosteldetails` ADD COLUMN `plan_status` INT NULL DEFAULT 1 AFTER `due_date`;",
 
-    "ALTER TABLE `manage_plan_details` ADD COLUMN `hostel_id` VARCHAR(45) NULL AFTER `hosted_page_id`;"
+    "ALTER TABLE `manage_plan_details` ADD COLUMN `hostel_id` VARCHAR(45) NULL AFTER `hosted_page_id`;",
+
+    "ALTER TABLE `hostel` CHANGE COLUMN `Address` `Address` TEXT NULL ;"
 ];
 
 queries.forEach(executeQuery);
