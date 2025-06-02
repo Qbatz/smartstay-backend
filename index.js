@@ -36,6 +36,7 @@ var billings = require('./zoho_billing/billings');
 
 const masterDataQueries = require('./routes/masterData')
 const settingsQueries = require('./routes/settings');
+const kycQueries = require('./routes/kycVerification');
 
 
 const multer = require('multer');
@@ -70,11 +71,6 @@ app.listen(process.env.PORT, function () {
 })
 
 //Whatsapp_Clous_api
-
-const isValidPhoneNumber = (phoneNumber) => {
-    const regex = /^\+[1-9]{1}[0-9]{3,14}$/;
-    return regex.test(phoneNumber);
-};
 
 app.get('/webhook', (req, res) => {
     const mode = req.query['hub.mode'];
@@ -125,82 +121,6 @@ app.post('/webhook', async (req, res) => {
     }
 
     res.status(200).send('Webhook processed');
-});
-
-async function sendTemplateMessage(to, templateName, parameters = []) {
-    if (!isValidPhoneNumber(to)) {
-        console.error('Invalid phone number format:', to);
-        throw new Error('Invalid phone number format');
-    }
-
-    try {
-        const response = await axios.post(
-            'https://graph.facebook.com/v17.0/547806001759552/messages',
-            {
-                messaging_product: 'whatsapp',
-                to,
-                type: 'template',
-                template: {
-                    name: templateName,
-                    language: { code: 'en_IN' },
-                    components: [
-                        {
-                            type: 'body',
-                            parameters: parameters.map((p) => ({ type: 'text', text: p })),
-                        },
-                    ],
-                },
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
-                    'Content-Type': 'application/json',
-                },
-            }
-        );
-
-        console.log(`✅ Template message '${templateName}' sent:`, response.data);
-        return response.data;
-    } catch (err) {
-        console.error(`❌ Error sending template message '${templateName}':`, err.response?.data || err.message);
-        throw err;
-    }
-}
-
-app.post('/send-signup-message', async (req, res) => {
-    const { phone, username } = req.body;
-    if (!phone || !username) {
-        return res.status(400).json({ error: 'Phone number and username are required' });
-    }
-    const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
-    if (!isValidPhoneNumber(formattedPhone)) {
-        return res.status(400).json({ error: 'Invalid phone number format' });
-    }
-
-    try {
-        await sendTemplateMessage(formattedPhone, 'signup_welcome_msg', [username]);
-        res.status(200).json({ success: true, message: 'Signup welcome message sent' });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to send message' });
-    }
-});
-
-app.post('/send-onboard-message', async (req, res) => {
-    const { phone, name, hostel } = req.body;
-    if (!phone || !name || !hostel) {
-        return res.status(400).json({ error: 'Missing phone, name or hostel' });
-    }
-    const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
-    if (!isValidPhoneNumber(formattedPhone)) {
-        return res.status(400).json({ error: 'Invalid phone number format' });
-    }
-
-    try {
-        await sendTemplateMessage(formattedPhone, 'customer_welcome_msg', [name, hostel]);
-        res.status(200).json({ success: true, message: 'Onboard message sent' });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to send message' });
-    }
 });
 
 // ExpensesManagement 
@@ -1454,8 +1374,25 @@ app.post('/invoice-settings', upload.fields(
     settingsQueries.addOrEditInvoiceSettings(req, res);
 });
 
+app.get('/getInvoice-settings/', (req, res) => {
+     const hostel_id = req.body.hostel_id;
+    settingsQueries.getInvoiceSettings(req, res,hostel_id);
+});
+
+app.get('/getRecurringBills/', (req, res) => {
+     const hostel_id = req.body.hostel_id;
+    settingsQueries.getRecurringBills(req, res,hostel_id);
+});
+
+
 app.post('/add-recuringBill', (req, res) => {
     invoiceQueries.addRecurringBills(req, res)
+});
+
+app.post('/verify-kyc', (req, res) => {
+
+  const customer_id = req.body.customer_id;
+ kycQueries.verifyAndStoreKyc(req, res,customer_id)
 });
 
 

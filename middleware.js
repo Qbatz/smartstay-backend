@@ -32,6 +32,9 @@ module.exports = (req, res, next) => {
         '/get-InvoiceId',
         '/billing/new_hosted_page',
         '/reviews/all_review',
+        '/webhook',
+        '/send-signup-message',
+        '/send-onboard-message'
         // '/invoice_redirect/:invoiceUrl'
     ];
 

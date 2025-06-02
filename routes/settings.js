@@ -29,7 +29,6 @@ async function addOrEditInvoiceSettings(req, res) {
       suffix,
       tax,
       notes,
-      isAgreed,
       paymentMethods,
       privacyPolicy,
 
@@ -124,14 +123,14 @@ async function addOrEditInvoiceSettings(req, res) {
           prefix = ?, suffix = ?, tax = ?, notes = ?, isAgreed = ?,
           paymentMethods = ?, privacyPolicyHtml = ?, bankingId = ?
          WHERE hostel_Id = ?`,
-        [prefix, suffix, tax, notes, isAgreed, paymentMethodStr, privacyPolicy, updatedBankingId, hostelId]
+        [prefix, suffix, tax, notes, 0, paymentMethodStr, privacyPolicy, updatedBankingId, hostelId]
       );
     } else {
       await connection.promise().query(
         `INSERT INTO InvoiceSettings
           (hostel_Id, prefix, suffix, tax, notes, isAgreed, paymentMethods, privacyPolicyHtml, bankingId)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [hostelId, prefix, suffix, tax, notes, isAgreed, paymentMethodStr, privacyPolicy, updatedBankingId]
+        [hostelId, prefix, suffix, tax, notes, 0, paymentMethodStr, privacyPolicy, updatedBankingId]
       );
     }
 
@@ -159,6 +158,50 @@ async function addOrEditInvoiceSettings(req, res) {
     });
   }
 }
+
+const getInvoiceSettings = async (req, res,hostelId) => {
+  try {
+    if (!hostelId) {
+      return res.status(400).json({ success: false, message: "hostelId is required" });
+    }
+
+    // Fetch invoice settings
+    const invoice = await fetchInvoiceSettings(hostelId);
+    if (!invoice) {
+      return res.status(404).json({ success: false, message: "No invoice settings found for this hostel" });
+    }
+
+    // Process payment methods
+    const paymentMethods = parsePaymentMethods(invoice.paymentMethods);
+
+    // Fetch related bank details
+    const banking = invoice.bankingId ? await fetchBankDetails(invoice.bankingId) : null;
+
+    // Fetch signature file if available
+    const signatureFile = await fetchSignatureFile(hostelId);
+
+    // Build final response
+    return res.json({
+      success: true,
+      data: {
+        invoiceSettings: {
+          ...invoice,
+          paymentMethods,
+          signatureFile,
+        },
+        banking,
+      },
+    });
+
+  } catch (err) {
+    console.error("Error in getInvoiceSettings:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching invoice settings",
+    });
+  }
+};
+
 
 
 async function generateRecurringInvoiceForDate(inv_data, inv_startdate, inv_enddate) {
@@ -450,10 +493,96 @@ function computeBillingRange(data) {
 }
 
 
+const fetchInvoiceSettings = async (hostelId) => {
+  const [rows] = await connection.promise().query(
+    "SELECT * FROM InvoiceSettings WHERE hostel_Id = ? LIMIT 1",
+    [hostelId]
+  );
+  return rows[0] || null;
+};
+
+const parsePaymentMethods = (paymentStr) => {
+  return paymentStr
+    ? paymentStr.split(',').map(method => method.trim()).filter(Boolean)
+    : [];
+};
+
+const fetchBankDetails = async (bankingId) => {
+  const [rows] = await connection.promise().query(
+    "SELECT * FROM bankings WHERE id = ? AND status = 1",
+    [bankingId]
+  );
+  return rows[0] || null;
+};
+
+const fetchSignatureFile = async (hostelId) => {
+  const [rows] = await connection.promise().query(
+    "SELECT file_url FROM HostelPaymentFiles WHERE invoice_id = ? AND file_type = 'signature' ORDER BY id DESC LIMIT 1",
+    [hostelId]
+  );
+  return rows[0]?.file_url || null;
+};
+
+const getRecurringBills = async (req, res,hostel_id) => {
+  try {
+
+    if (!hostel_id) {
+      return res.status(400).json({ statusCode: 400, message: "Missing hostel_id parameter" });
+    }
+
+    const [rows] = await connection.promise().query(
+      `SELECT 
+        recure_id,
+        hostel_id,
+        recurringName,
+        billFrequency,
+        calculationFromDate,
+        calculationToDate,
+        billingDateOfMonth,
+        dueDateOfMonth,
+        isAutoSend,
+        remainderDates,
+        billDeliveryChannels,
+        status,
+        created_at,
+        updated_at
+      FROM RecurringBilling
+      WHERE hostel_id = ? AND status = 1
+      LIMIT 1`,
+      [hostel_id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        statusCode: 404,
+        message: "No recurring billing setup found for this hostel",
+      });
+    }
+
+    const result = rows[0];
+
+    // Convert comma-separated strings to arrays
+    result.remainderDates = result.remainderDates ? result.remainderDates.split(',').map(d => d.trim()) : [];
+    result.billDeliveryChannels = result.billDeliveryChannels ? result.billDeliveryChannels.split(',').map(c => c.trim()) : [];
+
+    return res.status(200).json({
+      statusCode: 200,
+      data: result,
+    });
+
+  } catch (error) {
+    console.error("Error in getRecurringBills:", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Internal server error while retrieving recurring billing settings",
+    });
+  }
+};
 
 
 
-module.exports = { addOrEditInvoiceSettings };
+
+module.exports = { getRecurringBills,addOrEditInvoiceSettings,getInvoiceSettings };
 
 
 
