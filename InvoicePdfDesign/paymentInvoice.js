@@ -38,7 +38,25 @@ function generateInvoice(data, invoiceDetails, outputPath) {
         .text(invoiceDetails.Hostel_Name, pageWidth - 250, 30, { width: 200, align: 'right' })
         .font('Helvetica')
         .fontSize(9)
-        .text(invoiceDetails.hostel_address, pageWidth - 250, 48, { width: 200, align: 'right' });
+        .text(
+            [invoiceDetails.hostel_address, invoiceDetails.harea].filter(Boolean).join(', '),
+            pageWidth - 250,
+            48,
+            { width: 200, align: 'right' }
+        )
+        .text(
+            [invoiceDetails.hlandmark, invoiceDetails.hpincode].filter(Boolean).join(' - '),
+            pageWidth - 250,
+            60,
+            { width: 200, align: 'right' }
+        )
+        .text(
+            [invoiceDetails.hcity, invoiceDetails.hstate].filter(Boolean).join(' - '),
+            pageWidth - 250,
+            72,
+            { width: 200, align: 'right' }
+        );
+
 
     // === Payment Invoice Title ===
     doc
@@ -60,13 +78,40 @@ function generateInvoice(data, invoiceDetails, outputPath) {
         .fontSize(10)
         .fillColor('#1E45E1') // Blue color for label
         .font('Helvetica-Bold')
-        .text('Bill To:', leftX, infoY)
+        .text('Bill To:', leftX, infoY);
 
-        .fillColor('black') // Back to black for details
-        .font('Helvetica')
-        .text(invoiceDetails.Name, leftX, infoY + lineGap)
-        .text(invoiceDetails.phoneNo, leftX, infoY + lineGap * 2)
-        .text(invoiceDetails.UserAddress, leftX, infoY + lineGap * 3, { width: 250 });
+    // Switch to black for details
+    doc.fillColor('black').font('Helvetica');
+
+    let currentY = infoY + lineGap;
+
+    if (invoiceDetails.Name) {
+        doc.text(invoiceDetails.Name, leftX, currentY);
+        currentY += lineGap;
+    }
+
+    if (invoiceDetails.phoneNo) {
+        doc.text(invoiceDetails.phoneNo, leftX, currentY);
+        currentY += lineGap;
+    }
+
+    const addressLine1 = [invoiceDetails.UserAddress, invoiceDetails.uarea].filter(Boolean).join(', ');
+    if (addressLine1) {
+        doc.text(addressLine1, leftX, currentY, { width: 250 });
+        currentY += lineGap;
+    }
+
+    const addressLine2 = [invoiceDetails.ulandmark, invoiceDetails.upincode].filter(Boolean).join(' - ');
+    if (addressLine2) {
+        doc.text(addressLine2, leftX, currentY, { width: 250 });
+        currentY += lineGap;
+    }
+
+    const addressLine3 = [invoiceDetails.ucity, invoiceDetails.ustate].filter(Boolean).join(' - ');
+    if (addressLine3) {
+        doc.text(addressLine3, leftX, currentY, { width: 250 });
+        currentY += lineGap;
+    }
 
 
     const formattedDate = moment(invoiceDetails.Date).format('DD-MM-YYYY');
@@ -93,7 +138,7 @@ function generateInvoice(data, invoiceDetails, outputPath) {
         .text(formattedDueDate, rightX + 160, infoY + lineHeight * 2);
 
     // === Table Header ===
-    const tableY = 280;
+    const tableY = 300;
     doc.roundedRect(leftX, tableY, pageWidth - 100, 25, 5).fill('#4768EA');
 
     doc
@@ -101,7 +146,7 @@ function generateInvoice(data, invoiceDetails, outputPath) {
         .font('Helvetica-Bold')
         .fontSize(10)
         .text('S.No', leftX + 10, tableY + 7)
-        .text('Description', leftX + 60, tableY + 7)
+        .text('Description', leftX + 120, tableY + 7)
         .text('Amount', leftX + 400, tableY + 7);
 
     // === Table Rows ===
@@ -111,7 +156,7 @@ function generateInvoice(data, invoiceDetails, outputPath) {
     data.forEach((item, i) => {
         doc
             .text(i + 1, leftX + 10, y)
-            .text(item.am_name, leftX + 60, y)
+            .text(item.am_name, leftX + 120, y)
             .text((item.amount ?? 0).toFixed(2), leftX + 400, y);
         y += 25;
     });
@@ -136,13 +181,13 @@ function generateInvoice(data, invoiceDetails, outputPath) {
         .fontSize(10)
         .font('Helvetica-Bold')
         .text('Sub Total', leftX + 300, y)
-        .text(`Rs. ${subtotal.toFixed(2)}`, leftX + 400, y);
+        .text(`Rs.${subtotal.toFixed(2)}`, leftX + 400, y);
 
     y += 20;
 
     doc
         .text('Tax', leftX + 300, y)
-        .text(`Rs. ${tax.toFixed(2)}`, leftX + 400, y);
+        .text(`Rs.${tax.toFixed(2)}`, leftX + 400, y);
 
     y += 20;
 
@@ -151,11 +196,12 @@ function generateInvoice(data, invoiceDetails, outputPath) {
         .text('Total', leftX + 300, y)
         .fontSize(12)
         .fillColor('black')
-        .text(`Rs. ${total.toFixed(2)}`, leftX + 400, y);
+        .text(`Rs.${total.toFixed(2)}`, leftX + 400, y);
 
 
     // === Account Details ===
     y += 120;
+
     doc
         .fillColor('#1E45E1')
         .font('Helvetica-Bold')
@@ -166,11 +212,27 @@ function generateInvoice(data, invoiceDetails, outputPath) {
     doc
         .fillColor('black')
         .font('Helvetica')
-        .fontSize(10)
-        .text(`Account No   : ${invoiceDetails.accNo}`, leftX, y)
-        .text(`IFSC Code    : ${invoiceDetails.ifsc}`, leftX, y + 15)
-        .text(`Bank Name    : ${invoiceDetails.bankName}`, leftX, y + 30)
-        .text(`UPI ID       : ${invoiceDetails.upi}`, leftX, y + 45);
+        .fontSize(10);
+    const labelX = leftX;
+    const valueX = leftX + 100; // adjust spacing as needed
+    let accountY = y;
+
+    doc.text("Account No", labelX, accountY);
+    doc.text(`: ${invoiceDetails.acc_num || " NA "}`, valueX, accountY);
+    accountY += 15;
+
+    doc.text("IFSC Code", labelX, accountY);
+    doc.text(`: ${invoiceDetails.ifsc_code || " NA "}`, valueX, accountY);
+    accountY += 15;
+
+    doc.text("Bank Name", labelX, accountY);
+    doc.text(`: ${invoiceDetails.acc_name || " NA "}`, valueX, accountY);
+    accountY += 15;
+
+    doc.text("UPI ID", labelX, accountY);
+    doc.text(`: ${invoiceDetails.upi_id || " NA "}`, valueX, accountY);
+    accountY += 15;
+
 
     // === QR Image ===
     // doc.image('qr.png', pageWidth - 120, y - 5, { width: 80 }); // Place your QR image here
@@ -188,7 +250,7 @@ function generateInvoice(data, invoiceDetails, outputPath) {
         .fontSize(9)
         .fillColor('gray')
         .font('Helvetica')
-        .text(invoiceDetails.terms || 'No refunds after due date.', leftX, y, { width: 300 });
+        .text(invoiceDetails.privacyPolicyHtml || 'No refunds after due date.', leftX, y, { width: 300 });
 
     doc
         .fillColor('#3D3D3D')
@@ -216,35 +278,5 @@ function generateInvoice(data, invoiceDetails, outputPath) {
 
     doc.end();
 }
-
-// === Sample Data (same as yours) ===
-const invoiceData = {
-    date: '2025-05-10',
-    invoiceNo: 'INV-2025-001',
-    username: 'Muthukrish M',
-    phone: '+91 45682 98322',
-    address: '8 8th Avenue Ext, Somewhereso Nagar,\nChennai, Tamilnadu - 600 066',
-    hostelName: 'Royal Grand Hostel',
-    items: [
-        { sno: 1, desc: 'Room Rent', month: 'May 2025', amount: 7000 },
-        { sno: 2, desc: 'Room Rent', month: 'May 2025', amount: 7000 }
-    ],
-    dueDate: '2025-05-25',
-    tax: 0,
-    bank: {
-        accNo: '123456789876',
-        bankName: 'Bank of India',
-        ifsc: 'BOI1234567',
-        upi: 'smartstay@upi'
-    },
-    contact: {
-        email: 'contact@royalgrandhostel.in',
-        phone: '+91 99999 58491'
-    },
-    terms: 'Tenants must pay all dues on or before the due date, maintain cleanliness, and follow PG rules; failure may lead to penalties or termination of stay.'
-};
-
-// generateInvoice(invoiceData, 'invoice.pdf');
-
 
 module.exports = { generateInvoice }

@@ -3,6 +3,7 @@ const https = require('https');
 const path = require('path');
 const AWS = require('aws-sdk');
 const paymentInvoice = require('../InvoicePdfDesign/paymentInvoice');
+const paymentInvoiceSecurity = require('../InvoicePdfDesign/paymentInvoiceSecurity');
 
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
@@ -33,15 +34,20 @@ const downloadImage = (imageUrl, localPath) => {
     });
 };
 
-const generateManualPDF = async (data, outputPath, filename) => {
+const generateManualPDF = async (data, outputPath, filename, action) => {
     try {
-        await paymentInvoice.generateInvoice(data, data[0], outputPath);
+
+        console.log('====================================');
+        console.log(action);
+        console.log('====================================');
+
+        if (action == 'advance') {
+            await paymentInvoiceSecurity.generateInvoice(data, data[0], outputPath);
+        } else {
+            await paymentInvoice.generateInvoice(data, data[0], outputPath);
+        }
 
         const inv_id = data[0].id;
-
-        console.log('====================================');
-        console.log("000000000000000000000");
-        console.log('====================================');
 
         // const s3Url = await uploadToS3(outputPath, filename, inv_id);
 
