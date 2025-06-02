@@ -1,21 +1,25 @@
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
+const path = require('path');
+const moment = require('moment');
 
-function generateInvoice(invoiceDetails, outputPath) {
+function generateReceipt(data, invoiceDetails, outputPath) {
+
     const doc = new PDFDocument({ size: 'A4', margin: 0 });
     doc.pipe(fs.createWriteStream(outputPath));
 
     const pageWidth = doc.page.width;
 
-    // === Header Background ===
     doc.rect(0, 0, pageWidth, 90).fill('#1E45E1');
-   
 
-    // === Logo & Tagline ===
-    // doc.image('logo.png', 50, 30, { width: 40 }); // Replace with your actual logo
-     doc.image('./Asset/Group@2x.png', 10, 30, { width: 35,height:35 });
-    doc.image('./Asset/Rectangleblue.png', 35, 215, { width: 8,height:8 });
-doc.image('./Asset/location 03.png', 35, 232, { width: 10,height:10 });
+    const logoPath = path.resolve(__dirname, '../Asset/Group@2x.png');
+    const rectBluePath = path.resolve(__dirname, '../Asset/Rectangleblue.png');
+    const locationIconPath = path.resolve(__dirname, '../Asset/location 03.png');
+    const cotactPath = path.resolve(__dirname, '../Asset/paidfull (2).png');
+
+    doc.image(logoPath, 10, 30, { width: 35, height: 35 });
+    doc.image(rectBluePath, 35, 215, { width: 8, height: 8 });
+    doc.image(locationIconPath, 35, 232, { width: 10, height: 10 });
     doc
         .fillColor('white')
         .fontSize(18)
@@ -30,11 +34,27 @@ doc.image('./Asset/location 03.png', 35, 232, { width: 10,height:10 });
         .fillColor('white')
         .fontSize(12)
         .font('Helvetica-Bold')
-        .text(invoiceDetails.hostelName, pageWidth - 250, 30, { width: 200, align: 'right' })
+        .text(invoiceDetails.hname, pageWidth - 250, 30, { width: 200, align: 'right' })
         .font('Helvetica')
         .fontSize(9)
-        .text(invoiceDetails.address, pageWidth - 250, 48, { width: 200, align: 'right' });
-
+        .text(
+            [invoiceDetails.haddress, invoiceDetails.harea].filter(Boolean).join(', '),
+            pageWidth - 250,
+            48,
+            { width: 200, align: 'right' }
+        )
+        .text(
+            [invoiceDetails.hlandmark, invoiceDetails.hpincode].filter(Boolean).join(' - '),
+            pageWidth - 250,
+            60,
+            { width: 200, align: 'right' }
+        )
+        .text(
+            [invoiceDetails.hcity, invoiceDetails.hstate].filter(Boolean).join(' - '),
+            pageWidth - 250,
+            72,
+            { width: 200, align: 'right' }
+        );
     // === Payment Invoice Title ===
     doc
         .fillColor('black')
@@ -51,41 +71,102 @@ doc.image('./Asset/location 03.png', 35, 232, { width: 10,height:10 });
     const lineHeight = fontSize + 6;
 
 
-   doc
-  .fontSize(10)
-  .fillColor('#1E45E1') // Blue color for label
-  .font('Helvetica-Bold')
-  .text('Bill To:', leftX, infoY)
+    doc
+        .fontSize(10)
+        .fillColor('#1E45E1') // Blue color for label
+        .font('Helvetica-Bold')
+        .text('Bill To:', leftX, infoY)
 
-  .fillColor('black') // Back to black for details
-  .font('Helvetica')
-  .text(invoiceDetails.username, leftX, infoY + lineGap)
-  .text(invoiceDetails.phone, leftX, infoY + lineGap * 2)
-  .text(invoiceDetails.address, leftX, infoY + lineGap * 3, { width: 250 });
+    doc.fillColor('black').font('Helvetica');
 
+    let currentY = infoY + lineGap;
 
-  doc
-  .font('Helvetica')
-  .fillColor('grey')
-  .text('Invoice No:', rightX + 90, infoY)
-  .font('Helvetica')
-   .fillColor('black')
-  .text(invoiceDetails.invoiceNo, rightX + 150, infoY)
-  .font('Helvetica')
-  .fillColor('grey')
-  .text('Invoice Date:', rightX + 90, infoY + lineHeight)
-  .font('Helvetica')
-   .fillColor('black')
-  .text(invoiceDetails.date, rightX + 160, infoY + lineHeight)
-  .font('Helvetica')
-  .fillColor('grey')
-  .text('Due Date:', rightX + 90, infoY + lineHeight * 2)
-  .font('Helvetica')
-   .fillColor('black')
-  .text(invoiceDetails.dueDate, rightX + 160, infoY + lineHeight * 2);
+    if (invoiceDetails.uname) {
+        doc.text(invoiceDetails.uname, leftX, currentY, {
+            width: 250,
+            lineBreak: true
+        });
+        currentY += lineGap;
+    }
+
+    if (invoiceDetails.uphone) {
+        doc.text(invoiceDetails.uphone, leftX, currentY, {
+            width: 250,
+            lineBreak: true
+        });
+        currentY += lineGap;
+    }
+
+    const addressLine1 = [invoiceDetails.uaddress, invoiceDetails.uarea].filter(Boolean).join(', ');
+    if (addressLine1) {
+        const address1Height = doc.heightOfString(addressLine1, {
+            width: 250,
+            align: 'left'
+        });
+
+        doc.text(addressLine1, leftX, currentY, {
+            width: 250,
+            align: 'left'
+        });
+
+        currentY += address1Height + 2; // small vertical margin
+    }
+
+    const addressLine2 = [invoiceDetails.ulandmark, invoiceDetails.upincode].filter(Boolean).join(' - ');
+    if (addressLine2) {
+        const address2Height = doc.heightOfString(addressLine2, {
+            width: 250,
+            align: 'left'
+        });
+
+        doc.text(addressLine2, leftX, currentY, {
+            width: 450,
+            align: 'left'
+        });
+
+        currentY += address2Height + 2; // add small margin after
+    }
+
+    const addressLine3 = [invoiceDetails.ucity, invoiceDetails.ustate].filter(Boolean).join(' - ');
+    if (addressLine3) {
+        const address3Height = doc.heightOfString(addressLine3, {
+            width: 250,
+            align: 'left'
+        });
+
+        doc.text(addressLine3, leftX, currentY, {
+            width: 250,
+            align: 'left'
+        });
+
+        currentY += address3Height + 2;
+    }
+
+    const formattedDate = moment(invoiceDetails.payment_date).format('DD-MM-YYYY');
+
+    doc
+        .font('Helvetica')
+        .fillColor('grey')
+        .text('Receipt No:', rightX + 90, infoY)
+        .fillColor('black')
+        .text(invoiceDetails.reference_id, rightX + 160, infoY)
+
+        .fillColor('grey')
+        .text('Payment Date:', rightX + 90, infoY + lineHeight)
+        .fillColor('black')
+        .text(formattedDate, rightX + 160, infoY + lineHeight)
+
+        .fillColor('grey')
+        .text('Payment Mode:', rightX + 90, infoY + lineHeight * 2)
+        .fillColor('black')
+        .text(
+            invoiceDetails.bank_type ? invoiceDetails.bank_type : invoiceDetails.payment_mode,
+            rightX + 160,
+            infoY + lineHeight * 2
+        );
 
     // === Table Header ===
-    const tableY = 280;
+    const tableY = 300;
     doc.roundedRect(leftX, tableY, pageWidth - 100, 25, 5).fill('#4768EA');
 
     doc
@@ -93,52 +174,51 @@ doc.image('./Asset/location 03.png', 35, 232, { width: 10,height:10 });
         .font('Helvetica-Bold')
         .fontSize(10)
         .text('S.No', leftX + 10, tableY + 7)
-        .text('Description', leftX + 60, tableY + 7)
+        .text('Description', leftX + 120, tableY + 7)
         // .text('Month', leftX + 250, tableY + 7)
         .text('Amount (INR)', leftX + 400, tableY + 7);
 
     // === Table Rows ===
-    
+
     let y = tableY + 35;
     doc.font('Helvetica').fillColor('black');
-    invoiceDetails.items.forEach((item, i) => {
+    data.forEach((item, i) => {
         doc
-            .text(item.sno, leftX + 10, y)
-            .text(item.desc, leftX + 60, y)
-            // .text(item.month, leftX + 250, y)
-            .text(`Rs. ${item.amount}`, leftX + 400, y);
+            .text(i + 1, leftX + 10, y)
+            .text(item.reason, leftX + 120, y)
+            .text((item.amount ?? 0).toFixed(2), leftX + 400, y);
         y += 25;
     });
 
     // === Summary ===
-    const subtotal = invoiceDetails.items.reduce((sum, i) => sum + i.amount, 0);
+    const subtotal = data.reduce((sum, i) => sum + i.amount, 0);
     const tax = invoiceDetails.tax || 0;
     const total = subtotal + tax;
-   // === Summary Section with Quote ===
+    // === Summary Section with Quote ===
 
 
-// Right column – Subtotal, Tax, Total
-doc
-  .fillColor('black')
-  .fontSize(10)
-  .font('Helvetica-Bold')
-  .text('Advance Amount', leftX + 300, y)
-  .text(`Rs. ${subtotal.toFixed(2)}`, leftX + 400, y);
+    // Right column – Subtotal, Tax, Total
+    doc
+        .fillColor('black')
+        .fontSize(10)
+        .font('Helvetica-Bold')
+        .text('Advance Amount', leftX + 300, y)
+        .text(`Rs. ${subtotal.toFixed(2)}`, leftX + 400, y);
 
-// y += 20;
+    // y += 20;
 
-// doc
-//   .text('Tax', leftX + 300, y)
-//   .text(`Rs. ${tax.toFixed(2)}`, leftX + 400, y);
+    // doc
+    //   .text('Tax', leftX + 300, y)
+    //   .text(`Rs. ${tax.toFixed(2)}`, leftX + 400, y);
 
-y += 20;
+    y += 20;
 
-doc
-  .font('Helvetica-Bold')
-  .text('Refundable Total', leftX + 300, y)
-  .fontSize(12)
-  .fillColor('black')
-  .text(`Rs. ${total.toFixed(2)}`, leftX + 400, y);
+    doc
+        .font('Helvetica-Bold')
+        .text('Refundable Total', leftX + 300, y)
+        .fontSize(12)
+        .fillColor('black')
+        .text(`Rs. ${total.toFixed(2)}`, leftX + 400, y);
 
 
     // === Account Details ===
@@ -175,23 +255,23 @@ doc
         .fontSize(9)
         .fillColor('gray')
         .font('Helvetica')
-        .text(invoiceDetails.terms || 'No refunds after due date.', leftX, y, { width: 300 });
+        .text(invoiceDetails.privacyPolicyHtml || 'No refunds after due date.', leftX, y, { width: 300 });
 
-        y += 10;
+    y += 10;
 
-// Left column – Farewell message
-doc
-  .fillColor('#1E45E1')
-  .fontSize(10)
-  .font('Helvetica')
-  .text('"Your comfort is our priority –\nSee you again at Smart Stay!"', leftX + 10, y + 70);
+    // Left column – Farewell message
+    doc
+        .fillColor('#1E45E1')
+        .fontSize(10)
+        .font('Helvetica')
+        .text('"Your comfort is our priority –\nSee you again at Smart Stay!"', leftX + 10, y + 70);
 
     doc
         .fillColor('#3D3D3D')
         .fontSize(10)
         .font('Helvetica-Bold')
         .text('Authorized Signature', pageWidth - 160, y);
-          doc.image('./Asset/paidfull (2).png', 430, 570, { width: 100,height:60 });
+    doc.image(cotactPath, 430, 570, { width: 100, height: 60 });
 
     // === Footer ===
     const footerY = 800;
@@ -205,7 +285,7 @@ doc
         .fillColor('white')
         .fontSize(10)
         .text(
-            `email : ${invoiceDetails.contact.email}    Contact : ${invoiceDetails.contact.phone}`,
+            `email : ${invoiceDetails.hemail}    Contact : ${invoiceDetails.hphone}`,
             footerX,
             footerY + 9,
             { width: footerWidth, align: 'center' }
@@ -214,31 +294,4 @@ doc
     doc.end();
 }
 
-// === Sample Data (same as yours) ===
-const invoiceData = {
-    date: '2025-05-10',
-    invoiceNo: 'INV-2025-001',
-    username: 'Muthukrish M',
-    phone: '+91 45682 98322',
-    address: '8 8th Avenue Ext, Somewhereso Nagar,\nChennai, Tamilnadu - 600 066',
-    hostelName: 'Royal Grand Hostel',
-    items: [
-        { sno: 1, desc: 'Room Rent', month: 'May 2025', amount: 7000 },
-         { sno: 2, desc: 'Room Rent', month: 'May 2025', amount: 7000 }
-    ],
-    dueDate: '2025-05-25',
-    tax: 0,
-    bank: {
-        accNo: '123456789876',
-        bankName: 'Bank of India',
-        ifsc: 'BOI1234567',
-        upi: 'smartstay@upi'
-    },
-    contact: {
-        email: 'contact@royalgrandhostel.in',
-        phone: '+91 99999 58491'
-    },
-    terms: 'This document confirms final settlement for the Tenant on 29/05/2025. All dues are cleared, and room has been vacated.'
-};
-
-generateInvoice(invoiceData, 'invoice5.pdf');
+module.exports = { generateReceipt }

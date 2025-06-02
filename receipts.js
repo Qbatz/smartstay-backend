@@ -327,6 +327,7 @@ exports.edit_receipt = (req, res) => {
                                     return res.status(201).json({ message: "Error to Update Return Advance Details", reason: err.message, statusCode: 201 });
                                 }
 
+
                                 if (payment_mode) {
                                     if (old_bank_id) {
                                         var sql6 = "UPDATE bankings SET balance = balance + ? WHERE id = ?";
@@ -598,38 +599,54 @@ exports.pdf_generate = (req, res) => {
         return res.status(201).json({ statusCode: 201, message: "Missing Receipt Details" })
     }
 
-    var sql1 = "SELECT rs.*,inv.*,man.*,hs.Name AS user_name,hs.Address AS user_address,hsv.Name AS hostel_name,hsv.Address AS hostel_address,hsv.profile AS hostel_profile,hsv.hostel_PhoneNo AS hostel_phone FROM receipts AS rs JOIN invoicedetails AS inv ON rs.invoice_number=inv.Invoices JOIN hostel AS hs ON hs.ID=inv.hos_user_id LEFT JOIN manual_invoice_amenities AS man ON man.invoice_id=inv.id JOIN hosteldetails AS hsv ON hsv.id=inv.Hostel_Id WHERE rs.id=? AND rs.status=1;";
-    connection.query(sql1, [id], async function (err, data) {
+    var sql2 = "SELECT * FROM receipts WHERE id=?";
+    connection.query(sql2, [id], function (err, receipt_data) {
         if (err) {
-            console.log(err);
             return res.status(201).json({ message: "Unable to Get Receipt Details", statusCode: 201 })
         }
 
-        if (data.length == 0) {
-            return res.status(201).json({ message: "Invalid Receipt Details", statusCode: 201 })
+        if (receipt_data.length == 0) {
+            return res.status(201).json({ message: "Invalid Receipt Detail", statusCode: 201 })
         }
 
-        var inv_data = data[0];
+        var invoice_number = receipt_data[0].invoice_number;
 
-        const currentDate = moment().format('YYYY-MM-DD');
-        const currentMonth = moment(currentDate).month() + 1;
-        const currentYear = moment(currentDate).year();
-        const currentTime = moment().format('HHmmss');
+        if (invoice_number != 0 && invoice_number) {
 
-        const filename = `RECEIPT${currentMonth}${currentYear}${currentTime}${inv_data.reference_id}.pdf`;
-        const outputPath = path.join(__dirname, filename);
+            var sql1 = "SELECT rs.*,hs.Name AS uname,hs.Phone AS uphone,hs.Email AS uemail,hs.Address AS uaddress,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upincode,hs.city AS ucity,hs.state AS ustate,hos.Name AS hname,hos.email_id AS hemail,hos.hostel_PhoneNo AS hphone,hos.area AS harea,hos.Address AS haddress,hos.landmark AS hlandmark,hos.pin_code AS hpincode,hos.city AS hcity,hos.state AS hstate,man.*,ban.type AS bank_type,ban.benificiary_name,inv.Date,inv.DueDate,inv.action,Insett.bankingId,Insett.privacyPolicyHtml FROM receipts AS rs JOIN hostel AS hs ON rs.user_id=hs.ID JOIN invoicedetails AS inv ON inv.Invoices=rs.invoice_number AND inv.hos_user_id=rs.user_id JOIN manual_invoice_amenities AS man ON man.invoice_id=inv.id JOIN hosteldetails AS hos ON hos.id=hs.Hostel_Id LEFT JOIN bankings AS ban ON ban.id=rs.payment_mode LEFT JOIN InvoiceSettings AS Insett ON Insett.hostel_Id=hos.id WHERE rs.id=?;";
 
-        const pdfPath = await generatereceipt(inv_data, outputPath, filename);
+        } else {
 
-        return res.status(200).json({ message: 'Receipt Pdf Generated', pdf_url: pdfPath });
+            var sql1 = "SELECT rs.*, hs.Name AS uname, hs.Phone AS uphone, hs.Email AS uemail, hs.Address AS uaddress, hs.area AS uarea, hs.landmark AS ulandmark, hs.pincode AS upincode, hs.city AS ucity, hs.state AS ustate, hos.Name AS hname, hos.email_id AS hemail, hos.hostel_PhoneNo AS hphone, hos.area AS harea, hos.Address AS haddress, hos.landmark AS hlandmark, hos.pin_code AS hpincode, hos.city AS hcity, hos.state AS hstate, ban.type AS bank_type, ban.benificiary_name, inv.Date, inv.DueDate,inv.action,Insett.bankingId, Insett.privacyPolicyHtml,ch.* FROM receipts AS rs JOIN hostel AS hs ON rs.user_id = hs.ID LEFT JOIN invoicedetails AS inv ON inv.Invoices = rs.invoice_number AND inv.hos_user_id = rs.user_id JOIN hosteldetails AS hos ON hos.id = hs.Hostel_Id LEFT JOIN bankings AS ban ON ban.id = rs.payment_mode LEFT JOIN InvoiceSettings AS Insett ON Insett.hostel_Id = hos.id LEFT JOIN checkout_deductions AS ch ON ch.receipt_id=rs.id WHERE rs.id = ?;"
 
-        // const filename = `INV${currentMonth}${currentYear}${currentTime}${inv_data[0].User_Id}.pdf`;
-        // const outputPath = path.join(__dirname, filename);
+        }
 
-        // const pdfPath = await generateManualPDF(inv_data, outputPath, filename);
+        connection.query(sql1, [id], async function (err, data) {
+            if (err) {
+                console.log(err);
+                return res.status(201).json({ message: "Unable to Get Receipt Details", statusCode: 201 })
+            }
 
-        // return res.status(200).json({ message: 'Insert PDF successfully', pdf_url: pdfPath, statusCode: 200 });
+            if (data.length == 0) {
+                return res.status(201).json({ message: "Invalid Receipt Details", statusCode: 201 })
+            }
 
+            var inv_data = data[0];
+            var action = inv_data.action;
+
+            const currentDate = moment().format('YYYY-MM-DD');
+            const currentMonth = moment(currentDate).month() + 1;
+            const currentYear = moment(currentDate).year();
+            const currentTime = moment().format('HHmmss');
+
+            const filename = `RECEIPT${currentMonth}${currentYear}${currentTime}${inv_data.reference_id}.pdf`;
+            const outputPath = path.join(__dirname, filename);
+
+            const pdfPath = await generatereceipt(data, inv_data, outputPath, filename, invoice_number, action);
+
+            return res.status(200).json({ message: 'Receipt Pdf Generated', pdf_url: pdfPath });
+
+        })
     })
 }
 

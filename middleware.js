@@ -38,7 +38,7 @@ module.exports = (req, res, next) => {
         // '/invoice_redirect/:invoiceUrl'
     ];
 
-    if (openEndpoints.includes(req.originalUrl) || req.originalUrl.startsWith('/login/login?') || req.originalUrl.startsWith('/invoice_redirect') || req.originalUrl.startsWith('/invoice_details') || req.originalUrl.startsWith('/customers')) {
+    if (openEndpoints.includes(req.originalUrl) || req.originalUrl.startsWith('/login/login?') || req.originalUrl.startsWith('/invoice_redirect') || req.originalUrl.startsWith('/invoice_details') || req.originalUrl.startsWith('/webhook') || req.originalUrl.startsWith('/customers')) {
         return next();
     } else {
         if (!token) {
