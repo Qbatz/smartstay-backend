@@ -6,7 +6,7 @@ function getMasterTypes(req, res) {
 
   const contentType = req.query.content_type;
   if (!contentType) {
-    return res.status(400).json({ success: false, error: "Missing content_type parameter" });
+    return res.status(201).json({ success: false, error: "Missing content_type parameter" });
   }
 
   const sql = `
@@ -19,7 +19,7 @@ function getMasterTypes(req, res) {
   db.query(sql, [contentType], (err, rows) => {
     if (err) {
       console.error('Error fetching master types:', err);
-      return res.status(500).json({ success: false, error: 'Server error' });
+      return res.status(201).json({ success: false, error: 'Server error' });
     }
 
     res.json({ success: true, data: rows });

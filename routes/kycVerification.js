@@ -7,11 +7,11 @@ async function verifyAndStoreKyc(req, res, customer_id) {
   db.query('SELECT * FROM hostel WHERE ID = ?', [customer_id], async (err, results) => {
     if (err) {
       console.error('DB error:', err);
-      return res.status(500).json({ success: false, error: 'Database error' });
+      return res.status(201).json({ success: false, error: 'Database error' });
     }
 
     if (results.length === 0) {
-      return res.status(404).json({ success: false, message: 'Customer not found' });
+      return res.status(201).json({ success: false, message: 'Customer not found' });
     }
 
     const hostel = results[0];
@@ -21,7 +21,7 @@ async function verifyAndStoreKyc(req, res, customer_id) {
     const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(hostel.Email);
 
     if (!isValidPhone) {
-      return res.status(400).json({ success: false, message: 'Invalid phone number format' });
+      return res.status(201).json({ success: false, message: 'Invalid phone number format' });
     }
 
    const email = (hostel.Email || '').trim().toLowerCase();
@@ -99,7 +99,7 @@ const cleanedPhone = cleanPhoneNumber(hostel.Phone.toString());
       db.query(insertQuery, insertValues, (insertErr) => {
         if (insertErr) {
           console.error('Insert Error:', insertErr);
-          return res.status(500).json({ success: false, error: 'Failed to store KYC data. Try again later.' });
+          return res.status(201).json({ success: false, error: 'Failed to store KYC data. Try again later.' });
         }
 
         res.status(200).json({ success: true, message: 'KYC request has been sent via SMS. Kindly complete the verification.' });
@@ -107,7 +107,7 @@ const cleanedPhone = cleanPhoneNumber(hostel.Phone.toString());
 
     } catch (apiErr) {
       console.error('KYC API Error:', apiErr);
-      res.status(502).json({ success: false, error: 'KYC request failed. Please try again later.', details: apiErr.message || apiErr });
+      res.status(201).json({ success: false, error: 'KYC request failed. Please try again later.', details: apiErr.message || apiErr });
     }
   });
 }
@@ -135,7 +135,7 @@ async function fetchAndUpdateKycStatus(req, res, customer_id) {
     );
 
     if (rows.length === 0) {
-      return res.status(404).json({ message: 'KYC ID not found for this customer', status: null });
+      return res.status(201).json({ message: 'KYC ID not found for this customer', status: null });
     }
 
     const kyc_id = rows[0].kyc_id;
@@ -149,12 +149,12 @@ async function fetchAndUpdateKycStatus(req, res, customer_id) {
     if (result.success) {
       return res.status(200).json({ message: 'KYC status fetched and updated successfully', status: kycResponse.status });
     } else {
-      return res.status(500).json({ message: 'KYC status fetched, but DB update failed', status: kycResponse.status });
+      return res.status(201).json({ message: 'KYC status fetched, but DB update failed', status: kycResponse.status });
     }
 
   } catch (error) {
     console.error(`[KYC MAIN SERVICE ERROR] Customer ID ${customer_id}:`, error);
-    return res.status(500).json({ message: 'Failed to fetch or update KYC status', status: null });
+    return res.status(201).json({ message: 'Failed to fetch or update KYC status', status: null });
   }
 }
 
