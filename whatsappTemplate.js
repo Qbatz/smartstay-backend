@@ -33,7 +33,7 @@ async function sendTemplateMessage(to, templateName, parameters = []) {
             {
                 headers: {
                     Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json', 
                 },
             }
         );
