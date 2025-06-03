@@ -5,7 +5,6 @@ const bcrypt = require('bcrypt');
 const moment = require('moment');
 const pdf = require('html-pdf');
 const phantomjs = require('phantomjs-prebuilt');
-const axios = require('axios');
 
 require('dotenv').config();
 const fs = require('fs');
@@ -13,12 +12,12 @@ const path = require('path');
 const connection = require('./config/connection');
 const uploadImage = require('./components/upload_image');
 const apiResponse = require('./zoho_billing/api_response');
+const { sendTemplateMessage } = require('./whatsappTemplate');
 
 
-const WHATSAPP_ACCESS_TOKEN = process.env.TOKEN;
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
-const AWS_REGION = process.env.AWS_REGION;
+const AWS_REGION = process.env.AWS_REGION; 
 
 AWS.config.update({
     accessKeyId: AWS_ACCESS_KEY_ID,
@@ -95,52 +94,6 @@ function getKeyFromUrl(url) {
     const urlParts = url.split('/');
     const key = urlParts.slice(3).join('/'); // Get everything after the bucket name
     return key;
-}
-
-const isValidPhoneNumber = (phoneNumber) => {
-    const regex = /^\+[1-9]{1}[0-9]{3,14}$/;
-    return regex.test(phoneNumber);
-};
-
-
-async function sendTemplateMessage(to, templateName, parameters = []) {
-    if (!isValidPhoneNumber(to)) {
-        console.error('Invalid phone number format:', to);
-        throw new Error('Invalid phone number format');
-    }
-
-    try {
-        const response = await axios.post(
-            'https://graph.facebook.com/v17.0/547806001759552/messages',
-            {
-                messaging_product: 'whatsapp',
-                to,
-                type: 'template',
-                template: {
-                    name: templateName,
-                    language: { code: 'en_IN' },
-                    components: [
-                        {
-                            type: 'body',
-                            parameters: parameters.map((valu) => ({ type: 'text', text: valu })),
-                        },
-                    ],
-                },
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
-                    'Content-Type': 'application/json',
-                },
-            }
-        );
-
-        console.log(`Template message '${templateName}' sent:`, response.data);
-        return response.data;
-    } catch (err) {
-        console.error(`Error sending template message '${templateName}':`, err.response?.data || err.message);
-        throw err;
-    }
 }
 
 function update_account_details(request, response) {

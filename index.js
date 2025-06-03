@@ -43,7 +43,6 @@ const multer = require('multer');
 const request = require('request');
 const upload = multer();
 
-const WHATSAPP_ACCESS_TOKEN = process.env.TOKEN;
 const WEBHOOK_VERIFY_TOKEN = process.env.MYTOKEN;
 
 var corsOptions = {

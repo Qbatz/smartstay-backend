@@ -2,6 +2,8 @@ const connection = require("./config/connection");
 const uploadImage = require("./components/upload_image");
 const crypto = require('crypto');
 
+const { sendTemplateMessage } = require('./whatsappTemplate');
+
 function add_booking(req, res) {
 
     var created_by = req.user_details.id;
@@ -238,7 +240,6 @@ function assign_booking(req, res) {
                         var address = booking_details.address;
                         var hostel_name = booking_details.hostel_name;
                         var profile = booking_details.profile || 0;
-
                         var sql4 = "INSERT INTO hostel (Circle, Name, Phone, Email, Address,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent,paid_advance,pending_advance,created_by,joining_Date,profile,area,landmark,pincode,city,state) VALUES (?)";
                         var params = [circle, name, mob_no, email_id, address, hostel_name, hostel_id, floor, room, bed, ad_amount, rent_amount, 0, ad_amount, created_by, join_date, profile, area, landmark, pincode, city, state];
                         connection.query(sql4, [params], function (err, ins_data) {
@@ -249,12 +250,29 @@ function assign_booking(req, res) {
 
                                 var user_ids = ins_data.insertId;
                                 const gen_user_id = generateUserId(f_name, user_ids);
+                                console.log("mob_no", mob_no)
 
+                                let mobilenumber = mob_no;
+
+                                mobilenumber = mobilenumber.replace(/\D/g, '');
+
+                                if (mobilenumber.startsWith('91') && mobilenumber.length === 12) {
+                                    mobilenumber = `+${mobilenumber}`;
+                                } else if (mobilenumber.length === 10) {
+                                    mobilenumber = `+91${mobilenumber}`;
+                                } else {
+                                    throw new Error('Invalid mobile number format');
+                                }
                                 var sql5 = "UPDATE bookings SET status=0 WHERE id=" + id + ";UPDATE hostel SET User_Id='" + gen_user_id + "' WHERE ID=" + user_ids + ";UPDATE bed_details SET user_id=" + user_ids + ", isfilled=1 WHERE id=" + bed + "";
                                 connection.query(sql5, function (err, up_res) {
                                     if (err) {
                                         return res.status(201).json({ statusCode: 201, message: "Unable to Remove Booking Details", reason: err.message });
                                     } else {
+                                        sendTemplateMessage(
+                                            mobilenumber,
+                                            'customer_welcome_msg',
+                                            [f_name, hostel_name] 
+                                        );
                                         return res.status(200).json({ statusCode: 200, message: "Checkin Assigned Successfully" });
                                     }
                                 })
