@@ -1477,6 +1477,11 @@ app.post('/getKycDetails', (req, res) => {
  kycQueries.fetchAndUpdateKycStatus(req, res,customer_id)
 });
 
+app.post('/getCustomerDetails', (req, res) => {
+  const customer_id = req.body.customer_id;
+ kycQueries.fetchAndUpdateCustomerKycStatus(req, res,customer_id)
+});
+
 
 
 // **************************** Start Cashfree Subscription ****************************

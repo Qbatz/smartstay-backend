@@ -158,6 +158,56 @@ async function fetchAndUpdateKycStatus(req, res, customer_id) {
   }
 }
 
+async function fetchAndUpdateCustomerKycStatus(req, res, customer_id) {
+  try {
+    console.log("[KYC] Customer ID:", customer_id);
+
+    const [rows] = await db.promise().query(
+      'SELECT kyc_id, status, image FROM customer_kyc_verification WHERE customer_id = ?', 
+      [customer_id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(201).json({ message: 'KYC ID not found for this customer', status: null });
+    }
+
+    const { kyc_id, status, image } = rows[0];
+    console.log("[KYC] Found - KYC ID:", kyc_id, "| Status:", status);
+
+    if (status === 'approved') {
+      return res.status(200).json({ message: 'KYC Completed', pic: image, status });
+    }
+
+    if (status === 'requested') {
+      const kycResponse = await kycService.fetchKycApiResponse(kyc_id); 
+      console.log("[KYC] API Response:", JSON.stringify(kycResponse, null, 2));
+
+      if (kycResponse.status === 'approved') {
+        const result = await insertOrUpdateKycDataApproved(customer_id, kycResponse);
+        
+        return res.status(200).json({
+          message: 'KYC Completed',
+          name: kycResponse.customer_name || null,
+          pic: kycResponse.actions?.[0]?.details?.aadhaar?.image || null,
+          status: kycResponse.status
+        });
+      } else {
+        return res.status(200).json({
+          message: 'KYC Pending',
+          status: kycResponse.status
+        });
+      }
+    }
+    return res.status(200).json({ message: 'KYC Pending', status });
+
+  } catch (error) {
+    console.error(`[KYC MAIN SERVICE ERROR] Customer ID ${customer_id}:`, error);
+    return res.status(201).json({ message: 'Failed to fetch or update KYC status', status: null });
+  }
+}
+
+
+
 async function insertOrUpdateKycData(customer_id, kycResponse) {
   try {
     const {
@@ -233,8 +283,97 @@ async function getRequestedClientIds() {
   return rows.map(row => row.kyc_id);
 }
 
+async function insertOrUpdateKycDataApproved(customer_id, kycResponse) {
+  try {
+    const {
+      id,
+      created_at,
+      status,
+      reference_id,
+      transaction_id,
+      expire_in_days,
+      reminder_registered,
+      auto_approved,
+      template_id
+    } = kycResponse;
+
+    // Defaults
+    let image = null;
+    let gender = null;
+    let id_number = null;
+    let document_type = null;
+
+    
+    if (status === 'approved' && Array.isArray(kycResponse.actions)) {
+      const details = kycResponse.actions[0]?.details;
+      
+      if (details?.aadhaar) {
+        const aadhaar = details.aadhaar;
+        image = aadhaar.image || null;
+        gender = aadhaar.gender || null;
+        id_number = aadhaar.id_number || null;
+        document_type = aadhaar.document_type || null;
+      } else if (details?.pan) {
+        const pan = details.pan;
+        image = null; 
+        gender = pan.gender || null;
+        id_number = pan.id_number || null;
+        document_type = pan.document_type || null;
+      }
+    }
+
+    const query = `
+      INSERT INTO customer_kyc_verification (
+        customer_id, kyc_id, created_at, status, reference_id,
+        transaction_id, expire_in_days, reminder_registered,
+        auto_approved, template_id, image, gender, id_number, document_type
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        kyc_id = VALUES(kyc_id),
+        created_at = VALUES(created_at),
+        status = VALUES(status),
+        reference_id = VALUES(reference_id),
+        transaction_id = VALUES(transaction_id),
+        expire_in_days = VALUES(expire_in_days),
+        reminder_registered = VALUES(reminder_registered),
+        auto_approved = VALUES(auto_approved),
+        template_id = VALUES(template_id),
+        image = VALUES(image),
+        gender = VALUES(gender),
+        id_number = VALUES(id_number),
+        document_type = VALUES(document_type),
+        updated_at = NOW()
+    `;
+
+    const values = [
+      customer_id,
+      id,
+      created_at,
+      status,
+      reference_id,
+      transaction_id,
+      expire_in_days,
+      reminder_registered ? 1 : 0,
+      auto_approved ? 1 : 0,
+      template_id,
+      image,
+      gender,
+      id_number,
+      document_type
+    ];
+
+    await db.promise().query(query, values);
+    return { success: true };
+
+  } catch (err) {
+    console.error("[insertOrUpdateKycData ERROR]", err);
+    return { success: false };
+  }
+}
 
 
-module.exports = { verifyAndStoreKyc,fetchAndUpdateKycStatus };
+
+
+module.exports = { verifyAndStoreKyc,fetchAndUpdateKycStatus,fetchAndUpdateCustomerKycStatus };
 
 
