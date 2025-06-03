@@ -18,7 +18,7 @@ async function sendTemplateMessage(to, templateName, parameters = []) {
             {
                 messaging_product: 'whatsapp',
                 to,
-                type: 'template',
+                type: 'template', 
                 template: {
                     name: templateName,
                     language: { code: 'en_IN' },
@@ -26,7 +26,7 @@ async function sendTemplateMessage(to, templateName, parameters = []) {
                         {
                             type: 'body',
                             parameters: parameters.map((valu) => ({ type: 'text', text: valu })),
-                        },
+                        }, 
                     ],
                 },
             },
