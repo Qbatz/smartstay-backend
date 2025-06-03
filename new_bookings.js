@@ -2,6 +2,8 @@ const connection = require("./config/connection");
 const uploadImage = require("./components/upload_image");
 const crypto = require('crypto');
 
+const { sendTemplateMessage } = require('./whatsappTemplate');
+
 function add_booking(req, res) {
 
     var created_by = req.user_details.id;
@@ -187,6 +189,12 @@ function assign_booking(req, res) {
             var mob_no = booking_details.phone_number;
             var email_id = booking_details.email_id || 'NA';
 
+            var area = booking_details.area;
+            var landmark = booking_details.landmark;
+            var pincode = booking_details.pin_code;
+            var city = booking_details.city;
+            var state = booking_details.state;
+
             if (email_id != 'NA') {
 
                 var sql3 = "SELECT * FROM hostel WHERE Email=? AND isActive=1 AND Hostel_Id=?";
@@ -232,7 +240,6 @@ function assign_booking(req, res) {
                         var address = booking_details.address;
                         var hostel_name = booking_details.hostel_name;
                         var profile = booking_details.profile || 0;
-
                         var sql4 = "INSERT INTO hostel (Circle, Name, Phone, Email, Address,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent,paid_advance,pending_advance,created_by,joining_Date,profile,area,landmark,pincode,city,state) VALUES (?)";
                         var params = [circle, name, mob_no, email_id, address, hostel_name, hostel_id, floor, room, bed, ad_amount, rent_amount, 0, ad_amount, created_by, join_date, profile, area, landmark, pincode, city, state];
                         connection.query(sql4, [params], function (err, ins_data) {
@@ -243,12 +250,29 @@ function assign_booking(req, res) {
 
                                 var user_ids = ins_data.insertId;
                                 const gen_user_id = generateUserId(f_name, user_ids);
+                                console.log("mob_no", mob_no)
 
+                                let mobilenumber = mob_no;
+
+                                mobilenumber = mobilenumber.replace(/\D/g, '');
+
+                                if (mobilenumber.startsWith('91') && mobilenumber.length === 12) {
+                                    mobilenumber = `+${mobilenumber}`;
+                                } else if (mobilenumber.length === 10) {
+                                    mobilenumber = `+91${mobilenumber}`;
+                                } else {
+                                    throw new Error('Invalid mobile number format');
+                                }
                                 var sql5 = "UPDATE bookings SET status=0 WHERE id=" + id + ";UPDATE hostel SET User_Id='" + gen_user_id + "' WHERE ID=" + user_ids + ";UPDATE bed_details SET user_id=" + user_ids + ", isfilled=1 WHERE id=" + bed + "";
                                 connection.query(sql5, function (err, up_res) {
                                     if (err) {
                                         return res.status(201).json({ statusCode: 201, message: "Unable to Remove Booking Details", reason: err.message });
                                     } else {
+                                        sendTemplateMessage(
+                                            mobilenumber,
+                                            'customer_welcome_msg',
+                                            [f_name, hostel_name]
+                                        );
                                         return res.status(200).json({ statusCode: 200, message: "Checkin Assigned Successfully" });
                                     }
                                 })
@@ -783,7 +807,7 @@ function recuring_bill_users(req, res) {
 }
 
 function edit_confirm_checkout(req, res) {
-    
+
     var { payment_date, reasons, user_id, hostel_id, comments, payment_id } = req.body;
 
     var created_by = req.user_details.id;
@@ -829,31 +853,31 @@ function edit_confirm_checkout(req, res) {
                 var receipt_id = receipt_data[0].id;
                 var old_bank_id = receipt_data[0].payment_mode;
 
-                var last_amount=Number(receipt_data[0].amount_received);
+                var last_amount = Number(receipt_data[0].amount_received);
 
-                var sql22="SELECT * FROM bankings WHERE id=? AND status=1";
-                connection.query(sql22,[payment_id],function(err,bank_data){
-                    if(err){
+                var sql22 = "SELECT * FROM bankings WHERE id=? AND status=1";
+                connection.query(sql22, [payment_id], function (err, bank_data) {
+                    if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to fetch Bank details", reason: err.message });
                     }
 
-                    if(bank_data.length == 0){
+                    if (bank_data.length == 0) {
                         return res.status(201).json({ statusCode: 201, message: "Invalid and Inactive Bank details", reason: err.message });
                     }
 
-                    var currentbankamount=Number(bank_data[0].balance);
+                    var currentbankamount = Number(bank_data[0].balance);
                     var check_amount = currentbankamount + last_amount;
 
                     if (check_amount >= Number(advance_return)) {
 
-                        var new_amount=check_amount - Number(advance_return)
+                        var new_amount = check_amount - Number(advance_return)
 
                         var sql5 = "UPDATE receipts SET amount_received=?,payment_date=?,payment_mode=? WHERE id=?";
-                        connection.query(sql5, [advance_return, payment_date,payment_id, receipt_id], function (err, up_rec) {
+                        connection.query(sql5, [advance_return, payment_date, payment_id, receipt_id], function (err, up_rec) {
                             if (err) {
                                 return res.status(201).json({ statusCode: 201, message: "Unable to Update Receipt details", reason: err.message });
                             } else {
-                               
+
                                 if (Array.isArray(reasons) && reasons.length > 0) {
                                     var sql3 = "DELETE FROM checkout_deductions WHERE receipt_id=?";
                                     connection.query(sql3, [receipt_id], function (err, del_receipt) {
@@ -861,23 +885,23 @@ function edit_confirm_checkout(req, res) {
                                             return res.status(201).json({ statusCode: 201, message: "Unable to Delete Receipt details", reason: err.message });
                                         } else {
                                             const values = reasons.map(r => [r.reason, r.amount, user_id, receipt_id, created_by]);
-        
+
                                             var sql4 = "INSERT INTO checkout_deductions (reason,amount,user_id,receipt_id,created_by) VALUES ?"
                                             connection.query(sql4, [values], function (err, ch_res) {
                                                 if (err) {
                                                     return res.status(201).json({ statusCode: 201, message: "Unable to add Receipt details", reason: err.message });
                                                 }
-        
-                                               
+
+
                                                 updateHostel();
                                             });
                                         }
                                     });
                                 } else {
-                                    
+
                                     updateHostel();
                                 }
-        
+
                                 function updateHostel() {
 
                                     if (payment_id) {
@@ -888,14 +912,14 @@ function edit_confirm_checkout(req, res) {
                                                 if (err) console.log("Error updating old bank balance:", err);
                                             });
                                         }
-    
+
                                         // Adjust the new bank balance
                                         if (payment_id) {
                                             var sql6 = "UPDATE bankings SET balance =  ? WHERE id = ?";
                                             connection.query(sql6, [new_amount, payment_id], function (err) {
                                                 if (err) console.log("Error updating new bank balance:", err);
                                             });
-    
+
                                             // Update the bank transactions
                                             var sql7 = "UPDATE bank_transactions SET amount = ?, date = ?, bank_id = ? WHERE edit_id = ?";
                                             connection.query(sql7, [advance_return, payment_date, payment_id, receipt_id], function (err) {
@@ -916,7 +940,7 @@ function edit_confirm_checkout(req, res) {
                             }
                         })
 
-                    }else{
+                    } else {
                         return res.status(201).json({ statusCode: 201, message: "Insufficient Bank Balance" });
                     }
 
