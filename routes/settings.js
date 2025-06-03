@@ -50,7 +50,7 @@ async function addOrEditInvoiceSettings(req, res) {
     const is_admin = req.is_admin;
 
     if (!hostelId) {
-      return res.status(400).json({ success: false, message: "hostelId is required" });
+      return res.status(201).json({ success: false, message: "hostelId is required" });
     }
 
     // Parse paymentMethods safely
@@ -60,7 +60,7 @@ async function addOrEditInvoiceSettings(req, res) {
         ? paymentMethods
         : JSON.parse(paymentMethods || "[]");
     } catch (parseErr) {
-      return res.status(400).json({ success: false, message: "Invalid paymentMethods format" });
+      return res.status(201).json({ success: false, message: "Invalid paymentMethods format" });
     }
     const paymentMethodStr = parsedPaymentMethods.join(",");
 
@@ -89,7 +89,7 @@ async function addOrEditInvoiceSettings(req, res) {
         );
         updatedBankingId = existingBankRows[0].id;
       } else {
-        return res.status(403).json({ success: false, message: "Permission Denied for updating bank." });
+        return res.status(201).json({ success: false, message: "Permission Denied for updating bank." });
       }
     } else {
       if (is_admin || (role_permissions[16]?.per_create === 1)) {
@@ -107,7 +107,7 @@ async function addOrEditInvoiceSettings(req, res) {
         );
         updatedBankingId = insertResult.insertId;
       } else {
-        return res.status(403).json({ success: false, message: "Permission Denied for creating bank." });
+        return res.status(201).json({ success: false, message: "Permission Denied for creating bank." });
       }
     }
 
@@ -152,7 +152,7 @@ async function addOrEditInvoiceSettings(req, res) {
     });
   } catch (error) {
     console.error("Unexpected Error:", error);
-    return res.status(500).json({
+    return res.status(201).json({
       success: false,
       message: "Something went wrong while processing invoice settings."
     });
@@ -162,13 +162,13 @@ async function addOrEditInvoiceSettings(req, res) {
 const getInvoiceSettings = async (req, res,hostelId) => {
   try {
     if (!hostelId) {
-      return res.status(400).json({ success: false, message: "hostelId is required" });
+      return res.status(201).json({ success: false, message: "hostelId is required" });
     }
 
     // Fetch invoice settings
     const invoice = await fetchInvoiceSettings(hostelId);
     if (!invoice) {
-      return res.status(404).json({ success: false, message: "No invoice settings found for this hostel" });
+      return res.status(201).json({ success: false, message: "No invoice settings found for this hostel" });
     }
 
     // Process payment methods
@@ -195,7 +195,7 @@ const getInvoiceSettings = async (req, res,hostelId) => {
 
   } catch (err) {
     console.error("Error in getInvoiceSettings:", err);
-    return res.status(500).json({
+    return res.status(201).json({
       success: false,
       message: "Internal server error while fetching invoice settings",
     });
@@ -527,7 +527,7 @@ const getRecurringBills = async (req, res,hostel_id) => {
   try {
 
     if (!hostel_id) {
-      return res.status(400).json({ statusCode: 400, message: "Missing hostel_id parameter" });
+      return res.status(201).json({ statusCode: 201, message: "Missing hostel_id parameter" });
     }
 
     const [rows] = await connection.promise().query(
@@ -553,8 +553,8 @@ const getRecurringBills = async (req, res,hostel_id) => {
     );
 
     if (rows.length === 0) {
-      return res.status(404).json({
-        statusCode: 404,
+      return res.status(201).json({
+        statusCode: 201,
         message: "No recurring billing setup found for this hostel",
       });
     }
@@ -572,8 +572,8 @@ const getRecurringBills = async (req, res,hostel_id) => {
 
   } catch (error) {
     console.error("Error in getRecurringBills:", error);
-    return res.status(500).json({
-      statusCode: 500,
+    return res.status(201).json({
+      statusCode: 201,
       message: "Internal server error while retrieving recurring billing settings",
     });
   }

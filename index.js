@@ -1451,8 +1451,8 @@ app.post('/invoice-settings', upload.fields(
     settingsQueries.addOrEditInvoiceSettings(req, res);
 });
 
-app.get('/getInvoice-settings/', (req, res) => {
-    const hostel_id = req.body.hostel_id;
+app.get('/getInvoice-settings/:hostel_id', (req, res) => {
+   const hostel_id = req.params.hostel_id;
     settingsQueries.getInvoiceSettings(req, res, hostel_id);
 });
 
