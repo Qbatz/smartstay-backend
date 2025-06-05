@@ -266,13 +266,13 @@ async function insertOrUpdateKycData(customer_id, kycResponse) {
 
 
 
-cron.schedule('0 12 * * *', async () => {
-  const clientIds = await getRequestedClientIds();
-  for (const clientId of clientIds) {
-    const kycResponse = kycService.fetchKycApiResponse(clientId);
-    const result = await insertOrUpdateKycData(clientId, kycResponse);
-  }
-});
+// cron.schedule('0 12 * * *', async () => {
+//   const clientIds = await getRequestedClientIds();
+//   for (const clientId of clientIds) {
+//     const kycResponse = kycService.fetchKycApiResponse(clientId);
+//     const result = await insertOrUpdateKycData(clientId, kycResponse);
+//   }
+// });
 
 async function getRequestedClientIds() {
   const [rows] = await db.promise().query(`
