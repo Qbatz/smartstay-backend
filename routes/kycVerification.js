@@ -265,7 +265,7 @@ async function insertOrUpdateKycData(customer_id, kycResponse) {
 }
 
 
-
+//commented based on the request
 // cron.schedule('0 12 * * *', async () => {
 //   const clientIds = await getRequestedClientIds();
 //   for (const clientId of clientIds) {
