@@ -2284,7 +2284,7 @@ function UpdateAmenitiesHistory(connection, response, request) {
                                 response.status(201).json({ message: "Does not Update" });
                             }
                             else {
-                                response.status(200).json({ message: "Update Successfully" });
+                                response.status(200).json({ message: "Amenities Update Successfully" });
                             }
                         })
                     }
@@ -2294,7 +2294,7 @@ function UpdateAmenitiesHistory(connection, response, request) {
                                 response.status(201).json({ message: "Does not Insert" });
                             }
                             else {
-                                response.status(200).json({ message: "Insert successful" });
+                                response.status(200).json({ message: "Amenities Added Successfully" });
                             }
 
                         })
@@ -2311,7 +2311,7 @@ function UpdateAmenitiesHistory(connection, response, request) {
                                 response.status(201).json({ message: "Does not Insert" });
                             }
                             else {
-                                response.status(200).json({ message: "Insert successful" });
+                                response.status(200).json({ message: "Amenities Added Successfully" });
                             }
 
                         })

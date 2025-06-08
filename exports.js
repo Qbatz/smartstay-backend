@@ -41,7 +41,7 @@ function export_customer(req, res) {
 
     } else if (type == 'walkin') {
 
-        var sql1 = "SELECT cus.*,ca.first_name AS creator_name,ca.user_type FROM customer_walk_in_details AS cus JOIN createaccount AS ca ON ca.id=cus.created_by WHERE cus.isActive=1 AND cus.created_By IN (?) ORDER BY cus.id DESC;"
+        var sql1 = "SELECT cus.*,ca.first_name AS creator_name,ca.user_type FROM customer_walk_in_details AS cus JOIN createaccount AS ca ON ca.id=cus.created_by WHERE cus.isActive=1 AND cus.hostel_id=? ORDER BY cus.id DESC;"
         var file_name = 'all_walkings';
 
     } else if (type == 'booking') {
@@ -51,7 +51,7 @@ function export_customer(req, res) {
 
     } else if (type == 'checkout') {
 
-        var sql1 = "SELECT hos.*,hstl.Name AS hostel_name,hf.floor_name,hr.Room_Id,bd.bed_no,ca.first_name AS creator_name,ca.user_type FROM hostel AS hos JOIN hosteldetails AS hstl ON hstl.ID=hos.Hostel_Id JOIN Hostel_Floor AS hf ON hf.floor_id=hos.Floor JOIN hostelrooms AS hr ON hr.id=hos.Rooms JOIN bed_details AS bd ON bd.id=hos.Bed JOIN createaccount AS ca ON ca.id=hos.created_by WHERE hos.isActive=1 AND hos.CheckoutDate != 'null' AND hos.Hostel_Id=? ORDER BY hos.id DESC;"
+        var sql1 = "SELECT hos.*, MAX(hstl.Name) AS hostel_name, MAX(hf.floor_name) AS floor_name, MAX(hr.Room_Id) AS Room_Id, MAX(bd.bed_no) AS bed_no, MAX(ca.first_name) AS creator_name, MAX(ca.user_type) AS user_type FROM hostel AS hos JOIN hosteldetails AS hstl ON hstl.id = hos.Hostel_Id JOIN Hostel_Floor AS hf ON hf.floor_id = hos.Floor JOIN hostelrooms AS hr ON hr.id = hos.Rooms JOIN bed_details AS bd ON bd.id = hos.Bed LEFT JOIN createaccount AS ca ON ca.id = hos.created_by WHERE hos.CheckoutDate IS NOT NULL AND hos.Hostel_Id = ? GROUP BY hos.id ORDER BY hos.id DESC;"
         var file_name = 'all_checkouts';
 
     } else if (type == 'complaint') {
