@@ -33,8 +33,7 @@ module.exports = (req, res, next) => {
         '/billing/new_hosted_page',
         '/reviews/all_review',
         '/webhook',
-        '/send-signup-message',
-        '/send-onboard-message'
+        '/send-whatsapp',
         // '/invoice_redirect/:invoiceUrl'
     ];
 

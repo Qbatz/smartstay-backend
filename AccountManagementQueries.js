@@ -499,7 +499,7 @@ function createnewAccount(request, response) {
                                                             }
                                                             sendTemplateMessage(
                                                                 mobile_no,
-                                                                'signup_welcome_msg',
+                                                                'welcome_signup_msg',
                                                                 [reqBodyData.first_name]
                                                             );
                                                             return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });
@@ -538,7 +538,7 @@ function createnewAccount(request, response) {
                                                     }
                                                     sendTemplateMessage(
                                                         mobile_no,
-                                                        'signup_welcome_msg',
+                                                        'welcome_signup_msg',
                                                         [reqBodyData.first_name]
                                                     );
                                                     return response.status(200).json({ message: 'New User Subscription Created Successfully', statusCode: 200 });

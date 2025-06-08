@@ -32,7 +32,7 @@ const refreshToken = () => {
             client_id: process.env.CLIENT_ID,
             client_secret: process.env.CLIENT_SECRET,
             refresh_token: process.env.REFRESH_TOKEN,
-            redirect_uri: "https://www.google.com/",
+            redirect_uri: "https://finance.s3remotica.com/",
             grant_type: 'refresh_token'
         };
 

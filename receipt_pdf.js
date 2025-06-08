@@ -15,7 +15,7 @@ exports.get_receipt_detailsbyid = async (req, res) => {
             var invoice_number = data[0].invoice_number;
             var hostel_id = data[0].hostel_id;
 
-            console.log(invoice_number);
+            console.log(invoice_number,"invoice_number");
 
             if (invoice_number == 0) {
 

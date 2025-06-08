@@ -38,6 +38,7 @@ const masterDataQueries = require('./routes/masterData')
 const settingsQueries = require('./routes/settings');
 const kycQueries = require('./routes/kycVerification');
 
+const { sendTemplateMessage } = require('./whatsappTemplate');
 
 const multer = require('multer');
 const request = require('request');
@@ -123,81 +124,27 @@ app.post('/webhook', async (req, res) => {
 });
 
 
-async function sendTemplateMessage(to, templateName, parameters = []) {
-    if (!isValidPhoneNumber(to)) {
-        console.error('Invalid phone number format:', to);
-        throw new Error('Invalid phone number format');
-    }
+app.post('/send-whatsapp', async (req, res) => {
+    const { to, templateName, parameters } = req.body;
 
     try {
-        const response = await axios.post(
-            'https://graph.facebook.com/v17.0/547806001759552/messages',
-            {
-                messaging_product: 'whatsapp',
-                to,
-                type: 'template',
-                template: {
-                    name: templateName,
-                    language: { code: 'en_IN' },
-                    components: [
-                        {
-                            type: 'body',
-                            parameters: parameters.map((p) => ({ type: 'text', text: p })),
-                        },
-                    ],
-                },
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
-                    'Content-Type': 'application/json',
-                },
-            }
-        );
+        await sendTemplateMessage(to, templateName, parameters);
 
-        console.log(`Template message '${templateName}' sent:`, response.data);
-        return response.data;
+        return res.status(200).json({
+            statusCode: 200,
+            message: 'WhatsApp message sent successfully',
+        });
     } catch (err) {
-        console.error(`Error sending template message '${templateName}':`, err.response?.data || err.message);
-        throw err;
-    }
-}
+        console.error("WhatsApp Error:", err.message);
 
-app.post('/send-signup-message', async (req, res) => {
-    const { phone, username } = req.body;
-    if (!phone || !username) {
-        return res.status(400).json({ error: 'Phone number and username are required' });
-    }
-    const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
-    if (!isValidPhoneNumber(formattedPhone)) {
-        return res.status(400).json({ error: 'Invalid phone number format' });
-    }
-
-    try {
-        await sendTemplateMessage(formattedPhone, 'signup_welcome_msg', [username]);
-        res.status(200).json({ success: true, message: 'Signup welcome message sent' });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to send message' });
+        return res.status(500).json({
+            statusCode: 500,
+            error: 'Failed to send WhatsApp message',
+            details: err.message,
+        });
     }
 });
 
-app.post('/send-onboard-message', async (req, res) => {
-    const { phone, name, hostel } = req.body;
-    if (!phone || !name || !hostel) {
-        return res.status(400).json({ error: 'Missing phone, name or hostel' });
-    }
-    const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
-    if (!isValidPhoneNumber(formattedPhone)) {
-        return res.status(400).json({ error: 'Invalid phone number format' });
-    }
-
-    try {
-        await sendTemplateMessage(formattedPhone, 'customer_welcome_msg', [name, hostel]);
-        res.status(200).json({ success: true, message: 'Onboard message sent' });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to send message' });
-    }
-});
 
 
 // ExpensesManagement 
@@ -1452,7 +1399,7 @@ app.post('/invoice-settings', upload.fields(
 });
 
 app.get('/getInvoice-settings/:hostel_id', (req, res) => {
-   const hostel_id = req.params.hostel_id;
+    const hostel_id = req.params.hostel_id;
     settingsQueries.getInvoiceSettings(req, res, hostel_id);
 });
 
@@ -1473,8 +1420,8 @@ app.post('/verify-kyc', (req, res) => {
 });
 
 app.post('/getKycDetails', (req, res) => {
-  const customer_id = req.body.customer_id;
- kycQueries.fetchAndUpdateKycStatus(req, res,customer_id)
+    const customer_id = req.body.customer_id;
+    kycQueries.fetchAndUpdateKycStatus(req, res, customer_id)
 });
 
 

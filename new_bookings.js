@@ -270,7 +270,7 @@ function assign_booking(req, res) {
                                     } else {
                                         sendTemplateMessage(
                                             mobilenumber,
-                                            'customer_welcome_msg',
+                                            'welcome_msg_customer',
                                             [f_name, hostel_name] 
                                         );
                                         return res.status(200).json({ statusCode: 200, message: "Checkin Assigned Successfully" });
