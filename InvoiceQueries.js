@@ -1480,7 +1480,7 @@ function generatePDFFor(breakUpTable, hosdata, hostel, data, response, connectio
     const invoiceDateWidth = doc.widthOfString('Invoice Date');
 
     const rightMargin = doc.page.width - invoiceNoWidth - 50;
-    const marginLeft = 30;
+    const marginLeft = 30;  
     const marginRight = doc.page.width / 2;
     const logoWidth = 100;
     const logoHeight = 100;
