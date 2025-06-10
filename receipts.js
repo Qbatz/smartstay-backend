@@ -543,7 +543,7 @@ exports.delete_receipt = (req, res) => {
                                 return res.status(201).json({ message: "Unable to Remove Transactions Details", reason: err.message, statusCode: 201 });
                             } else {
 
-                                console.log(ins_res);
+                                console.log(ins_res,"ins_res");
 
                                 if (payment_by == 'Net Banking') {
 
@@ -644,6 +644,7 @@ exports.pdf_generate = (req, res) => {
 
             const pdfPath = await generatereceipt(data, inv_data, outputPath, filename, invoice_number, action);
 
+            console.log("pdfPath>>>",pdfPath);
             return res.status(200).json({ message: 'Receipt Pdf Generated', pdf_url: pdfPath });
 
         })

@@ -3826,7 +3826,7 @@ function advance_invoice(req, res) {
                 connection.query(sql2, [inv_data.user_name, inv_data.Phone, inv_data.Email, inv_data.Name, inv_data.detHostel_Id, inv_data.hosFloor, inv_data.hosRoom, inv_data.advance_amount, inv_data.Address, invoice_date, due_date, invoiceNo, status, inv_data.User_Id, 0, 0, 0, 0, 0, 0, inv_data.Bed, pending_advance, inv_data.paid_advance, inv_data.hos_user_id], function (ins_err, ins_res) {
                     if (ins_err) {
                         console.log("Insert Error", ins_err);
-                        return res.status(201).json({ statusCode: 201, message: "Error to Add Invoice Details", reason: err.message })
+                        return res.status(201).json({ statusCode: 201, message: "Error to Add Invoice Details", reason: err?.message })
                     } else {
 
                         var inv_id = ins_res.insertId;
@@ -3834,7 +3834,7 @@ function advance_invoice(req, res) {
                         var sql3 = "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES ('advance',?,?,?)";
                         connection.query(sql3, [user_id, pending_advance, inv_id], function (err, ins_res) {
                             if (err) {
-                                return res.status(201).json({ statusCode: 201, message: "Error to Add Invoice Details", reason: err.message })
+                                return res.status(201).json({ statusCode: 201, message: "Error to Add Invoice Details", reason: err?.message })
                             } else {
                                 console.log("Insert Successfully");
                                 return res.status(200).json({ statusCode: 200, message: "Successfully Invoice Generated !" })
