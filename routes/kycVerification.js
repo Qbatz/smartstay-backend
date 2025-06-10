@@ -163,19 +163,19 @@ async function fetchAndUpdateCustomerKycStatus(req, res, customer_id) {
     console.log("[KYC] Customer ID:", customer_id);
 
     const [rows] = await db.promise().query(
-      'SELECT kyc_id, status, image FROM customer_kyc_verification WHERE customer_id = ?', 
+      'SELECT kyc_id, status, image, updated_at FROM customer_kyc_verification WHERE customer_id = ?', 
       [customer_id]
     );
 
     if (rows.length === 0) {
-      return res.status(201).json({ message: 'KYC ID not found for this customer', status: null });
+      return res.status(200).json({ message: 'KYC ID not found for this customer', status: "KYC Pending" });
     }
 
-    const { kyc_id, status, image } = rows[0];
+    const { kyc_id, status, image,updated_at } = rows[0];
     console.log("[KYC] Found - KYC ID:", kyc_id, "| Status:", status);
 
     if (status === 'approved') {
-      return res.status(200).json({statusCode:200, message: 'KYC Completed', pic: image, status });
+      return res.status(200).json({statusCode:200, message: 'KYC Completed', pic: image, status,updated_at });
     }
 
     if (status === 'requested') {
@@ -190,17 +190,19 @@ async function fetchAndUpdateCustomerKycStatus(req, res, customer_id) {
           message: 'KYC Completed',
           name: kycResponse.customer_name || null,
           pic: kycResponse.actions?.[0]?.details?.aadhaar?.image || null,
-          status: kycResponse.status
+          status: kycResponse.status,
+          updated_at: kycResponse.updated_at || null
         });
       } else {
         return res.status(200).json({
           statusCode:200,
           message: 'KYC Pending',
-          status: kycResponse.status
+          status: kycResponse.status,
+          updated_at: kycResponse.updated_at || null
         });
       }
     }
-    return res.status(200).json({statusCode:200, message: 'KYC Pending', status });
+    return res.status(200).json({statusCode:200, message: 'KYC Failed Retry', status,updated_at });
 
   } catch (error) {
     console.error(`[KYC MAIN SERVICE ERROR] Customer ID ${customer_id}:`, error);
