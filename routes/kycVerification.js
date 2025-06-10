@@ -102,7 +102,7 @@ const cleanedPhone = cleanPhoneNumber(hostel.Phone.toString());
           return res.status(201).json({ success: false, error: 'Failed to store KYC data. Try again later.' });
         }
 
-        res.status(200).json({ success: true, message: 'KYC request has been sent via SMS. Kindly complete the verification.' });
+        res.status(200).json({statusCode:200, success: true, message: 'KYC request has been sent via SMS. Kindly complete the verification.' });
       });
 
     } catch (apiErr) {
@@ -135,7 +135,7 @@ async function fetchAndUpdateKycStatus(req, res, customer_id) {
     );
 
     if (rows.length === 0) {
-      return res.status(201).json({ message: 'KYC ID not found for this customer', status: null });
+      return res.status(200).json({statusCode:200, message: 'KYC ID not found for this customer', status: "KYC Pending" });
     }
 
     const kyc_id = rows[0].kyc_id;
@@ -147,7 +147,7 @@ async function fetchAndUpdateKycStatus(req, res, customer_id) {
     const result = await insertOrUpdateKycData(customer_id, kycResponse);
     
     if (result.success) {
-      return res.status(200).json({ message: 'KYC status fetched and updated successfully', status: kycResponse.status });
+      return res.status(200).json({statusCode:200, message: 'KYC status fetched and updated successfully', status: kycResponse.status });
     } else {
       return res.status(201).json({ message: 'KYC status fetched, but DB update failed', status: kycResponse.status });
     }
@@ -175,7 +175,7 @@ async function fetchAndUpdateCustomerKycStatus(req, res, customer_id) {
     console.log("[KYC] Found - KYC ID:", kyc_id, "| Status:", status);
 
     if (status === 'approved') {
-      return res.status(200).json({ message: 'KYC Completed', pic: image, status });
+      return res.status(200).json({statusCode:200, message: 'KYC Completed', pic: image, status });
     }
 
     if (status === 'requested') {
@@ -186,6 +186,7 @@ async function fetchAndUpdateCustomerKycStatus(req, res, customer_id) {
         const result = await insertOrUpdateKycDataApproved(customer_id, kycResponse);
         
         return res.status(200).json({
+          statusCode:200,
           message: 'KYC Completed',
           name: kycResponse.customer_name || null,
           pic: kycResponse.actions?.[0]?.details?.aadhaar?.image || null,
@@ -193,12 +194,13 @@ async function fetchAndUpdateCustomerKycStatus(req, res, customer_id) {
         });
       } else {
         return res.status(200).json({
+          statusCode:200,
           message: 'KYC Pending',
           status: kycResponse.status
         });
       }
     }
-    return res.status(200).json({ message: 'KYC Pending', status });
+    return res.status(200).json({statusCode:200, message: 'KYC Pending', status });
 
   } catch (error) {
     console.error(`[KYC MAIN SERVICE ERROR] Customer ID ${customer_id}:`, error);
@@ -265,7 +267,7 @@ async function insertOrUpdateKycData(customer_id, kycResponse) {
 }
 
 
-//commented based on the request
+//commented based on the request  
 // cron.schedule('0 12 * * *', async () => {
 //   const clientIds = await getRequestedClientIds();
 //   for (const clientId of clientIds) {

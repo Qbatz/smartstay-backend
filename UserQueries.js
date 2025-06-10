@@ -1976,7 +1976,7 @@ function add_walk_in_customer(req, res) {
               return res.status(201).json({ error: 'Error updating data' });
             }
 
-            res.status(200).json({ message: 'Changes Saved successfully' });
+            res.status(200).json({ statusCode: 200, message: 'Changes Saved successfully' });
           });
         });
       } else {
