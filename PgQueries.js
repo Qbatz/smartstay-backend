@@ -1060,10 +1060,15 @@ function UpdateEB(connection, atten, response) {
     }
 
 };
+
+
 function listDashBoard(connection, response, request) {
 
     var role_permissions = request.role_permissions;
     var is_admin = request.is_admin;
+
+    let this_month_profit;
+    let this_month_other_income;
 
     if (is_admin == 1 || (role_permissions[0] && role_permissions[0].per_view == 1)) {
 
@@ -1079,7 +1084,6 @@ function listDashBoard(connection, response, request) {
                 console.log(error, "Error Message");
                 response.status(201).json({ message: "No data found", error: error.message });
             } else {
-
                 let project_amount;
 
                 var sql11 = "SELECT (SELECT COUNT(ID) FROM compliance WHERE Status != 'resolved' AND isActive = 1 AND Hostel_id = ?) AS activecomp_count,(SELECT COUNT(ID) FROM invoicedetails WHERE invoice_status = 1 AND Hostel_Id = ? AND BalanceDue != 0) AS pendinginv_count,(SELECT COUNT(ID) FROM bookings WHERE hostel_id = ? AND status = 1) AS booking_count,(SELECT coalesce(SUM(inv.PaidAmount),0) AS advance_inhand FROM invoicedetails AS inv JOIN hostel AS hs ON hs.id=inv.hos_user_id WHERE inv.action='advance' AND inv.invoice_status=1 AND hs.isActive=1 AND inv.Hostel_Id=?) AS advance_inhand";
@@ -1087,6 +1091,61 @@ function listDashBoard(connection, response, request) {
                     if (err) {
                         return response.status(201).json({ message: "Error to Get Count Details", error: err.message });
                     }
+                    var expensesQuery = `WITH hostel_users AS (
+                SELECT ID AS user_id
+                FROM hostel
+                WHERE hostel_id = ?
+            )
+
+            SELECT
+                income_summary.total_income,
+                expense_summary.total_expenses,
+                (income_summary.total_income - expense_summary.total_expenses) AS profit,
+                other_income_summary.other_income
+            FROM
+                (
+                    SELECT 
+                        IFNULL(SUM(mia.amount), 0) AS total_income
+                    FROM 
+                        manual_invoice_amenities mia
+                    JOIN hostel_users hu ON mia.user_id = hu.user_id
+                    WHERE 
+                        mia.am_name IN ('EB', 'Advance', 'Room Rent')
+                        AND MONTH(mia.created_at) = MONTH(CURRENT_DATE())
+                        AND YEAR(mia.created_at) = YEAR(CURRENT_DATE())
+                ) AS income_summary,
+                (
+                    SELECT 
+                        IFNULL(SUM(e.purchase_amount), 0) AS total_expenses
+                    FROM 
+                        expenses e
+                    WHERE 
+                        e.hostel_id = ?
+                        AND MONTH(e.purchase_date) = MONTH(CURRENT_DATE())
+                        AND YEAR(e.purchase_date) = YEAR(CURRENT_DATE())
+                ) AS expense_summary,
+                (
+                    SELECT 
+                        IFNULL(SUM(mia.amount), 0) AS other_income
+                    FROM 
+                        manual_invoice_amenities mia
+                    JOIN hostel_users hu ON mia.user_id = hu.user_id
+                    WHERE 
+                        mia.am_name NOT IN ('EB', 'Advance', 'Room Rent')
+                        AND MONTH(mia.created_at) = MONTH(CURRENT_DATE())
+                        AND YEAR(mia.created_at) = YEAR(CURRENT_DATE())
+                ) AS other_income_summary`
+
+                    connection.query(expensesQuery, [hostel_id, hostel_id], (err, expensesData) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            var expenses = expensesData[0]
+                            this_month_profit = expenses.profit || 0
+                            this_month_other_income = expenses.other_income || 0
+                            console.log("resultData---:eee" + this_month_profit)
+                        }
+                    })
 
                     var count_data = countdata[0];
 
@@ -1179,7 +1238,7 @@ function listDashBoard(connection, response, request) {
                                                                                 total_amount += i.purchase_amount;
                                                                             }
 
-                                                                            return response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, total_amount: total_amount, categoryList: data, book_data: book_data, bill_details: bill_details, advance_data: advance_data });
+                                                                            return response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, total_amount: total_amount, categoryList: data, book_data: book_data, bill_details: bill_details, advance_data: advance_data, this_month_profit, this_month_other_income });
 
                                                                         } else {
                                                                             return response.status(200).json({ dashboardList: dashboardList, Revenue_reports: results, total_amount: 0, categoryList: [], book_data: book_data, bill_details: bill_details, advance_data: advance_data });
@@ -1211,6 +1270,8 @@ function listDashBoard(connection, response, request) {
     //     response.status(201).json({ message: "Missing Parameter" });
     // }
 }
+
+
 
 function deleteHostel(request, response) {
     let req = request.body
@@ -1324,6 +1385,75 @@ function deleteHostel(request, response) {
     }
 
 }
+
+function getMonthlyProfitData(connection, hostel_id) {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            WITH hostel_users AS (
+  SELECT ID AS user_id
+  FROM hostel
+  WHERE hostel_id = ?
+)
+
+SELECT
+  income_summary.total_income,
+  expense_summary.total_expenses,
+  (income_summary.total_income - expense_summary.total_expenses) AS profit,
+  other_income_summary.other_income
+FROM
+  (
+    SELECT 
+      IFNULL(SUM(mia.amount), 0) AS total_income
+    FROM 
+      manual_invoice_amenities mia
+    JOIN hostel_users hu ON mia.user_id = hu.user_id
+    WHERE 
+      mia.am_name IN ('EB', 'Advance', 'Room Rent')
+      AND MONTH(mia.created_at) = MONTH(CURRENT_DATE())
+      AND YEAR(mia.created_at) = YEAR(CURRENT_DATE())
+  ) AS income_summary,
+  (
+    SELECT 
+      IFNULL(SUM(e.purchase_amount), 0) AS total_expenses
+    FROM 
+      expenses e
+    WHERE 
+      e.hostel_id = ?
+      AND MONTH(e.purchase_date) = MONTH(CURRENT_DATE())
+      AND YEAR(e.purchase_date) = YEAR(CURRENT_DATE())
+  ) AS expense_summary,
+  (
+    SELECT 
+      IFNULL(SUM(mia.amount), 0) AS other_income
+    FROM 
+      manual_invoice_amenities mia
+    JOIN hostel_users hu ON mia.user_id = hu.user_id
+    WHERE 
+      mia.am_name NOT IN ('EB', 'Advance', 'Room Rent')
+      AND MONTH(mia.created_at) = MONTH(CURRENT_DATE())
+      AND YEAR(mia.created_at) = YEAR(CURRENT_DATE())
+  ) AS other_income_summary
+
+        `;
+
+        console.log("report--->" + sql)
+
+        connection.query(sql, [hostel_id, hostel_id], (err, result) => {
+            if (err) {
+                reject(err);
+            } else {
+                console.log("Result:", JSON.stringify(result[0], null, 2));
+                resolve(result[0] || {
+                    total_income: 0,
+                    total_expenses: 0,
+                    other_income: 0,
+                    profit: 0
+                });
+            }
+        });
+    });
+}
+
 
 function deleteFloor(connection, response, request) {
 

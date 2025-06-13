@@ -31,18 +31,7 @@ async function addOrEditInvoiceSettings(req, res) {
       notes,
       paymentMethods,
       privacyPolicy,
-
-      // Bank Fields
-      accountName = "",
-      accountNo = "",
-      bankName = "",
-      ifscCode = "",
-      desc = "",
-      benificiary_name = "",
-      upi_id = "",
-      card_type = "",
-      card_holder = "",
-      card_no = ""
+      bank_id
     } = req.body;
 
     const created_by = req.user_details.id;
@@ -68,49 +57,6 @@ async function addOrEditInvoiceSettings(req, res) {
     const files = req.files || {};
     const signatureFile = files["signature"]?.[0] || null;
 
-    let updatedBankingId = null;
-
-    // Insert or Update Bank Info based on account number
-    const [existingBankRows] = await connection.promise().query(
-      "SELECT * FROM bankings WHERE acc_num = ? AND status = 1",
-      [accountNo]
-    );
-
-    if (existingBankRows.length > 0) {
-      if (is_admin || (role_permissions[16]?.per_edit === 1)) {
-        await connection.promise().query(
-          `UPDATE bankings SET
-            bank_name = ?, ifsc_code = ?
-           WHERE acc_num = ? AND status = 1`,
-          [
-            bankName, ifscCode,
-            accountNo
-          ]
-        );
-        updatedBankingId = existingBankRows[0].id;
-      } else {
-        return res.status(201).json({ success: false, message: "Permission Denied for updating bank." });
-      }
-    } else {
-      if (is_admin || (role_permissions[16]?.per_create === 1)) {
-        const [insertResult] = await connection.promise().query(
-          `INSERT INTO bankings
-            (acc_name, acc_num, bank_name, ifsc_code, description,
-             setus_default, balance, createdby, hostel_id,
-             benificiary_name, upi_id, card_type, card_holder, card_no, type)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            accountName, accountNo, bankName, ifscCode, desc,
-            0, 0, created_by, hostelId,
-            benificiary_name, upi_id, card_type, card_holder, card_no, 'bank'
-          ]
-        );
-        updatedBankingId = insertResult.insertId;
-      } else {
-        return res.status(201).json({ success: false, message: "Permission Denied for creating bank." });
-      }
-    }
-
     // Insert or Update InvoiceSettings
     const [existingRows] = await connection.promise().query(
       "SELECT * FROM InvoiceSettings WHERE hostel_Id = ?",
@@ -123,14 +69,14 @@ async function addOrEditInvoiceSettings(req, res) {
           prefix = ?, suffix = ?, tax = ?, notes = ?, isAgreed = ?,
           paymentMethods = ?, privacyPolicyHtml = ?, bankingId = ?
          WHERE hostel_Id = ?`,
-        [prefix, suffix, tax, notes, 0, paymentMethodStr, privacyPolicy, updatedBankingId, hostelId]
+        [prefix, suffix, tax, notes, 0, paymentMethodStr, privacyPolicy, bank_id, hostelId]
       );
     } else {
       await connection.promise().query(
         `INSERT INTO InvoiceSettings
           (hostel_Id, prefix, suffix, tax, notes, isAgreed, paymentMethods, privacyPolicyHtml, bankingId)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [hostelId, prefix, suffix, tax, notes, 0, paymentMethodStr, privacyPolicy, updatedBankingId]
+        [hostelId, prefix, suffix, tax, notes, 0, paymentMethodStr, privacyPolicy, bank_id]
       );
     }
 
@@ -175,7 +121,7 @@ const getInvoiceSettings = async (req, res,hostelId) => {
     const paymentMethods = parsePaymentMethods(invoice.paymentMethods);
 
     // Fetch related bank details
-    const banking = invoice.bankingId ? await fetchBankDetails(invoice.bankingId) : null;
+    // const banking = invoice.bankingId ? await fetchBankDetails(invoice.bankingId) : null;
 
     // Fetch signature file if available
     const signatureFile = await fetchSignatureFile(hostelId);
@@ -188,8 +134,7 @@ const getInvoiceSettings = async (req, res,hostelId) => {
           ...invoice,
           paymentMethods,
           signatureFile,
-        },
-        banking,
+        }
       },
     });
 
