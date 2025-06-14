@@ -564,9 +564,6 @@ exports.delete_receipt = (req, res) => {
                             if (ins_err) {
                                 return res.status(201).json({ message: "Unable to Remove Transactions Details", reason: err.message, statusCode: 201 });
                             } else {
-
-                                console.log(ins_res, "ins_res");
-
                                 if (payment_by == 'Net Banking') {
 
                                     var sql5 = "SELECT * FROM bankings WHERE id=?";
