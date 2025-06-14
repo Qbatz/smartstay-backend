@@ -170,8 +170,31 @@ exports.get_all_receipts = (req, res) => {
             return res.status(201).json({ message: "Missing Hostel Id", statusCode: 201 });
         }
 
-        var sql1 = `SELECT re.*, hos.Name AS Name, hos.profile AS user_profile, hos.return_advance, inv.id AS inv_id,inv.action, re.id AS id, hos.Address AS user_address, ca.Address AS admin_address FROM receipts AS re JOIN hostel AS hos ON hos.id = re.user_id LEFT JOIN (SELECT * FROM invoicedetails WHERE Hostel_Id = ? AND invoice_status = 1 GROUP BY Invoices) AS inv ON inv.Invoices = re.invoice_number JOIN createaccount AS ca ON ca.id = hos.created_by WHERE hos.Hostel_Id = ? AND re.status = 1 ORDER BY re.id DESC;`;
-        connection.query(sql1, [hostel_id, hostel_id], async (err, receipts) => {
+        var sql1 = `SELECT 
+  CONCAT(bankings.benificiary_name, '-', bankings.type) AS paymentMode,
+  re.*, 
+  hos.Name AS Name, 
+  hos.profile AS user_profile, 
+  hos.return_advance, 
+  inv.id AS inv_id,
+  inv.action, 
+  re.id AS id, 
+  hos.Address AS user_address, 
+  ca.Address AS admin_address 
+FROM receipts AS re 
+JOIN hostel AS hos ON hos.id = re.user_id 
+LEFT JOIN (
+    SELECT * FROM invoicedetails 
+    WHERE Hostel_Id = ? AND invoice_status = 1 
+    GROUP BY Invoices
+) AS inv ON inv.Invoices = re.invoice_number 
+JOIN createaccount AS ca ON ca.id = hos.created_by 
+LEFT JOIN bankings ON bankings.id = re.payment_mode AND bankings.hostel_id = ?
+WHERE hos.Hostel_Id = ? AND re.status = 1 
+ORDER BY re.id DESC;
+`;
+
+        connection.query(sql1, [hostel_id, hostel_id, hostel_id], async (err, receipts) => {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Error to Get Receipt Details", reason: err.message });
             }
@@ -185,7 +208,6 @@ exports.get_all_receipts = (req, res) => {
                     return new Promise((resolve, reject) => {
 
                         receipt.type = receipt.invoice_number == 0 ? 'checkout' : (receipt.action || 'Invoice')
-
                         if (receipt.invoice_number == 0) {
                             var sql2 = "SELECT * FROM checkout_deductions WHERE receipt_id=?";
                             connection.query(sql2, [receipt.id], (err, result) => {
@@ -543,7 +565,7 @@ exports.delete_receipt = (req, res) => {
                                 return res.status(201).json({ message: "Unable to Remove Transactions Details", reason: err.message, statusCode: 201 });
                             } else {
 
-                                console.log(ins_res,"ins_res");
+                                console.log(ins_res, "ins_res");
 
                                 if (payment_by == 'Net Banking') {
 
@@ -643,8 +665,6 @@ exports.pdf_generate = (req, res) => {
             const outputPath = path.join(__dirname, filename);
 
             const pdfPath = await generatereceipt(data, inv_data, outputPath, filename, invoice_number, action);
-
-            console.log("pdfPath>>>",pdfPath);
             return res.status(200).json({ message: 'Receipt Pdf Generated', pdf_url: pdfPath });
 
         })
