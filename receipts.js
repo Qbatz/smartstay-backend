@@ -665,8 +665,6 @@ exports.pdf_generate = (req, res) => {
             const outputPath = path.join(__dirname, filename);
 
             const pdfPath = await generatereceipt(data, inv_data, outputPath, filename, invoice_number, action);
-
-            console.log("pdfPath>>>", pdfPath);
             return res.status(200).json({ message: 'Receipt Pdf Generated', pdf_url: pdfPath });
 
         })
