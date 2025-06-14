@@ -3011,14 +3011,13 @@ function addRecurringBills(req, res) {
 
     const role_permissions = req.role_permissions;
     const is_admin = req.is_admin;
+    const created_by = req.user_details?.id;
 
-    // Define the validator early!
     const isValidDayNumber = (day) => {
         const d = parseInt(day, 10);
         return d >= 1 && d <= 31;
     };
 
-    // Permission check
     if (!(is_admin === 1 || (role_permissions[11] && role_permissions[11].per_create === 1))) {
         return res.status(208).json({
             statusCode: 208,
@@ -3027,7 +3026,7 @@ function addRecurringBills(req, res) {
     }
 
     if (!hostel_id) {
-        return res.status(400).json({ statusCode: 400, message: "Missing Mandatory Field: hostel_id" });
+        return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Field: hostel_id" });
     }
 
     // Validate all day number fields
@@ -3037,12 +3036,11 @@ function addRecurringBills(req, res) {
         !isValidDayNumber(billingDateOfMonth) ||
         !isValidDayNumber(dueDateOfMonth)
     ) {
-        return res.status(400).json({
-            statusCode: 400,
+        return res.status(201).json({
+            statusCode:201,
             message: "Invalid day number(s). Days must be between 1 and 31."
         });
     }
-
 
     const now = moment();
     const year = now.year();
@@ -3050,130 +3048,132 @@ function addRecurringBills(req, res) {
 
     const createValidDate = (day) => {
         const maxDay = moment({ year, month }).daysInMonth();
-        const validDay = Math.min(day, maxDay);
+        const validDay = Math.min(parseInt(day, 10), maxDay);
         return moment({ year, month, day: validDay }).format('YYYY-MM-DD');
     };
 
-    const calcFromDateFull = createValidDate(parseInt(calculationFromDate, 10));
-    const calcToDateFull = createValidDate(parseInt(calculationToDate, 10));
+    const calcFromDateFull = createValidDate(calculationFromDate);
+    const calcToDateFull = createValidDate(calculationToDate);
 
-
-    const remainderDatesStr = Array.isArray(remainderDates) ? remainderDates.join(',') : (remainderDates || '');
-    const billDeliveryChannelsStr = Array.isArray(billDeliveryChannels) ? billDeliveryChannels.join(',') : (billDeliveryChannels || '');
-
-    const created_by = req.user_details.id;
-
+    const remainderDatesStr = Array.isArray(remainderDates) ? remainderDates.join(',') : '';
+    const billDeliveryChannelsStr = Array.isArray(billDeliveryChannels) ? billDeliveryChannels.join(',') : '';
 
     const checkHostelSql = "SELECT id FROM hosteldetails WHERE id = ? AND isActive = 1";
+
     connection.query(checkHostelSql, [hostel_id], (err, hostelResults) => {
         if (err) {
             console.error(err);
-            return res.status(500).json({ statusCode: 500, message: "Database error while verifying hostel." });
+            return res.status(201).json({ statusCode: 201, message: "Database error while verifying hostel." });
         }
 
         if (hostelResults.length === 0) {
-            return res.status(404).json({
-                statusCode: 404,
-                message: "Hostel not found or inactive"
-            });
+            return res.status(201).json({ statusCode: 201, message: "Hostel not found or inactive" });
         }
 
-        if (recure_id) {
-            const updateSql = `
-        UPDATE RecurringBilling
-        SET
-          recurringName = ?,
-          billFrequency = ?,
-          calculationFromDate = ?,
-          calculationToDate = ?,
-          billingDateOfMonth = ?,
-          dueDateOfMonth = ?,
-          isAutoSend = ?,
-          remainderDates = ?,
-          billDeliveryChannels = ?,
-           status = ?,
-          updated_at = NOW()
-        WHERE recure_id = ?
-      `;
-
-            const updateValues = [
-                recurringName,
-                billFrequency,
-                calculationFromDate,
-                calculationToDate,
-                billingDateOfMonth,
-                dueDateOfMonth,
-                parseInt(isAutoSend) || 0,
-                remainderDatesStr,
-                billDeliveryChannelsStr,
-                1,
-                recure_id
-            ];
-
-            connection.query(updateSql, updateValues, (err) => {
-                if (err) {
-                    console.error(err);
-                    return res.status(500).json({ statusCode: 500, message: "Unable to update recurring billing." });
-                }
-
-                return res.status(200).json({
-                    statusCode: 200,
-                    message: "Recurring Bill Setup Updated Successfully!"
-                });
-            });
-
-        } else {
-            // Insert new record after checking existence
-            const checkExistsSql = "SELECT * FROM RecurringBilling WHERE hostel_id = ?";
-            connection.query(checkExistsSql, [hostel_id], (err, existingRecords) => {
-                if (err) {
-                    console.error(err);
-                    return res.status(500).json({ statusCode: 500, message: "Database error while checking existing billing." });
-                }
-
-                if (existingRecords.length > 0) {
-                    return res.status(409).json({
-                        statusCode: 409,
-                        message: "Recurring billing already setup for this hostel"
-                    });
-                }
-
-                const insertSql = `
-          INSERT INTO RecurringBilling (
-            hostel_id, recurringName, billFrequency, calculationFromDate, calculationToDate,
-            billingDateOfMonth, dueDateOfMonth, isAutoSend, remainderDates, billDeliveryChannels,status, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        const invoiceUpdate = `
+            UPDATE hosteldetails
+            SET recure = ?, inv_startdate = ?, inv_enddate = ?, due_date = ?
+            WHERE id = ?
         `;
 
-                const insertValues = [
-                    hostel_id,
+        const invoiceData = [1, calcFromDateFull, calcToDateFull, dueDateOfMonth, hostel_id];
+
+        connection.query(invoiceUpdate, invoiceData, (err) => {
+            if (err) {
+                console.error(err);
+                return res.status(201).json({ statusCode: 201, message: "Unable to update invoice settings." });
+            }
+
+            if (recure_id) {
+                const updateSql = `
+                    UPDATE RecurringBilling
+                    SET
+                        recurringName = ?, billFrequency = ?, calculationFromDate = ?, calculationToDate = ?,
+                        billingDateOfMonth = ?, dueDateOfMonth = ?, isAutoSend = ?, remainderDates = ?,
+                        billDeliveryChannels = ?, status = ?, updated_at = NOW()
+                    WHERE recure_id = ?
+                `;
+
+                const updateValues = [
                     recurringName,
                     billFrequency,
                     calculationFromDate,
                     calculationToDate,
                     billingDateOfMonth,
                     dueDateOfMonth,
-                    parseInt(isAutoSend) || 0,
+                    Number(isAutoSend) || 0,
                     remainderDatesStr,
                     billDeliveryChannelsStr,
-                    1
+                    1,
+                    recure_id
                 ];
 
-                connection.query(insertSql, insertValues, (err) => {
+                connection.query(updateSql, updateValues, (err) => {
                     if (err) {
                         console.error(err);
-                        return res.status(500).json({ statusCode: 500, message: "Unable to add recurring billing." });
+                        return res.status(201).json({ statusCode: 201, message: "Unable to update recurring billing." });
                     }
 
                     return res.status(200).json({
                         statusCode: 200,
-                        message: "Recurring Bill Setup Added Successfully!"
+                        message: "Recurring Bill Setup Updated Successfully!"
                     });
                 });
-            });
-        }
+
+            } else {
+                const checkExistsSql = "SELECT * FROM RecurringBilling WHERE hostel_id = ?";
+                connection.query(checkExistsSql, [hostel_id], (err, existingRecords) => {
+                    if (err) {
+                        console.error(err);
+                        return res.status(201).json({ statusCode: 201, message: "Database error while checking existing billing." });
+                    }
+
+                    if (existingRecords.length > 0) {
+                        return res.status(201).json({
+                            statusCode: 201,
+                            message: "Recurring billing already setup for this hostel"
+                        });
+                    }
+
+                    const insertSql = `
+                        INSERT INTO RecurringBilling (
+                            hostel_id, recurringName, billFrequency, calculationFromDate, calculationToDate,
+                            billingDateOfMonth, dueDateOfMonth, isAutoSend, remainderDates, billDeliveryChannels,
+                            status, created_at, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+                    `;
+
+                    const insertValues = [
+                        hostel_id,
+                        recurringName,
+                        billFrequency,
+                        calculationFromDate,
+                        calculationToDate,
+                        billingDateOfMonth,
+                        dueDateOfMonth,
+                        Number(isAutoSend) || 0,
+                        remainderDatesStr,
+                        billDeliveryChannelsStr,
+                        1
+                    ];
+
+                    connection.query(insertSql, insertValues, (err) => {
+                        if (err) {
+                            console.error(err);
+                            return res.status(201).json({ statusCode: 201, message: "Unable to add recurring billing." });
+                        }
+
+                        return res.status(200).json({
+                            statusCode: 200,
+                            message: "Recurring Bill Setup Added Successfully!"
+                        });
+                    });
+                });
+            }
+        });
     });
 }
+
 
 
 

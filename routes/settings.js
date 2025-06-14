@@ -84,16 +84,16 @@ async function addOrEditInvoiceSettings(req, res) {
     if (signatureFile) {
       const fileName = `${hostelId}_${timestamp}_${signatureFile.originalname}`;
 
-      // const signatureUrl = await uploadImage.uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, signatureFile);
+      const signatureUrl = await uploadImage.uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, signatureFile);
 
       await connection.promise().query(
         "INSERT INTO HostelPaymentFiles (invoice_id, file_url, file_type) VALUES (?, ?, ?)",
-        [hostelId, fileName, "signature"]
+        [hostelId, fileName, signatureUrl]
       );
     }
 
-    return res.json({
-      success: true,
+    return res.status(200).json({
+      successCode: 200,
       message: "Invoice settings and bank info saved successfully."
     });
   } catch (error) {
