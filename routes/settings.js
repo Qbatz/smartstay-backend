@@ -79,16 +79,15 @@ async function addOrEditInvoiceSettings(req, res) {
         [hostelId, prefix, suffix, tax, notes, 0, paymentMethodStr, privacyPolicy, bank_id]
       );
     }
-
     // Upload and record signature file
     if (signatureFile) {
       const fileName = `${hostelId}_${timestamp}_${signatureFile.originalname}`;
 
       const signatureUrl = await uploadImage.uploadProfilePictureToS3Bucket(bucketName, folderName, fileName, signatureFile);
-
+      
       await connection.promise().query(
         "INSERT INTO HostelPaymentFiles (invoice_id, file_url, file_type) VALUES (?, ?, ?)",
-        [hostelId, fileName, signatureUrl]
+        [hostelId, signatureUrl, "signature"]
       );
     }
 
@@ -461,10 +460,14 @@ const fetchBankDetails = async (bankingId) => {
 };
 
 const fetchSignatureFile = async (hostelId) => {
+  var sql = `SELECT file_url FROM HostelPaymentFiles WHERE invoice_id = ? AND file_type = 'signature' ORDER BY id DESC LIMIT 1`
+
   const [rows] = await connection.promise().query(
-    "SELECT file_url FROM HostelPaymentFiles WHERE invoice_id = ? AND file_type = 'signature' ORDER BY id DESC LIMIT 1",
+    sql,
     [hostelId]
   );
+
+
   return rows[0]?.file_url || null;
 };
 

@@ -3006,7 +3006,8 @@ function addRecurringBills(req, res) {
         dueDateOfMonth,
         isAutoSend,
         remainderDates,
-        billDeliveryChannels
+        billDeliveryChannels,
+        isActive
     } = req.body;
 
     const role_permissions = req.role_permissions;
@@ -3104,7 +3105,7 @@ function addRecurringBills(req, res) {
                     Number(isAutoSend) || 0,
                     remainderDatesStr,
                     billDeliveryChannelsStr,
-                    1,
+                    isActive,
                     recure_id
                 ];
 
@@ -3154,7 +3155,7 @@ function addRecurringBills(req, res) {
                         Number(isAutoSend) || 0,
                         remainderDatesStr,
                         billDeliveryChannelsStr,
-                        1
+                        isActive
                     ];
 
                     connection.query(insertSql, insertValues, (err) => {
