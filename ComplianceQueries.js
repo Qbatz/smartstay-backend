@@ -180,7 +180,14 @@ function GetComplianceList(connection, response, request) {
     if (is_admin == 1 || (role_permissions[13] && role_permissions[13].per_view == 1)) {
 
         // const query1 = `SELECT comp.*,ct.complaint_name,hf.floor_name AS floor_name,hr.Room_Id AS room_name FROM hosteldetails hstlDetails inner join compliance comp on comp.Hostel_id=hstlDetails.id JOIN complaint_type AS ct ON ct.id=comp.Complainttype JOIN Hostel_Floor AS hf ON hf.floor_id=comp.Floor_id AND hf.hostel_id=comp.Hostel_id JOIN hostelrooms AS hr ON hr.id=comp.Room WHERE hstlDetails.created_By IN (${show_ids}) ORDER BY comp.ID DESC`;
-        var sql1 = "SELECT comp.*,hostel.profile,ct.complaint_name,hf.floor_name AS floor_name,hr.Room_Id AS room_name,cr.first_name AS assigner_name,(SELECT COUNT(*) FROM complaice_comments al WHERE al.com_id = comp.ID) AS comment_count FROM hosteldetails hstlDetails inner join compliance comp on comp.Hostel_id=hstlDetails.id JOIN complaint_type AS ct ON ct.id=comp.Complainttype LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=comp.Floor_id AND hf.hostel_id=comp.Hostel_id JOIN hostel ON hostel.User_Id=comp.User_id LEFT JOIN hostelrooms AS hr ON hr.id=comp.Room LEFT JOIN createaccount AS cr ON cr.id=comp.Assign WHERE hstlDetails.ID =? AND comp.isActive=1 ORDER BY comp.ID DESC;"
+        var sql1 = `SELECT comp.*,hostel.profile,ct.complaint_name,hf.floor_name AS floor_name,hr.Room_Id AS 
+room_name,cr.first_name AS assigner_name,(SELECT COUNT(*) FROM complaice_comments al 
+WHERE al.com_id = comp.ID) AS comment_count, bed.bed_no as bedName, bed.id as bedID FROM hosteldetails hstlDetails inner join 
+compliance comp on comp.Hostel_id=hstlDetails.id JOIN complaint_type AS ct ON ct.id=comp.Complainttype 
+LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=comp.Floor_id AND hf.hostel_id=comp.Hostel_id JOIN hostel
+ ON hostel.User_Id=comp.User_id LEFT JOIN hostelrooms AS hr ON hr.id=comp.Room LEFT JOIN createaccount 
+AS cr ON cr.id=comp.Assign Left Join bed_details as bed on bed.hos_detail_id = hr.id and comp.Bed = bed.id 
+WHERE hstlDetails.ID =? AND comp.isActive=1 ORDER BY comp.ID DESC;`
         connection.query(sql1, [hostel_id], function (error, hostelData) {
             if (error) {
                 console.error(error);
@@ -217,8 +224,7 @@ async function add_complainttypes(req, res) {
         }
 
         try {
-            await planMiddleware.check_plan(hostel_id);
-            
+            // await planMiddleware.check_plan(hostel_id);
             var sql1 = "SELECT * FROM complaint_type WHERE complaint_name COLLATE latin1_general_ci = ? AND status=1 AND hostel_id ='" + hostel_id + "'";
             connection.query(sql1, [complaint_name], (err, sel_data) => {
                 if (err) {
