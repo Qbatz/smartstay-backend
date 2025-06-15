@@ -35,32 +35,51 @@ const downloadImage = (imageUrl, localPath) => {
 };
 
 const generateManualPDF = async (data, outputPath, filename, action) => {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        throw new Error('Invalid data provided to generate PDF.');
+    }
+
+    const invoiceDetails = data[0];
+    const inv_id = invoiceDetails.id;
+
     try {
-        if (action == 'advance') {
-            await paymentInvoiceSecurity.generateInvoice(data, data[0], outputPath);
-        } else {
-            await paymentInvoice.generateInvoice(data, data[0], outputPath);
+        // === Generate PDF ===
+        const generateFn = action === 'advance'
+            ? paymentInvoiceSecurity.generateInvoice
+            : paymentInvoice.generateInvoice;
+
+        await generateFn(data, invoiceDetails, outputPath);
+
+        // === Wait briefly to ensure file is written ===
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // === Validate File Exists ===
+        if (!fs.existsSync(outputPath)) {
+            throw new Error(`Generated PDF not found at path: ${outputPath}`);
         }
 
         const stats = fs.statSync(outputPath);
-        console.log(`PDF size before upload: ${stats.size} bytes`);
+        console.log(` PDF generated: ${outputPath} (${stats.size} bytes)`);
 
-        await new Promise(r => setTimeout(r, 1000));
-
-        const inv_id = data[0].id;
+        // === Upload to S3 ===
         const s3Url = await uploadToS3(outputPath, filename, inv_id);
 
-        if (s3Url) {
-            fs.unlinkSync(outputPath); // Uncomment if you want to delete after upload
-            return s3Url;
-        } else {
-            throw new Error('S3 upload failed.');
+        if (!s3Url) {
+            throw new Error(' S3 upload failed.');
         }
-    } catch (error) {
-        console.error('Error generating PDF:', error);
-        throw error;
+
+        // === Delete local file after upload (optional) ===
+        fs.unlinkSync(outputPath);
+        console.log(` Local PDF file deleted: ${outputPath}`);
+
+        return s3Url;
+
+    } catch (err) {
+        console.error(' Error in generateManualPDF:', err.message);
+        throw err;
     }
 };
+
 
 
 const uploadToS3 = async (filePath, filename, inv_id) => {
