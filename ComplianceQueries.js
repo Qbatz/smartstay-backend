@@ -224,6 +224,7 @@ async function add_complainttypes(req, res) {
         }
 
         try {
+            //commented on 14 june 2025
             // await planMiddleware.check_plan(hostel_id);
             var sql1 = "SELECT * FROM complaint_type WHERE complaint_name COLLATE latin1_general_ci = ? AND status=1 AND hostel_id ='" + hostel_id + "'";
             connection.query(sql1, [complaint_name], (err, sel_data) => {
