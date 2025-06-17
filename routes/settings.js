@@ -495,7 +495,7 @@ const getRecurringBills = async (req, res,hostel_id) => {
         created_at,
         updated_at
       FROM RecurringBilling
-      WHERE hostel_id = ? AND status = 1
+      WHERE hostel_id = ?
       LIMIT 1`,
       [hostel_id]
     );
