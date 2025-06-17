@@ -39,7 +39,7 @@ async function addOrEditInvoiceSettings(req, res) {
     const is_admin = req.is_admin;
 
     if (!hostelId) {
-      return res.status(201).json({ success: false, message: "hostelId is required" });
+      return res.status(201).json({ statusCode: 201, message: "hostelId is required" });
     }
 
     // Parse paymentMethods safely
@@ -49,7 +49,7 @@ async function addOrEditInvoiceSettings(req, res) {
         ? paymentMethods
         : JSON.parse(paymentMethods || "[]");
     } catch (parseErr) {
-      return res.status(201).json({ success: false, message: "Invalid paymentMethods format" });
+      return res.status(201).json({ statusCode: 201, message: "Invalid paymentMethods format" });
     }
     const paymentMethodStr = parsedPaymentMethods.join(",");
 
@@ -98,7 +98,7 @@ async function addOrEditInvoiceSettings(req, res) {
   } catch (error) {
     console.error("Unexpected Error:", error);
     return res.status(201).json({
-      success: false,
+      statusCode: 201,
       message: "Something went wrong while processing invoice settings."
     });
   }
@@ -107,13 +107,13 @@ async function addOrEditInvoiceSettings(req, res) {
 const getInvoiceSettings = async (req, res,hostelId) => {
   try {
     if (!hostelId) {
-      return res.status(201).json({ success: false, message: "hostelId is required" });
+      return res.status(201).json({ statusCode: 201, message: "hostelId is required" });
     }
 
     // Fetch invoice settings
     const invoice = await fetchInvoiceSettings(hostelId);
     if (!invoice) {
-      return res.status(201).json({ success: false, message: "No invoice settings found for this hostel" });
+      return res.status(201).json({ statusCode: 201, message: "No invoice settings found for this hostel" });
     }
 
     // Process payment methods
@@ -140,7 +140,7 @@ const getInvoiceSettings = async (req, res,hostelId) => {
   } catch (err) {
     console.error("Error in getInvoiceSettings:", err);
     return res.status(201).json({
-      success: false,
+      statusCode: 201,
       message: "Internal server error while fetching invoice settings",
     });
   }
@@ -491,7 +491,7 @@ const getRecurringBills = async (req, res,hostel_id) => {
         isAutoSend,
         remainderDates,
         billDeliveryChannels,
-        status,
+        status as isActive,
         created_at,
         updated_at
       FROM RecurringBilling

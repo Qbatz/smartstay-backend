@@ -24,25 +24,27 @@ async function verifyAndStoreKyc(req, res, customer_id) {
       return res.status(201).json({ success: false, message: 'Invalid phone number format' });
     }
 
-   const email = (hostel.Email || '').trim().toLowerCase();
+    const email = (hostel?.Email || '').trim().toLowerCase();
 
     // if (!isValidEmail) {
-      // return res.status(400).json({ success: false, message: 'Invalid email format' });
+    // return res.status(400).json({ success: false, message: 'Invalid email format' });
     // }
-const cleanedPhone = cleanPhoneNumber(hostel.Phone.toString());
+    const cleanedPhone = cleanPhoneNumber(hostel.Phone.toString());
     const payload = {
-      customer_identifier: cleanedPhone,
+      customer_identifier: "9486030122",
       notify_customer: true,
       customer_notification_mode: 'SMS',
       customer_name: hostel.Name,
       template_name: process.env.KYC_TEMPLATE_NAME,
-      identifier: email.toString,
+      identifier: email || '',
       type: 'geo_location',
       generate_access_token: true
     };
 
     try {
       const response = await kycService.verifyKyc(payload);
+
+      console.log("response_data" + response.toString)
 
       const {
         id,
@@ -102,7 +104,7 @@ const cleanedPhone = cleanPhoneNumber(hostel.Phone.toString());
           return res.status(201).json({ success: false, error: 'Failed to store KYC data. Try again later.' });
         }
 
-        res.status(200).json({statusCode:200, success: true, message: 'KYC request has been sent via SMS. Kindly complete the verification.' });
+        res.status(200).json({ statusCode: 200, success: true, message: 'KYC request has been sent via SMS. Kindly complete the verification.' });
       });
 
     } catch (apiErr) {
@@ -113,12 +115,12 @@ const cleanedPhone = cleanPhoneNumber(hostel.Phone.toString());
 }
 
 function cleanPhoneNumber(rawPhone) {
- 
+
   rawPhone = rawPhone.replace('+', '');
 
-  
+
   if (/^91\d{10}$/.test(rawPhone)) {
-    return rawPhone.slice(2); 
+    return rawPhone.slice(2);
   }
 
   if (/^\d{10}$/.test(rawPhone)) {
@@ -130,12 +132,12 @@ function cleanPhoneNumber(rawPhone) {
 async function fetchAndUpdateKycStatus(req, res, customer_id) {
   try {
     const [rows] = await db.promise().query(
-      'SELECT kyc_id FROM customer_kyc_verification WHERE customer_id = ?', 
+      'SELECT kyc_id FROM customer_kyc_verification WHERE customer_id = ?',
       [customer_id]
     );
 
     if (rows.length === 0) {
-      return res.status(200).json({statusCode:200, message: 'KYC ID not found for this customer', status: "KYC Pending" });
+      return res.status(200).json({ statusCode: 200, message: 'KYC ID not found for this customer', status: "KYC Pending" });
     }
 
     const kyc_id = rows[0].kyc_id;
@@ -145,9 +147,9 @@ async function fetchAndUpdateKycStatus(req, res, customer_id) {
     console.log("kyc_response:", JSON.stringify(kycResponse, null, 2));
 
     const result = await insertOrUpdateKycData(customer_id, kycResponse);
-    
+
     if (result.success) {
-      return res.status(200).json({statusCode:200, message: 'KYC status fetched and updated successfully', status: kycResponse.status });
+      return res.status(200).json({ statusCode: 200, message: 'KYC status fetched and updated successfully', status: kycResponse.status });
     } else {
       return res.status(201).json({ message: 'KYC status fetched, but DB update failed', status: kycResponse.status });
     }
@@ -163,7 +165,7 @@ async function fetchAndUpdateCustomerKycStatus(req, res, customer_id) {
     console.log("[KYC] Customer ID:", customer_id);
 
     const [rows] = await db.promise().query(
-      'SELECT kyc_id, status, image, updated_at FROM customer_kyc_verification WHERE customer_id = ?', 
+      'SELECT kyc_id, status, image, updated_at,current_address,officialName,id_number  FROM customer_kyc_verification WHERE customer_id = ?',
       [customer_id]
     );
 
@@ -171,38 +173,48 @@ async function fetchAndUpdateCustomerKycStatus(req, res, customer_id) {
       return res.status(200).json({ message: 'KYC ID not found for this customer', status: "KYC Pending" });
     }
 
-    const { kyc_id, status, image,updated_at } = rows[0];
+    const { kyc_id, status, image, updated_at, officialName, current_address, id_number } = rows[0];
     console.log("[KYC] Found - KYC ID:", kyc_id, "| Status:", status);
 
     if (status === 'approved') {
-      return res.status(200).json({statusCode:200, message: 'KYC Completed', pic: image, status,updated_at });
+      return res.status(200).json({ statusCode: 200, message: 'KYC Completed', pic: image, status, updated_at, name: officialName, address: current_address, aadhaarNumber: id_number });
     }
 
     if (status === 'requested') {
-      const kycResponse = await kycService.fetchKycApiResponse(kyc_id); 
+      const kycResponse = await kycService.fetchKycApiResponse(kyc_id);
       console.log("[KYC] API Response:", JSON.stringify(kycResponse, null, 2));
 
       if (kycResponse.status === 'approved') {
         const result = await insertOrUpdateKycDataApproved(customer_id, kycResponse);
-        
+        const nameInDoc = kycResponse.actions?.[0]?.details?.aadhaar?.name ||
+          kycResponse.actions?.[0]?.details?.pan?.name ||
+          kycResponse.customer_name || null;
+
+        const address = kycResponse.actions?.[0]?.details?.aadhaar?.current_address_details?.address || null;
+        const image = kycResponse.actions?.[0]?.details?.aadhaar?.image || null;
+        const aadhaarNumber = kycResponse.actions?.[0]?.details?.aadhaar?.id_number || null;
+
         return res.status(200).json({
-          statusCode:200,
+          statusCode: 200,
           message: 'KYC Completed',
-          name: kycResponse.customer_name || null,
-          pic: kycResponse.actions?.[0]?.details?.aadhaar?.image || null,
+          name: nameInDoc,
+          aadhaarNumber,
+          pic: image,
           status: kycResponse.status,
-          updated_at: kycResponse.updated_at || null
+          currentAddress: address,
+          updated_at: kycResponse.updated_at || null,
+
         });
       } else {
         return res.status(200).json({
-          statusCode:200,
+          statusCode: 200,
           message: 'KYC Pending',
           status: kycResponse.status,
           updated_at: kycResponse.updated_at || null
         });
       }
     }
-    return res.status(200).json({statusCode:200, message: 'KYC Failed Retry', status,updated_at });
+    return res.status(200).json({ statusCode: 200, message: 'KYC Failed Retry', status, updated_at });
 
   } catch (error) {
     console.error(`[KYC MAIN SERVICE ERROR] Customer ID ${customer_id}:`, error);
@@ -306,23 +318,31 @@ async function insertOrUpdateKycDataApproved(customer_id, kycResponse) {
     let gender = null;
     let id_number = null;
     let document_type = null;
+    let current_address = null;
+    let officialName = null;
 
-    
     if (status === 'approved' && Array.isArray(kycResponse.actions)) {
       const details = kycResponse.actions[0]?.details;
-      
+      officialName =
+        details?.aadhaar?.name ||
+        details?.pan?.name ||
+        kycResponse.customer_name ||
+        null;
+
       if (details?.aadhaar) {
         const aadhaar = details.aadhaar;
         image = aadhaar.image || null;
         gender = aadhaar.gender || null;
         id_number = aadhaar.id_number || null;
         document_type = aadhaar.document_type || null;
+        current_address = aadhaar.current_address_details?.address || null;
       } else if (details?.pan) {
         const pan = details.pan;
-        image = null; 
+        image = null;
         gender = pan.gender || null;
         id_number = pan.id_number || null;
         document_type = pan.document_type || null;
+        current_address = null;
       }
     }
 
@@ -330,8 +350,9 @@ async function insertOrUpdateKycDataApproved(customer_id, kycResponse) {
       INSERT INTO customer_kyc_verification (
         customer_id, kyc_id, created_at, status, reference_id,
         transaction_id, expire_in_days, reminder_registered,
-        auto_approved, template_id, image, gender, id_number, document_type
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        auto_approved, template_id, image, gender,
+        id_number, document_type, current_address, officialName
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         kyc_id = VALUES(kyc_id),
         created_at = VALUES(created_at),
@@ -346,13 +367,15 @@ async function insertOrUpdateKycDataApproved(customer_id, kycResponse) {
         gender = VALUES(gender),
         id_number = VALUES(id_number),
         document_type = VALUES(document_type),
+        current_address = VALUES(current_address),
+        officialName = VALUES(officialName),
         updated_at = NOW()
     `;
 
     const values = [
       customer_id,
       id,
-      created_at,
+      created_at || new Date(),
       status,
       reference_id,
       transaction_id,
@@ -363,21 +386,25 @@ async function insertOrUpdateKycDataApproved(customer_id, kycResponse) {
       image,
       gender,
       id_number,
-      document_type
+      document_type,
+      current_address,
+      officialName
     ];
 
     await db.promise().query(query, values);
+    console.log(`[KYC DB Saved] CID: ${customer_id}, ID: ${id_number}, Name: ${officialName}`);
     return { success: true };
 
   } catch (err) {
     console.error("[insertOrUpdateKycData ERROR]", err);
-    return { success: false };
+    return { success: false, error: err.message };
   }
 }
 
 
 
 
-module.exports = { verifyAndStoreKyc,fetchAndUpdateKycStatus,fetchAndUpdateCustomerKycStatus };
+
+module.exports = { verifyAndStoreKyc, fetchAndUpdateKycStatus, fetchAndUpdateCustomerKycStatus };
 
 
