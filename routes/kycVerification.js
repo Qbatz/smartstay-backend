@@ -31,7 +31,7 @@ async function verifyAndStoreKyc(req, res, customer_id) {
     // }
     const cleanedPhone = cleanPhoneNumber(hostel.Phone.toString());
     const payload = {
-      customer_identifier: "9486030122",
+      customer_identifier: cleanedPhone,
       notify_customer: true,
       customer_notification_mode: 'SMS',
       customer_name: hostel.Name,

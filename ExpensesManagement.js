@@ -665,7 +665,7 @@ function GetHostelExpenses(request, response) {
            expen.purchase_amount, expen.status, expen.description, 
            expen.created_by, expen.createdate, expen.payment_mode,
            expen.bank_id, category.category_Name, ven.Vendor_Name, 
-           asname.asset_name,ban.acc_name,ban.acc_num , CONCAT(ban.benificiary_name, '-', ban.type) AS paymentModeName,
+           asname.asset_name,ban.acc_name,ban.acc_num , CONCAT(ban.benificiary_name, '-', ban.type) AS paymentModeName
                     FROM expenses expen
                     LEFT JOIN Expense_Category_Name category ON category.id = expen.category_id
                     LEFT JOIN Vendor ven ON ven.id = expen.vendor_id
