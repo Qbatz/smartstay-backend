@@ -3077,7 +3077,7 @@ function addRecurringBills(req, res) {
             WHERE id = ?
         `;
 
-        const invoiceData = [1, calcFromDateFull, calcToDateFull, dueDateOfMonth, hostel_id];
+        const invoiceData = [1, calculationFromDate, calculationToDate, dueDateOfMonth, hostel_id];
 
         connection.query(invoiceUpdate, invoiceData, (err) => {
             if (err) {
