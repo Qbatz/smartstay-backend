@@ -172,6 +172,7 @@ function generateUserId(firstName, user_id) {
 function assign_booking(req, res) {
 
     var { id, floor, room, hostel_id, bed, join_date, ad_amount, rent_amount } = req.body;
+    var { whatsappId } = req.body
 
     var created_by = req.user_details.id;
 
@@ -268,11 +269,13 @@ function assign_booking(req, res) {
                                     if (err) {
                                         return res.status(201).json({ statusCode: 201, message: "Unable to Remove Booking Details", reason: err.message });
                                     } else {
-                                        sendTemplateMessage(
-                                            mobilenumber,
-                                            'welcome_msg_customer',
-                                            [f_name, hostel_name] 
-                                        );
+                                        if (whatsappId) {
+                                            sendTemplateMessage(
+                                                mobilenumber,
+                                                'welcome_msg_customer',
+                                                [f_name, hostel_name]
+                                            );
+                                        }
                                         return res.status(200).json({ statusCode: 200, message: "Checkin Assigned Successfully" });
                                     }
                                 })
