@@ -1480,7 +1480,7 @@ function generatePDFFor(breakUpTable, hosdata, hostel, data, response, connectio
     const invoiceDateWidth = doc.widthOfString('Invoice Date');
 
     const rightMargin = doc.page.width - invoiceNoWidth - 50;
-    const marginLeft = 30;  
+    const marginLeft = 30;
     const marginRight = doc.page.width / 2;
     const logoWidth = 100;
     const logoHeight = 100;
@@ -2910,7 +2910,7 @@ function add_recuring_bill(req, res) {
 
         var created_by = req.user_details.id;
 
-        var sql1 = "SELECT * FROM hosteldetails AS hstl JOIN hostel AS hos ON hos.Hostel_Id=hstl.id WHERE hos.id=? AND hos.isActive=1 AND hstl.isActive=1;";
+        var sql1 = "SELECT hstl.*, IFNULL(rb.status, 0) AS recurring_isActive FROM hosteldetails AS hstl JOIN hostel AS hos ON hos.Hostel_Id = hstl.id LEFT JOIN RecurringBilling AS rb ON rb.hostel_id = hstl.id WHERE hos.id =? AND hos.isActive = 1 AND hstl.isActive = 1;";
         connection.query(sql1, [user_id], function (err, user_details) {
             if (err) {
                 console.log(err);
@@ -2918,6 +2918,11 @@ function add_recuring_bill(req, res) {
             } else if (user_details.length != 0) {
 
                 var user_data = user_details[0];
+
+                if (user_data.recurring_isActive==0) {
+                    return res.status(201).json({ statusCode: 201, message: "Please enable the Recurring in the" })
+                }
+
 
                 var total_am_amount = amenity && amenity.length > 0 ? amenity.reduce((sum, user) => sum + user.amount, 0) : 0;
 
@@ -3038,7 +3043,7 @@ function addRecurringBills(req, res) {
         !isValidDayNumber(dueDateOfMonth)
     ) {
         return res.status(201).json({
-            statusCode:201,
+            statusCode: 201,
             message: "Invalid day number(s). Days must be between 1 and 31."
         });
     }
