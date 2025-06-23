@@ -117,8 +117,8 @@ exports.add_general_user = async (req, res) => {
                                 }
                             }
 
-                            var sql2 = "INSERT INTO createaccount (first_name,last_name,mobileNo,email_Id,password,user_type,Address,profile,user_status,createdby,area,landmark,pin_code,city,state) VALUES (?,?,?,?,?,?,?,?,1,?,?,?,?,?,?)";
-                            connection.query(sql2, [f_name, l_name, mob_no, email_id, hash_password, 'agent', address, profile_url, created_by,area,landmark,pin_code,city,state], function (err, ins_res) {
+                            var sql2 = "INSERT INTO createaccount (first_name,last_name,mobileNo,email_Id,password,user_type,Address,profile,user_status,createdby,area,landmark,pin_code,city,state) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                            connection.query(sql2, [f_name, l_name, mob_no, email_id, hash_password, 'agent', address || '', profile_url,'1', created_by,area,landmark,pin_code,city,state], function (err, ins_res) {
                                 if (err) {
                                     return res.status(201).json({ statusCode: 201, message: "Unable to Add User Details" })
                                 } else {
