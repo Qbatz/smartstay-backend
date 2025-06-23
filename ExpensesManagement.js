@@ -578,7 +578,7 @@ function getAllfilter(createdBy, response, data, total_amount) {
     left join Expense_Category_Name category on category.id = expen.category_id
     left join Vendor ven on ven.id = expen.vendor_id
     left join assets ast on ast.id = expen.asset_id
-    LEFT JOIN bankings ban ON ban.id=expen.bank_id
+    LEFT JOIN bankings ban ON ban.id=expen.payment_mode
     left join asset_names asname on asname.id=expen.asset_id
 left join hosteldetails hos on hos.id = expen.hostel_id
         where expen.status = true and expen.created_by = ${createdBy}`
@@ -679,7 +679,7 @@ function GetHostelExpenses(request, response) {
                     LEFT JOIN assets ast ON ast.id = expen.asset_id
                     LEFT JOIN asset_names asname ON asname.id=expen.asset_id
                     LEFT JOIN hosteldetails hos ON hos.id = expen.hostel_id
-                    LEFT JOIN bankings ban ON ban.id=expen.bank_id
+                    LEFT JOIN bankings ban ON ban.id=expen.payment_mode
                     WHERE expen.status = true AND expen.hostel_id=${hostel_id}`;
 
         if (asset_id) {
