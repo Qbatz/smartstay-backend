@@ -2910,7 +2910,8 @@ function add_recuring_bill(req, res) {
 
         var created_by = req.user_details.id;
 
-        var sql1 = "SELECT hstl.*, IFNULL(rb.status, 0) AS recurring_isActive FROM hosteldetails AS hstl JOIN hostel AS hos ON hos.Hostel_Id = hstl.id LEFT JOIN RecurringBilling AS rb ON rb.hostel_id = hstl.id WHERE hos.id =? AND hos.isActive = 1 AND hstl.isActive = 1;";
+        var sql1 = "SELECT * FROM hosteldetails AS hstl JOIN hostel AS hos ON hos.Hostel_Id = hstl.id LEFT JOIN RecurringBilling AS rb ON rb.hostel_id = hstl.id WHERE hos.id =? AND hos.isActive = 1 AND hstl.isActive = 1;";
+       
         connection.query(sql1, [user_id], function (err, user_details) {
             if (err) {
                 console.log(err);
@@ -2919,7 +2920,7 @@ function add_recuring_bill(req, res) {
 
                 var user_data = user_details[0];
 
-                if (user_data.recurring_isActive==0) {
+                if (user_data.status==0) {
                     return res.status(201).json({ statusCode: 201, message: "Please enable the Recurring in the" })
                 }
 
