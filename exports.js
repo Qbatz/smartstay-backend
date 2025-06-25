@@ -1,6 +1,7 @@
 const connection = require('./config/connection')
 const fs = require('fs');
 const exports_file = require('./components/upload_image');
+const moment = require('moment')
 
 function export_customer(req, res) {
 
@@ -8,6 +9,13 @@ function export_customer(req, res) {
 
     var type = req.body.type;
     var hostel_id = req.body.hostel_id;
+
+    var category = req.body?.category ? req.body.category : null;
+    var max_amount = req.body?.max_amount ? Number(req.body.max_amount) : null;
+    var min_amount = req.body?.min_amount ? Number(req.body.min_amount) : null;
+    var start_date = req.body?.start_date ? moment(new Date(req.body.start_date)).format('YYYY-MM-DD') : null;
+    var end_date = req.body?.end_date ? moment(new Date(req.body.end_date)).format('YYYY-MM-DD') : null;
+    var payment_mode = req.body?.payment_mode ? req.body.payment_mode : null;
 
     if (!type || !hostel_id) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
@@ -31,8 +39,37 @@ function export_customer(req, res) {
 
     } else if (type == 'expenses') {
 
-        var sql1 = "SELECT ex.*,ca.category_Name,ass.asset_name,cas.first_name AS creator_name,cas.user_type FROM expenses AS ex JOIN Expense_Category_Name AS ca ON ex.category_id=ca.id JOIN createaccount AS cas ON ex.created_by=cas.id LEFT JOIN assets AS ass ON ass.id=asset_id  WHERE ex.hostel_id =? AND ex.status=1 ORDER BY ex.id DESC;"
-        var file_name = 'all_expenses';
+        sql1 = `SELECT ex.*, ca.category_Name, ass.asset_name, cas.first_name AS creator_name, cas.user_type 
+                FROM expenses AS ex 
+                JOIN Expense_Category_Name AS ca ON ex.category_id=ca.id 
+                JOIN createaccount AS cas ON ex.created_by=cas.id 
+                LEFT JOIN assets AS ass ON ass.id=ex.asset_id  
+                WHERE ex.hostel_id = ? AND ex.status = 1`;
+
+        if (category) {
+            sql1 += ` AND ex.category_id = ${connection.escape(category)}`;
+        }
+
+        if (payment_mode) {
+            sql1 += ` AND ex.payment_mode = ${connection.escape(payment_mode)}`;
+        }
+
+        if (min_amount !== null && max_amount !== null) {
+            sql1 += ` AND ex.purchase_amount BETWEEN ${min_amount} AND ${max_amount}`;
+        } else if (min_amount !== null) {
+            sql1 += ` AND ex.purchase_amount >= ${min_amount}`;
+        } else if (max_amount !== null) {
+            sql1 += ` AND ex.purchase_amount <= ${max_amount}`;
+        }
+
+        if (start_date && end_date) {
+            sql1 += ` AND ex.purchase_date BETWEEN '${start_date} 00:00:00' AND '${end_date} 23:59:59'`;
+        } else if (start_date) {
+            sql1 += ` AND ex.purchase_date BETWEEN '${start_date} 00:00:00' AND '${start_date} 23:59:59'`;
+        }
+
+        sql1 += ` ORDER BY ex.id DESC`;
+        file_name = 'all_expenses';
 
     } else if (type == 'customer_readings') {
 
@@ -67,7 +104,6 @@ function export_customer(req, res) {
         } else if (data.length != 0) {
 
             const filePath = `smartstay_${file_name}_${Date.now()}.xlsx`;
-
             exports_file.export_function(data, filePath)
                 .then((s3Url) => {
                     return res.status(200).json({ statusCode: 200, message: "File Exported Successfully", fileUrl: s3Url });
