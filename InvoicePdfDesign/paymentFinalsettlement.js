@@ -4,294 +4,221 @@ const path = require('path');
 const moment = require('moment');
 
 function generateReceipt(data, invoiceDetails, outputPath) {
-
-    const doc = new PDFDocument({ size: 'A4', margin: 0 });
+    const doc = new PDFDocument({ size: 'A4', margin: 20 });
     doc.pipe(fs.createWriteStream(outputPath));
 
+    const margin = doc.page.margins.left;
     const pageWidth = doc.page.width;
 
-    doc.rect(0, 0, pageWidth, 90).fill('#1E45E1');
+    // Border
+    doc.lineWidth(1).strokeColor('#E0E0E0')
+        .rect(margin, margin, pageWidth - margin * 2, doc.page.height - margin * 2).stroke();
 
+    // Header
+    doc.rect(margin, margin, pageWidth - margin * 2, 80).fill('#1E45E1');
+
+    // Images
     const logoPath = path.resolve(__dirname, '../Asset/Group@2x.png');
     const rectBluePath = path.resolve(__dirname, '../Asset/Rectangleblue.png');
     const locationIconPath = path.resolve(__dirname, '../Asset/location 03.png');
-    const cotactPath = path.resolve(__dirname, '../Asset/paidfull (2).png');
+    const paidFullPath = path.resolve(__dirname, '../Asset/paidfull (2).png');
 
-    doc.image(logoPath, 10, 30, { width: 35, height: 35 });
-    doc.image(rectBluePath, 35, 215, { width: 8, height: 8 });
-    doc.image(locationIconPath, 35, 232, { width: 10, height: 10 });
-    doc
-        .fillColor('white')
-        .fontSize(18)
-        .font('Helvetica-Bold')
-        .text('Smartstay', 50, 32)
-        .fontSize(10)
-        .font('Helvetica')
-        .text('Meet All Your Needs.', 50, 52);
+    doc.image(logoPath, margin + 16, margin + 10, { width: 25, height: 25 });
+    doc.image(rectBluePath, 35, 194, { width: 8, height: 8 });
+    doc.image(locationIconPath, 35, 215, { width: 10, height: 10 });
 
-    // === Hostel Details Right ===
-    doc
-        .fillColor('white')
-        .fontSize(12)
-        .font('Helvetica-Bold')
-        .text(invoiceDetails.hname, pageWidth - 250, 30, { width: 200, align: 'right' })
-        .font('Helvetica')
-        .fontSize(9)
-        .text(
-            [invoiceDetails.haddress, invoiceDetails.harea].filter(Boolean).join(', '),
-            pageWidth - 250,
-            48,
-            { width: 200, align: 'right' }
-        )
-        .text(
-            [invoiceDetails.hlandmark, invoiceDetails.hpincode].filter(Boolean).join(' - '),
-            pageWidth - 250,
-            60,
-            { width: 200, align: 'right' }
-        )
-        .text(
-            [invoiceDetails.hcity, invoiceDetails.hstate].filter(Boolean).join(' - '),
-            pageWidth - 250,
-            72,
-            { width: 200, align: 'right' }
-        );
-    // === Payment Invoice Title ===
-    doc
-        .fillColor('black')
-        .fontSize(14)
-        .font('Helvetica-Bold')
-        .text('Final Settlement Receipt', 0, 150, { align: 'center' });
+    // Left Header
+    doc.fillColor('white')
+        .fontSize(18).font('Helvetica-Bold').text('Smartstay', margin + 50, margin + 17)
+        .fontSize(10).font('Helvetica').text('Meet All Your Needs.', margin + 35, margin + 49);
 
-    // === Bill To & Invoice Info ===
-    const leftX = 50;
-    const rightX = pageWidth - 250;
-    const infoY = 180;
+    // Right Header
+    doc.font('Helvetica-Bold').fontSize(15).text(invoiceDetails.hname, pageWidth - margin - 150, margin + 10, { width: 200, align: 'left' })
+        .font('Helvetica').fontSize(9)
+        .text([invoiceDetails.haddress, invoiceDetails.harea, invoiceDetails.hcity].filter(Boolean).join(', '), pageWidth - margin - 150, margin + 28, { width: 200, align: 'left' })
+        .text([invoiceDetails.hstate, invoiceDetails.hpincode].filter(Boolean).join(' - '), pageWidth - margin - 150, margin + 40, { width: 200, align: 'left' });
+
+    // Title
+    doc.fillColor('black').fontSize(14).font('Helvetica-Bold').text('Final Settlement Receipt', 0, margin + 100, { align: 'center' });
+
+    // === Billing Info ===
+    const leftX = margin + 30;
+    const rightX = pageWidth - margin - 270;
+    const infoY = margin + 140;
     const lineGap = 18;
     const fontSize = 10;
     const lineHeight = fontSize + 6;
 
-
-    doc
-        .fontSize(10)
-        .fillColor('#1E45E1') // Blue color for label
-        .font('Helvetica-Bold')
-        .text('Bill To:', leftX, infoY)
+    doc.fontSize(fontSize).fillColor('#1E45E1').font('Helvetica-Oblique').text('Bill To:', leftX, infoY);
 
     doc.fillColor('black').font('Helvetica');
-
     let currentY = infoY + lineGap;
 
     if (invoiceDetails.uname) {
-        doc.text(invoiceDetails.uname, leftX, currentY, {
-            width: 250,
-            lineBreak: true
-        });
-        currentY += lineGap;
+        doc.text(invoiceDetails.uname, leftX, currentY, { width: 250 }); currentY += lineGap;
     }
-
     if (invoiceDetails.uphone) {
-        doc.text(invoiceDetails.uphone, leftX, currentY, {
-            width: 250,
-            lineBreak: true
-        });
-        currentY += lineGap;
+        doc.text(invoiceDetails.uphone, leftX, currentY, { width: 250 }); currentY += lineGap;
     }
-
-    const addressLine1 = [invoiceDetails.uaddress, invoiceDetails.uarea].filter(Boolean).join(', ');
-    if (addressLine1) {
-        const address1Height = doc.heightOfString(addressLine1, {
-            width: 250,
-            align: 'left'
-        });
-
-        doc.text(addressLine1, leftX, currentY, {
-            width: 250,
-            align: 'left'
-        });
-
-        currentY += address1Height + 2; // small vertical margin
+    const addr1 = [invoiceDetails.uaddress, invoiceDetails.uarea].filter(Boolean).join(', ');
+    if (addr1) {
+        const h1 = doc.heightOfString(addr1, { width: 250 });
+        doc.text(addr1, leftX, currentY, { width: 250 }); currentY += h1 + 2;
     }
-
-    const addressLine2 = [invoiceDetails.ulandmark, invoiceDetails.upincode].filter(Boolean).join(' - ');
-    if (addressLine2) {
-        const address2Height = doc.heightOfString(addressLine2, {
-            width: 250,
-            align: 'left'
-        });
-
-        doc.text(addressLine2, leftX, currentY, {
-            width: 450,
-            align: 'left'
-        });
-
-        currentY += address2Height + 2; // add small margin after
+    const addr2 = [invoiceDetails.ulandmark, invoiceDetails.ucity].filter(Boolean).join(' - ');
+    if (addr2) {
+        const h2 = doc.heightOfString(addr2, { width: 250 });
+        doc.text(addr2, leftX, currentY, { width: 250 }); currentY += h2 + 2;
     }
-
-    const addressLine3 = [invoiceDetails.ucity, invoiceDetails.ustate].filter(Boolean).join(' - ');
-    if (addressLine3) {
-        const address3Height = doc.heightOfString(addressLine3, {
-            width: 250,
-            align: 'left'
-        });
-
-        doc.text(addressLine3, leftX, currentY, {
-            width: 250,
-            align: 'left'
-        });
-
-        currentY += address3Height + 2;
+    const addr3 = [invoiceDetails.upincode, invoiceDetails.ustate].filter(Boolean).join(' - ');
+    if (addr3) {
+        const h3 = doc.heightOfString(addr3, { width: 250 });
+        doc.text(addr3, leftX, currentY, { width: 250 }); currentY += h3 + 2;
     }
 
     const formattedDate = moment(invoiceDetails.payment_date).format('DD-MM-YYYY');
 
-    doc
-        .font('Helvetica')
-        .fillColor('grey')
-        .text('Receipt No:', rightX + 90, infoY)
-        .fillColor('black')
+    doc.font('Helvetica').fillColor('grey')
+        .text('Receipt No:', rightX + 90, infoY).fillColor('black')
         .text(invoiceDetails.reference_id, rightX + 160, infoY)
 
-        .fillColor('grey')
-        .text('Payment Date:', rightX + 90, infoY + lineHeight)
-        .fillColor('black')
+        .fillColor('grey').text('Date:', rightX + 90, infoY + lineHeight).fillColor('black')
         .text(formattedDate, rightX + 160, infoY + lineHeight)
 
-        .fillColor('grey')
-        .text('Payment Mode:', rightX + 90, infoY + lineHeight * 2)
-        .fillColor('black')
-        .text(
-            invoiceDetails.bank_type ? invoiceDetails.bank_type : invoiceDetails.payment_mode,
-            rightX + 160,
-            infoY + lineHeight * 2
-        );
+        .fillColor('grey').text('Room No:', rightX + 90, infoY + lineHeight * 2).fillColor('black')
+        .text(invoiceDetails.room_no, rightX + 160, infoY + lineHeight * 2)
+
+        .fillColor('grey').text('Payment Mode:', rightX + 90, infoY + lineHeight * 3).fillColor('black')
+        .text(invoiceDetails.bank_type || invoiceDetails.payment_mode, rightX + 160, infoY + lineHeight * 3);
 
     // === Table Header ===
-    const tableY = 300;
-    doc.roundedRect(leftX, tableY, pageWidth - 100, 25, 5).fill('#4768EA');
+  // === Custom Header (only top corners rounded) ===
+const tableY = currentY + 35;
+const tableWidth = pageWidth - margin * 2 - 60;
 
-    doc
-        .fillColor('white')
-        .font('Helvetica-Bold')
-        .fontSize(10)
-        .text('S.No', leftX + 10, tableY + 7)
-        .text('Description', leftX + 120, tableY + 7)
-        // .text('Month', leftX + 250, tableY + 7)
-        .text('Amount (INR)', leftX + 400, tableY + 7);
+doc.save();
+doc.moveTo(leftX + 5, tableY)
+    .lineTo(leftX + tableWidth - 5, tableY)
+    .quadraticCurveTo(leftX + tableWidth, tableY, leftX + tableWidth, tableY + 5)
+    .lineTo(leftX + tableWidth, tableY + 25)
+    .lineTo(leftX, tableY + 25)
+    .lineTo(leftX, tableY + 5)
+    .quadraticCurveTo(leftX, tableY, leftX + 5, tableY)
+    .fill('#4768EA');
+doc.restore();
 
-    // === Table Rows ===
+// === Header Text ===
+doc.fillColor('white').font('Helvetica-Bold').fontSize(10)
+    .text('S.No', leftX + 10, tableY + 7)
+    .text('Description', leftX + 120, tableY + 7)
+    .text('Amount / INR', leftX + 400, tableY + 7);
 
-    let y = tableY + 35;
-    doc.font('Helvetica').fillColor('black');
-    data.forEach((item, i) => {
-        doc
-            .text(i + 1, leftX + 10, y)
-            .text(item.reason, leftX + 120, y)
-            .text((item.amount ?? 0).toFixed(2), leftX + 400, y);
-        y += 25;
-    });
+// === Table Body (horizontal borders only) ===
+let y = tableY + 25;
+const rowHeight = 25;
 
-    // === Summary ===
+data.forEach((item, i) => {
+    // Top border of row
+    doc.moveTo(leftX, y).lineTo(leftX + tableWidth, y).strokeColor('#D3D3D3').stroke();
+
+    doc.fillColor('black').font('Helvetica')
+        .text(i + 1, leftX + 11, y + 7)
+        .text(item.reason, leftX + 123, y + 7)
+        .text(`Rs. ${item.amount.toFixed(2)}`, leftX + 400, y + 7);
+
+    y += rowHeight;
+});
+
+// Final bottom border
+doc
+  .moveTo(leftX, y)
+  .lineTo(leftX + tableWidth, y)
+  .strokeColor('#D3D3D3')
+  .lineWidth(0.1) // Ensures the line is 1px thick
+  .stroke();
+
+
+ // === Totals ===
     const subtotal = data.reduce((sum, i) => sum + i.amount, 0);
-    const tax = invoiceDetails.tax || 0;
-    const total = subtotal + tax;
-    // === Summary Section with Quote ===
-
-
-    // Right column – Subtotal, Tax, Total
+    const total = subtotal + (invoiceDetails.tax || 0);
+y += 30;
     doc
         .fillColor('black')
         .fontSize(10)
-        .font('Helvetica-Bold')
+        .font('Helvetica')
         .text('Advance Amount', leftX + 300, y)
         .text(`Rs. ${subtotal.toFixed(2)}`, leftX + 400, y);
 
-    // y += 20;
-
-    // doc
-    //   .text('Tax', leftX + 300, y)
-    //   .text(`Rs. ${tax.toFixed(2)}`, leftX + 400, y);
-
     y += 20;
-
     doc
-        .font('Helvetica-Bold')
         .text('Refundable Total', leftX + 300, y)
-        .fontSize(12)
-        .fillColor('black')
+        .fontSize(10)
         .text(`Rs. ${total.toFixed(2)}`, leftX + 400, y);
+      y += 30;
+
+doc
+  .moveTo(margin, y) // Use margin instead of leftX
+  .lineTo(pageWidth - margin, y) // Ends at right margin
+  .lineWidth(1)
+  .strokeColor('#E0E0E0')
+  .stroke();
 
 
-    // === Account Details ===
-    // y += 120;
-    // doc
-    //     .fillColor('#1E45E1')
-    //     .font('Helvetica-Bold')
-    //     .fontSize(11)
-    //     .text('ACCOUNT DETAILS', leftX, y);
-    // y += 20;
+    
 
-    // doc
-    //     .fillColor('black')
-    //     .font('Helvetica')
-    //     .fontSize(10)
-    //     .text(`Account No   : ${invoiceDetails.bank.accNo}`, leftX, y)
-    //     .text(`IFSC Code    : ${invoiceDetails.bank.ifsc}`, leftX, y + 15)
-    //     .text(`Bank Name    : ${invoiceDetails.bank.bankName}`, leftX, y + 30)
-    //     .text(`UPI ID       : ${invoiceDetails.bank.upi}`, leftX, y + 45);
 
-    // === QR Image ===
-    // doc.image('qr.png', pageWidth - 120, y - 5, { width: 80 }); // Place your QR image here
-
-    // === Terms and Signature ===
-    y += 100;
-    doc
-        .fillColor('#1E45E1')
-        .font('Helvetica-Bold')
-        .fontSize(10)
+    // Acknowledgment
+    y += 80;
+    doc.fillColor('#1E45E1').font('Helvetica').fontSize(11)
         .text('Acknowledgment', leftX, y);
-    y += 15;
+    y += 17;
 
-    doc
-        .fontSize(9)
-        .fillColor('gray')
-        .font('Helvetica')
-        .text(invoiceDetails.privacyPolicyHtml || 'No refunds after due date.', leftX, y, { width: 300 });
+    const ackText = `This document confirms final settlement for the Tenant on ${moment(invoiceDetails.payment_date).format('DD/MM/YYYY')}. All dues are cleared, and room has been vacated.`;
+    doc.fontSize(9).fillColor('gray').font('Helvetica').text(ackText, leftX, y, { width: 300 });
+      doc.fillColor('#3D3D3D').fontSize(10).font('Helvetica-Bold')
+        .text('Authorized Signature', pageWidth - 160, y );
 
-    y += 10;
+    // Footer message & signature
+    doc.fillColor('#1E45E1').fontSize(10)
+        .text('"Your comfort is our priority –\nSee you again at Smart Stay!"', leftX + 10, y + 100);
 
-    // Left column – Farewell message
-    doc
-        .fillColor('#1E45E1')
-        .fontSize(10)
-        .font('Helvetica')
-        .text('"Your comfort is our priority –\nSee you again at Smart Stay!"', leftX + 10, y + 70);
+  
 
-    doc
-        .fillColor('#3D3D3D')
-        .fontSize(10)
-        .font('Helvetica-Bold')
-        .text('Authorized Signature', pageWidth - 160, y);
-    doc.image(cotactPath, 430, 570, { width: 100, height: 60 });
+    doc.image(paidFullPath, pageWidth - 180, y + 90, { width: 100, height: 60 });
 
-    // === Footer ===
-    const footerY = 800;
-    const footerHeight = 30;
-    const footerX = 20;
-    const footerWidth = pageWidth - 40;
+    // === Footer Bar ===
+const sideSpacing = 20; // ⬅️ spacing from both sides
 
-    doc.roundedRect(footerX, footerY, footerWidth, footerHeight, 15).fill('#1E45E1');
+const footerHeight = 26;
+const footerWidth = pageWidth - margin * 2 - sideSpacing * 2; // subtract left & right spacing
+const footerX = margin + sideSpacing; // shift right to leave left spacing
+const footerY = doc.page.height - margin - footerHeight;
+const cornerRadius = 15;
 
-    doc
-        .fillColor('white')
-        .fontSize(10)
-        .text(
-            `email : ${invoiceDetails.hemail}    Contact : ${invoiceDetails.hphone}`,
-            footerX,
-            footerY + 9,
-            { width: footerWidth, align: 'center' }
-        );
+doc.save();
+doc.moveTo(footerX + cornerRadius, footerY) // start after top-left curve
+    .lineTo(footerX + footerWidth - cornerRadius, footerY) // top straight line
+    .quadraticCurveTo(footerX + footerWidth, footerY, footerX + footerWidth, footerY + cornerRadius) // top-right corner
+    .lineTo(footerX + footerWidth, footerY + footerHeight) // right straight down
+    .lineTo(footerX, footerY + footerHeight) // bottom line
+    .lineTo(footerX, footerY + cornerRadius) // left straight up
+    .quadraticCurveTo(footerX, footerY, footerX + cornerRadius, footerY) // top-left corner
+    .fill('#1E45E1');
+doc.restore();
+
+// === Footer Text ===
+doc.fillColor('white')
+   .fontSize(10)
+   .font('Helvetica')
+   .text(`email: ${invoiceDetails.hemail}  |  Contact: ${invoiceDetails.hphone}`, footerX, footerY + 13, {
+       width: footerWidth,
+       align: 'center'
+   });
+
+
+
 
     doc.end();
 }
 
-module.exports = { generateReceipt }
+module.exports = { generateReceipt };
