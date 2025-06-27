@@ -1945,7 +1945,7 @@ function hosteldetails(req, res) {
         })
     } else {
 
-        var sql1 = "SELECT id,Name,image1,image2,image3,image4,email_id,hostel_PhoneNo AS phone,Address,area,landmark,pin_code,city,state FROM hosteldetails WHERE isActive=1 AND created_By IN (?)";
+        var sql1 = "SELECT id,Name,image1,image2,image3,image4,email_id,hostel_PhoneNo AS phone,Address,area,landmark,pin_code,city,state ,profile FROM hosteldetails WHERE isActive=1 AND created_By IN (?)";
         connection.query(sql1, [show_ids], function (err, data) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Hostel Details" });
