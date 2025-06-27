@@ -195,6 +195,14 @@ function assign_booking(req, res) {
             var pincode = booking_details.pin_code;
             var city = booking_details.city;
             var state = booking_details.state;
+            var createdat = booking_details.createdat;
+
+            if (new Date(join_date) <= new Date(createdat)) {
+                return res.status(201).json({
+                    statusCode: 201,
+                    message: "Joining date must be greater than booking created date"
+                });
+            }
 
             if (email_id != 'NA') {
 

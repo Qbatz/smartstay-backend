@@ -1,5 +1,6 @@
 const moment = require('moment');
 const connection = require('./config/connection')
+const dateValidation = require('./service/commonValidation')
 const path = require('path');
 const fs = require('fs');
 const AWS = require('aws-sdk');
@@ -21,7 +22,6 @@ function AddExpense(request, response) {
     let reqData = request.body;
     var createdBy = request.user_details.id;
     let purchase_date = reqData.purchase_date ? moment(new Date(reqData.purchase_date)).format('YYYY-MM-DD') : ''
-    console.log("purchase_date", purchase_date);
     let purchase_amount = Number(reqData.unit_count) * Number(reqData.unit_amount)
     purchase_amount = isNaN(purchase_amount) ? reqData.unit_amount : purchase_amount;
     // console.log("purchase_amount", purchase_amount);
@@ -34,6 +34,13 @@ function AddExpense(request, response) {
 
     if (!hostel_id) {
         return response.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+    }
+
+    if(!dateValidation.isValidHostelAndPurchaseDate(hostel_id,purchase_date)){
+        return res.status(201).json({
+                statusCode: 201,
+                message: "Purchase date is before hostel created date"
+            });
     }
 
     // console.log("createdate", createdate);

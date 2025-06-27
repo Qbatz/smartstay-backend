@@ -2831,7 +2831,7 @@ function delete_manual_invoice(req, res) {
         var paid_amount = data[0].PaidAmount;
 
         if (paid_amount > 0) {
-            return res.status(201).json({ statusCode: 201, message: "Already Added Paid Amount In this Invoice. So Not Deleted" })
+            return res.status(201).json({ statusCode: 201, message: "Paid amount already added in this invoice, so can't delete" })
         }
 
         var sql2 = "UPDATE invoicedetails SET invoice_status=0 WHERE id=?";

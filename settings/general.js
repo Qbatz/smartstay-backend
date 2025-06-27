@@ -20,7 +20,7 @@ exports.add_general_user = async (req, res) => {
 
         if (id) {
 
-            if (!f_name || !email_id || !mob_no  || !pin_code || !city || !state ) {
+            if (!f_name || !email_id || !mob_no || !pin_code || !city || !state) {
                 return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
             }
 
@@ -62,7 +62,7 @@ exports.add_general_user = async (req, res) => {
 
                                     // Update User Details
                                     var sql4 = "UPDATE createaccount SET first_name=?,last_name=?,mobileNo=?,email_Id=?,Address=?,profile=?,area=?,landmark=?,pin_code=?,city=?,state=? WHERE id=?";
-                                    connection.query(sql4, [f_name, l_name, mob_no, email_id, address, profile_url,area,landmark,pin_code,city,state, id], function (err, up_res) {
+                                    connection.query(sql4, [f_name, l_name, mob_no, email_id, address, profile_url, area, landmark, pin_code, city, state, id], function (err, up_res) {
                                         if (err) {
                                             return res.status(201).json({ statusCode: 201, message: "Unable to Update User Details" })
                                         } else {
@@ -118,7 +118,7 @@ exports.add_general_user = async (req, res) => {
                             }
 
                             var sql2 = "INSERT INTO createaccount (first_name,last_name,mobileNo,email_Id,password,user_type,Address,profile,user_status,createdby,area,landmark,pin_code,city,state) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-                            connection.query(sql2, [f_name, l_name, mob_no, email_id, hash_password, 'agent', address || '', profile_url,'1', created_by,area,landmark,pin_code,city,state], function (err, ins_res) {
+                            connection.query(sql2, [f_name, l_name, mob_no, email_id, hash_password, 'agent', address || '', profile_url, '1', created_by, area, landmark, pin_code, city, state], function (err, ins_res) {
                                 if (err) {
                                     return res.status(201).json({ statusCode: 201, message: "Unable to Add User Details" })
                                 } else {
@@ -178,6 +178,17 @@ exports.change_password = (req, res) => {
                 if (err) {
                     return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
                 } else if (data.length != 0) {
+
+                    const currentUser = data[0];
+                    const currentHashedPassword = currentUser.password;
+
+                    const isSamePassword = await bcrypt.compare(new_pass, currentHashedPassword);
+                    if (isSamePassword) {
+                        return res.status(201).json({
+                            statusCode: 201,
+                            message: "New password cannot be the same as the current password"
+                        });
+                    }
 
                     const hash_password = await bcrypt.hash(new_pass, 10);
 

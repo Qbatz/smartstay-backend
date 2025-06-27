@@ -2,11 +2,11 @@ const connection = require('../config/connection')
 
 exports.add_contact = (req, res) => {
 
-    var { user_name, guardian, mob_no, address, user_id, id, area,landmark,pin_code,city,state} = req.body;
+    var { user_name, guardian, mob_no, address, user_id, id, area, landmark, pin_code, city, state } = req.body;
 
     var created_by = req.user_details.id;
 
-    if (!user_name || !guardian || !mob_no || !user_id  || !pin_code || !city || !state) {
+    if (!user_name || !guardian || !mob_no || !user_id || !pin_code || !city || !state) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
     }
 
@@ -25,7 +25,7 @@ exports.add_contact = (req, res) => {
                     } else if (sel_res.length == 0) {
 
                         var sql3 = "UPDATE contacts SET user_name=?,guardian=?,mob_no=?,address=?,area=?,landmark=?,pin_code=?,city=?,state=? WHERE id=?";
-                        connection.query(sql3, [user_name, guardian, mob_no, address,area,landmark,pin_code,city,state, id], function (err, ins_data) {
+                        connection.query(sql3, [user_name, guardian, mob_no, address, area, landmark, pin_code, city, state, id], function (err, ins_data) {
                             if (err) {
                                 return res.status(201).json({ statusCode: 201, message: "Error Fetching Edit Contact Details", reason: err.message })
                             } else {
@@ -67,7 +67,7 @@ exports.add_contact = (req, res) => {
                                 } else if (sel_res.length == 0) {
 
                                     var sql3 = "INSERT INTO contacts (user_name,guardian,mob_no,address,user_id,created_by,area,landmark,pin_code,city,state) VALUES (?)";
-                                    var params = [user_name, guardian, mob_no, address, user_id, created_by,area,landmark,pin_code,city,state];
+                                    var params = [user_name, guardian, mob_no, address, user_id, created_by, area, landmark, pin_code, city, state];
 
                                     connection.query(sql3, [params], function (err, ins_data) {
                                         if (err) {
@@ -137,6 +137,17 @@ exports.reassign_bed = (req, res) => {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Error Fetching User Details", reason: err.message })
         } else if (data.length != 0) {
+
+            const user = data[0];
+            const joiningDate = new Date(user.joining_Date);
+            const reassignDate = new Date(re_date);
+
+            if (reassignDate < joiningDate) {
+                return res.status(201).json({
+                    statusCode: 201,
+                    message: "Reassign date must be on or after the joining date"
+                });
+            }
 
             var sql2 = "INSERT INTO reassign_userdetails (user_id,hostel_id,old_floor,old_room,old_bed,new_floor,new_room,new_bed,reassign_date,created_by,status) VALUES (?)"
             var params = [user_id, hostel_id, c_floor, c_room, c_bed, re_floor, re_room, re_bed, re_date, created_by, 1];
