@@ -17,7 +17,7 @@ const { sendTemplateMessage } = require('./whatsappTemplate');
 
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
-const AWS_REGION = process.env.AWS_REGION; 
+const AWS_REGION = process.env.AWS_REGION;
 
 AWS.config.update({
     accessKeyId: AWS_ACCESS_KEY_ID,
@@ -452,9 +452,15 @@ function createnewAccount(request, response) {
                                 var plan_duration = subscription_response.trial_remaining_days;
                                 var plan_code = subscription_response.plan.plan_code;
 
-                                var futureDate = new Date(currentDate);
-                                futureDate.setDate(futureDate.getDate() + Number(plan_duration));
-                                var formattedFutureDate = futureDate.toISOString().split('T')[0];
+                                // var futureDate = new Date(currentDate);
+                                // futureDate.setDate(futureDate.getDate() + Number(plan_duration));
+                                // var formattedFutureDate = futureDate?.toISOString().split('T')[0];
+
+                                const today = new Date();
+                                const planDuration = Number(plan_duration) || 0;
+                                const futureDate = new Date(today.getTime() + planDuration * 24 * 60 * 60 * 1000);
+                                const currentDate = today.toISOString().split('T')[0];
+                                const formattedFutureDate = futureDate.toISOString().split('T')[0];
 
                                 if (reference_id && reference_id != 0) {
 
