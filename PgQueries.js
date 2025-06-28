@@ -1875,11 +1875,11 @@ function delete_hostel_image(req, res) {
 
                 var bucketName = process.env.AWS_BUCKET_NAME;
 
-                if (Data != 0) {
-                    const old_profile_key = await getKeyFromUrl(Data);
-                    var deleteResponse = await uploadImage.deleteImageFromS3Bucket(bucketName, old_profile_key);
-                    console.log("Image deleted successfully");
-                }
+                // if (Data != 0) {
+                //     const old_profile_key = await getKeyFromUrl(Data);
+                //     var deleteResponse = await uploadImage.deleteImageFromS3Bucket(bucketName, old_profile_key);
+                //     console.log("Image deleted successfully");
+                // }
 
                 var sql2 = "UPDATE hosteldetails SET " + image_name + "=0 WHERE id='" + hostel_id + "'"
                 connection.query(sql2, function (err, up_data) {
