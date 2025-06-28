@@ -28,28 +28,17 @@ nodeCron.schedule('0 0 * * *', () => {
             console.log(err);
         } else if (data.length != 0) {
 
-            data.forEach(inv_data => {
-
-                const invoiceDate = parseInt(inv_data.invoice_date, 10);
-                const today = moment(); // Current Date
+             data.forEach(inv_data => {
+                const invoiceDate = parseInt(inv_data.invoice_date, 10); // Date of month for invoice generation
+                const lastMonth = moment().subtract(1, 'months');
+                
 
                 let start_day = parseInt(inv_data.inv_startdate, 10) || 1; // Default to 1 if NULL
-                let end_day = parseInt(inv_data.inv_enddate, 10) || moment().subtract(1, 'months').endOf('month').date(); // Last month's last day if NULL
-
-                if (inv_data.inv_enddate && end_day < today.date()) {
-                    const lastMonth = moment().subtract(1, 'months');
-                    end_day = parseInt(inv_data.inv_enddate, 10);
-                    start_day = parseInt(inv_data.inv_startdate, 10) || 1; // Get start date if provided, else default to 1
-                }
-
-                const lastMonth = moment().subtract(1, 'months');
-
-                // Calculate start and end dates
                 const inv_startdate = lastMonth.date(start_day).format("YYYY-MM-DD");
-                const inv_enddate = lastMonth.date(end_day).format("YYYY-MM-DD");
-
+                const inv_enddate = moment(inv_startdate).add(30, 'days').format("YYYY-MM-DD");
                 console.log(`User: ${inv_data.user_id}, Hostel: ${inv_data.Hostel_Id}, Start Date: ${inv_startdate}, End Date: ${inv_enddate}`);
 
+                // Trigger only if today matches the invoice_date (e.g., 1st, 5th, etc.)
                 if (invoiceDate === today.date()) {
                     generateInvoiceForDate(inv_data, inv_startdate, inv_enddate);
                 }
