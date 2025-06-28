@@ -2106,59 +2106,68 @@ function delete_walk_in_customer(req, res) {
 
 
 function user_check_out(req, res) {
-
-  var created_by = req.user_details.id;
-
-  var role_permissions = req.role_permissions;
-  var is_admin = req.is_admin;
+  const created_by = req.user_details.id;
+  const role_permissions = req.role_permissions;
+  const is_admin = req.is_admin;
 
   if (is_admin == 1 || (role_permissions[6] && role_permissions[6].per_create == 1)) {
-
-    var { checkout_date, user_id, hostel_id, comments, action, req_date } = req.body;
+    let { checkout_date, user_id, hostel_id, comments, action, req_date } = req.body;
 
     if (!user_id || !checkout_date || !req_date) {
-      return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+      return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
     }
 
     if (!action) {
-      var action = 1 // Add Checkout
+      action = 1; // Add Checkout
     }
-    // var action = 2 // Edit Checkout
 
-    var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1 AND created_by=? AND Hostel_Id=?";
+    const sql1 = "SELECT * FROM hostel WHERE ID = ? AND isActive = 1 AND created_by = ? AND Hostel_Id = ?";
     connection.query(sql1, [user_id, created_by, hostel_id], function (err, sel_res) {
       if (err) {
-        return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
-      } else if (sel_res.length != 0) {
+        return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" });
+      } else if (sel_res.length !== 0) {
+        const user_data = sel_res[0];
 
-        console.log(sel_res[0].CheckoutDate);
-
-        if (action == 1 && sel_res[0].CheckoutDate) {
-          return res.status(201).json({ statusCode: 201, message: "Already Added Checkout Date" })
-        } else {
-
-          var sql2 = "UPDATE hostel SET checkout_comment=?,CheckOutDate=?,req_date=? WHERE ID=?";
-          connection.query(sql2, [comments, checkout_date, req_date, user_id], function (err, data) {
-            if (err) {
-              return res.status(201).json({ statusCode: 201, message: "Unable to Update User Details" })
-            } else {
-              if (action == 1) { // Add Message
-                return res.status(200).json({ statusCode: 200, message: "Check-out Added Successfully!" })
-              } else {
-                return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully!" })
-              }
-            }
-          })
-
+        if (action === 1 && user_data.CheckoutDate) {
+          return res.status(201).json({ statusCode: 201, message: "Already Added Checkout Date" });
         }
+
+        const joiningDate = new Date(user_data.joining_Date);
+        const checkOutDate = new Date(checkout_date);
+
+        if (checkOutDate <= joiningDate) {
+          return res.status(201).json({
+            statusCode: 201,
+            message: "Check-out date must be after the joining date (" + joiningDate.toISOString().split('T')[0] + ")"
+          });
+        }
+
+        const sql2 = "UPDATE hostel SET checkout_comment = ?, CheckOutDate = ?, req_date = ? WHERE ID = ?";
+        connection.query(sql2, [comments, checkout_date, req_date, user_id], function (err, data) {
+          if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Update User Details" });
+          } else {
+            const msg = (action === 1)
+              ? "Check-out Added Successfully!"
+              : "Changes Saved Successfully!";
+            return res.status(200).json({ statusCode: 200, message: msg });
+          }
+        });
       } else {
-        return res.status(201).json({ statusCode: 201, message: "Please select a valid hostel name. This customer does not exist for this hostel." })
+        return res.status(201).json({
+          statusCode: 201,
+          message: "Please select a valid hostel name. This customer does not exist for this hostel."
+        });
       }
-    })
+    });
   } else {
-    res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    res.status(208).json({
+      message: "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208
+    });
   }
 }
+
 
 function get_confirm_checkout(req, res) {
 

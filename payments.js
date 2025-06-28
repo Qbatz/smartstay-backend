@@ -410,13 +410,24 @@ function delete_bank_trans(req, res) {
             if (err) {
                 return res.status(201).json({ statusCode: 201, message: "Unable to Get Bank Details" })
             } else if (data != 0) {
-
+                const transaction = data[0];
+                const amountToReverse = parseInt(transaction.amount);
+                const bankId = transaction.bank_id
                 var sql2 = "UPDATE bank_transactions SET status=0 WHERE id=?";
                 connection.query(sql2, [id], function (err, up_data) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Delete Bank Transactions" })
                     } else {
-                        return res.status(200).json({ statusCode: 200, message: "Transaction Deleted Successfully!" })
+                        // Reduce balance in banking table
+                        const sql3 = "UPDATE bankings SET balance = balance - ? WHERE id = ?";
+                        connection.query(sql3, [amountToReverse, bankId], function (err, up_balance) {
+                            if (err) {
+                                return res.status(201).json({ statusCode: 201, message: "Unable to Update Bank Balance", reason: err.message });
+                            }
+
+                            return res.status(200).json({ statusCode: 200, message: "Transaction Deleted & Balance Updated Successfully!" });
+                        });
+
                     }
                 })
             } else {

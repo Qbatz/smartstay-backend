@@ -36,8 +36,6 @@ async function verifyAndStoreKyc(req, res, customer_id) {
       customer_notification_mode: 'SMS',
       customer_name: hostel.Name,
       template_name: process.env.KYC_TEMPLATE_NAME,
-      identifier: email || '',
-      type: 'geo_location',
       generate_access_token: true
     };
 
@@ -403,7 +401,16 @@ async function insertOrUpdateKycDataApproved(customer_id, kycResponse) {
 
 
 
-
+//const payload = {
+    //   customer_identifier: cleanedPhone,
+    //   notify_customer: true,
+    //   customer_notification_mode: 'SMS',
+    //   customer_name: hostel.Name,
+    //   template_name: process.env.KYC_TEMPLATE_NAME,
+    //    identifier: email || '',
+    //    type: 'geo_location',
+    //   generate_access_token: true
+    // };
 
 module.exports = { verifyAndStoreKyc, fetchAndUpdateKycStatus, fetchAndUpdateCustomerKycStatus };
 

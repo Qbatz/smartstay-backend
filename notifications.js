@@ -1,5 +1,6 @@
 const connection = require('./config/connection')
 const addNotification = require('./components/add_notification')
+const dateValidation = require('./service/commonValidation')
 
 
 function all_notifications(req, res) {
@@ -177,6 +178,13 @@ function add_room_reading(req, res) {
 
         if (!hostel_id || !floor_id || !room_id || !date || !reading) {
             return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+        }
+
+        if(!dateValidation.isValidHostelAndPurchaseDate(hostel_id,date)){
+             return res.status(201).json({
+            statusCode: 201,
+            message: "Date is before hostel created date"
+        });
         }
 
         var sql1 = "SELECT * FROM eb_settings WHERE hostel_id=? AND status=1";
