@@ -82,30 +82,30 @@ const generateManualPDF = async (data, outputPath, filename, action) => {
 
 
 
-const uploadToS3 = async (filePath, filename, inv_id) => {
-    try {
-        const fileContent = fs.readFileSync(filePath);
-        console.log(`Read file ${filePath} - size: ${fileContent.length} bytes`);
+// const uploadToS3 = async (filePath, filename, inv_id) => {
+//     try {
+//         const fileContent = fs.readFileSync(filePath);
+//         console.log(`Read file ${filePath} - size: ${fileContent.length} bytes`);
 
-        const key = `Invoice/${filename}`;
-        var bucketName = process.env.AWS_BUCKET_NAME;
+//         const key = `Invoice/${filename}`;
+//         var bucketName = process.env.AWS_BUCKET_NAME;
 
-        const params = {
-            Bucket: bucketName,
-            Key: key,
-            Body: fileContent,
-            ContentType: 'application/pdf',
-        };
+//         const params = {
+//             Bucket: bucketName,
+//             Key: key,
+//             Body: fileContent,
+//             ContentType: 'application/pdf',
+//         };
 
-        const data = await s3.upload(params).promise();
-        console.log('PDF uploaded successfully:', data.Location);
+//         const data = await s3.upload(params).promise();
+//         console.log('PDF uploaded successfully:', data.Location);
 
-        return data.Location;
-    } catch (err) {
-        console.error('Error uploading PDF:', err);
-        throw err;  // Important: propagate error
-    }
-};
+//         return data.Location;
+//     } catch (err) {
+//         console.error('Error uploading PDF:', err);
+//         throw err;  // Important: propagate error
+//     }
+// };
 
 
 module.exports = { downloadImage, generateManualPDF };
