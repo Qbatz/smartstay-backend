@@ -6,6 +6,7 @@ const connection = require('./config/connection');
 const notifications = require('./notifications');
 const assets = require('./assets');
 const crons = require('./crons');
+const whatsappCrons = require('./appCrons/whatsAppCrons')
 const payments = require('./payments');
 const importFunc = require('./components/import_func');
 const xlsx = require('xlsx');
