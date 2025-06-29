@@ -68,27 +68,27 @@ const generatereceipt = async (data, inv_data, outputPath, filename, invoice_num
     }
 }
 
-// const uploadToS3 = async (filePath, filename) => {
-//     try {
-//         const fileContent = fs.readFileSync(filePath);
+const uploadToS3 = async (filePath, filename) => {
+    try {
+        const fileContent = fs.readFileSync(filePath);
 
-//         const key = `Receipts/${filename}`;
-//         var bucketName = process.env.AWS_BUCKET_NAME;
+        const key = `Receipts/${filename}`;
+        var bucketName = process.env.AWS_BUCKET_NAME;
 
-//         const params = {
-//             Bucket: bucketName,
-//             Key: key,
-//             Body: fileContent,
-//             ContentType: 'application/pdf',
-//         };
+        const params = {
+            Bucket: bucketName,
+            Key: key,
+            Body: fileContent,
+            ContentType: 'application/pdf',
+        };
 
-//         const data = await s3.upload(params).promise();
-//         console.log('PDF uploaded successfully:', data.Location);
+        const data = await s3.upload(params).promise();
+        console.log('PDF uploaded successfully:', data.Location);
 
-//         return data.Location;
-//     } catch (err) {
-//         console.error('Error uploading PDF:', err);
-//     }
-// };
+        return data.Location;
+    } catch (err) {
+        console.error('Error uploading PDF:', err);
+    }
+};
 
 module.exports = { downloadImage, generatereceipt };

@@ -4,6 +4,7 @@ const path = require('path');
 const moment = require('moment');
 
 function generateInvoice(data, invoiceDetails, outputPath) {
+  
     const doc = new PDFDocument({ size: 'A4', margin: 0 });
     doc.pipe(fs.createWriteStream(outputPath));
  const margin = 20;
@@ -142,9 +143,31 @@ doc
         doc.text(addressLine3, leftX, currentY, { width: 250 }); currentY += lineGap;
     }
 
-    const formattedDate = moment(invoiceDetails.Date).format('DD-MM-YYYY');
-    const formattedDueDate = moment(invoiceDetails.DueDate).format('DD-MM-YYYY');
-
+    // const formattedDate = moment(invoiceDetails.Date).format('DD-MM-YYYY');
+    // const formattedDueDate = moment(invoiceDetails.DueDate).format('DD-MM-YYYY');
+//  const formattedDate = new Date(invoiceDetails.Date).toISOString().substring(0, 10);
+const utcDate = new Date(invoiceDetails.Date);
+const formattedDate = utcDate.toLocaleDateString('en-GB', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+const utcDate2 = new Date(invoiceDetails.DueDate);
+const formattedDueDate = utcDate2.toLocaleDateString('en-GB', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+const utcDate3 = new Date(invoiceDetails.joining_Date);
+const formattedJoiningDate = utcDate3.toLocaleDateString('en-GB', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+// const formattedDueDate =new Date(invoiceDetails.DueDate).toISOString().substring(0, 10);
     doc
         .font('Helvetica')
         .fillColor('grey')
@@ -154,11 +177,15 @@ doc
         .fillColor('grey')
         .text('Invoice Date:', rightX + 90, infoY + lineHeight)
         .fillColor('black')
-        .text(formattedDate, rightX + 160, infoY + lineHeight)
+        .text(formattedDate, rightX + 150, infoY + lineHeight)
         .fillColor('grey')
         .text('Due Date:', rightX + 90, infoY + lineHeight * 2)
         .fillColor('black')
-        .text(formattedDueDate, rightX + 160, infoY + lineHeight * 2);
+        .text(formattedDueDate, rightX + 150, infoY + lineHeight * 2)
+         .fillColor('grey')
+        .text('Joining Date:', rightX + 90, infoY + lineHeight * 3)
+        .fillColor('black')
+        .text(formattedJoiningDate, rightX + 150, infoY + lineHeight * 3);
 
     // === Table Header ===
     // const tableY = contentStartY + 120;
@@ -184,7 +211,7 @@ doc
     // });
 
 
-    const tableY = contentStartY + 150;
+    const tableY = contentStartY + 160;
 doc.roundedRect(leftX, tableY, pageWidth - 100, 25, 5).fill('#4768EA');
 
 doc

@@ -4,6 +4,7 @@ const path = require('path');
 const moment = require('moment');
 
 function generateReceipt(data, invoiceDetails, outputPath) {
+     
     const doc = new PDFDocument({ size: 'A4', margin: 20 });
     doc.pipe(fs.createWriteStream(outputPath));
 

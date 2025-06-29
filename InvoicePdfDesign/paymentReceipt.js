@@ -4,6 +4,7 @@ const path = require('path');
 const moment = require('moment');
 
 function generateReceipt(data, invoiceDetails, outputPath) {
+ 
     const doc = new PDFDocument({ size: 'A4', margin: 0 });
     doc.pipe(fs.createWriteStream(outputPath));
 
@@ -102,7 +103,7 @@ function generateReceipt(data, invoiceDetails, outputPath) {
         }
     });
 
-    const formattedDate = moment(invoiceDetails.Date).format('DD-MM-YYYY');
+    const formattedDate = moment(invoiceDetails.payment_date).format('DD-MM-YYYY');
     const formattedDueDate = moment(invoiceDetails.DueDate).format('DD-MM-YYYY');
 
     doc.fillColor('gray').font('Helvetica').fontSize(10);
@@ -113,10 +114,10 @@ function generateReceipt(data, invoiceDetails, outputPath) {
     doc.text('Payment Mode:', rightX + 80, rightStartY + lineHeight * 3);
 
     doc.fillColor('black');
-    doc.text(invoiceDetails.invoice_number, rightX + 150, rightStartY);
-    doc.text(formattedDate, rightX + 150, rightStartY + lineHeight);
-    doc.text(formattedDueDate, rightX + 150, rightStartY + lineHeight * 2);
-    doc.text(invoiceDetails.bank_type || invoiceDetails.paymentMode, rightX + 150, rightStartY + lineHeight * 3);
+    doc.text( `# ${invoiceDetails.reference_id}`, rightX + 150, rightStartY);
+    doc.text(`# ${invoiceDetails.invoice_number}`, rightX + 150, rightStartY + lineHeight);
+    doc.text(formattedDate, rightX + 150, rightStartY + lineHeight * 2);
+    doc.text(invoiceDetails.bank_type || invoiceDetails.payment_mode, rightX + 160, rightStartY + lineHeight * 3);
 
     // ==== Table Header ====
     // const tableY = rightStartY + 100;
@@ -218,7 +219,7 @@ doc
     y += 20;
 
     doc.fillColor('black').fontSize(10).font('Helvetica');
-    doc.text(`Payment Mode : ${invoiceDetails.bank_type || invoiceDetails.paymentMode}`, leftX, y); y += 15;
+    doc.text(`Payment Mode : ${invoiceDetails.bank_type || invoiceDetails.payment_mode}`, leftX, y); y += 15;
     doc.text(`Transaction ID: ${invoiceDetails.trans_id || '—'}`, leftX, y); y += 15;
     doc.text(`Received By : ${invoiceDetails.benificiary_name || "Account"}`, leftX, y); y += 15;
     doc.text(`Status : Paid`, leftX, y);

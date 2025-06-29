@@ -4,8 +4,7 @@ const path = require('path');
 const moment = require('moment');
 
 function generateReceipt(data, invoiceDetails, outputPath) {
-    console.log("invoiceDetails",invoiceDetails)
-    console.log("data",data)
+  
 
     const doc = new PDFDocument({ size: 'A4', margin: 0 });
     doc.pipe(fs.createWriteStream(outputPath));
@@ -115,20 +114,47 @@ function generateReceipt(data, invoiceDetails, outputPath) {
 
     const formattedDate = moment(invoiceDetails.payment_date).format('DD-MM-YYYY');
 
+    // doc
+    //     .font('Helvetica')
+    //     .fillColor('grey')
+    //     .text('Receipt No:', rightX + 60, infoY)
+    //     .fillColor('black')
+    //     .text(` # ${invoiceDetails.reference_id}`, rightX + 150, infoY)
+
+    //      .fillColor('grey')
+    //     .text('Invoice Ref:', rightX + 60, infoY)
+    //     .fillColor('black')
+    //     .text(`# ${invoiceDetails.invoice_number}`, rightX + 150, infoY)
+    //     .fillColor('grey')
+    //     .text('Payment Date:', rightX + 60, infoY + lineHeight)
+    //     .fillColor('black')
+    //     .text(formattedDate, rightX + 150, infoY + lineHeight)
+    //     .fillColor('grey')
+    //     .text('Payment Mode:', rightX + 60, infoY + lineHeight * 2)
+    //     .fillColor('black')
+    //     .text(invoiceDetails.bank_type || invoiceDetails.payment_mode, rightX + 150, infoY + lineHeight * 2);
     doc
-        .font('Helvetica')
-        .fillColor('grey')
-        .text('Receipt No:', rightX + 60, infoY)
-        .fillColor('black')
-        .text(invoiceDetails.reference_id, rightX + 150, infoY)
-        .fillColor('grey')
-        .text('Payment Date:', rightX + 60, infoY + lineHeight)
-        .fillColor('black')
-        .text(formattedDate, rightX + 150, infoY + lineHeight)
-        .fillColor('grey')
-        .text('Payment Mode:', rightX + 60, infoY + lineHeight * 2)
-        .fillColor('black')
-        .text(invoiceDetails.bank_type || invoiceDetails.payment_mode, rightX + 150, infoY + lineHeight * 2);
+  .font('Helvetica')
+  .fillColor('grey')
+  .text('Receipt No:', rightX + 60, infoY)
+  .fillColor('black')
+  .text(`# ${invoiceDetails.reference_id}`, rightX + 140, infoY)
+
+  .fillColor('grey')
+  .text('Invoice Ref:', rightX + 60, infoY + lineHeight)
+  .fillColor('black')
+  .text(`# ${invoiceDetails.invoice_number}`, rightX + 140, infoY + lineHeight)
+
+  .fillColor('grey')
+  .text('Payment Date:', rightX + 60, infoY + lineHeight * 2)
+  .fillColor('black')
+  .text(formattedDate, rightX + 140, infoY + lineHeight * 2)
+
+  .fillColor('grey')
+  .text('Payment Mode:', rightX + 60, infoY + lineHeight * 3)
+  .fillColor('black')
+  .text(invoiceDetails.bank_type || invoiceDetails.payment_mode, rightX + 140, infoY + lineHeight * 3);
+
 
 
   
@@ -140,9 +166,9 @@ function generateReceipt(data, invoiceDetails, outputPath) {
         
         .text('Payment For',rightX - 295,infoY + 200);
     // === Amount Box ===
-    const subtotal = data.reduce((sum, i) => sum + i.amount, 0);
-    const tax = invoiceDetails.tax || 0;
-    const total = subtotal + tax;
+   const subtotal = data.reduce((sum, i) => sum + parseFloat(i.amount_received || 0), 0);
+const tax = parseFloat(invoiceDetails.tax || 0);
+const total = subtotal + tax;
     const boxX = 360;
     const boxY = currentY + 40;
 
@@ -216,9 +242,12 @@ doc.font('Helvetica').fillColor('black');
 
 data.forEach((item, i) => {
     doc
+        .font('Helvetica') // ensure font stays consistent
+        .fontSize(10)
+        .fillColor('black')
         .text(i + 1, leftX + 10, y)
-        .text(item.am_name, leftX + 120, y)
-        .text((item.amount ?? 0).toFixed(2), leftX + 400, y);
+        .text(item.am_name || '-', leftX + 120, y) // default to '-' if name missing
+        .text((parseFloat(item.amount_received) || 0).toFixed(2), leftX + 400, y);
     y += 25;
 });
 
@@ -234,26 +263,26 @@ doc
     
 
     // === Summary ===
-    y += 10;
-    doc
-        .fillColor('black')
-        .fontSize(10)
-        .font('Helvetica-Bold')
-        .text('Sub Total', leftX + 300, y)
-        .text(`Rs. ${subtotal.toFixed(2)}`, leftX + 400, y);
-    y += 20;
+    // y += 10;
+    // doc
+    //     .fillColor('black')
+    //     .fontSize(10)
+    //     .font('Helvetica-Bold')
+    //     .text('Sub Total', leftX + 300, y)
+    //     .text(`Rs. ${subtotal.toFixed(2)}`, leftX + 400, y);
+    // y += 20;
 
-    doc
-        .text('Tax', leftX + 300, y)
-        .text(`Rs. ${tax.toFixed(2)}`, leftX + 400, y);
-    y += 20;
+    // doc
+    //     .text('Tax', leftX + 300, y)
+    //     .text(`Rs. ${tax.toFixed(2)}`, leftX + 400, y);
+    // y += 20;
 
-    doc
-        .font('Helvetica-Bold')
-        .text('Total', leftX + 300, y)
-        .fontSize(12)
-        .fillColor('black')
-        .text(`Rs. ${total.toFixed(2)}`, leftX + 400, y);
+    // doc
+    //     .font('Helvetica-Bold')
+    //     .text('Total', leftX + 300, y)
+    //     .fontSize(12)
+    //     .fillColor('black')
+    //     .text(`Rs. ${total.toFixed(2)}`, leftX + 400, y);
 
            y += 30;
 const outerPadding = 20;
@@ -282,7 +311,7 @@ doc
 
     doc.text(`Payment Mode   : ${invoiceDetails.bank_type || invoiceDetails.paymentmode}`, leftX, y);
     doc.text(`Received By : ${invoiceDetails.benificiary_name || " Account "}`, leftX, y + 15);
-    doc.text(`Status   : Active`, leftX, y + 30);
+    doc.text(`Status   : Paid`, leftX, y + 30);
 
     // === QR or Signature Image ===
     doc.image(immage1, 430, y - 30, { width: 100, height: 70 });

@@ -4,8 +4,7 @@ const path = require('path');
 const moment = require('moment');
 
 function generateInvoice(data, invoiceDetails, outputPath) {
-    console.log("invoiceDetails",invoiceDetails)
-    console.log("data",data)
+   
     const doc = new PDFDocument({ size: 'A4', margin: 0 });
     doc.pipe(fs.createWriteStream(outputPath));
 
@@ -144,9 +143,31 @@ doc
         currentY += height + 2;
     });
 
-    const formattedDate = moment(invoiceDetails.Date).format('DD-MM-YYYY');
-    const formattedDueDate = moment(invoiceDetails.DueDate).format('DD-MM-YYYY');
-    const formattedJoinDate = moment(invoiceDetails.joining_Date).format('DD-MM-YYYY');
+    // const formattedDate = moment(invoiceDetails.Date).format('DD-MM-YYYY');
+    const utcDate = new Date(invoiceDetails.Date);
+const formattedDate = utcDate.toLocaleDateString('en-GB', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+    const utcDate1 = new Date(invoiceDetails.DueDate);
+const formattedDueDate = utcDate1.toLocaleDateString('en-GB', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+   const utcDate2 = new Date(invoiceDetails.joining_Date);
+const formattedJoinDate = utcDate2.toLocaleDateString('en-GB', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+   
+   
 
     const labelX = rightX + 90;
     doc
@@ -164,10 +185,14 @@ doc
         .text('Due Date:', labelX, infoY + lineGap * 2)
         .fillColor('black')
         .text(formattedDueDate, labelX + 70, infoY + lineGap * 2)
+        // .fillColor('grey')
+        // .text('Joining Date:', labelX, infoY + lineGap * 3 + 5)
+        // .fillColor('black')
+        // .text(formattedJoinDate, labelX + 70, infoY + lineGap * 3 + 5);
         .fillColor('grey')
-        .text('Joining Date:', labelX, infoY + lineGap * 3 + 5)
-        .fillColor('black')
-        .text(formattedJoinDate, labelX + 70, infoY + lineGap * 3 + 5);
+.text('Joining Date:', labelX, infoY + lineGap * 2.8)
+.fillColor('black')
+.text(formattedJoinDate, labelX + 70, infoY + lineGap * 2.8);
 
     // === Table Header ===
     const tableY = 280;
