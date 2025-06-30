@@ -69,4 +69,3 @@ jobs:
             echo "SMS_DLTTEMPLATEID=${{ secrets.SMS_DLTTEMPLATEID}}" | sudo tee .env > /dev/null
 
             pm2 restart smartstay-dev-api.s3remotica.com || pm2 start index.js --name smartstay-dev-api.s3remotica.com
-
