@@ -1,0 +1,64 @@
+# This workflow will run tests using node and then publish a package to GitHub Packages when a release is created
+# For more information see: https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages
+
+name: Node.js Package
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: dev
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - name: Deploy to EC2 via SSH (system-wide Node)
+        uses: appleboy/ssh-action@v0.1.6
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /usr/share/nginx/html/inai-dev-api.s3remotica.com
+            git config --global --add safe.directory /usr/share/nginx/html/inai-dev-api.s3remotica.com
+
+            sudo git pull origin main2
+            sudo npm install
+
+            echo "AWS_ACCESS_KEY_ID=${{ vars.AWS_ACCESS_KEY_ID}}" | sudo tee .env > /dev/null
+            echo "AWS_SECRET_ACCESS_KEY=${{ vars.AWS_SECRET_ACCESS_KEY}}" | sudo tee .env > /dev/null
+            echo "AWS_REGION=${{ vars.AWS_REGION}}" | sudo tee .env > /dev/null
+            echo "AWS_BUCKET_NAME=${{ vars.AWS_BUCKET_NAME}}" | sudo tee .env > /dev/null
+            echo "JWT_SECRET=${{ vars.JWT_SECRET}}" | sudo tee .env > /dev/null
+            echo "CLIENT_ID=${{ vars.ZOHO_CLIENT_ID}}" | sudo tee .env > /dev/null
+            echo "CLIENT_SECRET=${{ vars.ZOHO_CLIENT_SECRET}}" | sudo tee .env > /dev/null
+            echo "REFRESH_TOKEN=${{ vars.ZOHO_REFRESH_TOKEN}}" | sudo tee .env > /dev/null
+            echo "ACCESS_TOKEN=${{ vars.ZOHO_ACCESS_TOKEN}}" | sudo tee .env > /dev/null
+            echo "ORGANIZATION_ID=${{ vars.ZOHO_ORGANIZATION_ID}}" | sudo tee .env > /dev/null
+            echo "PORT=${{ vars.PORT}}" | sudo tee .env > /dev/null
+            echo "HOST=${{ vars.DB_HOST}}" | sudo tee .env > /dev/null
+            echo "DATABASE=${{ vars.DB_NAME}}" | sudo tee .env > /dev/null
+            echo "HOST_USER=${{ vars.DB_USER_NAME}}" | sudo tee .env > /dev/null
+            echo "PASSWORD=${{ vars.DB_PASSWORD}}" | sudo tee .env > /dev/null
+            echo "BASEURL=${{ vars.BASEURL}}" | sudo tee .env > /dev/null
+            echo "TOKEN=${{ vars.WHATS_APP_TOKEN}}" | sudo tee .env > /dev/null
+            echo "KYC_CLIENT_ID=${{ vars.KYC_CLIENT_ID}}" | sudo tee .env > /dev/null
+            echo "KYC_CLIENT_SECRET=${{ vars.KYC_CLIENT_SECRET}}" | sudo tee .env > /dev/null
+            echo "KYC_TEMPLATE_NAME=${{ vars.KYC_TEMPLATE_NAME}}" | sudo tee .env > /dev/null
+            echo "KYC_BASE_URL=${{ vars.KYC_BASE_URL}}" | sudo tee .env > /dev/null
+            echo "KYC_END_POINT=${{ vars.KYC_END_POINT}}" | sudo tee .env > /dev/null
+            echo "KYC_STATUS_END_POINT=${{ vars.KYC_STATUS_END_POINT}}" | sudo tee .env > /dev/null
+            echo "MYTOKEN=${{ vars.WHATS_APP_SECRET}}" | sudo tee .env > /dev/null
+            echo "SMS_APIKEY=${{ vars.SMS_APIKEY}}" | sudo tee .env > /dev/null
+            echo "SMS_SENDERID=${{ vars.SMS_SENDERID}}" | sudo tee .env > /dev/null
+            echo "SMS_DLTTEMPLATEID=${{ vars.SMS_DLTTEMPLATEID}}" | sudo tee .env > /dev/null
+
+            pm2 restart inai-dev-api.s3remotica.com || pm2 start index.js --name inai-dev-api.s3remotica.com
+
