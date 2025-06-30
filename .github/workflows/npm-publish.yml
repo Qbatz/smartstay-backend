@@ -54,7 +54,7 @@ jobs:
             echo "HOST=${{ secrets.DB_HOST}}" | sudo tee .env > /dev/null
             echo "DATABASE=${{ secrets.DB_NAME}}" | sudo tee .env > /dev/null
             echo "HOST_USER=${{ secrets.DB_USER_NAME}}" | sudo tee .env > /dev/null
-            echo "PASSWORD=${{ secrets.DB_PASSWORD}}" | sudo tee .env > /dev/null
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD}}" | sudo tee .env > /dev/null
             echo "BASEURL=${{ secrets.BASEURL}}" | sudo tee .env > /dev/null
             echo "TOKEN=${{ secrets.WHATS_APP_TOKEN}}" | sudo tee .env > /dev/null
             echo "KYC_CLIENT_ID=${{ secrets.KYC_CLIENT_ID}}" | sudo tee .env > /dev/null
