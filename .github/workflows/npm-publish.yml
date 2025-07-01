@@ -50,7 +50,6 @@ jobs:
             echo "REFRESH_TOKEN=${{ secrets.ZOHO_REFRESH_TOKEN}}" | sudo tee .env > /dev/null
             echo "ACCESS_TOKEN=${{ secrets.ZOHO_ACCESS_TOKEN}}" | sudo tee .env > /dev/null
             echo "ORGANIZATION_ID=${{ secrets.ZOHO_ORGANIZATION_ID}}" | sudo tee .env > /dev/null
-            echo "PORT=${{ vars.APP_PORT}}" | sudo tee .env > /dev/null
             echo "HOST=${{ secrets.DB_HOST}}" | sudo tee .env > /dev/null
             echo "DATABASE=${{ secrets.DB_NAME}}" | sudo tee .env > /dev/null
             echo "HOST_USER=${{ secrets.DB_USER_NAME}}" | sudo tee .env > /dev/null
@@ -67,5 +66,6 @@ jobs:
             echo "SMS_APIKEY=${{ secrets.SMS_APIKEY}}" | sudo tee .env > /dev/null
             echo "SMS_SENDERID=${{ secrets.SMS_SENDERID}}" | sudo tee .env > /dev/null
             echo "SMS_DLTTEMPLATEID=${{ secrets.SMS_DLTTEMPLATEID}}" | sudo tee .env > /dev/null
+            echo "PORT=${{ vars.APP_PORT}}" | sudo tee .env > /dev/null
 
             pm2 restart smartstay-dev-api.s3remotica.com || pm2 start index.js --name smartstay-dev-api.s3remotica.com
