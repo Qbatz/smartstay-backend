@@ -40,32 +40,32 @@ jobs:
             sudo git pull origin main
             sudo npm install
 
-            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID}}" | sudo tee .env > /dev/null
-            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY}}" | sudo tee .env > /dev/null
-            echo "AWS_REGION=${{ secrets.AWS_REGION}}" | sudo tee .env > /dev/null
-            echo "AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME}}" | sudo tee .env > /dev/null
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET}}" | sudo tee .env > /dev/null
-            echo "CLIENT_ID=${{ secrets.ZOHO_CLIENT_ID}}" | sudo tee .env > /dev/null
-            echo "CLIENT_SECRET=${{ secrets.ZOHO_CLIENT_SECRET}}" | sudo tee .env > /dev/null
-            echo "REFRESH_TOKEN=${{ secrets.ZOHO_REFRESH_TOKEN}}" | sudo tee .env > /dev/null
-            echo "ACCESS_TOKEN=${{ secrets.ZOHO_ACCESS_TOKEN}}" | sudo tee .env > /dev/null
-            echo "ORGANIZATION_ID=${{ secrets.ZOHO_ORGANIZATION_ID}}" | sudo tee .env > /dev/null
-            echo "HOST=${{ secrets.DB_HOST}}" | sudo tee .env > /dev/null
-            echo "DATABASE=${{ secrets.DB_NAME}}" | sudo tee .env > /dev/null
-            echo "HOST_USER=${{ secrets.DB_USER_NAME}}" | sudo tee .env > /dev/null
-            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD}}" | sudo tee .env > /dev/null
-            echo "BASEURL=${{ secrets.BASEURL}}" | sudo tee .env > /dev/null
-            echo "TOKEN=${{ secrets.WHATS_APP_TOKEN}}" | sudo tee .env > /dev/null
-            echo "KYC_CLIENT_ID=${{ secrets.KYC_CLIENT_ID}}" | sudo tee .env > /dev/null
-            echo "KYC_CLIENT_SECRET=${{ secrets.KYC_CLIENT_SECRET}}" | sudo tee .env > /dev/null
-            echo "KYC_TEMPLATE_NAME=${{ secrets.KYC_TEMPLATE_NAME}}" | sudo tee .env > /dev/null
-            echo "KYC_BASE_URL=${{ secrets.KYC_BASE_URL}}" | sudo tee .env > /dev/null
-            echo "KYC_END_POINT=${{ secrets.KYC_END_POINT}}" | sudo tee .env > /dev/null
-            echo "KYC_STATUS_END_POINT=${{ secrets.KYC_STATUS_END_POINT}}" | sudo tee .env > /dev/null
-            echo "MYTOKEN=${{ secrets.WHATS_APP_SECRET}}" | sudo tee .env > /dev/null
-            echo "SMS_APIKEY=${{ secrets.SMS_APIKEY}}" | sudo tee .env > /dev/null
-            echo "SMS_SENDERID=${{ secrets.SMS_SENDERID}}" | sudo tee .env > /dev/null
-            echo "SMS_DLTTEMPLATEID=${{ secrets.SMS_DLTTEMPLATEID}}" | sudo tee .env > /dev/null
-            echo "PORT=${{ vars.APP_PORT}}" | sudo tee .env > /dev/null
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID}}" | sudo tee -a .env > /dev/null
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY}}" | sudo tee -a .env > /dev/null
+            echo "AWS_REGION=${{ secrets.AWS_REGION}}" | sudo tee -a .env > /dev/null
+            echo "AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME}}" | sudo tee -a .env > /dev/null
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET}}" | sudo tee -a .env > /dev/null
+            echo "CLIENT_ID=${{ secrets.ZOHO_CLIENT_ID}}" | sudo tee -a .env > /dev/null
+            echo "CLIENT_SECRET=${{ secrets.ZOHO_CLIENT_SECRET}}" | sudo tee -a .env > /dev/null
+            echo "REFRESH_TOKEN=${{ secrets.ZOHO_REFRESH_TOKEN}}" | sudo tee -a .env > /dev/null
+            echo "ACCESS_TOKEN=${{ secrets.ZOHO_ACCESS_TOKEN}}" | sudo tee -a .env > /dev/null
+            echo "ORGANIZATION_ID=${{ secrets.ZOHO_ORGANIZATION_ID}}" | sudo tee -a .env > /dev/null
+            echo "HOST=${{ secrets.DB_HOST}}" | sudo tee -a .env > /dev/null
+            echo "DATABASE=${{ secrets.DB_NAME}}" | sudo tee -a .env > /dev/null
+            echo "HOST_USER=${{ secrets.DB_USER_NAME}}" | sudo tee -a .env > /dev/null
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD}}" | sudo tee -a .env > /dev/null
+            echo "BASEURL=${{ secrets.BASEURL}}" | sudo tee -a .env > /dev/null
+            echo "TOKEN=${{ secrets.WHATS_APP_TOKEN}}" | sudo tee -a .env > /dev/null
+            echo "KYC_CLIENT_ID=${{ secrets.KYC_CLIENT_ID}}" | sudo tee -a .env > /dev/null
+            echo "KYC_CLIENT_SECRET=${{ secrets.KYC_CLIENT_SECRET}}" | sudo tee -a .env > /dev/null
+            echo "KYC_TEMPLATE_NAME=${{ secrets.KYC_TEMPLATE_NAME}}" | sudo tee -a .env > /dev/null
+            echo "KYC_BASE_URL=${{ secrets.KYC_BASE_URL}}" | sudo tee -a .env > /dev/null
+            echo "KYC_END_POINT=${{ secrets.KYC_END_POINT}}" | sudo tee -a .env > /dev/null
+            echo "KYC_STATUS_END_POINT=${{ secrets.KYC_STATUS_END_POINT}}" | sudo tee -a .env > /dev/null
+            echo "MYTOKEN=${{ secrets.WHATS_APP_SECRET}}" | sudo tee -a .env > /dev/null
+            echo "SMS_APIKEY=${{ secrets.SMS_APIKEY}}" | sudo tee -a .env > /dev/null
+            echo "SMS_SENDERID=${{ secrets.SMS_SENDERID}}" | sudo tee -a .env > /dev/null
+            echo "SMS_DLTTEMPLATEID=${{ secrets.SMS_DLTTEMPLATEID}}" | sudo tee -a .env > /dev/null
+            echo "PORT=${{ vars.APP_PORT}}" | sudo tee -a .env > /dev/null
 
             pm2 restart smartstay-dev-api.s3remotica.com || pm2 start index.js --name smartstay-dev-api.s3remotica.com
