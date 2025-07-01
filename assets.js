@@ -39,7 +39,7 @@ function all_assets(req, res) {
     }
 }
 
-function add_asset(req, res) {
+async function add_asset(req, res) {
 
     var user_id = req.user_details.id;
     var role_permissions = req.role_permissions;
@@ -53,7 +53,7 @@ function add_asset(req, res) {
         return res.status(201).json({ message: "Missing Hostel Details", statusCode: 201 })
     }
 
-    const isValid = dateValidation.isValidHostelAndPurchaseDate(hostel_id, data.purchase_date);
+    const isValid = await dateValidation.isValidHostelAndPurchaseDate(hostel_id, data.purchase_date);
     if (!isValid) {
         return res.status(201).json({
             statusCode: 201,
@@ -471,7 +471,7 @@ function remove_asset(req, res) {
     }
 }
 
-function asseign_asset(req, res) {
+async function asseign_asset(req, res) {
 
     var user_id = req.user_details.id;
     var asset_id = req.body.asset_id;
@@ -488,7 +488,9 @@ function asseign_asset(req, res) {
         var validationResult = assign_validations(data);
         const inputDate = data.asseign_date;
         const formattedDate = new Date(inputDate).toISOString().slice(0, 10);
-        if (!dateValidation.isValidPurchaseDateForAsset(asset_id, formattedDate)) {
+        
+        const isValid = await dateValidation.isValidPurchaseDateForAsset(asset_id,formattedDate)
+        if (!isValid) {
             return res.status(201).json({
                 statusCode: 201,
                 message: "Reassigned date is before asset created date"
