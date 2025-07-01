@@ -2921,7 +2921,7 @@ function add_recuring_bill(req, res) {
                 var user_data = user_details[0];
 
                 if (user_data.status==0) {
-                    return res.status(201).json({ statusCode: 201, message: "Please enable the Recurring in the" })
+                    return res.status(201).json({ statusCode: 201, message: "Please enable the Recurring in the Settings" })
                 }
 
 
