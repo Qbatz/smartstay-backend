@@ -50,7 +50,7 @@ jobs:
             echo "REFRESH_TOKEN=${{ secrets.ZOHO_REFRESH_TOKEN}}" | sudo tee .env > /dev/null
             echo "ACCESS_TOKEN=${{ secrets.ZOHO_ACCESS_TOKEN}}" | sudo tee .env > /dev/null
             echo "ORGANIZATION_ID=${{ secrets.ZOHO_ORGANIZATION_ID}}" | sudo tee .env > /dev/null
-            echo "PORT=${{ secrets.PORT}}" | sudo tee .env > /dev/null
+            echo "PORT=${{ vars.APP_PORT}}" | sudo tee .env > /dev/null
             echo "HOST=${{ secrets.DB_HOST}}" | sudo tee .env > /dev/null
             echo "DATABASE=${{ secrets.DB_NAME}}" | sudo tee .env > /dev/null
             echo "HOST_USER=${{ secrets.DB_USER_NAME}}" | sudo tee .env > /dev/null
