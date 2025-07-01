@@ -12,8 +12,8 @@ async function verifyKyc(requestData) {
     };
 
     const auth = {
-      username: process.env.BASIC_KYC_AUTH_USER,
-      password: process.env.BASIC_KYC_AUTH_PASS
+      username: process.env.KYC_CLIENT_ID,
+      password: process.env.KYC_CLIENT_SECRET
     };
 
     const response = await axios.post(url, requestData, {
@@ -40,8 +40,8 @@ async function fetchKycApiResponse(kyc_id) {
             'ClientSecret': process.env.KYC_CLIENT_SECRET
           },
           auth: {
-            username: process.env.BASIC_KYC_AUTH_USER,
-            password: process.env.BASIC_KYC_AUTH_PASS
+            username: process.env.KYC_CLIENT_ID,
+            password: process.env.KYC_CLIENT_SECRET
           },
           timeout: 10000
     });
