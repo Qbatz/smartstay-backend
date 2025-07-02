@@ -109,12 +109,15 @@ function AddCompliance(connection, request, response) {
 
 function GetComplianceList(connection, response, request) {
     const userDetails = request.user_details;
-
     var show_ids = request.show_ids;
     var role_permissions = request.role_permissions;
     var is_admin = request.is_admin;
-
     var hostel_id = request.body.hostel_id;
+
+    // New filters from frontend
+    var status = request.body.status || null; // optional filter
+    var from_date = request.body.from_date ? new Date(request.body.from_date) : null;
+    var to_date = request.body.to_date ? new Date(request.body.to_date) : null;
 
     if (!hostel_id) {
         return response.status(201).json({ statusCode: 201, message: 'Missing Hostel Details' });
@@ -122,29 +125,69 @@ function GetComplianceList(connection, response, request) {
 
     if (is_admin == 1 || (role_permissions[13] && role_permissions[13].per_view == 1)) {
 
-        // const query1 = `SELECT comp.*,ct.complaint_name,hf.floor_name AS floor_name,hr.Room_Id AS room_name FROM hosteldetails hstlDetails inner join compliance comp on comp.Hostel_id=hstlDetails.id JOIN complaint_type AS ct ON ct.id=comp.Complainttype JOIN Hostel_Floor AS hf ON hf.floor_id=comp.Floor_id AND hf.hostel_id=comp.Hostel_id JOIN hostelrooms AS hr ON hr.id=comp.Room WHERE hstlDetails.created_By IN (${show_ids}) ORDER BY comp.ID DESC`;
-        var sql1 = `SELECT comp.*,hostel.profile,ct.complaint_name,hf.floor_name AS floor_name,hr.Room_Id AS 
-room_name,cr.first_name AS assigner_name,(SELECT COUNT(*) FROM complaice_comments al 
-WHERE al.com_id = comp.ID) AS comment_count, bed.bed_no as bedName, bed.id as bedID FROM hosteldetails hstlDetails inner join 
-compliance comp on comp.Hostel_id=hstlDetails.id JOIN complaint_type AS ct ON ct.id=comp.Complainttype 
-LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=comp.Floor_id AND hf.hostel_id=comp.Hostel_id JOIN hostel
- ON hostel.User_Id=comp.User_id LEFT JOIN hostelrooms AS hr ON hr.id=comp.Room LEFT JOIN createaccount 
-AS cr ON cr.id=comp.Assign Left Join bed_details as bed on bed.hos_detail_id = hr.id and comp.Bed = bed.id 
-WHERE hstlDetails.ID =? AND comp.isActive=1 ORDER BY comp.ID DESC;`
-        connection.query(sql1, [hostel_id], function (error, hostelData) {
+        let sql1 = `
+            SELECT 
+                comp.*,
+                hostel.profile,
+                ct.complaint_name,
+                hf.floor_name AS floor_name,
+                hr.Room_Id AS room_name,
+                cr.first_name AS assigner_name,
+                (
+                    SELECT COUNT(*) FROM complaice_comments al 
+                    WHERE al.com_id = comp.ID
+                ) AS comment_count,
+                bed.bed_no AS bedName,
+                bed.id AS bedID
+            FROM hosteldetails hstlDetails 
+            INNER JOIN compliance comp ON comp.Hostel_id = hstlDetails.id 
+            JOIN complaint_type AS ct ON ct.id = comp.Complainttype 
+            LEFT JOIN Hostel_Floor AS hf ON hf.floor_id = comp.Floor_id AND hf.hostel_id = comp.Hostel_id 
+            JOIN hostel ON hostel.User_Id = comp.User_id 
+            LEFT JOIN hostelrooms AS hr ON hr.id = comp.Room 
+            LEFT JOIN createaccount AS cr ON cr.id = comp.Assign 
+            LEFT JOIN bed_details AS bed ON bed.hos_detail_id = hr.id AND comp.Bed = bed.id 
+            WHERE hstlDetails.ID = ? AND comp.isActive = 1
+        `;
+
+        const params = [hostel_id];
+
+        // Append status filter if provided
+        if (status) {
+            sql1 += ` AND comp.Status = ?`;
+            params.push(status);
+        }
+
+        // Append date range filter if provided
+        if (from_date && to_date) {
+            sql1 += ` AND comp.created_At BETWEEN ? AND ?`;
+            params.push(from_date, to_date);
+        } else if (from_date) {
+            sql1 += ` AND comp.created_At >= ?`;
+            params.push(from_date);
+        } else if (to_date) {
+            sql1 += ` AND comp.created_At <= ?`;
+            params.push(to_date);
+        }
+
+        sql1 += ` ORDER BY comp.ID DESC`;
+
+        connection.query(sql1, params, function (error, hostelData) {
             if (error) {
                 console.error(error);
-                response.status(201).json({ message: 'Error fetching hostel data' });
-                return;
-            } else {
-                response.status(200).json({ hostelData: hostelData });
+                return response.status(201).json({ message: 'Error fetching hostel data' });
             }
-
+            return response.status(200).json({ hostelData: hostelData });
         });
+
     } else {
-        response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+        response.status(208).json({
+            message: "Permission Denied. Please contact your administrator for access.",
+            statusCode: 208
+        });
     }
 }
+
 
 async function add_complainttypes(req, res) {
 
