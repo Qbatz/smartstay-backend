@@ -46,9 +46,12 @@ function export_customer(req, res) {
                 LEFT JOIN assets AS ass ON ass.id=ex.asset_id  
                 WHERE ex.hostel_id = ? AND ex.status = 1`;
 
+
         if (category) {
             sql1 += ` AND ex.category_id = ${connection.escape(category)}`;
         }
+
+        console.log("categoryId----->"+category)
 
         if (payment_mode) {
             sql1 += ` AND ex.payment_mode = ${connection.escape(payment_mode)}`;

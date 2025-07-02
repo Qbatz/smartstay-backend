@@ -21,9 +21,9 @@ async function getWhatsAppIdFromMasterTypesAsync(connection) {
 
 nodeCron.schedule('0 0 * * *', async () => {
     try {
-        const todayDate = moment().format("YYYY-MM-DD");
-        const todayDay = moment().date();
+        const today = moment().startOf('day');
         const whatsappId = await getWhatsAppIdFromMasterTypesAsync(connection);
+
         if (!whatsappId) {
             return;
         }
@@ -35,6 +35,7 @@ nodeCron.schedule('0 0 * * *', async () => {
                 hos.Name AS hostel_name,
                 hos.inv_startdate,
                 hos.inv_enddate,
+                hos.due_date,
                 rb.isAutoSend AS autoSend,
                 rb.billDeliveryChannels,
                 rb.remainderDates,
@@ -62,26 +63,36 @@ nodeCron.schedule('0 0 * * *', async () => {
             }
 
             if (!data.length) {
-                console.log("No data to process in this Cron");
+                console.log("No data to process in this cron job.");
                 return;
             }
 
             data.forEach(inv_data => {
-                const reminderDays = inv_data.remainderDates
+                const remainderBeforeDueDate = inv_data.remainderDates
                     ? inv_data.remainderDates.split(',').map(d => parseInt(d.trim(), 10))
                     : [];
 
-                const isTodayReminder = reminderDays.includes(todayDay);
+                const dueDay = parseInt(inv_data.due_date, 10);
+                const dueDate = moment().date(dueDay); 
 
-                const invoiceDate = parseInt(inv_data.inv_startdate);
+                
+                if (dueDate.isBefore(today)) {
+                    dueDate.add(1, 'month');
+                }
+
+                const isTodayReminder = remainderBeforeDueDate.some(reminderDay => {
+                    const reminderDate = moment(dueDate).subtract(reminderDay, 'days');
+                    return reminderDate.isSame(today, 'day');
+                });
 
                 if (inv_data.isWhatsAppEnabled && inv_data.autoSend && isTodayReminder) {
-
+                    console.log(`Trigger WhatsApp reminder for hostel ${inv_data.hostel_name} (ID: ${inv_data.user_id}) - Due Date: ${dueDate.format('YYYY-MM-DD')}`);
                 }
             });
         });
 
     } catch (error) {
+        console.error("Cron job error:", error);
     }
 });
 
