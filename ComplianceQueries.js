@@ -157,16 +157,15 @@ function GetComplianceList(connection, response, request) {
             sql1 += ` AND comp.Status = ?`;
             params.push(status);
         }
-
         // Append date range filter if provided
         if (from_date && to_date) {
-            sql1 += ` AND comp.created_At BETWEEN ? AND ?`;
+            sql1 += ` AND comp.createdat BETWEEN ? AND ?`;
             params.push(from_date, to_date);
         } else if (from_date) {
-            sql1 += ` AND comp.created_At >= ?`;
+            sql1 += ` AND comp.createdat >= ?`;
             params.push(from_date);
         } else if (to_date) {
-            sql1 += ` AND comp.created_At <= ?`;
+            sql1 += ` AND comp.createdat <= ?`;
             params.push(to_date);
         }
 

@@ -371,7 +371,7 @@ function insertInvoice(inv_data, totalAmount, invoice_id, due_date, inv_startdat
   });
 }
 
-nodeCron.schedule('0 12 * * *', () => {
+nodeCron.schedule('0 0 * * *', async () => {
   processRecurringInvoices().catch(err => console.error("Cron Error:", err));
 });
 

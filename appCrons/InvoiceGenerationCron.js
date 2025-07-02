@@ -3,7 +3,7 @@ const nodeCron = require('node-cron');
 const moment = require('moment');
 const request = require('request');
 
-nodeCron.schedule('*/10 * * * * *', async () => {
+nodeCron.schedule('0 0 * * *', async () => {
     const today = moment().date();
     var sql1 = "SELECT rec.*,hs.*,hos.Name AS hostel_name,hos.inv_startdate,hos.inv_enddate,hos.bill_date FROM recuring_inv_details AS rec JOIN hostel AS hs ON hs.ID=rec.user_id JOIN hosteldetails AS hos ON hos.id=hs.Hostel_Id WHERE rec.status=1 AND hs.isActive=1;";
     connection.query(sql1, function (err, data) {
