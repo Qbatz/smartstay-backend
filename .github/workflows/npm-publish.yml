@@ -30,9 +30,9 @@ jobs:
       - name: Deploy to EC2 via SSH (system-wide Node)
         uses: appleboy/ssh-action@v0.1.6
         with:
-          host: ${{ vars.EC2_HOST }}
+          host: ${{ secrets.EC2_HOST }}
           username: ec2-user
-          key: ${{ vars.EC2_SSH_KEY }}
+          key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /usr/share/nginx/html/smartstay-testing-api.s3remotica.com
             git config --global --add safe.directory /usr/share/nginx/html/smartstay-testing-api.s3remotica.com
