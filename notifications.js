@@ -161,7 +161,7 @@ function update_notification_status(req, res) {
 }
 // Add Eb Reading
 
-function add_room_reading(req, res) {
+async function add_room_reading(req, res) {
 
     var created_by = req.user_details.id;
 
@@ -180,7 +180,9 @@ function add_room_reading(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
         }
 
-        if(!dateValidation.isValidHostelAndPurchaseDate(hostel_id,date)){
+        const isValid = await dateValidation.isValidHostelAndPurchaseDate(hostel_id,purchase_date)
+
+        if(!isValid){
              return res.status(201).json({
             statusCode: 201,
             message: "Date is before hostel created date"

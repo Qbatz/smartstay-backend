@@ -39,7 +39,7 @@ nodeCron.schedule('0 0 * * *', () => {
                 console.log(`User: ${inv_data.user_id}, Hostel: ${inv_data.Hostel_Id}, Start Date: ${inv_startdate}, End Date: ${inv_enddate}`);
 
                 // Trigger only if today matches the invoice_date (e.g., 1st, 5th, etc.)
-                if (invoiceDate === today.date()) {
+                if (invoiceDate === today) {
                     generateInvoiceForDate(inv_data, inv_startdate, inv_enddate);
                 }
             });

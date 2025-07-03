@@ -17,7 +17,7 @@ AWS.config.update({
 
 const s3 = new AWS.S3();
 
-function AddExpense(request, response) {
+async function AddExpense(request, response) {
 
     let reqData = request.body;
     var createdBy = request.user_details.id;
@@ -36,7 +36,9 @@ function AddExpense(request, response) {
         return response.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
     }
 
-    if(!dateValidation.isValidHostelAndPurchaseDate(hostel_id,purchase_date)){
+    const isValid = await dateValidation.isValidHostelAndPurchaseDate(hostel_id,purchase_date)
+
+    if(!isValid){
         return res.status(201).json({
                 statusCode: 201,
                 message: "Purchase date is before hostel created date"

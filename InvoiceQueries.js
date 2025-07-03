@@ -3076,11 +3076,11 @@ function addRecurringBills(req, res) {
 
         const invoiceUpdate = `
             UPDATE hosteldetails
-            SET recure = ?, inv_startdate = ?, inv_enddate = ?, due_date = ?
+            SET recure = ?, inv_startdate = ?, inv_enddate = ?, due_date = ?, bill_date = ?
             WHERE id = ?
         `;
 
-        const invoiceData = [1, calculationFromDate, "", dueDateOfMonth, hostel_id];
+        const invoiceData = [1, calculationFromDate, "", dueDateOfMonth, billingDateOfMonth, hostel_id];
 
         connection.query(invoiceUpdate, invoiceData, (err) => {
             if (err) {
