@@ -3,41 +3,99 @@ const dateValidation = require('./service/commonValidation')
 
 // All Assets Details
 function all_assets(req, res) {
-
     const user_id = req.user_details.id;
-    var show_ids = req.show_ids;
-    var role_permissions = req.role_permissions;
-    var is_admin = req.is_admin;
+    const role_permissions = req.role_permissions;
+    const is_admin = req.is_admin;
 
-    var hostel_id = req.body.hostel_id;
+    const {
+        hostel_id,
+        price_range,     
+        start_date,     
+        end_date         
+    } = req.body;
 
-    if (is_admin == 1 || (role_permissions[8] && role_permissions[8].per_view == 1)) {
+    if (!(is_admin == 1 || (role_permissions[8] && role_permissions[8].per_view == 1))) {
+        return res.status(208).json({
+            message: "Permission Denied. Please contact your administrator for access.",
+            statusCode: 208
+        });
+    }
 
-        if (!hostel_id) {
-            return res.status(201).json({ message: "Missing Hostel Details", statusCode: 201 })
+    if (!hostel_id) {
+        return res.status(201).json({ message: "Missing Hostel Details", statusCode: 201 });
+    }
+
+    let sql = `
+        SELECT DISTINCT 
+            assets.*, 
+            hos.Name AS hostel_Name, 
+            hosfloor.floor_name,
+            hr.Room_id AS room_name, 
+            aa.room_id, 
+            aname.asset_name AS asset, 
+            ven.Vendor_Name, 
+            aa.asset_id AS Asset_id, 
+            aa.hostel_id,
+            aa.room_id, 
+            aa.assigned_date, 
+            aa.floor_id, 
+            ban.acc_name, 
+            ban.acc_num 
+        FROM assets 
+            LEFT JOIN Vendor AS ven ON ven.id = assets.vendor_id 
+            LEFT JOIN assigned_assets AS aa ON assets.id = aa.asset_id 
+            LEFT JOIN asset_names AS aname ON aa.asset_id = aname.id 
+            LEFT JOIN hosteldetails hos ON hos.id = aa.hostel_id 
+            LEFT JOIN Hostel_Floor hosfloor ON hosfloor.floor_id = aa.floor_id AND hosfloor.hostel_id = aa.hostel_id 
+            LEFT JOIN hostelrooms AS hr ON hr.id = aa.room_id 
+            LEFT JOIN bankings AS ban ON ban.id = assets.bank_id 
+        WHERE assets.hostel_id = ? AND assets.status = 1
+    `;
+
+    let values = [hostel_id];
+
+    if (price_range) {
+        switch (price_range) {
+            case "0-100":
+                sql += " AND assets.price BETWEEN 0 AND 100";
+                break;
+            case "100-500":
+                sql += " AND assets.price BETWEEN 100 AND 500";
+                break;
+            case "500-1000":
+                sql += " AND assets.price BETWEEN 500 AND 1000";
+                break;
+            case "1000+":
+                sql += " AND assets.price > 1000";
+                break;
+        }
+    }
+    if (start_date && end_date) {
+        sql += " AND assets.purchase_date BETWEEN ? AND ?";
+        values.push(start_date, end_date);
+    } else if (start_date) {
+        sql += " AND assets.purchase_date >= ?";
+        values.push(start_date);
+    } else if (end_date) {
+        sql += " AND assets.purchase_date <= ?";
+        values.push(end_date);
+    }
+
+    sql += " ORDER BY assets.id DESC";
+
+    connection.query(sql, values, (err, data) => {
+        if (err) {
+            return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 });
         }
 
-        // var sql1 = "SELECT assets.*,ven.Vendor_Name,aa.asset_id,aa.hostel_id,aa.room_id,aa.assigned_date FROM assets JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id WHERE assets.created_by=? AND assets.status=1 ORDER BY assets.id DESC";
-        // var sql1 = "SELECT assets.*,aname.asset_name,ven.Vendor_Name,aa.asset_id AS Asset_id,aa.hostel_id,aa.room_id,aa.assigned_date FROM assets JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id JOIN asset_names AS aname ON assets.asset_id=aname.id WHERE assets.created_by=? AND assets.status=1 ORDER BY assets.id DESC"
-        var sql1 = `SELECT distinct assets.*,hos.Name as hostel_Name,hosfloor.floor_name,hr.Room_id AS room_name,aa.room_id,aname.asset_name as asset,ven.Vendor_Name,aa.asset_id AS Asset_id,aa.hostel_id,
-                aa.room_id,aa.assigned_date,aa.floor_id,ban.acc_name,ban.acc_num FROM assets LEFT JOIN Vendor AS ven ON ven.id=assets.vendor_id LEFT JOIN assigned_assets AS aa ON assets.id=aa.asset_id 
-                LEFT JOIN asset_names AS aname ON aa.asset_id=aname.id LEFT JOIN hosteldetails hos ON hos.id = aa.hostel_id LEFT JOIN Hostel_Floor hosfloor ON
-                hosfloor.floor_id = aa.floor_id AND hosfloor.hostel_id = aa.hostel_id LEFT JOIN hostelrooms AS hr ON hr.id=aa.room_id LEFT JOIN bankings AS ban ON ban.id=assets.bank_id WHERE assets.hostel_id =? AND assets.status=true ORDER BY assets.id DESC`
-
-        connection.query(sql1, [hostel_id], (err, data) => {
-            if (err) {
-                return res.status(201).json({ message: "Unable to Get Asset Details", statusCode: 201 })
-                // } else if (data && data.length > 0) {
-                //     // console.log("data", data);
-                //     return res.status(200).json({ message: "All Asset Details", statusCode: 200, assets: data })
-            } else {
-                return res.status(200).json({ message: "All Asset Details", statusCode: 200, assets: data })
-            }
-        })
-    } else {
-        res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
-    }
+        return res.status(200).json({
+            message: "All Asset Details",
+            statusCode: 200,
+            assets: data
+        });
+    });
 }
+
 
 async function add_asset(req, res) {
 
