@@ -17,6 +17,8 @@ function export_customer(req, res) {
     var end_date = req.body?.end_date ? moment(new Date(req.body.end_date)).format('YYYY-MM-DD') : null;
     var payment_mode = req.body?.payment_mode ? req.body.payment_mode : null;
 
+    var status = req.body?.status || null;
+
     if (!type || !hostel_id) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
     }
@@ -51,7 +53,6 @@ function export_customer(req, res) {
             sql1 += ` AND ex.category_id = ${connection.escape(category)}`;
         }
 
-        console.log("categoryId----->"+category)
 
         if (payment_mode) {
             sql1 += ` AND ex.payment_mode = ${connection.escape(payment_mode)}`;
@@ -96,11 +97,37 @@ function export_customer(req, res) {
 
     } else if (type == 'complaint') {
 
-        var sql1 = "SELECT com.*,ct.complaint_name,hstl.Name AS hostel_name,hf.floor_name,hr.Room_Id,bd.bed_no,ca.first_name AS creator_name,ca.user_type FROM compliance AS com JOIN hosteldetails AS hstl ON hstl.ID=com.Hostel_id JOIN Hostel_Floor AS hf ON hf.floor_id=com.Floor_id JOIN hostelrooms AS hr ON hr.id=com.Room JOIN bed_details AS bd ON bd.id=com.Bed JOIN createaccount AS ca ON ca.id=com.created_by JOIN complaint_type AS ct ON com.Complainttype=ct.id WHERE com.Hostel_Id =? ORDER BY com.id DESC;"
+        const startDate = moment(req.body.start_date).format("YYYY-MM-DD") + " 00:00:00";
+        const endDate = moment(req.body.end_date).format("YYYY-MM-DD") + " 23:59:59";
+
+        var sql1 = `SELECT com.*,ct.complaint_name,hstl.Name AS hostel_name,hf.floor_name,hr.Room_Id,bd.bed_no,
+                ca.first_name AS creator_name,ca.user_type 
+                FROM compliance AS com 
+                JOIN hosteldetails AS hstl ON hstl.ID=com.Hostel_id 
+                JOIN Hostel_Floor AS hf ON hf.floor_id=com.Floor_id 
+                JOIN hostelrooms AS hr ON hr.id=com.Room 
+                JOIN bed_details AS bd ON bd.id=com.Bed 
+                JOIN createaccount AS ca ON ca.id=com.created_by 
+                JOIN complaint_type AS ct ON com.Complainttype=ct.id 
+                WHERE com.Hostel_Id = ?`;
+
+        if (status) {
+            sql1 += ` AND com.status = ${connection.escape(status)}`;
+        }
+
+        if (startDate && endDate) {
+            sql1 += ` AND com.createdat BETWEEN '${startDate}' AND '${endDate}'`;
+        } else if (startDate) {
+            const singleDayEnd = startDate.replace('00:00:00', '23:59:59');
+            sql1 += ` AND com.createdat BETWEEN '${startDate}' AND '${singleDayEnd}'`;
+        }
+
+        sql1 += ` ORDER BY com.id DESC`;
         var file_name = 'all_complaints';
 
     }
 
+    console.log("queryy--->" + sql1)
     connection.query(sql1, [hostel_id], function (err, data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Unable to Get All Details" })
