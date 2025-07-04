@@ -16,6 +16,7 @@ function export_customer(req, res) {
     var start_date = req.body?.start_date ? moment(new Date(req.body.start_date)).format('YYYY-MM-DD') : null;
     var end_date = req.body?.end_date ? moment(new Date(req.body.end_date)).format('YYYY-MM-DD') : null;
     var payment_mode = req.body?.payment_mode ? req.body.payment_mode : null;
+     var price_range = req.body?.price_range || null;
 
     var status = req.body?.status || null;
 
@@ -36,7 +37,35 @@ function export_customer(req, res) {
 
     } else if (type == 'assets') {
 
-        var sql1 = "SELECT ass.*,ven.Vendor_Name,hos.Name AS hostel_name,hosfloor.floor_name,hr.Room_Id AS room_name,ca.first_name AS creator_name,ca.user_type FROM assets AS ass LEFT JOIN Vendor AS ven ON ass.vendor_id=ven.id LEFT JOIN assigned_assets AS aa ON aa.asset_id=ass.id LEFT JOIN hosteldetails hos ON hos.id = aa.hostel_id LEFT JOIN Hostel_Floor hosfloor ON hosfloor.floor_id = aa.floor_id AND hosfloor.hostel_id = aa.hostel_id LEFT JOIN hostelrooms AS hr ON hr.id=aa.room_id JOIN createaccount AS ca ON ass.created_by=ca.id WHERE ass.hostel_id = ? AND ass.status=1;";
+        var sql1 = `SELECT ass.*,ven.Vendor_Name,hos.Name AS hostel_name,hosfloor.floor_name,hr.Room_Id AS room_name,ca.first_name AS creator_name,ca.user_type 
+                    FROM assets AS ass 
+                    LEFT JOIN Vendor AS ven ON ass.vendor_id=ven.id 
+                    LEFT JOIN assigned_assets AS aa ON aa.asset_id=ass.id 
+                    LEFT JOIN hosteldetails hos ON hos.id = aa.hostel_id 
+                    LEFT JOIN Hostel_Floor hosfloor ON hosfloor.floor_id = aa.floor_id AND hosfloor.hostel_id = aa.hostel_id 
+                    LEFT JOIN hostelrooms AS hr ON hr.id=aa.room_id 
+                    JOIN createaccount AS ca ON ass.created_by=ca.id 
+                    WHERE ass.hostel_id = ? AND ass.status=1`;
+
+        if (price_range) {
+            if (price_range === '0-100') {
+                sql1 += ' AND ass.price BETWEEN 0 AND 100';
+            } else if (price_range === '100-500') {
+                sql1 += ' AND ass.price BETWEEN 100 AND 500';
+            } else if (price_range === '500-1000') {
+                sql1 += ' AND ass.price BETWEEN 500 AND 1000';
+            } else if (price_range === '1000+') {
+                sql1 += ' AND ass.price > 1000';
+            }
+        }
+
+        if (start_date && end_date) {
+            sql1 += ` AND ass.purchase_date BETWEEN '${start_date}' AND '${end_date}'`;
+        } else if (start_date) {
+            sql1 += ` AND ass.purchase_date = '${start_date}'`;
+        }
+
+        sql1 += ` ORDER BY ass.id DESC`;
         var file_name = 'all_assets';
 
     } else if (type == 'expenses') {
@@ -97,9 +126,6 @@ function export_customer(req, res) {
 
     } else if (type == 'complaint') {
 
-        const startDate = moment(req.body.start_date).format("YYYY-MM-DD") + " 00:00:00";
-        const endDate = moment(req.body.end_date).format("YYYY-MM-DD") + " 23:59:59";
-
         var sql1 = `SELECT com.*,ct.complaint_name,hstl.Name AS hostel_name,hf.floor_name,hr.Room_Id,bd.bed_no,
                 ca.first_name AS creator_name,ca.user_type 
                 FROM compliance AS com 
@@ -115,11 +141,10 @@ function export_customer(req, res) {
             sql1 += ` AND com.status = ${connection.escape(status)}`;
         }
 
-        if (startDate && endDate) {
-            sql1 += ` AND com.createdat BETWEEN '${startDate}' AND '${endDate}'`;
-        } else if (startDate) {
-            const singleDayEnd = startDate.replace('00:00:00', '23:59:59');
-            sql1 += ` AND com.createdat BETWEEN '${startDate}' AND '${singleDayEnd}'`;
+        if (start_date && end_date) {
+            sql1 += ` AND com.createdat BETWEEN '${start_date} 00:00:00' AND '${end_date} 23:59:59'`;
+        } else if (start_date) {
+            sql1 += ` AND com.createdat BETWEEN '${start_date} 00:00:00' AND '${start_date} 23:59:59'`;
         }
 
         sql1 += ` ORDER BY com.id DESC`;
