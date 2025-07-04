@@ -44,9 +44,8 @@ async function isValidPurchaseDateForAsset(asset_id, purchase_date) {
         connection.query(sql, [asset_id], (err, results) => {
             if (err || results.length === 0) return resolve(false);
 
-            const created_date = new Date(results[0].create_At);
+            const created_date = new Date(results[0].createdat);
             const pur_date = new Date(purchase_date);
-
             if (pur_date >= created_date) {
                 resolve(true);
             } else {
