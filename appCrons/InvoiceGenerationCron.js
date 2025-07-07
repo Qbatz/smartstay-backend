@@ -1,7 +1,7 @@
 const connection = require('../config/connection');
 const nodeCron = require('node-cron');
 const moment = require('moment');
-const request = require('request');
+const request = require('request');                                                      
 
 nodeCron.schedule('0 0 * * *', async () => {
     const today = moment().date();
