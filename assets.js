@@ -310,7 +310,7 @@ async function add_asset(req, res) {
                             return res.status(201).json({ message: "Invalid Bank Id" });
                         }
 
-                        // ✅ ALLOW NEGATIVE BALANCE: no check for insufficient balance
+                        
                         insertasset(new_bank_id, sel_res);
                     });
 
@@ -380,6 +380,8 @@ async function add_asset(req, res) {
                                         }
                                     });
 
+                                }else {
+                                    return res.status(201).json({ message: "Asset name already exists", statusCode: 201 });
                                 }
                             });
                         }
