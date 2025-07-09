@@ -1106,182 +1106,194 @@ function getAmnitiesName(connection, request, response) {
   }
 }
 
-function aadhar_verify_otp(req, res) {
+// function aadhar_verify_otp(req, res) {
 
-  var role_permissions = req.role_permissions;
-  var is_admin = req.is_admin;
+//   var role_permissions = req.role_permissions;
+//   var is_admin = req.is_admin;
 
-  if (is_admin == 1 || (role_permissions[4] && role_permissions[4].per_edit == 1)) {
+//   if (is_admin == 1 || (role_permissions[4] && role_permissions[4].per_edit == 1)) {
 
-    var user_id = req.body.user_id;
-    var aadhar_number = req.body.aadhar_number;
+//     var user_id = req.body.user_id;
+//     var aadhar_number = req.body.aadhar_number;
 
-    if (!user_id || !aadhar_number) {
-      return res
-        .status(200)
-        .json({
-          statusCode: 201,
-          message: "Missing User Details and Aadhar Number",
-        });
-    }
+//     if (!user_id || !aadhar_number) {
+//       return res
+//         .status(200)
+//         .json({
+//           statusCode: 201,
+//           message: "Missing User Details and Aadhar Number",
+//         });
+//     }
 
-    var client_id = process.env.CASHFREE_CLIENTID;
-    var client_secret = process.env.CASHFREE_CLIENTSECRET;
-    var url = "https://api.cashfree.com/verification/offline-aadhaar/otp";
+//     var client_id = process.env.CASHFREE_CLIENTID;
+//     var client_secret = process.env.CASHFREE_CLIENTSECRET;
+//     var url = "https://api.cashfree.com/verification/offline-aadhaar/otp";
 
-    const options = {
-      url: url,
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-client-id": client_id,
-        "x-client-secret": client_secret,
-      },
+//     const options = {
+//       url: url,
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//         "x-client-id": client_id,
+//         "x-client-secret": client_secret,
+//       },
 
-      body: JSON.stringify({
-        aadhaar_number: aadhar_number,
-        consent: "Y",
-      }),
-    };
-    request(options, (error, response, body) => {
-      if (error) {
-        console.error("Error:", error);
-        return res.json({ message: error });
-      }
-      const result = JSON.parse(body);
-      console.log("OTP generation response:", result);
-      if (result.status == "SUCCESS") {
-        return res
-          .status(200)
-          .json({
-            statusCode: 200,
-            message: "OTP sent successfully",
-            result: result,
-          });
-      } else {
-        return res.status(201).json({ statusCode: 201, result: result });
-      }
-    });
+//       body: JSON.stringify({
+//         aadhaar_number: aadhar_number,
+//         consent: "Y",
+//       }),
+//     };
+//     request(options, (error, response, body) => {
+//       if (error) {
+//         console.error("Error:", error);
+//         return res.json({ message: error });
+//       }
+//       const result = JSON.parse(body);
+//       console.log("OTP generation response:", result);
+//       if (result.status == "SUCCESS") {
+//         return res
+//           .status(200)
+//           .json({
+//             statusCode: 200,
+//             message: "OTP sent successfully",
+//             result: result,
+//           });
+//       } else {
+//         return res.status(201).json({ statusCode: 201, result: result });
+//       }
+//     });
 
-  } else {
-    res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
-  }
-}
+//   } else {
+//     res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+//   }
+// }
 
 function encrypt(text, secretKey) {
   return CryptoJS.AES.encrypt(text, secretKey).toString();
 }
-
-function aadhaar_otp_verify(req, res) {
-
-  var role_permissions = req.role_permissions;
-  var is_admin = req.is_admin;
-
-  if (is_admin == 1 || (role_permissions[4] && role_permissions[4].per_edit == 1)) {
-
-    var otp = req.body.otp;
-    var aadhar_number = req.body.aadhar_number;
-    var user_id = req.body.user_id;
-    var ref_id = req.body.ref_id;
-
-    if (!otp || !user_id || !aadhar_number) {
-      return res
-        .status(200)
-        .json({ statusCode: 201, message: "Missing Required Fields" });
-    }
-
-    var client_id = process.env.CASHFREE_CLIENTID;
-    var client_secret = process.env.CASHFREE_CLIENTSECRET;
-    var url = "https://api.cashfree.com/verification/offline-aadhaar/verify";
-
-    const secretKey = "abcd"; // Secret key used for encryption
-    const originalText = aadhar_number;
-    const encryptedText = encrypt(originalText, secretKey);
-    console.log(encryptedText);
-
-    if (otp == "1234") {
-      var sql1 =
-        "UPDATE hostel SET AadharNo='" +
-        encryptedText +
-        "' WHERE ID='" +
-        user_id +
-        "'";
-      console.log(sql1);
-      connection.query(sql1, function (err, data) {
-        if (err) {
-          return res
-            .status(201)
-            .json({
-              statusCode: 201,
-              message: "Unable to Update Aadhar Details",
-            });
-        } else {
-          return res
-            .status(200)
-            .json({
-              statusCode: 200,
-              message: "Successfully Update Aadhar Details",
-            });
-        }
-      });
-    } else {
-      const options = {
-        url: url,
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-client-id": client_id,
-          "x-client-secret": client_secret,
-        },
-
-        body: JSON.stringify({
-          otp: otp,
-          ref_id: ref_id,
-        }),
-      };
-      request(options, (error, response, body) => {
-        if (error) {
-          console.error("Error:", error);
-          return;
-        }
-
-        const result = JSON.parse(body);
-        console.log("OTP verification response:", result);
-
-        if (result.status == "VALID") {
-          var sql1 =
-            "UPDATE hostel SET AadharNo='" +
-            encryptedText +
-            "' WHERE ID='" +
-            user_id +
-            "'";
-          connection.query(sql1, function (err, data) {
-            if (err) {
-              return res
-                .status(201)
-                .json({
-                  statusCode: 201,
-                  message: "Unable to Update Aadhar Details",
-                });
-            } else {
-              return res
-                .status(200)
-                .json({
-                  statusCode: 200,
-                  message: "Successfully Update Aadhar Details",
-                  result: result,
-                });
-            }
-          });
-        } else {
-          return res.status(201).json({ statusCode: 201, result: result });
-        }
-      });
-    }
-  } else {
-    res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
-  }
+function aadhaar_otp_verify( res) {
+  return res.status(200).json({
+    statusCode: 200,
+  });
 }
+
+function aadhar_verify_otp(res) {
+  return res.status(200).json({
+    statusCode: 200,
+   
+  });
+}
+
+// function aadhaar_otp_verify(req, res) {
+
+//   var role_permissions = req.role_permissions;
+//   var is_admin = req.is_admin;
+
+//   if (is_admin == 1 || (role_permissions[4] && role_permissions[4].per_edit == 1)) {
+
+//     var otp = req.body.otp;
+//     var aadhar_number = req.body.aadhar_number;
+//     var user_id = req.body.user_id;
+//     var ref_id = req.body.ref_id;
+
+//     if (!otp || !user_id || !aadhar_number) {
+//       return res
+//         .status(200)
+//         .json({ statusCode: 201, message: "Missing Required Fields" });
+//     }
+
+//     var client_id = process.env.CASHFREE_CLIENTID;
+//     var client_secret = process.env.CASHFREE_CLIENTSECRET;
+//     var url = "https://api.cashfree.com/verification/offline-aadhaar/verify";
+
+//     const secretKey = "abcd"; // Secret key used for encryption
+//     const originalText = aadhar_number;
+//     const encryptedText = encrypt(originalText, secretKey);
+//     console.log(encryptedText);
+
+//     if (otp == "1234") {
+//       var sql1 =
+//         "UPDATE hostel SET AadharNo='" +
+//         encryptedText +
+//         "' WHERE ID='" +
+//         user_id +
+//         "'";
+//       console.log(sql1);
+//       connection.query(sql1, function (err, data) {
+//         if (err) {
+//           return res
+//             .status(201)
+//             .json({
+//               statusCode: 201,
+//               message: "Unable to Update Aadhar Details",
+//             });
+//         } else {
+//           return res
+//             .status(200)
+//             .json({
+//               statusCode: 200,
+//               message: "Successfully Update Aadhar Details",
+//             });
+//         }
+//       });
+//     } else {
+//       const options = {
+//         url: url,
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           "x-client-id": client_id,
+//           "x-client-secret": client_secret,
+//         },
+
+//         body: JSON.stringify({
+//           otp: otp,
+//           ref_id: ref_id,
+//         }),
+//       };
+//       request(options, (error, response, body) => {
+//         if (error) {
+//           console.error("Error:", error);
+//           return;
+//         }
+
+//         const result = JSON.parse(body);
+//         console.log("OTP verification response:", result);
+
+//         if (result.status == "VALID") {
+//           var sql1 =
+//             "UPDATE hostel SET AadharNo='" +
+//             encryptedText +
+//             "' WHERE ID='" +
+//             user_id +
+//             "'";
+//           connection.query(sql1, function (err, data) {
+//             if (err) {
+//               return res
+//                 .status(201)
+//                 .json({
+//                   statusCode: 201,
+//                   message: "Unable to Update Aadhar Details",
+//                 });
+//             } else {
+//               return res
+//                 .status(200)
+//                 .json({
+//                   statusCode: 200,
+//                   message: "Successfully Update Aadhar Details",
+//                   result: result,
+//                 });
+//             }
+//           });
+//         } else {
+//           return res.status(201).json({ statusCode: 201, result: result });
+//         }
+//       });
+//     }
+//   } else {
+//     res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+//   }
+// }
 
 function conutry_list(req, res) {
   var sql1 = "SELECT * FROM country_list";
@@ -2106,59 +2118,68 @@ function delete_walk_in_customer(req, res) {
 
 
 function user_check_out(req, res) {
-
-  var created_by = req.user_details.id;
-
-  var role_permissions = req.role_permissions;
-  var is_admin = req.is_admin;
+  const created_by = req.user_details.id;
+  const role_permissions = req.role_permissions;
+  const is_admin = req.is_admin;
 
   if (is_admin == 1 || (role_permissions[6] && role_permissions[6].per_create == 1)) {
-
-    var { checkout_date, user_id, hostel_id, comments, action, req_date } = req.body;
+    let { checkout_date, user_id, hostel_id, comments, action, req_date } = req.body;
 
     if (!user_id || !checkout_date || !req_date) {
-      return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+      return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
     }
 
     if (!action) {
-      var action = 1 // Add Checkout
+      action = 1; // Add Checkout
     }
-    // var action = 2 // Edit Checkout
 
-    var sql1 = "SELECT * FROM hostel WHERE ID=? AND isActive=1 AND created_by=? AND Hostel_Id=?";
+    const sql1 = "SELECT * FROM hostel WHERE ID = ? AND isActive = 1 AND created_by = ? AND Hostel_Id = ?";
     connection.query(sql1, [user_id, created_by, hostel_id], function (err, sel_res) {
       if (err) {
-        return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" })
-      } else if (sel_res.length != 0) {
+        return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details" });
+      } else if (sel_res.length !== 0) {
+        const user_data = sel_res[0];
 
-        console.log(sel_res[0].CheckoutDate);
-
-        if (action == 1 && sel_res[0].CheckoutDate) {
-          return res.status(201).json({ statusCode: 201, message: "Already Added Checkout Date" })
-        } else {
-
-          var sql2 = "UPDATE hostel SET checkout_comment=?,CheckOutDate=?,req_date=? WHERE ID=?";
-          connection.query(sql2, [comments, checkout_date, req_date, user_id], function (err, data) {
-            if (err) {
-              return res.status(201).json({ statusCode: 201, message: "Unable to Update User Details" })
-            } else {
-              if (action == 1) { // Add Message
-                return res.status(200).json({ statusCode: 200, message: "Check-out Added Successfully!" })
-              } else {
-                return res.status(200).json({ statusCode: 200, message: "Changes Saved Successfully!" })
-              }
-            }
-          })
-
+        if (action === 1 && user_data.CheckoutDate) {
+          return res.status(201).json({ statusCode: 201, message: "Already Added Checkout Date" });
         }
+
+        const joiningDate = new Date(user_data.joining_Date);
+        const checkOutDate = new Date(checkout_date);
+
+        if (checkOutDate <= joiningDate) {
+          return res.status(201).json({
+            statusCode: 201,
+            message: "Check-out date must be after the joining date (" + joiningDate.toISOString().split('T')[0] + ")"
+          });
+        }
+
+        const sql2 = "UPDATE hostel SET checkout_comment = ?, CheckOutDate = ?, req_date = ? WHERE ID = ?";
+        connection.query(sql2, [comments, checkout_date, req_date, user_id], function (err, data) {
+          if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Update User Details" });
+          } else {
+            const msg = (action === 1)
+              ? "Check-out Added Successfully!"
+              : "Changes Saved Successfully!";
+            return res.status(200).json({ statusCode: 200, message: msg });
+          }
+        });
       } else {
-        return res.status(201).json({ statusCode: 201, message: "Please select a valid hostel name. This customer does not exist for this hostel." })
+        return res.status(201).json({
+          statusCode: 201,
+          message: "Please select a valid hostel name. This customer does not exist for this hostel."
+        });
       }
-    })
+    });
   } else {
-    res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    res.status(208).json({
+      message: "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208
+    });
   }
 }
+
 
 function get_confirm_checkout(req, res) {
 

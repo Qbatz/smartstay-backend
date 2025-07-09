@@ -4,6 +4,7 @@ const path = require('path');
 const moment = require('moment');
 
 function generateReceipt(data, invoiceDetails, outputPath) {
+     
     const doc = new PDFDocument({ size: 'A4', margin: 20 });
     doc.pipe(fs.createWriteStream(outputPath));
 
@@ -22,8 +23,11 @@ function generateReceipt(data, invoiceDetails, outputPath) {
     const rectBluePath = path.resolve(__dirname, '../Asset/Rectangleblue.png');
     const locationIconPath = path.resolve(__dirname, '../Asset/location 03.png');
     const paidFullPath = path.resolve(__dirname, '../Asset/paidfull (2).png');
+    const locationuserPath = path.resolve(__dirname, '../Asset/user.png');
 
+ 
     doc.image(logoPath, margin + 16, margin + 10, { width: 25, height: 25 });
+    doc.image(locationuserPath, 35, 178, { width: 8, height: 8 });
     doc.image(rectBluePath, 35, 194, { width: 8, height: 8 });
     doc.image(locationIconPath, 35, 215, { width: 10, height: 10 });
 

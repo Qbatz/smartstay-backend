@@ -4,8 +4,10 @@ const cron = require('node-cron');
 const middleware = require('./middleware');
 const connection = require('./config/connection');
 const notifications = require('./notifications');
-const assets = require('./assets');
+const assets = require('./assets');                      
 const crons = require('./crons');
+const whatsappCrons = require('./appCrons/whatsAppCrons');
+const invoiceGenerationCrons = require('./appCrons/InvoiceGenerationCron');
 const payments = require('./payments');
 const importFunc = require('./components/import_func');
 const xlsx = require('xlsx');
@@ -1040,12 +1042,7 @@ app.post('/get_bill_details', (req, res) => {
     userQueries.get_bill_details(req, res)
 });
 
-// Completed
 
-// Bookings
-// app.post('/add_booking', (req, res) => {
-//     bookings.add_booking(req, res)
-// });
 
 app.post('/add_booking', upload.fields([{ name: 'profile', maxCount: 1 }]), (req, res) => {
     newBookings.add_booking(req, res)
@@ -1059,10 +1056,6 @@ app.post('/delete_booking', (req, res) => {
     bookings.delete_booking(req, res)
 });
 
-// Assign Booking
-// app.post('/assign_booking', (req, res) => {
-//     bookings.assign_booking(req, res)
-// });
 
 app.post('/assign_booking', (req, res) => {
     newBookings.assign_booking(req, res)

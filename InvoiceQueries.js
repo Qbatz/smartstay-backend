@@ -2831,7 +2831,7 @@ function delete_manual_invoice(req, res) {
         var paid_amount = data[0].PaidAmount;
 
         if (paid_amount > 0) {
-            return res.status(201).json({ statusCode: 201, message: "Already Added Paid Amount In this Invoice. So Not Deleted" })
+            return res.status(201).json({ statusCode: 201, message: "Paid amount already added in this invoice, so can't delete" })
         }
 
         var sql2 = "UPDATE invoicedetails SET invoice_status=0 WHERE id=?";
@@ -3007,7 +3007,6 @@ function addRecurringBills(req, res) {
         recurringName,
         billFrequency,
         calculationFromDate,
-        calculationToDate,
         billingDateOfMonth,
         dueDateOfMonth,
         isAutoSend,
@@ -3039,7 +3038,6 @@ function addRecurringBills(req, res) {
     // Validate all day number fields
     if (
         !isValidDayNumber(calculationFromDate) ||
-        !isValidDayNumber(calculationToDate) ||
         !isValidDayNumber(billingDateOfMonth) ||
         !isValidDayNumber(dueDateOfMonth)
     ) {
@@ -3060,7 +3058,6 @@ function addRecurringBills(req, res) {
     };
 
     const calcFromDateFull = createValidDate(calculationFromDate);
-    const calcToDateFull = createValidDate(calculationToDate);
 
     const remainderDatesStr = Array.isArray(remainderDates) ? remainderDates.join(',') : '';
     const billDeliveryChannelsStr = Array.isArray(billDeliveryChannels) ? billDeliveryChannels.join(',') : '';
@@ -3079,11 +3076,11 @@ function addRecurringBills(req, res) {
 
         const invoiceUpdate = `
             UPDATE hosteldetails
-            SET recure = ?, inv_startdate = ?, inv_enddate = ?, due_date = ?
+            SET recure = ?, inv_startdate = ?, inv_enddate = ?, due_date = ?, bill_date = ?
             WHERE id = ?
         `;
 
-        const invoiceData = [1, calculationFromDate, calculationToDate, dueDateOfMonth, hostel_id];
+        const invoiceData = [1, calculationFromDate, "", dueDateOfMonth, billingDateOfMonth, hostel_id];
 
         connection.query(invoiceUpdate, invoiceData, (err) => {
             if (err) {
@@ -3105,7 +3102,7 @@ function addRecurringBills(req, res) {
                     recurringName,
                     billFrequency,
                     calculationFromDate,
-                    calculationToDate,
+                    "",
                     billingDateOfMonth,
                     dueDateOfMonth,
                     Number(isAutoSend) || 0,
@@ -3155,7 +3152,7 @@ function addRecurringBills(req, res) {
                         recurringName,
                         billFrequency,
                         calculationFromDate,
-                        calculationToDate,
+                        "",
                         billingDateOfMonth,
                         dueDateOfMonth,
                         Number(isAutoSend) || 0,
@@ -3220,16 +3217,10 @@ function get_recuring_amount(req, res) {
                     const today = moment(); // Current Date
 
                     let start_day = parseInt(inv_data.inv_startdate, 10) || 1; // Default to 1 if NULL
-                    let end_day = parseInt(inv_data.inv_enddate, 10) || moment().subtract(1, 'months').endOf('month').date(); // Last month's last day if NULL
-
-                    if (inv_data.inv_enddate && end_day < today.date()) {
-                        end_day = parseInt(inv_data.inv_enddate, 10);
-                        start_day = parseInt(inv_data.inv_startdate, 10) || 1; // Get start date if provided, else default to 1
-                    }
-
+            
                     const lastMonth = moment().subtract(1, 'months');
                     const inv_startdate = lastMonth.date(start_day).format("YYYY-MM-DD");
-                    const inv_enddate = lastMonth.date(end_day).format("YYYY-MM-DD");
+                    const inv_enddate = moment(inv_startdate).add(30, 'days').format("YYYY-MM-DD");
                     const room_rent = inv_data.RoomRent;
                     const startDate = new Date(inv_startdate);
                     const endDate = new Date(inv_enddate);
@@ -3269,15 +3260,8 @@ function get_recuring_amount(req, res) {
                             const lastMonth = moment().subtract(1, "months");
 
                             let start_day = parseInt(sql2_res[0]?.start_date, 10) || 1; // Default to 1 if NULL
-                            let end_day = parseInt(sql2_res[0]?.end_date, 10) || lastMonth.endOf("month").date(); // Last month's last day if NULL
-
-                            if (sql2_res[0]?.end_date && end_day < today.date()) {
-                                end_day = parseInt(sql2_res[0]?.end_date, 10);
-                                start_day = parseInt(sql2_res[0]?.start_date, 10) || 1; // Get start date if provided, else default to 1
-                            }
-
                             var eb_start_date = lastMonth.date(start_day).format("YYYY-MM-DD");
-                            var eb_end_date = lastMonth.date(end_day).format("YYYY-MM-DD");
+                            var eb_end_date = moment(eb_start_date).add(30, 'days').format("YYYY-MM-DD");
 
                             eb_unit_amount = sql2_res[0]?.amount || 0
 
@@ -3316,21 +3300,15 @@ function get_recuring_amount(req, res) {
                                     const nextMonth = moment(); // Current month (Feb 2025)
 
                                     let start_day = parseInt(amenity.startdate, 10) || 1;
-                                    let end_day = parseInt(amenity.enddate, 10) || lastMonth.endOf("month").date();
-
+                                
                                     const lastMonthDays = lastMonth.daysInMonth();
                                     start_day = Math.min(Math.max(start_day, 1), lastMonthDays);
-                                    end_day = Math.min(Math.max(end_day, start_day), lastMonthDays);
-
+                                
                                     let am_start_date, am_end_date;
+                                     am_start_date = lastMonth.date(start_day).format("YYYY-MM-DD");
+                                     am_end_date = moment(am_start_date).add(30, 'days').format("YYYY-MM-DD");
 
-                                    if (amenity.startdate && amenity.startdate === amenity.enddate) {
-                                        am_start_date = lastMonth.date(start_day).format("YYYY-MM-DD");
-                                        am_end_date = nextMonth.date(end_day).format("YYYY-MM-DD"); // Moves end date to next month
-                                    } else {
-                                        am_start_date = lastMonth.date(start_day).format("YYYY-MM-DD");
-                                        am_end_date = lastMonth.date(end_day).format("YYYY-MM-DD");
-                                    }
+                                   
 
                                     const sql1 = `
                                         SELECT am.Amount, amname.Amnities_Name 

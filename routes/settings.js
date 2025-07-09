@@ -371,8 +371,7 @@ function insertInvoice(inv_data, totalAmount, invoice_id, due_date, inv_startdat
   });
 }
 
-nodeCron.schedule('0 0 * * *', () => {
-  console.log("Running Cron every 10 seconds");
+nodeCron.schedule('0 0 * * *', async () => {
   processRecurringInvoices().catch(err => console.error("Cron Error:", err));
 });
 
@@ -422,19 +421,17 @@ async function processRecurringInvoices() {
 
 function computeBillingRange(data) {
   const lastMonth = moment().subtract(1, 'month');
-
+  
   const startDay = parseInt(data.calculationFromDate, 10) || 1;
-  let endDay = parseInt(data.calculationToDate, 10) ||
-    lastMonth.endOf('month').date();
+  const inv_startdate = moment(lastMonth).date(startDay);
+  const inv_enddate = moment(inv_startdate).add(30, 'days');
 
-  // Prevent end date from being before start date
-  if (endDay < startDay) endDay = startDay;
-
-  const inv_startdate = lastMonth.date(startDay).format('YYYY-MM-DD');
-  const inv_enddate = lastMonth.date(endDay).format('YYYY-MM-DD');
-
-  return { inv_startdate, inv_enddate };
+  return {
+    inv_startdate: inv_startdate.format('YYYY-MM-DD'),
+    inv_enddate: inv_enddate.format('YYYY-MM-DD')
+  };
 }
+
 
 
 const fetchInvoiceSettings = async (hostelId) => {
