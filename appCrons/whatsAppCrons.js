@@ -104,7 +104,7 @@ nodeCron.schedule('0 0 * * *', async () => {
                 const lastMonth = moment().subtract(1, 'months');
                 const inv_startdate = lastMonth.date(start_day).format("YYYY-MM-DD");
                 const inv_enddate = moment(inv_startdate).add(30, 'days').format("YYYY-MM-DD");
-            
+
                 if (inv_data.isWhatsAppEnabled && inv_data.autoSend && isTodayReminder) {
                     console.log(`Trigger WhatsApp reminder for hostel ${inv_data.hostel_name} (ID: ${inv_data.user_id}) - Due Date: ${dueDate.format('YYYY-MM-DD')}`);
                     generateInvoiceForDate(inv_data, inv_startdate, inv_enddate);
@@ -122,10 +122,17 @@ function generateInvoiceForDate(inv_data, inv_startdate, inv_enddate) {
     var total_array = [];
 
     var currentdate = moment().format('YYYY-MM-DD');
+    const firstDayOfMonth = moment().startOf('month').format('YYYY-MM-DD');
+    const lastDayOfMonth = moment().endOf('month').format('YYYY-MM-DD');
 
-    var sql1 = "SELECT * FROM invoicedetails WHERE hos_user_id=? AND action='recuring' AND invoice_status=1 AND Date=?";
-
-    connection.query(sql1, [inv_data.user_id, currentdate], async function (err, data) {
+   const sql1 = `
+  SELECT * FROM invoicedetails
+  WHERE hos_user_id = ?
+    AND action = 'recuring'
+    AND invoice_status = 1
+    AND Date BETWEEN ? AND ?
+`;
+    connection.query(sql1, [inv_data.user_id, firstDayOfMonth,lastDayOfMonth], async function (err, data) {
         if (err) {
             console.log(err);
         } else if (data.length != 0) {
@@ -484,4 +491,3 @@ const uploadToS3 = async (filePath, filename, inv_id) => {
 
 
 
-                                                                                 
