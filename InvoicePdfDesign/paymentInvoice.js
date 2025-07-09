@@ -38,9 +38,9 @@ function generateInvoice(data, invoiceDetails, outputPath) {
     doc.image(logoPath, outerPadding + 16, outerPadding + 15, { width: 25, height: 25 });
   
 
-      doc.image(locationuserPath, 35, 198, { width: 8, height: 8 });
-    doc.image(rectBluePath, 35, 215, { width: 8, height: 8 });
-    doc.image(locationIconPath, 35, 233, { width: 10, height: 10 });
+      doc.image(locationuserPath, 50, 198, { width: 8, height: 8 });
+    doc.image(rectBluePath, 50, 215, { width: 8, height: 8 });
+    doc.image(locationIconPath, 50, 233, { width: 10, height: 10 });
 
     const logoTextY = outerPadding + 20; 
 const subtitleY = logoTextY + 24;
@@ -64,31 +64,57 @@ const subtitleY = logoTextY + 24;
   .text('Meet All Your Needs.', outerPadding + 30, subtitleY);
 
     // === Hostel Details Right ===
-    doc
-        .fillColor('white')
-        .fontSize(12)
-        .font('Helvetica-Bold')
-        .text(invoiceDetails.Hostel_Name, pageWidth - 150, outerPadding + 10, { width: 200, align: 'left' })
-        .font('Helvetica')
-        .fontSize(9)
-        .text(
-            [invoiceDetails.hostel_address, invoiceDetails.harea].filter(Boolean).join(', '),
-            pageWidth - 150,
-            outerPadding + 30,
-            { width: 200, align: 'left' }
-        )
-        .text(
-            [invoiceDetails.hlandmark, invoiceDetails.hcity].filter(Boolean).join(' - '),
-            pageWidth - 150,
-            outerPadding + 42,
-            { width: 200, align: 'left' }
-        )
-        .text(
-            [invoiceDetails.hstate, invoiceDetails.hpincode].filter(Boolean).join(' - '),
-            pageWidth - 150,
-            outerPadding + 54,
-            { width: 200, align: 'left' }
-        );
+    // doc
+    //     .fillColor('white')
+    //     .fontSize(12)
+    //     .font('Helvetica-Bold')
+    //     .text(invoiceDetails.Hostel_Name, pageWidth - 150, outerPadding + 10, { width: 200, align: 'left' })
+    //     .font('Helvetica')
+    //     .fontSize(9)
+    //     .text(
+    //         [invoiceDetails.hostel_address, invoiceDetails.harea].filter(Boolean).join(', '),
+    //         pageWidth - 150,
+    //         outerPadding + 30,
+    //         { width: 200, align: 'left' }
+    //     )
+    //     .text(
+    //         [invoiceDetails.hlandmark, invoiceDetails.hcity].filter(Boolean).join(' - '),
+    //         pageWidth - 150,
+    //         outerPadding + 42,
+    //         { width: 200, align: 'left' }
+    //     )
+    //     .text(
+    //         [invoiceDetails.hstate, invoiceDetails.hpincode].filter(Boolean).join(' - '),
+    //         pageWidth - 150,
+    //         outerPadding + 54,
+    //         { width: 200, align: 'left' }
+    //     );
+    let currentYh = outerPadding + 10;
+
+doc
+  .fillColor('white')
+  .fontSize(12)
+  .font('Helvetica-Bold')
+  .text(invoiceDetails.Hostel_Name, pageWidth - 150, currentYh, {
+    width: 200,
+    align: 'left',
+  });
+
+currentYh += 15; // spacing after hostel name
+doc.font('Helvetica').fontSize(9);
+
+const lines = [
+  [invoiceDetails.hostel_address, invoiceDetails.harea].filter(Boolean).join(', '),
+  [invoiceDetails.hlandmark, invoiceDetails.hcity].filter(Boolean).join(' - '),
+  [invoiceDetails.hstate, invoiceDetails.hpincode].filter(Boolean).join(' - ')
+];
+
+lines.forEach(line => {
+  if (line) {
+    doc.text(line, pageWidth - 150, currentYh, { width: 200, align: 'left' });
+    currentYh += 12; // only move down if line exists
+  }
+});
 
     // === Payment Invoice Title ===
     // doc
@@ -115,32 +141,32 @@ doc
     doc
         .fontSize(10)
         .fillColor('#1E45E1')
-        .font('Helvetica-Bold')
+        .font('Helvetica-Oblique')
         .text('Bill To:', leftX, infoY);
 
     doc.fillColor('black').font('Helvetica');
     let currentY = infoY + lineGap;
 
     if (invoiceDetails.Name) {
-        doc.text(invoiceDetails.Name, leftX, currentY); currentY += lineGap;
+        doc.text(invoiceDetails.Name, leftX + 13, currentY); currentY += lineGap;
     }
     if (invoiceDetails.phoneNo) {
-        doc.text(invoiceDetails.phoneNo, leftX, currentY); currentY += lineGap;
+        doc.text(invoiceDetails.phoneNo, leftX + 13, currentY); currentY += lineGap;
     }
 
     const addressLine1 = [invoiceDetails.UserAddress, invoiceDetails.uarea].filter(Boolean).join(', ');
     if (addressLine1) {
-        doc.text(addressLine1, leftX, currentY, { width: 250 }); currentY += lineGap;
+        doc.text(addressLine1, leftX + 13, currentY, { width: 250 }); currentY += lineGap;
     }
 
     const addressLine2 = [invoiceDetails.ulandmark, invoiceDetails.ucity].filter(Boolean).join(' - ');
     if (addressLine2) {
-        doc.text(addressLine2, leftX, currentY, { width: 250 }); currentY += lineGap;
+        doc.text(addressLine2, leftX + 13, currentY, { width: 250 }); currentY += lineGap;
     }
 
     const addressLine3 = [invoiceDetails.ustate, invoiceDetails.upincode].filter(Boolean).join(' - ');
     if (addressLine3) {
-        doc.text(addressLine3, leftX, currentY, { width: 250 }); currentY += lineGap;
+        doc.text(addressLine3, leftX + 13, currentY, { width: 250 }); currentY += lineGap;
     }
 
     // const formattedDate = moment(invoiceDetails.Date).format('DD-MM-YYYY');
@@ -171,21 +197,21 @@ const formattedJoiningDate = utcDate3.toLocaleDateString('en-GB', {
     doc
         .font('Helvetica')
         .fillColor('grey')
-        .text('Invoice No:', rightX + 90, infoY)
+        .text('Invoice No:', rightX + 70, infoY)
         .fillColor('black')
-        .text(invoiceDetails.Invoices, rightX + 150, infoY)
+        .text(invoiceDetails.Invoices, rightX + 140, infoY)
         .fillColor('grey')
-        .text('Invoice Date:', rightX + 90, infoY + lineHeight)
+        .text('Invoice Date:', rightX + 70, infoY + lineHeight * 1.2)
         .fillColor('black')
-        .text(formattedDate, rightX + 150, infoY + lineHeight)
+        .text(formattedDate, rightX + 140, infoY + lineHeight * 1.2)
         .fillColor('grey')
-        .text('Due Date:', rightX + 90, infoY + lineHeight * 2)
+        .text('Due Date:', rightX + 70, infoY + lineHeight * 2.3)
         .fillColor('black')
-        .text(formattedDueDate, rightX + 150, infoY + lineHeight * 2)
+        .text(formattedDueDate, rightX + 140, infoY + lineHeight * 2.3)
          .fillColor('grey')
-        .text('Joining Date:', rightX + 90, infoY + lineHeight * 3)
+        .text('Joining Date:', rightX + 70, infoY + lineHeight * 3.5)
         .fillColor('black')
-        .text(formattedJoiningDate, rightX + 150, infoY + lineHeight * 3);
+        .text(formattedJoiningDate, rightX + 140, infoY + lineHeight * 3.5);
 
     // === Table Header ===
     // const tableY = contentStartY + 120;
@@ -223,23 +249,37 @@ doc
     .text('Amount', leftX + 400, tableY + 7);
 
 // === Table Rows ===
+// let y = tableY + 35;
+// doc.font('Helvetica').fillColor('black');
+// data.forEach((item, i) => {
+//     doc
+//         .text(i + 1, leftX + 10, y)
+//         .text(item.am_name, leftX + 120, y)
+//         .text((item.amount ?? 0).toFixed(2), leftX + 400, y);
+//     y += 25;
+// });
 let y = tableY + 35;
 doc.font('Helvetica').fillColor('black');
+
 data.forEach((item, i) => {
-    doc
-        .text(i + 1, leftX + 10, y)
-        .text(item.am_name, leftX + 120, y)
-        .text((item.amount ?? 0).toFixed(2), leftX + 400, y);
-    y += 25;
+  // Draw row text
+  doc
+    .text(i + 1, leftX + 10, y)
+    .text(item.am_name, leftX + 120, y)
+    .text((item.amount ?? 0).toFixed(2), leftX + 400, y);
+
+  // Draw horizontal line under the row
+  doc
+    .moveTo(leftX + 10, y + 20) // line start
+    .lineTo(pageWidth - 50, y + 20) // line end
+    .strokeColor('#D9D9D9') // light gray line
+    .lineWidth(0.2)
+    .stroke();
+
+  y += 25;
 });
 
 // === HR line after table rows ===
-doc
-    .moveTo(leftX, y - 7) // start a bit above the gap
-    .lineTo(pageWidth - leftX, y - 7)
-    .lineWidth(0.5)
-    .strokeColor('#D9D9D9')
-    .stroke();
 
 
     
