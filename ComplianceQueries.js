@@ -160,10 +160,24 @@ function GetComplianceList(connection, response, request) {
         // Append date range filter if provided
         if (from_date && to_date) {
             sql1 += ` AND comp.createdat BETWEEN ? AND ?`;
-            params.push(from_date, to_date);
+            const dt = new Date(to_date);
+            const endDate = new Date(Date.UTC(
+                dt.getUTCFullYear(),
+                dt.getUTCMonth(),
+                dt.getUTCDate(),
+                23, 59, 59, 999
+            )).toISOString();
+            params.push(from_date, endDate);
         } else if (from_date) {
-            sql1 += ` AND comp.createdat >= ?`;
-            params.push(from_date);
+            const dt = new Date(from_date);
+            const endDate = new Date(Date.UTC(
+                dt.getUTCFullYear(),
+                dt.getUTCMonth(),
+                dt.getUTCDate(),
+                23, 59, 59, 999
+            )).toISOString();
+            sql1 += ` AND comp.createdat BETWEEN ? AND ?`;
+            params.push(from_date.toISOString(), endDate);
         } else if (to_date) {
             sql1 += ` AND comp.createdat <= ?`;
             params.push(to_date);
