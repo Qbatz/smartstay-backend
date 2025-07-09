@@ -32,9 +32,9 @@ function generateReceipt(data, invoiceDetails, outputPath) {
 
     // === Logo & Tagline ===
     doc.image(logoPath, 30, 35, { width: 30, height: 30 });
-    doc.image(locationuserPath, 35, 168, { width: 10, height: 10 });
-    doc.image(rectBluePath, 35, 185, { width: 8, height: 8 });
-    doc.image(locationIconPath, 35, 202, { width: 10, height: 10 });
+    doc.image(locationuserPath, 50, 168, { width: 10, height: 10 });
+    doc.image(rectBluePath, 50, 190, { width: 8, height: 8 });
+    doc.image(locationIconPath, 50, 208, { width: 10, height: 10 });
     doc
         .fillColor('white')
         .fontSize(18)
@@ -44,17 +44,49 @@ function generateReceipt(data, invoiceDetails, outputPath) {
         .font('Helvetica')
         .text('Meet All Your Needs.', 45, 70);
 
-    // === Hostel Details Right ===
-    doc
-        .fillColor('white')
-        .fontSize(12)
-        .font('Helvetica-Bold')
-        .text(invoiceDetails.hname, pageWidth - 150, 35, { width: 200, align: 'left' })
-        .font('Helvetica')
-        .fontSize(9)
-        .text([invoiceDetails.haddress, invoiceDetails.harea].filter(Boolean).join(', '), pageWidth - 150, 53, { width: 200, align: 'left' })
-        .text([invoiceDetails.hlandmark, invoiceDetails.hcity].filter(Boolean).join(' - '), pageWidth - 150, 65, { width: 200, align: 'left' })
-        .text([invoiceDetails.hstate, invoiceDetails.hpincode].filter(Boolean).join(' - '), pageWidth - 150, 77, { width: 200, align: 'left' });
+  
+
+
+let currentYq = 35;
+const blockX = pageWidth - 170; // Shift left for margin
+const blockWidth = 180;
+
+doc
+  .fillColor('white')
+  .fontSize(12)
+  .font('Helvetica-Bold')
+  .text(invoiceDetails.hname, blockX, currentYq, {
+    width: blockWidth,
+    align: 'left',
+  });
+
+currentYq += 18;
+
+doc.font('Helvetica').fontSize(9);
+
+const lines = [
+  [invoiceDetails.haddress, invoiceDetails.harea].filter(Boolean).join(', '),
+  [invoiceDetails.hlandmark, invoiceDetails.hcity].filter(Boolean).join(' - '),
+  [invoiceDetails.hstate, invoiceDetails.hpincode].filter(Boolean).join(' - ')
+];
+
+lines.forEach((line) => {
+  if (line) {
+    const textHeight = doc.heightOfString(line, {
+      width: blockWidth,
+      align: 'left',
+    });
+
+    doc.text(line, blockX, currentYq, {
+      width: blockWidth,
+      align: 'left',
+    });
+
+    currentYq += textHeight + 2; // increase Y based on actual line height
+  }
+});
+
+
 
     // === Title ===
     doc
@@ -82,33 +114,33 @@ function generateReceipt(data, invoiceDetails, outputPath) {
     let currentY = infoY + lineGap;
 
     if (invoiceDetails.uname) {
-        doc.text(invoiceDetails.uname, leftX, currentY, { width: 250 });
+        doc.text(invoiceDetails.uname, leftX + 15, currentY, { width: 250 });
         currentY += lineGap;
     }
 
     if (invoiceDetails.uphone) {
-        doc.text(invoiceDetails.uphone, leftX, currentY, { width: 250 });
+        doc.text(invoiceDetails.uphone, leftX + 15, currentY + 5, { width: 250 });
         currentY += lineGap;
     }
 
     const addressLine1 = [invoiceDetails.uaddress, invoiceDetails.uarea].filter(Boolean).join(', ');
     if (addressLine1) {
         const address1Height = doc.heightOfString(addressLine1, { width: 250 });
-        doc.text(addressLine1, leftX, currentY, { width: 250 });
+        doc.text(addressLine1, leftX + 15, currentY + 5, { width: 250 });
         currentY += address1Height + 2;
     }
 
     const addressLine2 = [invoiceDetails.ulandmark, invoiceDetails.ucity].filter(Boolean).join(' - ');
     if (addressLine2) {
         const address2Height = doc.heightOfString(addressLine2, { width: 250 });
-        doc.text(addressLine2, leftX, currentY, { width: 450 });
+        doc.text(addressLine2, leftX + 15, currentY + 2, { width: 450 });
         currentY += address2Height + 2;
     }
 
     const addressLine3 = [invoiceDetails.ustate, invoiceDetails.upincode].filter(Boolean).join(' - ');
     if (addressLine3) {
         const address3Height = doc.heightOfString(addressLine3, { width: 250 });
-        doc.text(addressLine3, leftX, currentY, { width: 250 });
+        doc.text(addressLine3, leftX + 15, currentY + 2, { width: 250 });
         currentY += address3Height + 2;
     }
 
@@ -141,19 +173,19 @@ function generateReceipt(data, invoiceDetails, outputPath) {
   .text(`# ${invoiceDetails.reference_id}`, rightX + 140, infoY)
 
   .fillColor('grey')
-  .text('Invoice Ref:', rightX + 60, infoY + lineHeight)
+  .text('Invoice Ref:', rightX + 60, infoY + lineHeight * 1.2)
   .fillColor('black')
-  .text(`# ${invoiceDetails.invoice_number}`, rightX + 140, infoY + lineHeight)
+  .text(`# ${invoiceDetails.invoice_number}`, rightX + 140, infoY + lineHeight * 1.2)
 
   .fillColor('grey')
-  .text('Payment Date:', rightX + 60, infoY + lineHeight * 2)
+  .text('Payment Date:', rightX + 60, infoY + lineHeight * 2.3)
   .fillColor('black')
-  .text(formattedDate, rightX + 140, infoY + lineHeight * 2)
+  .text(formattedDate, rightX + 140, infoY + lineHeight * 2.3)
 
   .fillColor('grey')
-  .text('Payment Mode:', rightX + 60, infoY + lineHeight * 3)
+  .text('Payment Mode:', rightX + 60, infoY + lineHeight * 3.6)
   .fillColor('black')
-  .text(invoiceDetails.bank_type || invoiceDetails.payment_mode, rightX + 140, infoY + lineHeight * 3);
+  .text(invoiceDetails.bank_type || invoiceDetails.payment_mode, rightX + 140, infoY + lineHeight * 3.6);
 
 
 

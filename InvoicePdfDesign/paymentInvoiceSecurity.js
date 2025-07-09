@@ -67,34 +67,63 @@ function generateInvoice(data, invoiceDetails, outputPath) {
     const hostelInfoX = pageWidth - 160; // starting point for right-aligned block
 const hostelInfoWidth = 250;
 
+// doc
+//   .fillColor('white')
+//   .fontSize(12)
+//   .font('Helvetica-Bold')
+//   .text(invoiceDetails.Hostel_Name, hostelInfoX, 30, {
+//     width: hostelInfoWidth,
+//     align: 'left'
+//   })
+//   .fontSize(9)
+//   .font('Helvetica')
+//   .text(
+//     [invoiceDetails.hostel_address, invoiceDetails.harea].filter(Boolean).join(', '),
+//     hostelInfoX,
+//     48,
+//     { width: hostelInfoWidth, align: 'left' }
+//   )
+//   .text(
+//     [invoiceDetails.hlandmark, invoiceDetails.hcity].filter(Boolean).join(' - '),
+//     hostelInfoX,
+//     60,
+//     { width: hostelInfoWidth, align: 'left' }
+//   )
+//   .text(
+//     [invoiceDetails.hstate, invoiceDetails.hpincode].filter(Boolean).join(' - '),
+//     hostelInfoX,
+//     72,
+//     { width: hostelInfoWidth, align: 'left' }
+//   );
 doc
   .fillColor('white')
   .fontSize(12)
   .font('Helvetica-Bold')
   .text(invoiceDetails.Hostel_Name, hostelInfoX, 30, {
     width: hostelInfoWidth,
-    align: 'left'
+    align: 'left',
   })
   .fontSize(9)
-  .font('Helvetica')
-  .text(
-    [invoiceDetails.hostel_address, invoiceDetails.harea].filter(Boolean).join(', '),
-    hostelInfoX,
-    48,
-    { width: hostelInfoWidth, align: 'left' }
-  )
-  .text(
-    [invoiceDetails.hlandmark, invoiceDetails.hpincode].filter(Boolean).join(' - '),
-    hostelInfoX,
-    60,
-    { width: hostelInfoWidth, align: 'left' }
-  )
-  .text(
-    [invoiceDetails.hcity, invoiceDetails.hstate].filter(Boolean).join(' - '),
-    hostelInfoX,
-    72,
-    { width: hostelInfoWidth, align: 'left' }
-  );
+  .font('Helvetica');
+
+let currentwY = 48; 
+
+const lines = [
+  [invoiceDetails.hostel_address, invoiceDetails.harea].filter(Boolean).join(', '),
+  [invoiceDetails.hlandmark, invoiceDetails.hcity].filter(Boolean).join(' - '),
+  [invoiceDetails.hstate, invoiceDetails.hpincode].filter(Boolean).join(' - ')
+];
+
+lines.forEach(line => {
+  if (line) {
+    doc.text(line, hostelInfoX, currentwY, {
+      width: hostelInfoWidth,
+      align: 'left'
+    });
+    currentwY += 12;
+  }
+});
+
 
 
     // === Invoice Title ===
@@ -109,9 +138,9 @@ doc
     const lineGap = 18;
     const rightX = pageWidth - 250;
 
-  doc.image(locationuserPath, 35, 197, { width: 8, height: 8 });
-    doc.image(rectBluePath, 35, 215, { width: 8, height: 8 });
-    doc.image(locationIconPath, 35, 232, { width: 10, height: 10 });
+  doc.image(locationuserPath, 50, 197, { width: 8, height: 8 });
+    doc.image(rectBluePath, 50, 215, { width: 8, height: 8 });
+    doc.image(locationIconPath, 50, 234, { width: 10, height: 10 });
 
     doc
         .fontSize(10)
@@ -123,12 +152,12 @@ doc
     let currentY = infoY + lineGap;
 
     if (invoiceDetails.Name) {
-        doc.text(invoiceDetails.Name, leftX, currentY);
+        doc.text(invoiceDetails.Name, leftX + 12, currentY);
         currentY += lineGap;
     }
 
     if (invoiceDetails.phoneNo) {
-        doc.text(invoiceDetails.phoneNo, leftX, currentY);
+        doc.text(invoiceDetails.phoneNo, leftX + 12, currentY);
         currentY += lineGap;
     }
 
@@ -139,7 +168,7 @@ doc
     ];
     addressLines.forEach(line => {
         const height = doc.heightOfString(line, { width: 250 });
-        doc.text(line, leftX, currentY, { width: 250 });
+        doc.text(line, leftX + 12, currentY, { width: 250 });
         currentY += height + 2;
     });
 
@@ -169,14 +198,14 @@ const formattedJoinDate = utcDate2.toLocaleDateString('en-GB', {
    
    
 
-    const labelX = rightX + 90;
+    const labelX = rightX + 70;
     doc
         .font('Helvetica')
         .fillColor('grey')
         .text('Invoice No:', labelX, infoY)
         .fillColor('black')
         // .text('#',invoiceDetails.Invoices, labelX + 60, infoY)
-        .text(`# ${invoiceDetails.Invoices}`, labelX + 60, infoY)
+        .text(`# ${invoiceDetails.Invoices}`, labelX + 70, infoY)
         .fillColor('grey')
         .text('Invoice Date:', labelX, infoY + lineGap)
         .fillColor('black')
@@ -314,29 +343,23 @@ data.forEach((item, i) => {
 // doc.image(phonepeLogo, rightX + 70, logoY + 5, { width: 40 });
 // doc.image(gpayLogo, rightX + 120, logoY + 8, { width: 30 });
 
-//     // === Terms and Signature ===
-//     y += 100;
-//     if (invoiceDetails.privacyPolicyHtml) {
-//         doc
-//             .fillColor('#1E45E1')
-//             .font('Helvetica-Bold')
-//             .fontSize(10)
-//             .text('Terms and Conditions', leftX, y);
-//         y += 15;
+    // === Terms and Signature ===
+    // y += 100;
+   
+    //     doc
+    //         .fillColor('#1E45E1')
+    //         .font('Helvetica-Bold')
+    //         .fontSize(10)
+    //         .text('Terms and Conditions', leftX, y + 100);
+    //     y += 115;
 
-//         doc
-//             .fontSize(9)
-//             .fillColor('gray')
-//             .font('Helvetica')
-//             .text("Tenants must pay all dues on or before the due date, maintain cleanliness, and follow PG rules; failure may lead to penalties or termination of stay.", leftX, y, { width: 300 });
-//     }
+    //     doc
+    //         .fontSize(9)
+    //         .fillColor('gray')
+    //         .font('Helvetica')
+    //         .text("Tenants must pay all dues on or before the due date, maintain cleanliness, and follow PG rules; failure may lead to penalties or termination of stay.", leftX, y, { width: 300 });
+    
 
-//     // === Authorized Signature ===
-//     doc
-//         .fillColor('#3D3D3D')
-//         .fontSize(10)
-//         .font('Helvetica-Bold')
-//         .text('Authorized Signature', pageWidth - 160, y - 90);
 
 
 const qrImagePath = path.resolve(__dirname, '../Asset/barcode.png');
@@ -354,7 +377,7 @@ doc.image(gpayLogo, pageWidth - 70, logoY + 3, { width: 30 });
 
 // Terms & Conditions
 let termsY = logoY + 120;
-if (invoiceDetails.privacyPolicyHtml) {
+// if (invoiceDetails.privacyPolicyHtml) {
     doc
         .fillColor('#1E45E1')
         .font('Helvetica-Bold')
@@ -373,7 +396,7 @@ if (invoiceDetails.privacyPolicyHtml) {
             termsY,
             { width: 300 }
         );
-}
+// }
 
 // Authorized Signature aligned nicely near QR bottom
 doc
