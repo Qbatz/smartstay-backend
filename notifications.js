@@ -180,7 +180,7 @@ async function add_room_reading(req, res) {
             return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
         }
 
-        const isValid = await dateValidation.isValidHostelAndPurchaseDate(hostel_id,purchase_date)
+        const isValid = await dateValidation.isValidHostelAndPurchaseDate(hostel_id,date)
 
         if(!isValid){
              return res.status(201).json({
