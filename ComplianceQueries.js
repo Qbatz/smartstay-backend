@@ -176,7 +176,18 @@ function GetComplianceList(connection, response, request) {
                 console.error(error);
                 return response.status(201).json({ message: 'Error fetching hostel data' });
             }
-            return response.status(200).json({ hostelData: hostelData });
+
+            const data = hostelData;
+            const filterOptions = []
+            hostelData.map(item => {
+                if (filterOptions.length > 0) {
+                    filterOptions.filter(opt => opt.User_id === item.User_id).length === 0 ? filterOptions.push(item) : null;
+                }
+                else {
+                    filterOptions.push(item)
+                }
+            });
+            return response.status(200).json({ hostelData: data, filterOptions: filterOptions });
         });
 
     } else {
