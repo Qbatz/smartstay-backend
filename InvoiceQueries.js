@@ -2851,10 +2851,38 @@ function customer_readings(req, res) {
     var created_by = req.user_details.id;
     var role_permissions = req.role_permissions;
     var is_admin = req.is_admin;
+    let fromDate = null;
+    let toDate = null;
 
     var show_ids = req.show_ids;
 
     var hostel_id = req.body.hostel_id;
+    let params = [hostel_id]
+
+    if (req.body.from_date && req.body.from_date !== '') {
+        const dt = new Date(req.body.from_date);
+        fromDate = dt.toISOString()
+    }
+
+    if (req.body.to_date && req.body.to_date !== '') {
+        const dt = new Date(req.body.to_date);
+        toDate = new Date(Date.UTC(
+                dt.getUTCFullYear(),
+                dt.getUTCMonth(),
+                dt.getUTCDate(),
+                23, 59, 59, 999
+            )).toISOString();
+    }
+
+    if (req.body.from_date && req.body.from_date !== '' && (req.body.to_date === null || req.body.to_date === undefined || req.body.to_date === '')) {
+        const dt = new Date(req.body.from_date);
+        toDate = toDate = new Date(Date.UTC(
+                dt.getUTCFullYear(),
+                dt.getUTCMonth(),
+                dt.getUTCDate(),
+                23, 59, 59, 999
+            )).toISOString();
+    }
 
     if (!hostel_id) {
         return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
@@ -2873,14 +2901,32 @@ function customer_readings(req, res) {
                 if (hostel_based == 1) {
                     var sql1 = "SELECT cb.*,hos.Name,hos.profile,hos.HostelName,DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id WHERE type='hostel' AND hos.Hostel_Id=? ORDER BY cb.start_meter DESC;"
                 } else {
-                    var sql1 = "SELECT cb.*,hos.Name,hos.profile,hos.HostelName,hf.floor_name,hr.Room_Id, DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id JOIN Hostel_Floor AS hf ON hf.floor_id=hos.Floor AND hf.hostel_id=hos.Hostel_Id JOIN hostelrooms AS hr ON hr.id=hos.Rooms WHERE type='room' AND hos.Hostel_Id=? ORDER BY cb.start_meter DESC";
-                }
+                    var sql1 = "SELECT cb.*,hos.Name,hos.profile,hos.HostelName,hf.floor_name,hr.Room_Id, DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id JOIN Hostel_Floor AS hf ON hf.floor_id=hos.Floor AND hf.hostel_id=hos.Hostel_Id JOIN hostelrooms AS hr ON hr.id=hos.Rooms WHERE type='room' AND hos.Hostel_Id=? ";
+                    if (fromDate !== null && toDate != null) {
+                        sql1 += ' AND cb.date between ? and ?'
+                        params.push(fromDate);
+                        params.push(toDate)
+                    }
+                    else if (fromDate !== null && toDate === null) {
+                        sql1 += ' AND cb.date between ? and ?'
+                        params.push(fromDate);
+                        params.push(toDate)
+                    }
 
-                connection.query(sql1, [hostel_id], function (err, data) {
+                    sql1 += ' ORDER BY cb.start_meter DESC'
+                }
+                
+                connection.query(sql1, params, function (err, data) {
                     if (err) {
                         console.log(err);
                         return res.status(201).json({ statusCode: 201, message: "Unable to Get Eb Details" })
                     } else {
+                        if (hostel_based == 1) {
+
+                        }
+                        else {
+
+                        }
                         return res.status(200).json({ statusCode: 200, message: "Customer Eb Details", eb_details: data })
                     }
                 })
