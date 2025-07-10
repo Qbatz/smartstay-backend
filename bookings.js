@@ -232,31 +232,63 @@ function add_booking(req, res) {
 }
 
 function all_bookings(req, res) {
-    var created_by = req.user_details.id;
-    var show_ids = req.show_ids;
-    var role_permissions = req.role_permissions;
-    var is_admin = req.is_admin;
+    const created_by = req.user_details.id;
+    const show_ids = req.show_ids;
+    const role_permissions = req.role_permissions;
+    const is_admin = req.is_admin;
+    const hostel_id = req.body.hostel_id;
+    const searchName = req.body.searchName?.trim() || null;
 
-    var hostel_id = req.body.hostel_id;
+    if (!(is_admin === 1 || (role_permissions[5] && role_permissions[5].per_view === 1))) {
+        return res.status(208).json({
+            message: "Permission Denied. Please contact your administrator for access.",
+            statusCode: 208
+        });
+    }
 
-    if (is_admin == 1 || (role_permissions[5] && role_permissions[5].per_view == 1)) {
+    if (!hostel_id) {
+        return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" });
+    }
 
-        if (!hostel_id) {
-            return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+    const sql = `
+        SELECT 
+            book.*,
+            hst.Name AS hostel_name,
+            hf.floor_name AS floor_name,
+            hosroom.Room_Id AS room_name,
+            bed.bed_no AS bed_name
+        FROM bookings AS book
+        LEFT JOIN hosteldetails AS hst ON hst.id = book.hostel_id
+        LEFT JOIN Hostel_Floor AS hf ON hf.floor_id = book.floor_id AND hf.hostel_id = book.hostel_id
+        LEFT JOIN hostelrooms AS hosroom ON hosroom.id = book.room_id
+        LEFT JOIN bed_details AS bed ON bed.id = book.bed_id
+        WHERE book.hostel_id = ?
+            AND book.status = TRUE
+            AND (
+                ? IS NULL
+                OR CONCAT(book.first_name, ' ', book.last_name) LIKE CONCAT('%', ?, '%')
+                OR book.first_name LIKE CONCAT('%', ?, '%')
+                OR book.last_name LIKE CONCAT('%', ?, '%')
+            )
+        ORDER BY book.id DESC
+    `;
+
+    const params = [hostel_id, searchName, searchName, searchName, searchName];
+
+    connection.query(sql, params, (err, data) => {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: "Unable to Get Bookings" });
         }
 
-        var sql1 = "SELECT book.*,hst.Name AS hostel_name,hf.floor_name AS floor_name,hosroom.Room_Id AS room_name,bed.bed_no AS bed_name FROM bookings AS book LEFT JOIN hosteldetails AS hst ON hst.id=book.hostel_id LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=book.floor_id AND hf.hostel_id=book.hostel_id LEFT JOIN hostelrooms AS hosroom ON hosroom.id=book.room_id LEFT JOIN bed_details AS bed ON bed.id=book.bed_id WHERE book.hostel_id=? AND book.status= true ORDER BY book.id DESC";
-        connection.query(sql1, [hostel_id], function (err, data) {
-            if (err) {
-                return res.status(201).json({ statusCode: 201, message: "Unable to Get Bookings" });
-            } else {
-                return res.status(200).json({ statusCode: 200, message: "All Booking Details", bookings: data });
-            }
+        return res.status(200).json({
+            statusCode: 200,
+            message: "All Booking Details",
+            bookings: data
         });
-    } else {
-        res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
-    }
+    });
 }
+
+
 
 function delete_booking(req, res) {
     var id = req.body.id;
