@@ -196,7 +196,7 @@ lines.forEach((line) => {
         .fontSize(11)
         .font('Helvetica-Bold')
         
-        .text('Payment For',rightX - 295,infoY + 200);
+        .text('Payment For',rightX - 295,infoY + 180);
     // === Amount Box ===
    const subtotal = data.reduce((sum, i) => sum + parseFloat(i.amount_received || 0), 0);
 const tax = parseFloat(invoiceDetails.tax || 0);
