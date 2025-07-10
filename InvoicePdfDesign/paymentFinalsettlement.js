@@ -4,7 +4,8 @@ const path = require('path');
 const moment = require('moment');
 
 function generateReceipt(data, invoiceDetails, outputPath) {
-     
+     console.log("invoiceDetails...?",invoiceDetails)
+      console.log("data.....?",data)
     const doc = new PDFDocument({ size: 'A4', margin: 20 });
     doc.pipe(fs.createWriteStream(outputPath));
 
@@ -27,9 +28,9 @@ function generateReceipt(data, invoiceDetails, outputPath) {
 
  
     doc.image(logoPath, margin + 16, margin + 10, { width: 25, height: 25 });
-    doc.image(locationuserPath, 35, 178, { width: 8, height: 8 });
-    doc.image(rectBluePath, 35, 194, { width: 8, height: 8 });
-    doc.image(locationIconPath, 35, 215, { width: 10, height: 10 });
+    doc.image(locationuserPath, 50, 178, { width: 8, height: 8 });
+    doc.image(rectBluePath, 50, 194, { width: 8, height: 8 });
+    doc.image(locationIconPath, 50, 215, { width: 10, height: 10 });
 
     // Left Header
     doc.fillColor('white')
@@ -37,10 +38,37 @@ function generateReceipt(data, invoiceDetails, outputPath) {
         .fontSize(10).font('Helvetica').text('Meet All Your Needs.', margin + 35, margin + 49);
 
     // Right Header
-    doc.font('Helvetica-Bold').fontSize(15).text(invoiceDetails.hname, pageWidth - margin - 150, margin + 10, { width: 200, align: 'left' })
-        .font('Helvetica').fontSize(9)
-        .text([invoiceDetails.haddress, invoiceDetails.harea, invoiceDetails.hcity].filter(Boolean).join(', '), pageWidth - margin - 150, margin + 28, { width: 200, align: 'left' })
-        .text([invoiceDetails.hstate, invoiceDetails.hpincode].filter(Boolean).join(' - '), pageWidth - margin - 150, margin + 40, { width: 200, align: 'left' });
+    // doc.font('Helvetica-Bold').fontSize(15).text(invoiceDetails.hname, pageWidth - margin - 150, margin + 10, { width: 200, align: 'left' })
+    //     .font('Helvetica').fontSize(9)
+    //     .text([invoiceDetails.haddress, invoiceDetails.harea].filter(Boolean).join(', '), pageWidth - margin - 150, margin + 28, { width: 200, align: 'left' })
+    //      .text([invoiceDetails.hcity].filter(Boolean).join(', '), pageWidth - margin - 150, margin + 40, { width: 200, align: 'left' })
+    //     .text([invoiceDetails.hstate, invoiceDetails.hpincode].filter(Boolean).join(' - '), pageWidth - margin - 150, margin + 52, { width: 200, align: 'left' });
+    let addressY = margin + 28; // starting Y below the heading
+const addressX = pageWidth - margin - 150;
+const addressWidth = 200;
+
+doc.font('Helvetica-Bold').fontSize(15).text(invoiceDetails.hname, addressX, margin + 10, {
+  width: addressWidth,
+  align: 'left',
+});
+
+doc.font('Helvetica').fontSize(9);
+
+const addressLines = [
+  [invoiceDetails.haddress, invoiceDetails.harea].filter(Boolean).join(', '),
+  invoiceDetails.hlandmark, // optional line
+  invoiceDetails.hcity,
+  [invoiceDetails.hstate, invoiceDetails.hpincode].filter(Boolean).join(' - ')
+].filter(Boolean); // removes empty or undefined lines
+
+addressLines.forEach((line) => {
+  const lineHeight = doc.heightOfString(line, { width: addressWidth });
+  doc.text(line, addressX, addressY, {
+    width: addressWidth,
+    align: 'left',
+  });
+  addressY += lineHeight + 2;
+});
 
     // Title
     doc.fillColor('black').fontSize(14).font('Helvetica-Bold').text('Final Settlement Receipt', 0, margin + 100, { align: 'center' });
@@ -59,25 +87,25 @@ function generateReceipt(data, invoiceDetails, outputPath) {
     let currentY = infoY + lineGap;
 
     if (invoiceDetails.uname) {
-        doc.text(invoiceDetails.uname, leftX, currentY, { width: 250 }); currentY += lineGap;
+        doc.text(invoiceDetails.uname, leftX + 15, currentY, { width: 250 }); currentY += lineGap;
     }
     if (invoiceDetails.uphone) {
-        doc.text(invoiceDetails.uphone, leftX, currentY, { width: 250 }); currentY += lineGap;
+        doc.text(invoiceDetails.uphone, leftX + 15, currentY, { width: 250 }); currentY += lineGap;
     }
     const addr1 = [invoiceDetails.uaddress, invoiceDetails.uarea].filter(Boolean).join(', ');
     if (addr1) {
         const h1 = doc.heightOfString(addr1, { width: 250 });
-        doc.text(addr1, leftX, currentY, { width: 250 }); currentY += h1 + 2;
+        doc.text(addr1, leftX + 15, currentY, { width: 250 }); currentY += h1 + 2;
     }
     const addr2 = [invoiceDetails.ulandmark, invoiceDetails.ucity].filter(Boolean).join(' - ');
     if (addr2) {
         const h2 = doc.heightOfString(addr2, { width: 250 });
-        doc.text(addr2, leftX, currentY, { width: 250 }); currentY += h2 + 2;
+        doc.text(addr2, leftX + 15, currentY, { width: 250 }); currentY += h2 + 2;
     }
     const addr3 = [invoiceDetails.upincode, invoiceDetails.ustate].filter(Boolean).join(' - ');
     if (addr3) {
         const h3 = doc.heightOfString(addr3, { width: 250 });
-        doc.text(addr3, leftX, currentY, { width: 250 }); currentY += h3 + 2;
+        doc.text(addr3, leftX + 15, currentY, { width: 250 }); currentY += h3 + 2;
     }
 
     const formattedDate = moment(invoiceDetails.payment_date).format('DD-MM-YYYY');

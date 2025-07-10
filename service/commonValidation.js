@@ -1,5 +1,6 @@
 
 const connection = require("../config/connection");
+const moment = require('moment');                   
 
 async function isValidHostelAndPurchaseDate(hostel_id, purchase_date) {
     return new Promise((resolve) => {
@@ -20,13 +21,14 @@ async function isValidHostelAndPurchaseDate(hostel_id, purchase_date) {
                 return resolve(false);
             }
 
-            const created_date = new Date(results[0].create_At);
-            const pur_date = new Date(purchase_date);
+    
+             const createdDate = moment(results[0].create_At).format('YYYY-MM-DD');
+            const purchaseDate = moment(purchase_date).format('YYYY-MM-DD');
 
-            console.log("Created Date:", created_date);
-            console.log("Purchase Date:", pur_date);
+            console.log("Created Date:", createdDate);
+            console.log("Purchase Date:", purchaseDate);
 
-            if (pur_date >= created_date) {
+            if (purchaseDate >= createdDate) {
                 return resolve(true);
             } else {
                 return resolve(false);
@@ -43,9 +45,8 @@ async function isValidPurchaseDateForAsset(asset_id, purchase_date) {
         const sql = "SELECT * FROM assets WHERE id=?";
         connection.query(sql, [asset_id], (err, results) => {
             if (err || results.length === 0) return resolve(false);
-
-            const created_date = new Date(results[0].createdat);
-            const pur_date = new Date(purchase_date);
+             const created_date = moment(results[0].createdat).format('YYYY-MM-DD');
+            const pur_date = moment(purchase_date).format('YYYY-MM-DD');                       
             if (pur_date >= created_date) {
                 resolve(true);
             } else {
