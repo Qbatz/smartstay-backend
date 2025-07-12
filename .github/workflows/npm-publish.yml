@@ -5,14 +5,14 @@ name: Node.js Package
 
 on:
   push:
-    branches: ["qa-build"]
+    branches: ["prod"]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     environment:
-      name: testing
+      name: prod
 
     strategy:
       matrix:
