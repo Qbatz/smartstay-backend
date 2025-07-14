@@ -2847,53 +2847,99 @@ function delete_manual_invoice(req, res) {
 }
 
 function customer_readings(req, res) {
+    const created_by = req.user_details.id;
+    const role_permissions = req.role_permissions;
+    const is_admin = req.is_admin;
+    const hostel_id = req.body.hostel_id;
 
-    var created_by = req.user_details.id;
-    var role_permissions = req.role_permissions;
-    var is_admin = req.is_admin;
-
-    var show_ids = req.show_ids;
-
-    var hostel_id = req.body.hostel_id;
+    const start_date_raw = req.body.start_date || null;
+    const end_date_raw = req.body.end_date || null;
+    const searchName = req.body.searchName?.trim() || null;
 
     if (!hostel_id) {
-        return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+        return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" });
     }
 
-    if (is_admin == 1 || (role_permissions[12] && role_permissions[12].per_view == 1)) {
+    if (!(is_admin == 1 || (role_permissions[12] && role_permissions[12].per_view == 1))) {
+        return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    }
 
-        var ch_query = "SELECT * FROM eb_settings WHERE hostel_id=? AND status=1";
-        connection.query(ch_query, [hostel_id], function (err, ch_res) {
-            if (err) {
-                return res.status(201).json({ statusCode: 201, message: err.message })
-            } else if (ch_res.length != 0) {
+    const ch_query = "SELECT * FROM eb_settings WHERE hostel_id=? AND status=1";
 
-                var hostel_based = ch_res[0].hostel_based;
+    connection.query(ch_query, [hostel_id], function (err, ch_res) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: err.message });
+        }
 
-                if (hostel_based == 1) {
-                    var sql1 = "SELECT cb.*,hos.Name,hos.profile,hos.HostelName,DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id WHERE type='hostel' AND hos.Hostel_Id=? ORDER BY cb.start_meter DESC;"
-                } else {
-                    var sql1 = "SELECT cb.*,hos.Name,hos.profile,hos.HostelName,hf.floor_name,hr.Room_Id, DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date FROM customer_eb_amount AS cb JOIN hostel AS hos ON hos.ID=cb.user_id JOIN Hostel_Floor AS hf ON hf.floor_id=hos.Floor AND hf.hostel_id=hos.Hostel_Id JOIN hostelrooms AS hr ON hr.id=hos.Rooms WHERE type='room' AND hos.Hostel_Id=? ORDER BY cb.start_meter DESC";
-                }
+        if (ch_res.length === 0) {
+            return res.status(201).json({ statusCode: 201, message: "Not Added Settings" });
+        }
 
-                connection.query(sql1, [hostel_id], function (err, data) {
-                    if (err) {
-                        console.log(err);
-                        return res.status(201).json({ statusCode: 201, message: "Unable to Get Eb Details" })
-                    } else {
-                        return res.status(200).json({ statusCode: 200, message: "Customer Eb Details", eb_details: data })
-                    }
-                })
+        const hostel_based = ch_res[0].hostel_based;
+        const is_hostel_based = hostel_based == 1;
 
+        let sql1 = `
+            SELECT cb.*, hos.Name AS username, hos.profile, hos.HostelName,
+        `;
+
+        if (is_hostel_based) {
+            sql1 += `
+                DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date
+                FROM customer_eb_amount AS cb
+                JOIN hostel AS hos ON hos.ID = cb.user_id
+                WHERE cb.type = 'hostel' AND hos.Hostel_Id = ?
+            `;
+        } else {
+            sql1 += `
+                hf.floor_name, hr.Room_Id,
+                DATE_FORMAT(cb.date, '%Y-%m-%d') AS reading_date
+                FROM customer_eb_amount AS cb
+                JOIN hostel AS hos ON hos.ID = cb.user_id
+                JOIN Hostel_Floor AS hf ON hf.floor_id = hos.Floor AND hf.hostel_id = hos.Hostel_Id
+                JOIN hostelrooms AS hr ON hr.id = hos.Rooms
+                WHERE cb.type = 'room' AND hos.Hostel_Id = ?
+            `;
+        }
+
+        const params = [hostel_id];
+
+        if (start_date_raw) {
+            const start = new Date(start_date_raw);
+            const start_time = `${start.toISOString().slice(0, 10)} 00:00:00`;
+
+            let end_time;
+            if (end_date_raw) {
+                const end = new Date(end_date_raw);
+                end_time = `${end.toISOString().slice(0, 10)} 23:59:59`;
             } else {
-                return res.status(201).json({ statusCode: 201, message: "Not Added Settings" })
+                end_time = `${start.toISOString().slice(0, 10)} 23:59:59`;
             }
-        })
 
-    } else {
-        res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
-    }
+            sql1 += ` AND cb.date BETWEEN ? AND ?`;
+            params.push(start_time, end_time);
+        }
+
+        if (searchName) {
+            sql1 += ` AND hos.Name LIKE ?`;
+            params.push(`%${searchName}%`);
+        }
+
+        sql1 += ` ORDER BY cb.start_meter DESC`;
+
+        console.log("sql_queryy-->"+sql1)
+
+        connection.query(sql1, params, function (err, data) {
+            if (err) {
+                console.log(err);
+                return res.status(201).json({ statusCode: 201, message: "Unable to Get Eb Details" });
+            }
+
+            return res.status(200).json({ statusCode: 200, message: "Customer Eb Details", eb_details: data });
+        });
+    });
 }
+
+
 
 function add_recuring_bill(req, res) {
 

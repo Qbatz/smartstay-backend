@@ -1,6 +1,7 @@
 const connection = require('./config/connection')
 const addNotification = require('./components/add_notification')
 const dateValidation = require('./service/commonValidation')
+const moment = require('moment');
 
 
 function all_notifications(req, res) {
@@ -1620,23 +1621,59 @@ function delete_hostel_reading(req, res) {
 }
 
 function get_hostel_reading(req, res) {
-
-    var hostel_id = req.body.hostel_id;
+    const hostel_id = req.body.hostel_id;
+    const searchName = req.body.searchName?.trim() || null;
+    const start_date_raw = req.body.start_date || null;
+    const end_date_raw = req.body.end_date || null;
 
     if (!hostel_id) {
-        return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+        return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" });
     }
 
-    var sql1 = "SELECT hos.Name as hoatel_Name,eb.id as eb_Id,hos.id as hostel_Id,hos.profile,eb.hostel_id,eb.total_amount,eb.total_reading,eb.date,eb.reading FROM hostel_readings eb JOIN hosteldetails hos ON hos.id = eb.hostel_id where eb.status=1 AND eb.hostel_id=?;";
-    connection.query(sql1, [hostel_id], function (err, data) {
-        if (err) {
-            return res.status(201).json({ statusCode: 201, message: err.message })
-        } else {
-            return res.status(200).json({ statusCode: 200, message: "Hostel Readings", hostel_readings: data })
-        }
-    })
+    const conditions = [`eb.status = 1`, `eb.hostel_id = ?`];
+    const params = [hostel_id];
 
+    // Search filter (Name)
+    if (searchName) {
+        conditions.push(`hos.Name LIKE ?`);
+        params.push(`%${searchName}%`);
+    }
+
+    // Date filter
+    if (start_date_raw) {
+        const start_date = moment(start_date_raw).format('YYYY-MM-DD 00:00:00');
+        const end_date = end_date_raw
+            ? moment(end_date_raw).format('YYYY-MM-DD 23:59:59')
+            : moment(start_date_raw).format('YYYY-MM-DD 23:59:59');
+        conditions.push(`eb.date BETWEEN ? AND ?`);
+        params.push(start_date, end_date);
+    }
+
+    const sql = `
+        SELECT 
+            hos.Name as hoatel_Name,
+            eb.id as eb_Id,
+            hos.id as hostel_Id,
+            hos.profile,
+            eb.hostel_id,
+            eb.total_amount,
+            eb.total_reading,
+            eb.date,
+            eb.reading 
+        FROM hostel_readings eb 
+        JOIN hosteldetails hos ON hos.id = eb.hostel_id 
+        WHERE ${conditions.join(' AND ')}
+        ORDER BY eb.id DESC
+    `;
+
+    connection.query(sql, params, function (err, data) {
+        if (err) {
+            return res.status(201).json({ statusCode: 201, message: err.message });
+        }
+        return res.status(200).json({ statusCode: 200, message: "Hostel Readings", hostel_readings: data });
+    });
 }
+
 
 function delete_amenities(req, res) {
 
