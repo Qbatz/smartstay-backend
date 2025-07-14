@@ -170,10 +170,17 @@ function export_customer(req, res) {
         JOIN createaccount AS ca ON ca.id = cus.created_by 
         WHERE cus.status = 1 AND hos.Hostel_Id = ?
     `;
-                                            
+
         if (searchName) {
             sql1 += ` AND hos.Name LIKE CONCAT('%', ${connection.escape(searchName)}, '%')`;
         }
+
+        if (start_date && end_date) {
+            sql1 += ` AND cus.date BETWEEN '${start_date} 00:00:00' AND '${end_date} 23:59:59'`;
+        } else if (start_date) {
+            sql1 += ` AND cus.date BETWEEN '${start_date} 00:00:00' AND '${start_date} 23:59:59'`;
+        }
+
 
         sql1 += ` ORDER BY cus.id DESC`;
 
