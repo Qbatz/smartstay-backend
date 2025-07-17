@@ -5,7 +5,7 @@ name: Node.js Package
 
 on:
   push:
-    branches: ["qa-build"]
+    branches: ["prod1"]
 
 jobs:
   build-and-deploy:
