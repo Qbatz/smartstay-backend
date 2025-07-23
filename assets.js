@@ -274,7 +274,7 @@ async function add_asset(req, res) {
                                             }
                                         })
                                     } else {
-                                        return res.status(202).json({ message: "Asset Name Already Exists", statusCode: 201 })
+                                        return res.status(202).json({ message: "Asset Name Already Exists", statusCode: 202 })
                                     }
                                 })
                             }
@@ -378,7 +378,7 @@ async function add_asset(req, res) {
                                     });
 
                                 }else {
-                                    return res.status(201).json({ message: "Asset name already exists", statusCode: 201 });
+                                    return res.status(202).json({ message: "Asset name already exists", statusCode: 202});
                                 }
                             });
                         }

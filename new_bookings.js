@@ -195,7 +195,9 @@ function assign_booking(req, res) {
             var pincode = booking_details.pin_code;
             var city = booking_details.city;
             var state = booking_details.state;
-            var createdat = booking_details.createdat;
+            var createdat = booking_details.booking_date;
+
+            console.log("booking_details",booking_details)
 
             if (new Date(join_date) <= new Date(createdat)) {
                 return res.status(201).json({
