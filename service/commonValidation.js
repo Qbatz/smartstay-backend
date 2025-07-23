@@ -38,16 +38,19 @@ async function isValidHostelAndPurchaseDate(hostel_id, purchase_date) {
 }
 
 
-async function isValidPurchaseDateForAsset(asset_id, purchase_date) {
+async function isValidPurchaseDateForAsset(asset_id, assigned_date) {
     return new Promise((resolve) => {
-        if (!asset_id || !purchase_date) return resolve(false);
+        if (!asset_id || !assigned_date) return resolve(false);
 
         const sql = "SELECT * FROM assets WHERE id=?";
         connection.query(sql, [asset_id], (err, results) => {
             if (err || results.length === 0) return resolve(false);
-             const created_date = moment(results[0].createdat).format('YYYY-MM-DD');
-            const pur_date = moment(purchase_date).format('YYYY-MM-DD');                       
-            if (pur_date >= created_date) {
+
+            const created_date = moment(results[0].createdat).format('YYYY-MM-DD');
+            const purchase_date = moment(results[0].purchase_date).format('YYYY-MM-DD');
+            const assign_date = moment(assigned_date).format('YYYY-MM-DD');
+
+            if (assign_date >= created_date && assign_date >= purchase_date) {
                 resolve(true);
             } else {
                 resolve(false);
@@ -55,6 +58,7 @@ async function isValidPurchaseDateForAsset(asset_id, purchase_date) {
         });
     });
 }
+
 
 module.exports = {
     isValidHostelAndPurchaseDate,isValidPurchaseDateForAsset

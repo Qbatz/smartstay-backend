@@ -239,6 +239,9 @@ function all_bookings(req, res) {
     const hostel_id = req.body.hostel_id;
     const searchName = req.body.searchName?.trim() || null;
 
+    const start_date_raw = req.body.start_date || null;
+    const end_date_raw = req.body.end_date || null;
+
     if (!(is_admin === 1 || (role_permissions[5] && role_permissions[5].per_view === 1))) {
         return res.status(208).json({
             message: "Permission Denied. Please contact your administrator for access.",
@@ -250,7 +253,7 @@ function all_bookings(req, res) {
         return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" });
     }
 
-    const sql = `
+    let sql = `
         SELECT 
             book.*,
             hst.Name AS hostel_name,
@@ -263,17 +266,35 @@ function all_bookings(req, res) {
         LEFT JOIN hostelrooms AS hosroom ON hosroom.id = book.room_id
         LEFT JOIN bed_details AS bed ON bed.id = book.bed_id
         WHERE book.hostel_id = ?
-            AND book.status = TRUE
-            AND (
-                ? IS NULL
-                OR CONCAT(book.first_name, ' ', book.last_name) LIKE CONCAT('%', ?, '%')
-                OR book.first_name LIKE CONCAT('%', ?, '%')
-                OR book.last_name LIKE CONCAT('%', ?, '%')
-            )
-        ORDER BY book.id DESC
+          AND book.status = TRUE
     `;
 
-    const params = [hostel_id, searchName, searchName, searchName, searchName];
+    const params = [hostel_id];
+
+    // Search Name filter
+    if (searchName) {
+        sql += `
+          AND (
+              CONCAT(book.first_name, ' ', book.last_name) LIKE CONCAT('%', ?, '%')
+              OR book.first_name LIKE CONCAT('%', ?, '%')
+              OR book.last_name LIKE CONCAT('%', ?, '%')
+          )
+        `;
+        params.push(searchName, searchName, searchName);
+    }
+
+    // Date filter
+    if (start_date_raw) {
+        const start_date = `${new Date(start_date_raw).toISOString().slice(0, 10)} 00:00:00`;
+        const end_date = end_date_raw
+            ? `${new Date(end_date_raw).toISOString().slice(0, 10)} 23:59:59`
+            : `${new Date(start_date_raw).toISOString().slice(0, 10)} 23:59:59`;
+
+        sql += ` AND book.createdat BETWEEN ? AND ?`;
+        params.push(start_date, end_date);
+    }
+
+    sql += ` ORDER BY book.id DESC`;
 
     connection.query(sql, params, (err, data) => {
         if (err) {
@@ -287,6 +308,7 @@ function all_bookings(req, res) {
         });
     });
 }
+
 
 
 
