@@ -213,7 +213,7 @@ function assign_booking(req, res) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Get Email Details", reason: err.message });
                     } else if (em_data.length != 0) {
-                        return res.status(201).json({ statusCode: 201, message: "Email Already Exists" });
+                        return res.status(202).json({ statusCode: 202, message: "Email Already Exists" });
                     } else {
                         next_function();
                     }
@@ -292,7 +292,7 @@ function assign_booking(req, res) {
                             }
                         })
                     } else {
-                        return res.status(201).json({ statusCode: 201, message: "Mobile Number Already Exists" });
+                        return res.status(203).json({ statusCode: 203, message: "Mobile Number Already Exists" });
                     }
                 })
             }
