@@ -195,7 +195,9 @@ function assign_booking(req, res) {
             var pincode = booking_details.pin_code;
             var city = booking_details.city;
             var state = booking_details.state;
-            var createdat = booking_details.createdat;
+            var createdat = booking_details.booking_date;
+
+            console.log("booking_details",booking_details)
 
             if (new Date(join_date) <= new Date(createdat)) {
                 return res.status(201).json({
@@ -211,7 +213,7 @@ function assign_booking(req, res) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Get Email Details", reason: err.message });
                     } else if (em_data.length != 0) {
-                        return res.status(201).json({ statusCode: 201, message: "Email Already Exists" });
+                        return res.status(202).json({ statusCode: 202, message: "Email Already Exists" });
                     } else {
                         next_function();
                     }
@@ -290,7 +292,7 @@ function assign_booking(req, res) {
                             }
                         })
                     } else {
-                        return res.status(201).json({ statusCode: 201, message: "Mobile Number Already Exists" });
+                        return res.status(203).json({ statusCode: 203, message: "Mobile Number Already Exists" });
                     }
                 })
             }

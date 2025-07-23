@@ -46,11 +46,11 @@ async function isValidPurchaseDateForAsset(asset_id, assigned_date) {
         connection.query(sql, [asset_id], (err, results) => {
             if (err || results.length === 0) return resolve(false);
 
-            const created_date = moment(results[0].createdat).format('YYYY-MM-DD');
+            // const created_date = moment(results[0].createdat).format('YYYY-MM-DD');
             const purchase_date = moment(results[0].purchase_date).format('YYYY-MM-DD');
             const assign_date = moment(assigned_date).format('YYYY-MM-DD');
 
-            if (assign_date >= created_date && assign_date >= purchase_date) {
+            if (assign_date >= purchase_date) {
                 resolve(true);
             } else {
                 resolve(false);
