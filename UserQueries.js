@@ -12,42 +12,85 @@ var uploadImage = require("./components/upload_image");
 const { bed_details } = require("./PgQueries");
 
 
+//------>search query for check in customer
+
 function getUsers(connection, response, request) {
-  // Get values in middleware
-  var role_permissions = request.role_permissions;
-  var is_admin = request.is_admin;
-
-  // var page = parseInt(request.body.page) || 1;
-  // var limit = request.body.page_limit || 10;
-  // var offset = (page - 1) * limit;
-
-  // console.log(role_permissions[4]);
+  const role_permissions = request.role_permissions;
+  const is_admin = request.is_admin;
 
   if (is_admin == 1 || (role_permissions[4] && role_permissions[4].per_view == 1)) {
-
-    var hostel_id = request.body.hostel_id;
+    const hostel_id = request.body.hostel_id;
+    const searchName = request.body.searchName?.trim() || null;
+    const start_date_raw = request.body.start_date;
+    const end_date_raw = request.body.end_date;
 
     if (!hostel_id) {
-      return response.status(201).json({ statusCode: 201, message: "Missing Hostel Id" })
+      return response.status(201).json({ statusCode: 201, message: "Missing Hostel Id" });
     }
 
-    // var sql1 = "SELECT COUNT(*) as totalItems FROM hostel WHERE created_by='" + userDetails.id + "' AND isActive=1;";
-    var query = "SELECT hstl.*,CASE WHEN hstl.CheckoutDate is NULL THEN 1 ELSE 0 END AS check_outed,bd.bed_no AS Bed,hstl.Bed AS hstl_Bed,hsroom.Room_Id AS Rooms,hstl.Rooms AS hstl_Rooms,hsroom.id AS room_id,hsroom.Room_Id,DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,hstl.Hostel_Id AS user_hostel,hf.floor_name FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true LEFT JOIN country_list AS cl ON hstl.country_code=cl.country_code Left Join hostelrooms hsroom ON hsroom.Hostel_Id = hstlDetails.id and hsroom.Floor_Id = hstl.Floor and hsroom.id = hstl.Rooms LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=hstl.Floor AND hf.hostel_id=hstl.Hostel_Id LEFT JOIN bed_details AS bd ON bd.id=hstl.Bed  WHERE hstl.Hostel_Id=? ORDER BY hstl.ID DESC";
-    connection.query(query, [hostel_id], function (error, hostelData) {
+    let query = `
+      SELECT 
+        hstl.*, 
+        CASE WHEN hstl.CheckoutDate IS NULL THEN 1 ELSE 0 END AS check_outed,
+        bd.bed_no AS Bed,
+        hstl.Bed AS hstl_Bed,
+        hsroom.Room_Id AS Rooms,
+        hstl.Rooms AS hstl_Rooms,
+        hsroom.id AS room_id,
+        hsroom.Room_Id,
+        DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,
+        hstl.Hostel_Id AS user_hostel,
+        hf.floor_name 
+      FROM hosteldetails AS hstlDetails 
+      INNER JOIN hostel AS hstl 
+        ON hstl.Hostel_Id = hstlDetails.id AND hstl.isActive = TRUE 
+      LEFT JOIN country_list AS cl ON hstl.country_code = cl.country_code 
+      LEFT JOIN hostelrooms hsroom 
+        ON hsroom.Hostel_Id = hstlDetails.id AND hsroom.Floor_Id = hstl.Floor AND hsroom.id = hstl.Rooms 
+      LEFT JOIN Hostel_Floor AS hf ON hf.floor_id = hstl.Floor AND hf.hostel_id = hstl.Hostel_Id 
+      LEFT JOIN bed_details AS bd ON bd.id = hstl.Bed 
+      WHERE hstl.Hostel_Id = ?
+    `;
+
+    const queryParams = [hostel_id];
+
+    if (searchName) {
+      query += ` AND hstl.Name LIKE ?`;
+      queryParams.push(`%${searchName}%`);
+    }
+
+    // Handle Date Filtering
+    if (start_date_raw) {
+      const startDate = `${new Date(start_date_raw).toISOString().slice(0, 10)} 00:00:00`;
+      const endDate = end_date_raw
+        ? `${new Date(end_date_raw).toISOString().slice(0, 10)} 23:59:59`
+        : `${new Date(start_date_raw).toISOString().slice(0, 10)} 23:59:59`;
+
+      query += ` AND hstl.joining_Date BETWEEN ? AND ?`;
+      queryParams.push(startDate, endDate);
+    }
+
+    query += ` ORDER BY hstl.ID DESC`;
+
+    // Execute query
+    connection.query(query, queryParams, function (error, hostelData) {
       if (error) {
         console.error(error);
-        response.status(403).json({ message: "Error  hostel data" });
-        return;
-      } else if (hostelData.length != 0) {
-        response.status(200).json({ hostelData: hostelData });
-      } else {
-        response.status(200).json({ hostelData: hostelData });
+        return response.status(201).json({ message: "Error fetching hostel data" });
       }
+
+      response.status(200).json({ hostelData });
     });
+
   } else {
-    response.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    response.status(208).json({
+      message: "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208
+    });
   }
 }
+
+
 
 function getKeyFromUrl(url) {
   const urlParts = url.split("/");
@@ -2044,39 +2087,76 @@ function add_walk_in_customer(req, res) {
 }
 
 function get_walk_in_customer_list(req, res) {
-
   const created_By = req.user_details.id;
+  const show_ids = req.show_ids;
+  const role_permissions = req.role_permissions;
+  const is_admin = req.is_admin;
+  const hostel_id = req.body.hostel_id;
+  const searchName = req.body.searchName?.trim() || null;
+  const start_date_raw = req.body.start_date || null;
+  const end_date_raw = req.body.end_date || null;
 
-  var show_ids = req.show_ids;
-  var role_permissions = req.role_permissions;
-  var is_admin = req.is_admin;
-  var hostel_id = req.body.hostel_id;
+  if (!(is_admin === 1 || (role_permissions[7] && role_permissions[7].per_view === 1))) {
+    return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+  }
 
-  if (is_admin == 1 || (role_permissions[7] && role_permissions[7].per_view == 1)) {
+  if (!hostel_id) {
+    return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" });
+  }
 
-    if (!hostel_id) {
-      return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" })
+  let query = `
+    SELECT * FROM customer_walk_in_details 
+    WHERE hostel_id = ? 
+      AND isActive = true
+  `;
+
+  const params = [hostel_id];
+
+  // Add search name filter
+  if (searchName) {
+    query += `
+      AND (
+        CONCAT(first_name, ' ', last_name) LIKE CONCAT('%', ?, '%')
+        OR first_name LIKE CONCAT('%', ?, '%')
+        OR last_name LIKE CONCAT('%', ?, '%')
+      )
+    `;
+    params.push(searchName, searchName, searchName);
+  }
+
+  // Add date filters for walk_In_Date
+  if (start_date_raw) {
+    const start_date = new Date(start_date_raw);
+    const start = `${start_date.toISOString().slice(0, 10)} 00:00:00`;
+
+    let end;
+    if (end_date_raw) {
+      const end_date = new Date(end_date_raw);
+      end = `${end_date.toISOString().slice(0, 10)} 23:59:59`;
+    } else {
+      end = `${start_date.toISOString().slice(0, 10)} 23:59:59`;
     }
 
-    // Query to fetch customer details by ID
-    const query = `SELECT * FROM customer_walk_in_details WHERE hostel_id=? AND isActive = true ORDER BY id DESC`;
-    connection.query(query, [hostel_id], (err, results) => {
-      if (err) {
-        return res.status(201).json({ error: 'Error retrieving customer details' });
-      }
-
-      // Check if customer exists
-      if (results.length == 0) {
-        return res.status(201).json({ message: 'Customer not found' });
-      }
-
-      // Return customer details
-      res.status(200).json({ message: 'Customer details retrieved successfully', data: results });
-    });
-  } else {
-    res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+    query += ` AND walk_In_Date BETWEEN ? AND ?`;
+    params.push(start, end);
   }
+
+  query += ` ORDER BY id DESC`;
+
+  connection.query(query, params, (err, results) => {
+    if (err) {
+      return res.status(201).json({ error: 'Error retrieving customer details' });
+    }
+
+    if (results.length === 0) {
+      return res.status(200).json({ message: 'No customer records found', data: [] });
+    }
+
+    res.status(200).json({ message: 'Customer details retrieved successfully', data: results });
+  });
 }
+
+
 
 
 function delete_walk_in_customer(req, res) {
@@ -2146,11 +2226,19 @@ function user_check_out(req, res) {
 
         const joiningDate = new Date(user_data.joining_Date);
         const checkOutDate = new Date(checkout_date);
+        const requestDate = new Date(req_date);
 
         if (checkOutDate <= joiningDate) {
           return res.status(201).json({
             statusCode: 201,
             message: "Check-out date must be after the joining date (" + joiningDate.toISOString().split('T')[0] + ")"
+          });
+        }
+
+         if (requestDate >= checkOutDate) {
+          return res.status(201).json({
+            statusCode: 201,
+            message: "Requested date must be earlier than the check-out date"
           });
         }
 
@@ -2232,100 +2320,123 @@ function checkout_list(req, res) {
   const role_permissions = req.role_permissions;
   const is_admin = req.is_admin;
   const hostel_id = req.body.hostel_id;
+  const searchName = req.body.searchName?.trim() || null;
+  const start_date_raw = req.body.start_date || null;
+  const end_date_raw = req.body.end_date || null;
 
   if (!hostel_id) {
     return res.status(201).json({ statusCode: 201, message: "Missing Hostel Details" });
   }
 
-  if (is_admin == 1 || (role_permissions[6] && role_permissions[6].per_view == 1)) {
-    const sql1 = `
-      SELECT hs.Hostel_Id, hs.ID, hs.HostelName, hs.Name, hs.checkout_comment, 
-        DATE_FORMAT(hs.CheckoutDate, '%Y-%m-%d') AS CheckoutDate,
-        hs.profile AS user_profile,
-        DATEDIFF(hs.checkoutDate, ?) AS notice_period,
-        hos_de.profile, hs.Floor, hs.Bed,
-        DATE_FORMAT(hs.req_date, '%Y-%m-%d') AS req_date,
-        hs.isActive, hs.Phone, hf.floor_name AS floor_name,
-        hosroom.Room_Id AS room_name, bed.bed_no AS bed_name
-      FROM hostel AS hs 
-      JOIN hosteldetails AS hos_de ON hos_de.id = hs.Hostel_Id 
-      LEFT JOIN Hostel_Floor AS hf ON hf.floor_id = hs.Floor AND hf.hostel_id = hs.Hostel_Id 
-      LEFT JOIN hostelrooms AS hosroom ON hosroom.id = hs.Rooms 
-      LEFT JOIN bed_details AS bed ON bed.id = hs.Bed 
-      WHERE hs.Hostel_Id = ? AND hs.CheckoutDate IS NOT NULL 
-      ORDER BY hs.CheckoutDate DESC
-    `;
+  if (is_admin !== 1 && !(role_permissions[6] && role_permissions[6].per_view === 1)) {
+    return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
+  }
 
-    connection.query(sql1, [current_date, hostel_id], function (err, ch_list) {
-      if (err) {
-        return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message });
-      }
+  let sql1 = `
+    SELECT hs.Hostel_Id, hs.ID, hs.HostelName, hs.Name, hs.checkout_comment, 
+      DATE_FORMAT(hs.CheckoutDate, '%Y-%m-%d') AS CheckoutDate,
+      hs.profile AS user_profile,
+      DATEDIFF(hs.checkoutDate, ?) AS notice_period,
+      hos_de.profile, hs.Floor, hs.Bed,
+      DATE_FORMAT(hs.req_date, '%Y-%m-%d') AS req_date,
+      hs.isActive, hs.Phone, hf.floor_name AS floor_name,
+      hosroom.Room_Id AS room_name, bed.bed_no AS bed_name
+    FROM hostel AS hs 
+    JOIN hosteldetails AS hos_de ON hos_de.id = hs.Hostel_Id 
+    LEFT JOIN Hostel_Floor AS hf ON hf.floor_id = hs.Floor AND hf.hostel_id = hs.Hostel_Id 
+    LEFT JOIN hostelrooms AS hosroom ON hosroom.id = hs.Rooms 
+    LEFT JOIN bed_details AS bed ON bed.id = hs.Bed 
+    WHERE hs.Hostel_Id = ?
+      AND hs.CheckoutDate IS NOT NULL
+  `;
 
-      if (!ch_list.length) {
-        return res.status(200).json({ statusCode: 200, message: "No Check-Out Records Found", checkout_details: [] });
-      }
+  const queryParams = [current_date, hostel_id];
 
-      let completed = 0;
+  // Add name filter if present
+  if (searchName) {
+    sql1 += ` AND hs.Name LIKE CONCAT('%', ?, '%')`;
+    queryParams.push(searchName);
+  }
 
-      Promise.all(
-        ch_list.map((check_list, index) => {
-          const user_id = check_list.ID;
+  // Add date filter
+  if (start_date_raw) {
+    const start_date = new Date(start_date_raw);
+    const formatted_start = `${start_date.toISOString().slice(0, 10)} 00:00:00`;
 
-          return new Promise((resolve, reject) => {
-            const sql2 = `
-        SELECT re.id, re.invoice_number, ban.type, ban.benificiary_name, ban.id AS bank_id 
-        FROM receipts AS re 
-        LEFT JOIN bankings AS ban ON ban.id = re.payment_mode  
-        WHERE re.user_id = ? ORDER by id DESC
-      `;
+    let formatted_end;
+    if (end_date_raw) {
+      const end_date = new Date(end_date_raw);
+      formatted_end = `${end_date.toISOString().slice(0, 10)} 23:59:59`;
+    } else {
+      formatted_end = `${start_date.toISOString().slice(0, 10)} 23:59:59`;
+    }
 
-            connection.query(sql2, [user_id], (err, receipts) => {
-              if (err) return reject({ statusCode: 201, message: "Error Getting Receipts", reason: err.message });
+    sql1 += ` AND hs.CheckoutDate BETWEEN ? AND ?`;
+    queryParams.push(formatted_start, formatted_end);
+  }
 
-              if (receipts.length > 0) {
-                const receipt = receipts[0];
+  sql1 += ` ORDER BY hs.CheckoutDate DESC`;
 
-                check_list.bank_type = receipt.type || "";
-                check_list.bank_id = receipt.bank_id || 0;
-                check_list.benificiary_name = receipt.benificiary_name || "";
+  connection.query(sql1, queryParams, function (err, ch_list) {
+    if (err) {
+      return res.status(201).json({ statusCode: 201, message: "Unable to Get User Details", reason: err.message });
+    }
 
-                if (receipt.invoice_number == 0) {
-                  const receipt_id = receipt.id;
-                  const sql3 = "SELECT * FROM checkout_deductions WHERE receipt_id = ?";
+    if (!ch_list.length) {
+      return res.status(200).json({ statusCode: 200, message: "No Check-Out Records Found", checkout_details: [] });
+    }
 
-                  connection.query(sql3, [receipt_id], (err, deductions) => {
-                    if (err) return reject({ statusCode: 201, message: "Error Getting Deductions", reason: err.message });
+    Promise.all(
+      ch_list.map((check_list) => {
+        const user_id = check_list.ID;
+        return new Promise((resolve, reject) => {
+          const sql2 = `
+            SELECT re.id, re.invoice_number, ban.type, ban.benificiary_name, ban.id AS bank_id 
+            FROM receipts AS re 
+            LEFT JOIN bankings AS ban ON ban.id = re.payment_mode  
+            WHERE re.user_id = ? ORDER BY id DESC
+          `;
 
-                    check_list.amenities = deductions || [];
-                    resolve(check_list);
-                  });
-                } else {
-                  check_list.amenities = [];
+          connection.query(sql2, [user_id], (err, receipts) => {
+            if (err) return reject({ statusCode: 201, message: "Error Getting Receipts", reason: err.message });
+
+            if (receipts.length > 0) {
+              const receipt = receipts[0];
+              check_list.bank_type = receipt.type || "";
+              check_list.bank_id = receipt.bank_id || 0;
+              check_list.benificiary_name = receipt.benificiary_name || "";
+
+              if (receipt.invoice_number == 0) {
+                connection.query("SELECT * FROM checkout_deductions WHERE receipt_id = ?", [receipt.id], (err, deductions) => {
+                  if (err) return reject({ statusCode: 201, message: "Error Getting Deductions", reason: err.message });
+                  check_list.amenities = deductions || [];
                   resolve(check_list);
-                }
+                });
               } else {
-                check_list.bank_type = "";
-                check_list.bank_id = 0;
-                check_list.benificiary_name = "";
                 check_list.amenities = [];
                 resolve(check_list);
               }
-            });
+            } else {
+              check_list.bank_type = "";
+              check_list.bank_id = 0;
+              check_list.benificiary_name = "";
+              check_list.amenities = [];
+              resolve(check_list);
+            }
           });
-        })
-      )
-        .then((updatedList) => {
-          res.status(200).json({ statusCode: 200, message: "Check-Out Details", checkout_details: updatedList });
-        })
-        .catch((error) => {
-          res.status(201).json(error);
         });
-
-    });
-  } else {
-    return res.status(208).json({ message: "Permission Denied. Please contact your administrator for access.", statusCode: 208 });
-  }
+      })
+    )
+      .then((updatedList) => {
+        res.status(200).json({ statusCode: 200, message: "Check-Out Details", checkout_details: updatedList });
+      })
+      .catch((error) => {
+        res.status(201).json(error);
+      });
+  });
 }
+
+
 
 
 function delete_check_out(req, res) {

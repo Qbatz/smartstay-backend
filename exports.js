@@ -16,7 +16,8 @@ function export_customer(req, res) {
     var start_date = req.body?.start_date ? moment(new Date(req.body.start_date)).format('YYYY-MM-DD') : null;
     var end_date = req.body?.end_date ? moment(new Date(req.body.end_date)).format('YYYY-MM-DD') : null;
     var payment_mode = req.body?.payment_mode ? req.body.payment_mode : null;
-     var price_range = req.body?.price_range || null;
+    var price_range = req.body?.price_range || null;
+    var searchName = req.body.searchName?.trim() || null;
 
     var status = req.body?.status || null;
 
@@ -32,8 +33,36 @@ function export_customer(req, res) {
 
     if (type == 'customers') {
 
-        var sql1 = "SELECT hstl.*,bd.bed_no AS Bed,hstl.Bed AS hstl_Bed,hsroom.Room_Id AS Rooms,hstl.Rooms AS hstl_Rooms,hsroom.id AS room_id,hsroom.Room_Id,DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,hstl.Hostel_Id AS user_hostel,ca.first_name AS creator_name,ca.user_type FROM hosteldetails AS hstlDetails inner join hostel AS hstl on hstl.Hostel_Id=hstlDetails.id and hstl.isActive=true LEFT JOIN country_list AS cl ON hstl.country_code=cl.country_code Left Join hostelrooms hsroom ON hsroom.Hostel_Id = hstlDetails.id and hsroom.Floor_Id = hstl.Floor and hsroom.id = hstl.Rooms LEFT JOIN bed_details AS bd ON bd.id=hstl.Bed JOIN createaccount AS ca ON hstl.created_by=ca.id  WHERE hstl.Hostel_Id=? ORDER BY hstl.ID DESC;";
+        var sql1 = `
+        SELECT 
+            hstl.*,
+            bd.bed_no AS Bed,
+            hstl.Bed AS hstl_Bed,
+            hsroom.Room_Id AS Rooms,
+            hstl.Rooms AS hstl_Rooms,
+            hsroom.id AS room_id,
+            hsroom.Room_Id,
+            DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,
+            hstl.Hostel_Id AS user_hostel,
+            ca.first_name AS creator_name,
+            ca.user_type
+        FROM hosteldetails AS hstlDetails
+        INNER JOIN hostel AS hstl ON hstl.Hostel_Id = hstlDetails.id AND hstl.isActive = true
+        LEFT JOIN country_list AS cl ON hstl.country_code = cl.country_code
+        LEFT JOIN hostelrooms hsroom ON hsroom.Hostel_Id = hstlDetails.id AND hsroom.Floor_Id = hstl.Floor AND hsroom.id = hstl.Rooms
+        LEFT JOIN bed_details AS bd ON bd.id = hstl.Bed
+        JOIN createaccount AS ca ON hstl.created_by = ca.id
+        WHERE hstl.Hostel_Id = ?
+    `;
+
+        if (searchName) {
+            sql1 += ` AND hstl.Name LIKE CONCAT('%', ${connection.escape(searchName)}, '%') `;
+        }
+
+        sql1 += ` ORDER BY hstl.ID DESC`;
         var file_name = 'all_customers';
+
+
 
     } else if (type == 'assets') {
 
@@ -65,6 +94,18 @@ function export_customer(req, res) {
             sql1 += ` AND ass.purchase_date = '${start_date}'`;
         }
 
+        if (searchName) {
+            sql1 += `
+            AND (
+                ass.asset_name LIKE CONCAT('%', ${connection.escape(searchName)}, '%') OR
+                ass.product_name LIKE CONCAT('%', ${connection.escape(searchName)}, '%') OR
+                ass.brand_name LIKE CONCAT('%', ${connection.escape(searchName)}, '%') OR
+                ven.Vendor_Name LIKE CONCAT('%', ${connection.escape(searchName)}, '%') OR
+                hos.Name LIKE CONCAT('%', ${connection.escape(searchName)}, '%')
+            )
+        `;
+        }
+
         sql1 += ` ORDER BY ass.id DESC`;
         var file_name = 'all_assets';
 
@@ -77,6 +118,16 @@ function export_customer(req, res) {
                 LEFT JOIN assets AS ass ON ass.id=ex.asset_id  
                 WHERE ex.hostel_id = ? AND ex.status = 1`;
 
+
+        if (searchName) {
+            sql1 += `
+            AND (
+                ca.category_Name LIKE CONCAT('%', ${connection.escape(searchName)}, '%') OR
+                ass.asset_name LIKE CONCAT('%', ${connection.escape(searchName)}, '%') OR
+                cas.first_name LIKE CONCAT('%', ${connection.escape(searchName)}, '%')
+            )
+        `;
+        }
 
         if (category) {
             sql1 += ` AND ex.category_id = ${connection.escape(category)}`;
@@ -106,36 +157,145 @@ function export_customer(req, res) {
 
     } else if (type == 'customer_readings') {
 
-        var sql1 = "SELECT hos.Name AS user_name,cus.*,ca.first_name AS creator_name,ca.user_type FROM customer_eb_amount AS cus JOIN hostel AS hos ON hos.id=cus.user_id JOIN createaccount AS ca ON ca.id=cus.created_by WHERE cus.status=1 AND hos.Hostel_Id=? ORDER BY cus.id DESC;"
+
+
+        var sql1 = `
+        SELECT 
+            hos.Name AS user_name,
+            cus.*,
+            ca.first_name AS creator_name,
+            ca.user_type 
+        FROM customer_eb_amount AS cus 
+        JOIN hostel AS hos ON hos.id = cus.user_id 
+        JOIN createaccount AS ca ON ca.id = cus.created_by 
+        WHERE cus.status = 1 AND hos.Hostel_Id = ?
+    `;
+
+        if (searchName) {
+            sql1 += ` AND hos.Name LIKE CONCAT('%', ${connection.escape(searchName)}, '%')`;
+        }
+
+        if (start_date && end_date) {
+            sql1 += ` AND cus.date BETWEEN '${start_date} 00:00:00' AND '${end_date} 23:59:59'`;
+        } else if (start_date) {
+            sql1 += ` AND cus.date BETWEEN '${start_date} 00:00:00' AND '${start_date} 23:59:59'`;
+        }
+
+
+        sql1 += ` ORDER BY cus.id DESC`;
+
         var file_name = 'customer_readings';
 
     } else if (type == 'walkin') {
 
-        var sql1 = "SELECT cus.*,ca.first_name AS creator_name,ca.user_type FROM customer_walk_in_details AS cus JOIN createaccount AS ca ON ca.id=cus.created_by WHERE cus.isActive=1 AND cus.hostel_id=? ORDER BY cus.id DESC;"
-        var file_name = 'all_walkings';
+        var sql1 = `
+        SELECT cus.*, 
+               ca.first_name AS creator_name, 
+               ca.user_type 
+        FROM customer_walk_in_details AS cus 
+        JOIN createaccount AS ca ON ca.id = cus.created_by 
+        WHERE cus.isActive = 1 AND cus.hostel_id = ?
+    `;
 
+        if (searchName) {
+            sql1 += `
+            AND (
+                CONCAT(cus.first_name, ' ', cus.last_name) LIKE CONCAT('%', ${connection.escape(searchName)}, '%') OR
+                cus.first_name LIKE CONCAT('%', ${connection.escape(searchName)}, '%') OR
+                cus.last_name LIKE CONCAT('%', ${connection.escape(searchName)}, '%')
+            )
+        `;
+        }
+
+        sql1 += ` ORDER BY cus.id DESC;`;
+        var file_name = 'all_walkings';
     } else if (type == 'booking') {
 
-        var sql1 = "SELECT bo.*,hstl.Name AS hostel_name,hf.floor_name,hr.Room_Id,bd.bed_no,ca.first_name AS creator_name,ca.user_type FROM bookings AS bo LEFT JOIN hosteldetails AS hstl ON hstl.ID=bo.hostel_id LEFT JOIN Hostel_Floor AS hf ON hf.floor_id=bo.floor_id LEFT JOIN hostelrooms AS hr ON hr.id=bo.room_id LEFT JOIN bed_details AS bd ON bd.id=bo.bed_id JOIN createaccount AS ca ON ca.id=bo.created_by WHERE bo.status=1 AND bo.hostel_id=? ORDER BY bo.id DESC;"
+        var sql1 = `
+        SELECT bo.*, hstl.Name AS hostel_name, hf.floor_name, hr.Room_Id, bd.bed_no,
+               ca.first_name AS creator_name, ca.user_type 
+        FROM bookings AS bo 
+        LEFT JOIN hosteldetails AS hstl ON hstl.ID = bo.hostel_id 
+        LEFT JOIN Hostel_Floor AS hf ON hf.floor_id = bo.floor_id 
+        LEFT JOIN hostelrooms AS hr ON hr.id = bo.room_id 
+        LEFT JOIN bed_details AS bd ON bd.id = bo.bed_id 
+        JOIN createaccount AS ca ON ca.id = bo.created_by 
+        WHERE bo.status = 1 AND bo.hostel_id = ?
+    `;
+
+        if (searchName) {
+            sql1 += `
+            AND (
+                CONCAT(bo.first_name, ' ', bo.last_name) LIKE CONCAT('%', ${connection.escape(searchName)}, '%') OR
+                bo.first_name LIKE CONCAT('%', ${connection.escape(searchName)}, '%') OR
+                bo.last_name LIKE CONCAT('%', ${connection.escape(searchName)}, '%')
+            )
+        `;
+        }
+
+        sql1 += ` ORDER BY bo.id DESC;`;
         var file_name = 'all_bookings';
 
     } else if (type == 'checkout') {
 
-        var sql1 = "SELECT hos.*, MAX(hstl.Name) AS hostel_name, MAX(hf.floor_name) AS floor_name, MAX(hr.Room_Id) AS Room_Id, MAX(bd.bed_no) AS bed_no, MAX(ca.first_name) AS creator_name, MAX(ca.user_type) AS user_type FROM hostel AS hos JOIN hosteldetails AS hstl ON hstl.id = hos.Hostel_Id JOIN Hostel_Floor AS hf ON hf.floor_id = hos.Floor JOIN hostelrooms AS hr ON hr.id = hos.Rooms JOIN bed_details AS bd ON bd.id = hos.Bed LEFT JOIN createaccount AS ca ON ca.id = hos.created_by WHERE hos.CheckoutDate IS NOT NULL AND hos.Hostel_Id = ? GROUP BY hos.id ORDER BY hos.id DESC;"
+        var sql1 = `
+        SELECT hos.*, 
+               MAX(hstl.Name) AS hostel_name, 
+               MAX(hf.floor_name) AS floor_name, 
+               MAX(hr.Room_Id) AS Room_Id, 
+               MAX(bd.bed_no) AS bed_no, 
+               MAX(ca.first_name) AS creator_name, 
+               MAX(ca.user_type) AS user_type 
+        FROM hostel AS hos 
+        JOIN hosteldetails AS hstl ON hstl.id = hos.Hostel_Id 
+        JOIN Hostel_Floor AS hf ON hf.floor_id = hos.Floor 
+        JOIN hostelrooms AS hr ON hr.id = hos.Rooms 
+        JOIN bed_details AS bd ON bd.id = hos.Bed 
+        LEFT JOIN createaccount AS ca ON ca.id = hos.created_by 
+        WHERE hos.CheckoutDate IS NOT NULL AND hos.Hostel_Id = ?
+    `;
+
+        if (searchName) {
+            sql1 += `
+            AND (
+                CONCAT(hos.first_name, ' ', hos.last_name) LIKE CONCAT('%', ${connection.escape(searchName)}, '%') OR
+                hos.first_name LIKE CONCAT('%', ${connection.escape(searchName)}, '%') OR
+                hos.last_name LIKE CONCAT('%', ${connection.escape(searchName)}, '%')
+            )
+        `;
+        }
+
+        sql1 += `
+        GROUP BY hos.id 
+        ORDER BY hos.id DESC;
+    `;
+
         var file_name = 'all_checkouts';
 
     } else if (type == 'complaint') {
 
-        var sql1 = `SELECT com.*,ct.complaint_name,hstl.Name AS hostel_name,hf.floor_name,hr.Room_Id,bd.bed_no,
-                ca.first_name AS creator_name,ca.user_type 
-                FROM compliance AS com 
-                JOIN hosteldetails AS hstl ON hstl.ID=com.Hostel_id 
-                JOIN Hostel_Floor AS hf ON hf.floor_id=com.Floor_id 
-                JOIN hostelrooms AS hr ON hr.id=com.Room 
-                JOIN bed_details AS bd ON bd.id=com.Bed 
-                JOIN createaccount AS ca ON ca.id=com.created_by 
-                JOIN complaint_type AS ct ON com.Complainttype=ct.id 
-                WHERE com.Hostel_Id = ?`;
+        var sql1 = `
+        SELECT 
+            com.*, ct.complaint_name,
+            hstl.Name AS hostel_name,
+            hf.floor_name,
+            hr.Room_Id,
+            bd.bed_no,
+            ca.first_name AS creator_name,
+            ca.user_type 
+        FROM compliance AS com 
+        JOIN hosteldetails AS hstl ON hstl.ID = com.Hostel_id 
+        JOIN Hostel_Floor AS hf ON hf.floor_id = com.Floor_id 
+        JOIN hostelrooms AS hr ON hr.id = com.Room 
+        JOIN bed_details AS bd ON bd.id = com.Bed 
+        JOIN createaccount AS ca ON ca.id = com.created_by 
+        JOIN complaint_type AS ct ON com.Complainttype = ct.id 
+        WHERE com.Hostel_Id = ?
+    `;
+
+        if (searchName) {
+            sql1 += ` AND com.Name LIKE CONCAT('%', ${connection.escape(searchName)}, '%')`;
+        }
 
         if (status) {
             sql1 += ` AND com.status = ${connection.escape(status)}`;
@@ -151,8 +311,6 @@ function export_customer(req, res) {
         var file_name = 'all_complaints';
 
     }
-
-    console.log("queryy--->" + sql1)
     connection.query(sql1, [hostel_id], function (err, data) {
         if (err) {
             return res.status(201).json({ statusCode: 201, message: "Unable to Get All Details" })

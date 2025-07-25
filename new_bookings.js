@@ -22,9 +22,9 @@ function add_booking(req, res) {
         l_name = ""
     }
 
-    var { f_name, mob_no, email_id, address, joining_date, amount, hostel_id, id, area, landmark, pin_code, city, state } = req.body;
+    var { f_name, mob_no, email_id, address, joining_date, amount, hostel_id, id, area, landmark, pin_code, city, state,booking_date } = req.body;
 
-    if (!f_name || !mob_no || !joining_date || !amount || !hostel_id || !pin_code || !city || !state) {
+    if (!f_name || !mob_no || !joining_date || !amount || !hostel_id || !pin_code || !city || !state || !booking_date) {
         return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" });
     }
 
@@ -76,8 +76,8 @@ function add_booking(req, res) {
                         }
 
                         // var sql3 = "INSERT INTO bookings (first_name,last_name,joining_date,amount,hostel_id,phone_number,email_id,address,created_by,profile) VALUES (?)";
-                        var sql3 = "UPDATE bookings SET first_name=?,last_name=?,joining_date=?,amount=?,hostel_id=?,phone_number=?,email_id=?,address=?,profile=?,area=?,landmark=?,pin_code=?,city=?,state=? WHERE id=?";
-                        connection.query(sql3, [f_name, l_name, joining_date, amount, hostel_id, mob_no, email_id, address, profile_url, area, landmark, pin_code, city, state, id], function (err, ins_data) {
+                        var sql3 = "UPDATE bookings SET first_name=?,last_name=?,joining_date=?,amount=?,hostel_id=?,phone_number=?,email_id=?,address=?,profile=?,area=?,landmark=?,pin_code=?,city=?,state=?,booking_date=? WHERE id=?";
+                        connection.query(sql3, [f_name, l_name, joining_date, amount, hostel_id, mob_no, email_id, address, profile_url, area, landmark, pin_code, city, state,booking_date, id], function (err, ins_data) {
                             if (err) {
                                 return res.status(201).json({ statusCode: 201, message: "Unable to Add Booking Details", reason: err.message });
                             } else {
@@ -138,8 +138,8 @@ function add_booking(req, res) {
                             }
                         }
 
-                        var sql3 = "INSERT INTO bookings (first_name,last_name,joining_date,amount,hostel_id,phone_number,email_id,address,created_by,profile, area,landmark,pin_code,city,state) VALUES (?)";
-                        var params = [f_name, l_name, joining_date, amount, hostel_id, mob_no, email_id, address, created_by, profile_url, area, landmark, pin_code, city, state]
+                        var sql3 = "INSERT INTO bookings (first_name,last_name,joining_date,amount,hostel_id,phone_number,email_id,address,created_by,profile, area,landmark,pin_code,city,state,booking_date) VALUES (?)";
+                        var params = [f_name, l_name, joining_date, amount, hostel_id, mob_no, email_id, address, created_by, profile_url, area, landmark, pin_code, city, state,booking_date]
 
                         connection.query(sql3, [params], function (err, ins_data) {
                             if (err) {
@@ -195,7 +195,9 @@ function assign_booking(req, res) {
             var pincode = booking_details.pin_code;
             var city = booking_details.city;
             var state = booking_details.state;
-            var createdat = booking_details.createdat;
+            var createdat = booking_details.booking_date;
+
+            console.log("booking_details",booking_details)
 
             if (new Date(join_date) <= new Date(createdat)) {
                 return res.status(201).json({
@@ -211,7 +213,7 @@ function assign_booking(req, res) {
                     if (err) {
                         return res.status(201).json({ statusCode: 201, message: "Unable to Get Email Details", reason: err.message });
                     } else if (em_data.length != 0) {
-                        return res.status(201).json({ statusCode: 201, message: "Email Already Exists" });
+                        return res.status(202).json({ statusCode: 202, message: "Email Already Exists" });
                     } else {
                         next_function();
                     }
@@ -290,7 +292,7 @@ function assign_booking(req, res) {
                             }
                         })
                     } else {
-                        return res.status(201).json({ statusCode: 201, message: "Mobile Number Already Exists" });
+                        return res.status(203).json({ statusCode: 203, message: "Mobile Number Already Exists" });
                     }
                 })
             }

@@ -111,16 +111,13 @@ async function add_asset(req, res) {
         return res.status(201).json({ message: "Missing Hostel Details", statusCode: 201 })
     }
 
-    const isValid = await dateValidation.isValidHostelAndPurchaseDate(hostel_id, data.purchase_date);
-    if (!isValid) {
-        return res.status(201).json({
-            statusCode: 201,
-            message: "Purchase date is before hostel created date"
-        });
-    }
-
-
-
+    // const isValid = await dateValidation.isValidHostelAndPurchaseDate(hostel_id, data.purchase_date);
+    // if (!isValid) {
+    //     return res.status(201).json({
+    //         statusCode: 201,
+    //         message: "Purchase date is before hostel created date"
+    //     });
+    // }
     var validationResult = input_validations(data);
 
     if (!data.payment_type) {
@@ -277,7 +274,7 @@ async function add_asset(req, res) {
                                             }
                                         })
                                     } else {
-                                        return res.status(202).json({ message: "Asset Name Already Exists", statusCode: 201 })
+                                        return res.status(202).json({ message: "Asset Name Already Exists", statusCode: 202 })
                                     }
                                 })
                             }
@@ -381,7 +378,7 @@ async function add_asset(req, res) {
                                     });
 
                                 }else {
-                                    return res.status(201).json({ message: "Asset name already exists", statusCode: 201 });
+                                    return res.status(202).json({ message: "Asset name already exists", statusCode: 202});
                                 }
                             });
                         }
@@ -553,7 +550,7 @@ async function asseign_asset(req, res) {
         if (!isValid) {
             return res.status(201).json({
                 statusCode: 201,
-                message: "Reassigned date is before asset created date"
+                message: "Assigned date must be on or after the asset's created date and purchase date."
             });
         }
 

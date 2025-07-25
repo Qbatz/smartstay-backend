@@ -640,96 +640,292 @@ function loginAccount(connection, response, email_Id, password) {
 
 // Get User Details Based on Token
 
+// function get_user_details(connection, request, response) {
+
+//     const created_by = request.user_details.id;
+
+//     var sql1 = "SELECT * FROM createaccount WHERE id = ?;";
+//     connection.query(sql1, [created_by], function (sel_err, sel_res) {
+//         if (sel_err) {
+//             return response.status(201).json({ message: "Unable to Get User Details" });
+//         } else if (sel_res.length > 0) {
+
+//             var user_type = sel_res[0].user_type;
+//             var role_id = sel_res[0].role_id;
+
+//             const { password, createdat, ...filtered_user } = sel_res[0];
+
+//             if (user_type === 'admin') {
+
+//                 const sql2 = `SELECT * FROM subscription_details WHERE user_id = ? ORDER BY id DESC LIMIT 1`;
+//                 connection.query(sql2, [created_by], function (err, plan_data) {
+//                     if (err) return response.status(500).json({ message: "Error fetching plan", statusCode: 500 });
+
+//                     if (!plan_data.length) {
+//                         return response.status(200).json({
+//                             message: "User Details",
+//                             statusCode: 200,
+//                             user_details: filtered_user,
+//                             is_owner: 1,
+//                             role_permissions: [],
+//                             plan_data: []
+//                         });
+//                     }
+
+//                     const latestPlan = plan_data[0];
+//                     let selectedHostels = [];
+//                     try {
+//                         selectedHostels = JSON.parse(latestPlan.selected_hostels);
+//                         if (!Array.isArray(selectedHostels)) selectedHostels = [];
+//                     } catch (e) {
+//                         selectedHostels = [];
+//                     }
+
+//                     const sql3 = `SELECT hs.id AS hostel_id, hs.Name AS hostel_name,sd.plan_code, sd.plan_start, sd.plan_end, sd.status AS plan_status FROM hosteldetails hs LEFT JOIN (SELECT * FROM subscription_details WHERE status = 1 AND user_id = ?) sd ON hs.id = sd.hostel_id WHERE hs.created_By = ? AND hs.isActive = 1 GROUP BY hs.id`;
+//                     connection.query(sql3, [created_by, created_by], function (err, hostel_data) {
+//                         if (err) {
+//                             console.log(err);
+//                             return response.status(201).json({ message: "Error fetching hostel info", statusCode: 201 });
+//                         }
+
+//                         // Map to formatted structure
+//                         const hostel_details = hostel_data.map(row => ({
+//                             id: row.hostel_id,
+//                             name: row.hostel_name || "",
+//                             plan_start: row.plan_start || "",
+//                             plan_end: row.plan_end || "",
+//                             plan_status: row.plan_status || 0,
+//                             plan_code: row.plan_code || ""
+//                         }));
+
+//                         latestPlan.hostel_details = hostel_details;
+
+//                         return response.status(200).json({
+//                             message: "User Details",
+//                             statusCode: 200,
+//                             user_details: filtered_user,
+//                             is_owner: 1,
+//                             role_permissions: [],
+//                             plan_data: [latestPlan]
+//                         });
+//                     });
+//                 });
+
+
+//             } else {
+
+//                 var sql2 = `SELECT rp.*, per.permission_name, ro.role_name FROM role_permissions AS rp JOIN permissions AS per ON rp.permission_id = per.id JOIN roles AS ro ON ro.id = rp.role_id WHERE rp.role_id = ?`;
+//                 connection.query(sql2, [role_id], function (err, data) {
+//                     if (err) {
+//                         console.log(err);
+//                         return response.status(201).json({ message: "Unable to Get Role Permissions" });
+//                     } else {
+//                         response.status(200).json({ message: "User Details", user_details: filtered_user, is_owner: 0, role_permissions: data });
+//                     }
+//                 });
+//             }
+//         } else {
+//             response.status(201).json({ message: "Invalid User Details" });
+//         }
+//     });
+// }
+
+
+
+
 function get_user_details(connection, request, response) {
+    const current_user_id = request.user_details.id;
 
-    const created_by = request.user_details.id;
-
-    var sql1 = "SELECT * FROM createaccount WHERE id = ?;";
-    connection.query(sql1, [created_by], function (sel_err, sel_res) {
+    const sql1 = "SELECT * FROM createaccount WHERE id = ?";
+    connection.query(sql1, [current_user_id], function (sel_err, sel_res) {
         if (sel_err) {
-            return response.status(201).json({ message: "Unable to Get User Details" });
-        } else if (sel_res.length > 0) {
+            return response.status(500).json({ message: "Unable to Get User Details" });
+        }
 
-            var user_type = sel_res[0].user_type;
-            var role_id = sel_res[0].role_id;
+        if (!sel_res.length) {
+            return response.status(404).json({ message: "Invalid User Details" });
+        }
 
-            const { password, createdat, ...filtered_user } = sel_res[0];
+        const user = sel_res[0];
+        const { password, createdat, ...filtered_user } = user;
+        const user_type = user.user_type;
+        const role_id = user.role_id;
 
-            if (user_type === 'admin') {
+        if (user_type === 'admin') {
+            // Admin user
+            getPlanAndHostelDetails(connection, current_user_id, function (plan_data) {
+                return response.status(200).json({
+                    message: "User Details",
+                    statusCode: 200,
+                    user_details: filtered_user,
+                    is_owner: 1,
+                    role_permissions: [],
+                    plan_data
+                });
+            });
+        }
 
-                const sql2 = `SELECT * FROM subscription_details WHERE user_id = ? ORDER BY id DESC LIMIT 1`;
-                connection.query(sql2, [created_by], function (err, plan_data) {
-                    if (err) return response.status(500).json({ message: "Error fetching plan", statusCode: 500 });
 
-                    if (!plan_data.length) {
+        // else{
+        //      getPlanAndHostelDetails(connection, user.createdby, function (plan_data) {
+        //         return response.status(200).json({
+        //             message: "User Details",
+        //             statusCode: 200,
+        //             user_details: filtered_user,
+        //             is_owner: 1,
+        //             role_permissions: [],
+        //             plan_data
+        //         });
+        //     });
+        // }
+    else {
+            // Staff user — get role permissions and admin's plan data
+            const role_sql = `
+                SELECT rp.*, per.permission_name, ro.role_name 
+                FROM role_permissions AS rp 
+                JOIN permissions AS per ON rp.permission_id = per.id 
+                JOIN roles AS ro ON ro.id = rp.role_id 
+                WHERE rp.role_id = ?`;
+
+            connection.query(role_sql, [role_id], function (err, roleData) {
+                if (err) {
+                    return response.status(500).json({ message: "Unable to Get Role Permissions" });
+                }
+
+                // Get admin_id for staff
+                const getAdminSql = `SELECT createdby FROM createaccount WHERE id = ? LIMIT 1`;
+                connection.query(getAdminSql, [current_user_id], function (adminErr, adminRes) {
+                    
+                    console.log("current_user_id",current_user_id)
+                    console.log("getAdminSql",getAdminSql)
+                    if (adminErr || !adminRes.length) {
+                        console.log("Error fetching admin_id:", adminErr);
                         return response.status(200).json({
                             message: "User Details",
-                            statusCode: 200,
                             user_details: filtered_user,
-                            is_owner: 1,
-                            role_permissions: [],
+                            is_owner: 0,
+                            role_permissions: roleData,
                             plan_data: []
                         });
                     }
+                    console.log("Admin ID for staff:", adminRes[0]?.createdby);
 
-                    const latestPlan = plan_data[0];
-                    let selectedHostels = [];
-                    try {
-                        selectedHostels = JSON.parse(latestPlan.selected_hostels);
-                        if (!Array.isArray(selectedHostels)) selectedHostels = [];
-                    } catch (e) {
-                        selectedHostels = [];
-                    }
+                    const admin_id = adminRes[0].createdby;
 
-                    const sql3 = `SELECT hs.id AS hostel_id, hs.Name AS hostel_name,sd.plan_code, sd.plan_start, sd.plan_end, sd.status AS plan_status FROM hosteldetails hs LEFT JOIN (SELECT * FROM subscription_details WHERE status = 1 AND user_id = ?) sd ON hs.id = sd.hostel_id WHERE hs.created_By = ? AND hs.isActive = 1 GROUP BY hs.id`;
-                    connection.query(sql3, [created_by, created_by], function (err, hostel_data) {
-                        if (err) {
-                            console.log(err);
-                            return response.status(201).json({ message: "Error fetching hostel info", statusCode: 201 });
-                        }
-
-                        // Map to formatted structure
-                        const hostel_details = hostel_data.map(row => ({
-                            id: row.hostel_id,
-                            name: row.hostel_name || "",
-                            plan_start: row.plan_start || "",
-                            plan_end: row.plan_end || "",
-                            plan_status: row.plan_status || 0,
-                            plan_code: row.plan_code || ""
-                        }));
-
-                        latestPlan.hostel_details = hostel_details;
-
+                    getPlanAndHostelDetails(connection, admin_id, function (plan_data) {
                         return response.status(200).json({
                             message: "User Details",
-                            statusCode: 200,
                             user_details: filtered_user,
-                            is_owner: 1,
-                            role_permissions: [],
-                            plan_data: [latestPlan]
+                            is_owner: 0,
+                            role_permissions: roleData,
+                            plan_data
                         });
                     });
                 });
-
-
-            } else {
-
-                var sql2 = `SELECT rp.*, per.permission_name, ro.role_name FROM role_permissions AS rp JOIN permissions AS per ON rp.permission_id = per.id JOIN roles AS ro ON ro.id = rp.role_id WHERE rp.role_id = ?`;
-                connection.query(sql2, [role_id], function (err, data) {
-                    if (err) {
-                        console.log(err);
-                        return response.status(201).json({ message: "Unable to Get Role Permissions" });
-                    } else {
-                        response.status(200).json({ message: "User Details", user_details: filtered_user, is_owner: 0, role_permissions: data });
-                    }
-                });
-            }
-        } else {
-            response.status(201).json({ message: "Invalid User Details" });
+            });
         }
     });
 }
 
+// 🔁 Reusable function for getting plan + hostel details
+// function getPlanAndHostelDetails(connection, admin_id, callback) {
+//     const sqlPlan = `SELECT * FROM subscription_details WHERE user_id = ? ORDER BY id DESC LIMIT 1`;
+//     connection.query(sqlPlan, [admin_id], function (err, planData) {
+//         if (err || !planData.length) return callback([]);
+
+//         const latestPlan = planData[0];
+
+//         let selectedHostels = [];
+//         try {
+//             selectedHostels = JSON.parse(latestPlan.selected_hostels);
+//             if (!Array.isArray(selectedHostels)) selectedHostels = [];
+//         } catch (e) {
+//             selectedHostels = [];
+//         }
+
+//         const sqlHostel = `SELECT hs.id AS hostel_id, hs.Name AS hostel_name, sd.plan_code, sd.plan_start, sd.plan_end, sd.status AS plan_status 
+//                            FROM hosteldetails hs 
+//                            LEFT JOIN (
+//                                SELECT * FROM subscription_details 
+//                                WHERE status = 1 AND user_id = ?
+//                            ) sd ON hs.id = sd.hostel_id 
+//                            WHERE hs.created_By = ? AND hs.isActive = 1 
+//                            GROUP BY hs.id`;
+
+//         connection.query(sqlHostel, [admin_id, admin_id], function (err, hostelData) {
+//             if (err || !hostelData.length) {
+//                 latestPlan.hostel_details = [];
+//                 return callback([latestPlan]);
+//             }
+
+//             const hostel_details = hostelData.map(row => ({
+//                 id: row.hostel_id,
+//                 name: row.hostel_name || "",
+//                 plan_start: row.plan_start || "",
+//                 plan_end: row.plan_end || "",
+//                 plan_status: row.plan_status || 0,
+//                 plan_code: row.plan_code || ""
+//             }));
+
+//             latestPlan.hostel_details = hostel_details;
+//             return callback([latestPlan]);
+//         });
+//     });
+// }
+
+function getPlanAndHostelDetails(connection, admin_id, callback) {
+    const sqlPlan = `SELECT * FROM subscription_details WHERE user_id = ? ORDER BY id DESC LIMIT 1`;
+
+    connection.query(sqlPlan, [admin_id], function (err, planData) {
+        if (err || !planData.length) {
+           
+            return callback([]);
+        }
+
+        const latestPlan = planData[0];
+
+        let selectedHostels = [];
+        try {
+            selectedHostels = JSON.parse(latestPlan.selected_hostels || '[]');
+            if (!Array.isArray(selectedHostels)) selectedHostels = [];
+        } catch (e) {
+            console.log("Invalid selected_hostels JSON:", latestPlan.selected_hostels);
+            selectedHostels = [];
+        }
+
+        const sqlHostel = `
+            SELECT hs.id AS hostel_id, hs.Name AS hostel_name, 
+                   sd.plan_code, sd.plan_start, sd.plan_end, sd.status AS plan_status 
+            FROM hosteldetails hs 
+            LEFT JOIN (
+                SELECT * FROM subscription_details 
+                WHERE status = 1 AND user_id = ?
+            ) sd ON hs.id = sd.hostel_id 
+            WHERE hs.created_By = ? AND hs.isActive = 1 
+            GROUP BY hs.id`;
+
+        connection.query(sqlHostel, [admin_id, admin_id], function (err, hostelData) {
+            if (err) {
+               
+                latestPlan.hostel_details = [];
+                return callback([latestPlan]);
+            }
+
+            const hostel_details = hostelData.map(row => ({
+                id: row.hostel_id,
+                name: row.hostel_name || "",
+                plan_start: row.plan_start || "",
+                plan_end: row.plan_end || "",
+                plan_status: row.plan_status || 0,
+                plan_code: row.plan_code || ""
+            }));
+
+            latestPlan.hostel_details = hostel_details;
+           
+            return callback([latestPlan]); 
+        });
+    });
+}
 
 function forgetPassword(connection, response, reqData) {
 
