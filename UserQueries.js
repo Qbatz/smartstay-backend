@@ -112,7 +112,7 @@ function createUser(connection, request, response) {
 
   var { area, landmark, pincode, city, state } = request.body;
 
-  if (!atten.firstname || !pincode || !city || !state) {
+  if (!atten.firstname ) {
     return response.status(201).json({ statusCode: 201, message: "Missing Mandatory Details" })
   }
 
