@@ -71,4 +71,6 @@ jobs:
             echo "SMS_DLTTEMPLATEID=${{ secrets.SMS_DLTTEMPLATEID}}" | sudo tee -a .env > /dev/null
             echo "PORT=${{ vars.APP_PORT}}" | sudo tee -a .env > /dev/null
 
+            sudo chmod 777 .env
+
             pm2 restart smartstay-dev-api.s3remotica.com || pm2 start index.js --name smartstay-dev-api.s3remotica.com
