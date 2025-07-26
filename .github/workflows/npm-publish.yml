@@ -74,3 +74,4 @@ jobs:
             sudo chmod 777 .env
 
             pm2 restart smartstay-testing-api.s3remotica.com || pm2 start index.js --name smartstay-testing-api.s3remotica.com
+
