@@ -590,9 +590,7 @@ console.log("hostelData",hostelData)
           reasons?.reduce((acc, item) => acc + Number(item.amount || 0), 0) ||
           0;
 var check_amount = Number(advance_amount) - (Number(totalBalanceDue) + Number(reasonTotalAmount));
-        // var check_amount = Number(totalBalanceDue) + Number(reasonTotalAmount);
-console.log("check_amount",check_amount,Number(advance_amount),(Number(advance_amount) >= check_amount))
-        if (Number(advance_amount) >= check_amount) {
+if (Number(advance_amount) >= check_amount && check_amount > 0) {
           processInvoicesAndFinalizeCheckout(
             id,
             totalBalanceDue,
@@ -802,29 +800,29 @@ async function processInvoicesAndFinalizeCheckout(
                     const values = [
                       reasonVal.reason,
                       reasonVal.amount,
-                      user_id,
+                      id,
                       receipt_id,
                       created_by,
                     ];
                     if (reasonVal.id) {
                       console.log("update");
                       var sqlupdate =
-                        "UPDATE checkout_deductions SET reason =?,amount=?,user_id=?,created_by=?, receipt_id = ? WHERE id = ?";
+                        "UPDATE checkout_deductions SET reason =?,amount=?,user_id=?,receipt_id = ? ,created_by=?  WHERE id = ?";
                       connection.query(
                         sqlupdate,
                         [
                           reasonVal.reason,
                           reasonVal.amount,
-                          user_id,
-                          created_by,
+                          id,
                           receipt_id,
+                          created_by,
                           reasonVal.id,
                         ],
                         function (err) {
                           if (err) {
                             return res.status(201).json({
                               statusCode: 201,
-                              message: "Error inserting checkout deductions",
+                              message: "Error updating checkout deductions",
                               reason: err.message,
                             });
                           }
@@ -838,6 +836,7 @@ async function processInvoicesAndFinalizeCheckout(
                         }
                       );
                     } else {
+                      console.log("values",values,[values])
                       var sql4 =
                         "INSERT INTO checkout_deductions (reason,amount,user_id,receipt_id,created_by) VALUES ?";
                       connection.query(sql4, [values], function (err, ch_res) {
@@ -1451,7 +1450,7 @@ function edit_confirm_checkout(req, res) {
         : 0;
 
     const advance_return = advance_amount - totalAmount;
-
+console.log("advance_return",advance_amount ,totalAmount)
     if (totalAmount > advance_amount) {
       return res.status(201).json({
         statusCode: 201,
