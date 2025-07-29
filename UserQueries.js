@@ -478,7 +478,7 @@ function createUser(connection, request, response) {
 
                                               // var sql2 =
                                               //   "SELECT * FROM customer_reasons WHERE user_id=?";
-                                                var sql2 =
+                                              var sql2 =
                                                 "SELECT * FROM checkout_deductions WHERE user_id=?";
                                               connection.query(
                                                 sql2,
@@ -3271,6 +3271,7 @@ function checkout_list(req, res) {
   const start_date_raw = req.body.start_date || null;
   const end_date_raw = req.body.end_date || null;
 
+  console.log("hostel_id", hostel_id);
   if (!hostel_id) {
     return res
       .status(201)
@@ -3349,23 +3350,23 @@ function checkout_list(req, res) {
         checkout_details: [],
       });
     }
-    ch_list.map((checklist)=>{
-    connection.query(
-                  "select * from checkout_deductions where user_id=?",
-                  [checklist.ID],
-                  (err, deductions) => {
-                    if (err)
-                      return reject({
-                        statusCode: 201,
-                        message: "Error Getting Deductions",
-                        reason: err.message,
-                      });
-                    checklist.amenities = deductions || [];
-                    // resolve(checklist);
-                  }
-                );
-    })
-
+    ch_list.map((checklist) => {
+      connection.query(
+        "select * from checkout_deductions where user_id=?",
+        [checklist.ID],
+        (err, deductions) => {
+          if (err)
+            return reject({
+              statusCode: 201,
+              message: "Error Getting Deductions",
+              reason: err.message,
+            });
+          checklist.amenities = deductions || [];
+          // resolve(checklist);
+        }
+      );
+    });
+    console.log("checklist", ch_list);
     Promise.all(
       ch_list.map((check_list) => {
         const user_id = check_list.ID;
@@ -3391,23 +3392,23 @@ function checkout_list(req, res) {
               check_list.bank_id = receipt.bank_id || 0;
               check_list.benificiary_name = receipt.benificiary_name || "";
               const input = check_list.userID;
-
+              resolve(check_list);
               //if (receipt.invoice_number == 0) {
-                // console.log("----",check_list.ID)
-                // connection.query(
-                //   "select * from checkout_deductions where user_id=?",
-                //   [check_list.ID],
-                //   (err, deductions) => {
-                //     if (err)
-                //       return reject({
-                //         statusCode: 201,
-                //         message: "Error Getting Deductions",
-                //         reason: err.message,
-                //       });
-                //     check_list.amenities = deductions || [];
-                //     resolve(check_list);
-                //   }
-                // );
+              // console.log("----",check_list.ID)
+              // connection.query(
+              //   "select * from checkout_deductions where user_id=?",
+              //   [check_list.ID],
+              //   (err, deductions) => {
+              //     if (err)
+              //       return reject({
+              //         statusCode: 201,
+              //         message: "Error Getting Deductions",
+              //         reason: err.message,
+              //       });
+              //     check_list.amenities = deductions || [];
+              //     resolve(check_list);
+              //   }
+              // );
               // } else {
               //   check_list.amenities = [];
               //   resolve(check_list);
@@ -3419,7 +3420,6 @@ function checkout_list(req, res) {
               // check_list.amenities = [];
               resolve(check_list);
             }
-            
           });
         });
       })
@@ -3432,6 +3432,7 @@ function checkout_list(req, res) {
         });
       })
       .catch((error) => {
+        console.log(error);
         res.status(201).json(error);
       });
   });
