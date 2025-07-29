@@ -592,28 +592,28 @@ console.log("hostelData",hostelData)
 var check_amount = Number(advance_amount) - (Number(totalBalanceDue) + Number(reasonTotalAmount));
         // var check_amount = Number(totalBalanceDue) + Number(reasonTotalAmount);
 console.log("check_amount",check_amount,Number(advance_amount),(Number(advance_amount) >= check_amount))
-        // if (Number(advance_amount) >= check_amount) {
-        //   processInvoicesAndFinalizeCheckout(
-        //     id,
-        //     totalBalanceDue,
-        //     advance_return,
-        //     created_by,
-        //     checkout_date,
-        //     bed_id,
-        //     advance_return,
-        //     comments,
-        //     reasons,
-        //     new_hosdetails,
-        //     payment_id,
-        //     hostel_id,
-        //     res
-        //   );
-        // } else {
-        //   return res.status(201).json({
-        //     statusCode: 201,
-        //     message: "Advance Amount is Less than Total Balance Due",
-        //   });
-        // }
+        if (Number(advance_amount) >= check_amount) {
+          processInvoicesAndFinalizeCheckout(
+            id,
+            totalBalanceDue,
+            advance_return,
+            created_by,
+            checkout_date,
+            bed_id,
+            advance_return,
+            comments,
+            reasons,
+            new_hosdetails,
+            payment_id,
+            hostel_id,
+            res
+          );
+        } else {
+          return res.status(201).json({
+            statusCode: 201,
+            message: "Advance Amount is Less than Total Balance Due",
+          });
+        }
       });
     }
   });
