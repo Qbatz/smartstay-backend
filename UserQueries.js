@@ -3352,7 +3352,7 @@ function checkout_list(req, res) {
     console.log("ch_list",ch_list)
     ch_list.map((checklist)=>{
  connection.query(
-                  "select * from checkout_deductions where user_id=223",
+                  "select * from checkout_deductions where user_id=?",
                   [checklist.ID],
                   (err, deductions) => {
                     if (err)
