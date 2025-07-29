@@ -3349,9 +3349,8 @@ function checkout_list(req, res) {
         checkout_details: [],
       });
     }
-    console.log("ch_list",ch_list)
     ch_list.map((checklist)=>{
- connection.query(
+    connection.query(
                   "select * from checkout_deductions where user_id=?",
                   [checklist.ID],
                   (err, deductions) => {
@@ -3394,21 +3393,21 @@ function checkout_list(req, res) {
               const input = check_list.userID;
 
               //if (receipt.invoice_number == 0) {
-                console.log("----",check_list.ID)
-                connection.query(
-                  "select * from checkout_deductions where user_id=223",
-                  [check_list.ID],
-                  (err, deductions) => {
-                    if (err)
-                      return reject({
-                        statusCode: 201,
-                        message: "Error Getting Deductions",
-                        reason: err.message,
-                      });
-                    check_list.amenities = deductions || [];
-                    resolve(check_list);
-                  }
-                );
+                // console.log("----",check_list.ID)
+                // connection.query(
+                //   "select * from checkout_deductions where user_id=?",
+                //   [check_list.ID],
+                //   (err, deductions) => {
+                //     if (err)
+                //       return reject({
+                //         statusCode: 201,
+                //         message: "Error Getting Deductions",
+                //         reason: err.message,
+                //       });
+                //     check_list.amenities = deductions || [];
+                //     resolve(check_list);
+                //   }
+                // );
               // } else {
               //   check_list.amenities = [];
               //   resolve(check_list);

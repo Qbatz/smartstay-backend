@@ -537,6 +537,7 @@ function add_confirm_checkout(req, res) {
         reason: err.message,
       });
     }
+    console.log("hostelData",hostelData)
 
     if (hostelData.length === 0) {
       return res
@@ -588,9 +589,9 @@ console.log("hostelData",hostelData)
         const reasonTotalAmount =
           reasons?.reduce((acc, item) => acc + Number(item.amount || 0), 0) ||
           0;
-var check_amount = Number(advance_amount) - Number(reasonTotalAmount);
+var check_amount = Number(advance_amount) - (Number(totalBalanceDue) + Number(reasonTotalAmount));
         // var check_amount = Number(totalBalanceDue) + Number(reasonTotalAmount);
-console.log("check_amount",check_amount)
+console.log("check_amount",check_amount,Number(advance_amount),(Number(advance_amount) >= check_amount))
         if (Number(advance_amount) >= check_amount) {
           processInvoicesAndFinalizeCheckout(
             id,
