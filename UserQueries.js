@@ -90,7 +90,8 @@ function getUsers(connection, response, request) {
       // console.log("hostelData",hostelData)
       let completed = 0;
       hostelData.forEach((reasondata, index) => {
-        var sql2 = "SELECT * FROM customer_reasons WHERE user_id=?";
+        // var sql2 = "SELECT * FROM customer_reasons WHERE user_id=?";
+        var sql2 = "SELECT * FROM checkout_deductions WHERE user_id=?";
         connection.query(sql2, [reasondata.ID], function (err, reasonDatas) {
           if (err) {
             console.log(err);
@@ -290,11 +291,14 @@ function createUser(connection, request, response) {
                         let inv_id = atten.invoice_id || null;
                         var remaining = atten.reasons.length;
                         reasons.forEach((item) => {
+                          // var sql3 =
+                          //   "INSERT INTO customer_reasons (reason_name, user_id, amount,invoice_id) VALUES (?, ?, ?,?)";
                           var sql3 =
-                            "INSERT INTO customer_reasons (reason_name, user_id, amount,invoice_id) VALUES (?, ?, ?,?)";
+                            "INSERT INTO checkout_deductions (reason, user_id, amount,receipt_id) VALUES (?, ?, ?,?)";
+
                           connection.query(
                             sql3,
-                            [item.reason_name, user_id, item.amount, inv_id],
+                            [item.reason_name, user_id, item.amount, null],
                             function (err) {
                               if (err) {
                                 console.log(
@@ -472,8 +476,10 @@ function createUser(connection, request, response) {
                                                 "Advance Bill Generated"
                                               );
 
-                                              var sql2 =
-                                                "SELECT * FROM customer_reasons WHERE user_id=?";
+                                              // var sql2 =
+                                              //   "SELECT * FROM customer_reasons WHERE user_id=?";
+                                                var sql2 =
+                                                "SELECT * FROM checkout_deductions WHERE user_id=?";
                                               connection.query(
                                                 sql2,
                                                 [user_id],
@@ -482,11 +488,11 @@ function createUser(connection, request, response) {
                                                     console.log(err);
                                                   } else {
                                                     reasonDatas.push({
-                                                      reason_name: "Advance",
+                                                      reason: "Advance",
                                                       user_id: atten.ID,
-                                                      amount:atten.AdvanceAmount,
-                                                      inv_id:inv_id
-
+                                                      amount:
+                                                        atten.AdvanceAmount,
+                                                      inv_id: inv_id,
                                                     });
                                                     reasonDatas.forEach(
                                                       (item) => {
@@ -495,7 +501,7 @@ function createUser(connection, request, response) {
                                                         connection.query(
                                                           sql2,
                                                           [
-                                                            item.reason_name,
+                                                            item.reason,
                                                             item.user_id,
                                                             item.amount,
                                                             inv_id,
@@ -507,30 +513,30 @@ function createUser(connection, request, response) {
                                                             if (err) {
                                                               console.log(err);
                                                             } else {
-                                                              const sql =
-                                                                "UPDATE customer_reasons SET invoice_id = ? WHERE id = ?";
-                                                              connection.query(
-                                                                sql,
-                                                                [
-                                                                  inv_id,
-                                                                  item.id,
-                                                                ],
-                                                                (
-                                                                  err,
-                                                                  result
-                                                                ) => {
-                                                                  if (err) {
-                                                                    console.error(
-                                                                      `Error updating ID ${item.id}:`,
-                                                                      err
-                                                                    );
-                                                                  } else {
-                                                                    console.log(
-                                                                      `Updated ID ${item.id} with invoice_id ${inv_id}`
-                                                                    );
-                                                                  }
-                                                                }
-                                                              );
+                                                              // const sql =
+                                                              //   "UPDATE customer_reasons SET invoice_id = ? WHERE id = ?";
+                                                              // connection.query(
+                                                              //   sql,
+                                                              //   [
+                                                              //     inv_id,
+                                                              //     item.id,
+                                                              //   ],
+                                                              //   (
+                                                              //     err,
+                                                              //     result
+                                                              //   ) => {
+                                                              //     if (err) {
+                                                              //       console.error(
+                                                              //         `Error updating ID ${item.id}:`,
+                                                              //         err
+                                                              //       );
+                                                              //     } else {
+                                                              //       console.log(
+                                                              //         `Updated ID ${item.id} with invoice_id ${inv_id}`
+                                                              //       );
+                                                              //     }
+                                                              //   }
+                                                              // );
                                                               console.log(
                                                                 "Advance Bill Details Generated"
                                                               );
@@ -3290,7 +3296,7 @@ function checkout_list(req, res) {
       hos_de.profile, hs.Floor, hs.Bed,
       DATE_FORMAT(hs.req_date, '%Y-%m-%d') AS req_date,
       hs.isActive, hs.Phone, hf.floor_name AS floor_name,
-      hosroom.Room_Id AS room_name, bed.bed_no AS bed_name
+      hosroom.Room_Id AS room_name, bed.bed_no AS bed_name,hs.user_id AS userID
     FROM hostel AS hs 
     JOIN hosteldetails AS hos_de ON hos_de.id = hs.Hostel_Id 
     LEFT JOIN Hostel_Floor AS hf ON hf.floor_id = hs.Floor AND hf.hostel_id = hs.Hostel_Id 
@@ -3343,6 +3349,23 @@ function checkout_list(req, res) {
         checkout_details: [],
       });
     }
+    console.log("ch_list",ch_list)
+    ch_list.map((checklist)=>{
+ connection.query(
+                  "select * from checkout_deductions where user_id=223",
+                  [checklist.ID],
+                  (err, deductions) => {
+                    if (err)
+                      return reject({
+                        statusCode: 201,
+                        message: "Error Getting Deductions",
+                        reason: err.message,
+                      });
+                    checklist.amenities = deductions || [];
+                    // resolve(checklist);
+                  }
+                );
+    })
 
     Promise.all(
       ch_list.map((check_list) => {
@@ -3368,11 +3391,13 @@ function checkout_list(req, res) {
               check_list.bank_type = receipt.type || "";
               check_list.bank_id = receipt.bank_id || 0;
               check_list.benificiary_name = receipt.benificiary_name || "";
+              const input = check_list.userID;
 
-              if (receipt.invoice_number == 0) {
+              //if (receipt.invoice_number == 0) {
+                console.log("----",check_list.ID)
                 connection.query(
-                  "SELECT * FROM checkout_deductions WHERE receipt_id = ?",
-                  [receipt.id],
+                  "select * from checkout_deductions where user_id=223",
+                  [check_list.ID],
                   (err, deductions) => {
                     if (err)
                       return reject({
@@ -3384,17 +3409,18 @@ function checkout_list(req, res) {
                     resolve(check_list);
                   }
                 );
-              } else {
-                check_list.amenities = [];
-                resolve(check_list);
-              }
+              // } else {
+              //   check_list.amenities = [];
+              //   resolve(check_list);
+              // }
             } else {
               check_list.bank_type = "";
               check_list.bank_id = 0;
               check_list.benificiary_name = "";
-              check_list.amenities = [];
+              // check_list.amenities = [];
               resolve(check_list);
             }
+            
           });
         });
       })

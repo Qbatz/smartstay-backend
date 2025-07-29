@@ -35,11 +35,41 @@ exports.get_receipt_detailsbyid = async (req, res) => {
               amount: item.amount,
             }));
 
-            var total_amount = formattedAmenities.reduce(
-              (sum, item) => sum + item.amount,
-              0
-            );
+            // var total_amount = formattedAmenities.reduce(
+            //   (sum, item) => sum + item.amount,
+            //   0
+            // );
 
+            let advance = 0;
+            let others = 0;
+            var total_amount = 0;
+
+            const hasAdvance = formattedAmenities.some(
+              (item) => (item.am_name || "").toLowerCase() === "outstanding due"
+            );
+            // // First pass: Calculate total_amount properly
+            formattedAmenities.forEach((item) => {
+              const amt = Number(item.amount) || 0;
+              const name = (item.am_name || "").toLowerCase();
+
+              if (hasAdvance) {
+                if (name === "outstanding due") {
+                  console.log("amt", amt);
+                  advance += amt;
+                } else {
+                  console.log("others", amt);
+                  others += amt;
+                }
+              } else {
+                total_amount += amt;
+              }
+            });
+
+            console.log("total_amount", others, advance);
+            if (hasAdvance) {
+              total_amount = advance - others;
+            }
+            console.log("total_amount", total_amount, formattedAmenities);
             const finalresponse = {
               reference_id: data[0].reference_id,
               payment_date: moment(data[0].payment_date).format("YYYY-MM-DD"),
@@ -298,10 +328,9 @@ exports.get_bill_detailsbyid = async (req, res) => {
               due_date: moment.utc(Data[0].DueDate).format("YYYY-MM-DD") || "",
               invoice_number: Data[0].invoice_number,
               invoice_type: Data[0].action,
-              total_amount:hasAdvance? advance :total_amount,
-              refundable_Amount :hasAdvance ? total_amount : 0,
-              non_refundable_amount :hasAdvance ? others :0
-
+              total_amount: hasAdvance ? advance : total_amount,
+              refundable_Amount: hasAdvance ? total_amount : 0,
+              non_refundable_amount: hasAdvance ? others : 0,
             },
             user_details: {
               name: Data[0].uname || "",
