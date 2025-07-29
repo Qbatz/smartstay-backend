@@ -282,18 +282,8 @@ exports.get_bill_detailsbyid = async (req, res) => {
                 year: "numeric",
               });
             }
-
-            const name = (item.am_name || "").toLowerCase();
-            let amt = Number(item.amount) || 0;
-
-            // If "advance" exists, and this is NOT the advance row → make amount negative
-            if (hasAdvance && name !== "advance") {
-              amt = -Math.abs(amt); // ensure it’s negative
-            }
             return {
               ...item,
-              
-    amount: amt,
               invoice_id: Data[0].Invoices,
               duration: duration,
             };
@@ -308,7 +298,10 @@ exports.get_bill_detailsbyid = async (req, res) => {
               due_date: moment.utc(Data[0].DueDate).format("YYYY-MM-DD") || "",
               invoice_number: Data[0].invoice_number,
               invoice_type: Data[0].action,
-              total_amount: total_amount,
+              total_amount:hasAdvance? advance :total_amount,
+              refundable_Amount :hasAdvance ? total_amount : 0,
+              non_refundable_amount :hasAdvance ? others :0
+
             },
             user_details: {
               name: Data[0].uname || "",
