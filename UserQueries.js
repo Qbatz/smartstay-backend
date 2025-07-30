@@ -869,11 +869,6 @@ function createUser(connection, request, response) {
                                     }
                                   );
                                 });
-                              } else {
-                                return res.status(200).json({
-                                  statusCode: 200,
-                                  message: "Reasons Added Successfully",
-                                });
                               }
                               bedDetails
                                 .check_bed_details(bed_details_obj)
