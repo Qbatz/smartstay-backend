@@ -615,6 +615,7 @@ function createUser(connection, request, response) {
       is_admin == 1 ||
       (role_permissions[4] && role_permissions[4].per_create === 1)
     ) {
+      console.log("Triggered");
       connection.query(
         `SELECT * FROM hostel WHERE Phone='${atten.Phone}' AND isActive = 1 AND Hostel_Id='${atten.hostel_Id}'`,
         function (error, data) {
@@ -830,6 +831,50 @@ function createUser(connection, request, response) {
                                 user_id: user_ids,
                               };
 
+                              if (atten.reasons && atten.reasons.length > 0) {
+                                let reasons = atten.reasons;
+                                if (typeof reasons === "string") {
+                                  reasons = JSON.parse(reasons); // Convert string to array
+                                }
+                                let inv_id = atten.invoice_id || null;
+                                var remaining = atten.reasons.length;
+                                reasons.forEach((item) => {
+                                  // var sql3 =
+                                  //   "INSERT INTO customer_reasons (reason_name, user_id, amount,invoice_id) VALUES (?, ?, ?,?)";
+                                  var sql3 =
+                                    "INSERT INTO checkout_deductions (reason, user_id, amount,receipt_id) VALUES (?, ?, ?,?)";
+
+                                  connection.query(
+                                    sql3,
+                                    [
+                                      item.reason_name,
+                                      user_ids,
+                                      item.amount,
+                                      null,
+                                    ],
+                                    function (err) {
+                                      if (err) {
+                                        console.log(
+                                          "Error inserting amenity details:",
+                                          err
+                                        );
+                                      }
+                                      remaining -= 1;
+                                      if (remaining === 0) {
+                                        return res.status(200).json({
+                                          statusCode: 200,
+                                          message: "Reasons Added Successfully",
+                                        });
+                                      }
+                                    }
+                                  );
+                                });
+                              } else {
+                                return res.status(200).json({
+                                  statusCode: 200,
+                                  message: "Reasons Added Successfully",
+                                });
+                              }
                               bedDetails
                                 .check_bed_details(bed_details_obj)
                                 .then(() => {
@@ -872,7 +917,7 @@ function createUser(connection, request, response) {
                                             atten.Floor,
                                             atten.Rooms,
                                             advance_amount,
-                                            atten.Address,
+                                            atten.Address |"",
                                             due_date,
                                             invoice_date,
                                             invoice_number,
@@ -897,30 +942,71 @@ function createUser(connection, request, response) {
                                                 console.log(
                                                   "Advance Bill Generated"
                                                 );
-
                                                 var sql2 =
-                                                  "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
-                                                connection.query(
-                                                  sql2,
-                                                  [
-                                                    "Advance",
-                                                    user_ids,
-                                                    advance_amount,
-                                                    inv_id,
-                                                  ],
-                                                  async function (
-                                                    err,
-                                                    insdata
-                                                  ) {
-                                                    if (err) {
-                                                      console.log(err);
-                                                    } else {
-                                                      console.log(
-                                                        "Advance Bill Details Generated"
-                                                      );
+                                                "SELECT * FROM checkout_deductions WHERE user_id=?";
+                                              connection.query(
+                                                sql2,
+                                                [user_ids],
+                                                function (err, reasonDatas) {
+                                                  if (err) {
+                                                    console.log(err);
+                                                  } else {
+                                                reasonDatas.push({
+                                                  reason: "Advance",
+                                                  user_id: user_ids,
+                                                  amount: atten.AdvanceAmount,
+                                                  inv_id: inv_id,
+                                                });
+                                                reasonDatas.forEach((item) => {
+                                                  var sql2 =
+                                                    "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
+                                                  connection.query(
+                                                    sql2,
+                                                    [
+                                                      item.reason,
+                                                      item.user_id,
+                                                      item.amount,
+                                                      inv_id,
+                                                    ],
+                                                    async function (
+                                                      err,
+                                                      insdata
+                                                    ) {
+                                                      if (err) {
+                                                        console.log(err);
+                                                      } else {
+                                                        console.log(
+                                                          "Advance Bill Details Generated"
+                                                        );
+                                                      }
                                                     }
-                                                  }
-                                                );
+                                                  );
+                                                });
+                                              }
+                                               } )
+                                                // var sql2 =
+                                                //   "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
+                                                // connection.query(
+                                                //   sql2,
+                                                //   [
+                                                //     "Advance",
+                                                //     user_ids,
+                                                //     advance_amount,
+                                                //     inv_id,
+                                                //   ],
+                                                //   async function (
+                                                //     err,
+                                                //     insdata
+                                                //   ) {
+                                                //     if (err) {
+                                                //       console.log(err);
+                                                //     } else {
+                                                //       console.log(
+                                                //         "Advance Bill Details Generated"
+                                                //       );
+                                                //     }
+                                                //   }
+                                                // );
                                               }
                                             }
                                           );
