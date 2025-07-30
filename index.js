@@ -1492,6 +1492,24 @@ app.post("/FetchTemplateList", (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
   BillTemplate.FetchTemplateList(req, res);
 }); 
+
+app.post("/FetchTemplateListDetails", (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  BillTemplate.FetchTemplateListDetails(req, res);
+}); 
+
+app.post(
+  "/BillTemplateSetting",
+  upload.fields([
+    { name: "logo_url", maxCount: 1 },
+    { name: "digital_signature_url", maxCount: 1 },
+    { name: "qr_url", maxCount: 1 },
+  ]),
+  (req, res) => {
+    res.set("Access-Control-Allow-Origin", "*");
+    BillTemplate.BillTemplateSetting(req, res);
+  }
+);
 // **************************** Start Cashfree Subscription ****************************
 
 // Add Subscription
