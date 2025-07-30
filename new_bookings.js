@@ -589,10 +589,12 @@ console.log("hostelData",hostelData)
         const reasonTotalAmount =
           reasons?.reduce((acc, item) => acc + Number(item.amount || 0), 0) ||
           0;
+
         var check_amount =
           Number(advance_amount) -
           (Number(totalBalanceDue) + Number(reasonTotalAmount));
         if (Number(advance_amount) >= check_amount && check_amount > 0) {
+
           processInvoicesAndFinalizeCheckout(
             id,
             totalBalanceDue,
