@@ -589,8 +589,10 @@ console.log("hostelData",hostelData)
         const reasonTotalAmount =
           reasons?.reduce((acc, item) => acc + Number(item.amount || 0), 0) ||
           0;
-var check_amount = Number(advance_amount) - (Number(totalBalanceDue) + Number(reasonTotalAmount));
-if (Number(advance_amount) >= check_amount && check_amount > 0) {
+        var check_amount =
+          Number(advance_amount) -
+          (Number(totalBalanceDue) + Number(reasonTotalAmount));
+        if (Number(advance_amount) >= check_amount && check_amount > 0) {
           processInvoicesAndFinalizeCheckout(
             id,
             totalBalanceDue,
@@ -794,91 +796,84 @@ async function processInvoicesAndFinalizeCheckout(
                   receipt_id,
                 ]);
               }
-              if (insertValues.length > 0) {
-                insertValues &&
-                  insertValues.map((reasonVal, ind) => {
-                    const values = [
-                      reasonVal.reason,
-                      reasonVal.amount,
-                      id,
-                      receipt_id,
-                      created_by,
-                    ];
-                    if (reasonVal.id) {
-                      console.log("update");
-                      var sqlupdate =
-                        "UPDATE checkout_deductions SET reason =?,amount=?,user_id=?,receipt_id = ? ,created_by=?  WHERE id = ?";
-                      connection.query(
-                        sqlupdate,
-                        [
-                          reasonVal.reason,
-                          reasonVal.amount,
-                          id,
-                          receipt_id,
-                          created_by,
-                          reasonVal.id,
-                        ],
-                        function (err) {
-                          if (err) {
-                            return res.status(201).json({
-                              statusCode: 201,
-                              message: "Error updating checkout deductions",
-                              reason: err.message,
-                            });
-                          }
-                          finalizeCheckout(
-                            id,
-                            bed_id,
-                            advance_return,
-                            comments,
-                            res
-                          );
-                        }
-                      );
-                    } else {
-                      console.log("values",values,[values])
-                      var sql4 =
-                        "INSERT INTO checkout_deductions (reason,amount,user_id,receipt_id,created_by) VALUES ?";
-                      connection.query(sql4, [values], function (err, ch_res) {
-                        if (err) {
-                          return res.status(201).json({
-                            statusCode: 201,
-                            message: "Error inserting checkout deductions",
-                            reason: err.message,
-                          });
-                        }
-                        finalizeCheckout(
-                          id,
-                          bed_id,
-                          advance_return,
-                          comments,
-                          res
-                        );
-                      });
-                    }
-                  });
-              } else {
-                finalizeCheckout(id, bed_id, advance_return, comments, res);
-              }
               // if (insertValues.length > 0) {
-              //   const insertQuery = `
-              //                     INSERT INTO checkout_deductions (reason, amount, user_id, created_by, receipt_id)
-              //                     VALUES ?
-              //                 `;
-              //   connection.query(insertQuery, [insertValues], (err) => {
-              //     if (err) {
-              //       return res.status(201).json({
-              //         statusCode: 201,
-              //         message: "Error inserting checkout deductions",
-              //         reason: err.message,
-              //       });
-              //     }
-              //     finalizeCheckout(id, bed_id, advance_return, comments, res);
-              //   });
-              // }
-              //  else {
+              //   // insertValues &&
+              //   //   insertValues.map((reasonVal, ind) => {
+              //       // const values = [
+              //       //  ...insertValues[]
+              //       // ];
+              //       if (reasonVal.id) {
+              //         console.log("update");
+              //         var sqlupdate =
+              //           "UPDATE checkout_deductions SET reason =?,amount=?,user_id=?,receipt_id = ? ,created_by=?  WHERE id = ?";
+              //         connection.query(
+              //           sqlupdate,
+              //           [
+              //             reasonVal.reason,
+              //             reasonVal.amount,
+              //             id,
+              //             receipt_id,
+              //             created_by,
+              //             reasonVal.id,
+              //           ],
+              //           function (err) {
+              //             if (err) {
+              //               return res.status(201).json({
+              //                 statusCode: 201,
+              //                 message: "Error updating checkout deductions",
+              //                 reason: err.message,
+              //               });
+              //             }
+              //             finalizeCheckout(
+              //               id,
+              //               bed_id,
+              //               advance_return,
+              //               comments,
+              //               res
+              //             );
+              //           }
+              //         );
+              //       } else {
+              //         // console.log("values",values,[values])
+              //         var sql4 =
+              //           "INSERT INTO checkout_deductions (reason,amount,user_id,created_by,receipt_id) VALUES ?";
+              //         connection.query(sql4, [insertValues], function (err, ch_res) {
+              //           if (err) {
+              //             console.log(err.message)
+              //           }
+              //           finalizeCheckout(
+              //             id,
+              //             bed_id,
+              //             advance_return,
+              //             comments,
+              //             res
+              //           );
+              //         });
+              //       }
+              //     // });
+              // } 
+              // else {
               //   finalizeCheckout(id, bed_id, advance_return, comments, res);
               // }
+              if (insertValues.length > 0) {
+                const insertQuery = `
+                                  INSERT INTO checkout_deductions (reason, amount, user_id, created_by, receipt_id)
+                                  VALUES ?
+                              `;
+                connection.query(insertQuery, [insertValues], (err) => {
+                  if (err) {
+                    return res.status(201).json({
+                      statusCode: 201,
+                      message: "Error inserting checkout deductions",
+                      reason: err.message,
+                    });
+                  }
+                  finalizeCheckout(id, bed_id, advance_return, comments, res);
+                });
+              }
+               else {
+                finalizeCheckout(id, bed_id, advance_return, comments, res);
+              }
             };
             handleDeductions();
             // connection.query(
@@ -1450,7 +1445,7 @@ function edit_confirm_checkout(req, res) {
         : 0;
 
     const advance_return = advance_amount - totalAmount;
-console.log("advance_return",advance_amount ,totalAmount)
+    console.log("advance_return", advance_amount, totalAmount);
     if (totalAmount > advance_amount) {
       return res.status(201).json({
         statusCode: 201,
