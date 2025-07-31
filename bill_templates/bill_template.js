@@ -179,10 +179,17 @@ async function BillTemplateGlobalSetting(req, res) {
 }
 
 async function FetchTemplateList(req, res) {
-
   const { hostel_Id } = req.body;
-  const Query = `SELECT distinct common_logo_url, common_contact_number, common_email,common_digital_signature_url
-FROM bill_template where hostel_Id=?;`
+  const Query = `SELECT distinct 
+  common_logo_url, 
+  common_contact_number, 
+  common_email,
+  common_digital_signature_url,
+  is_logo_specific_template,
+  is_contact_specific_template,
+  is_email_specific_template,
+  is_signature_specific_template
+FROM bill_template where hostel_Id=?;`;
 
   connection.query(Query, [hostel_Id], (err, result) => {
     if (err) {
@@ -190,18 +197,16 @@ FROM bill_template where hostel_Id=?;`
         statusCode: 404,
         message: "No Data Found.",
       });
-    }
-    else {
+    } else {
       return res.status(200).json({
         statusCode: 200,
         message: result,
       });
     }
-  })
+  });
 }
 
 async function FetchTemplateListDetails(req, res) {
-
   const { hostel_Id } = req.body;
   const Query = `SELECT 
   bt.*,
@@ -233,7 +238,7 @@ LEFT JOIN
   bankings b ON bt.banking_id = b.id
 WHERE 
   bt.hostel_Id = ?;
-`
+`;
 
   connection.query(Query, [hostel_Id], (err, result) => {
     if (err) {
@@ -241,14 +246,13 @@ WHERE
         statusCode: 404,
         message: "No Data Found.",
       });
-    }
-    else {
+    } else {
       return res.status(200).json({
         statusCode: 200,
         message: result,
       });
     }
-  })
+  });
 }
 
 async function BillTemplateSetting(req, res) {
@@ -256,7 +260,7 @@ async function BillTemplateSetting(req, res) {
     const timestamp = Date.now();
     const bucketName = process.env.AWS_BUCKET_NAME;
     const folderName = "Hostel-Payments/";
-    const toBool = (val) => val === "true" || val === true
+    const toBool = (val) => val === "true" || val === true;
 
     const {
       is_logo_specific_template,
@@ -352,10 +356,14 @@ async function BillTemplateSetting(req, res) {
 `;
 
     const values = [
-      toBool(is_email_specific_template), email,
-      toBool(is_contact_specific_template), contact_number,
-      toBool(is_logo_specific_template), logoFileUrl,
-      toBool(is_signature_specific_template), signatureUrl,
+      toBool(is_email_specific_template),
+      email,
+      toBool(is_contact_specific_template),
+      contact_number,
+      toBool(is_logo_specific_template),
+      logoFileUrl,
+      toBool(is_signature_specific_template),
+      signatureUrl,
 
       toBool(is_email_specific_template),
       toBool(is_logo_specific_template),
@@ -379,17 +387,14 @@ async function BillTemplateSetting(req, res) {
       if (err) {
         console.log("Update error for id", singleId, err);
         return res.status(500).json({ error: err.message });
-      }
-      else {
+      } else {
         return res.status(200).json({
           successCode: 200,
           message: "Template updated successfully.",
         });
       }
     });
-
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Unexpected Error:", error);
     return res.status(500).json({
       statusCode: 500,
@@ -398,4 +403,9 @@ async function BillTemplateSetting(req, res) {
   }
 }
 
-module.exports = { BillTemplateGlobalSetting, FetchTemplateList, FetchTemplateListDetails, BillTemplateSetting };
+module.exports = {
+  BillTemplateGlobalSetting,
+  FetchTemplateList,
+  FetchTemplateListDetails,
+  BillTemplateSetting,
+};
