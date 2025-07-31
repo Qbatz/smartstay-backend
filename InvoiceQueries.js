@@ -3050,9 +3050,7 @@ function addRecurringBills(req, res) {
     const {
         recure_id,
         hostel_id,
-        recurringName,
         billFrequency,
-        calculationFromDate,
         billingDateOfMonth,
         dueDateOfMonth,
         isAutoSend,
@@ -3083,7 +3081,6 @@ function addRecurringBills(req, res) {
 
     // Validate all day number fields
     if (
-        !isValidDayNumber(calculationFromDate) ||
         !isValidDayNumber(billingDateOfMonth) ||
         !isValidDayNumber(dueDateOfMonth)
     ) {
@@ -3103,7 +3100,7 @@ function addRecurringBills(req, res) {
         return moment({ year, month, day: validDay }).format('YYYY-MM-DD');
     };
 
-    const calcFromDateFull = createValidDate(calculationFromDate);
+    const calcFromDateFull = createValidDate(billingDateOfMonth);
 
     const remainderDatesStr = Array.isArray(remainderDates) ? remainderDates.join(',') : '';
     const billDeliveryChannelsStr = Array.isArray(billDeliveryChannels) ? billDeliveryChannels.join(',') : '';
@@ -3126,7 +3123,7 @@ function addRecurringBills(req, res) {
             WHERE id = ?
         `;
 
-        const invoiceData = [1, calculationFromDate, "", dueDateOfMonth, billingDateOfMonth, hostel_id];
+        const invoiceData = [1, billingDateOfMonth, "", dueDateOfMonth, billingDateOfMonth, hostel_id];
 
         connection.query(invoiceUpdate, invoiceData, (err) => {
             if (err) {
@@ -3138,16 +3135,15 @@ function addRecurringBills(req, res) {
                 const updateSql = `
                     UPDATE RecurringBilling
                     SET
-                        recurringName = ?, billFrequency = ?, calculationFromDate = ?, calculationToDate = ?,
+                         billFrequency = ?, calculationFromDate = ?, calculationToDate = ?,
                         billingDateOfMonth = ?, dueDateOfMonth = ?, isAutoSend = ?, remainderDates = ?,
                         billDeliveryChannels = ?, status = ?, updated_at = NOW()
                     WHERE recure_id = ?
                 `;
 
                 const updateValues = [
-                    recurringName,
                     billFrequency,
-                    calculationFromDate,
+                    billingDateOfMonth,
                     "",
                     billingDateOfMonth,
                     dueDateOfMonth,
@@ -3187,17 +3183,16 @@ function addRecurringBills(req, res) {
 
                     const insertSql = `
                         INSERT INTO RecurringBilling (
-                            hostel_id, recurringName, billFrequency, calculationFromDate, calculationToDate,
+                            hostel_id, billFrequency, calculationFromDate, calculationToDate,
                             billingDateOfMonth, dueDateOfMonth, isAutoSend, remainderDates, billDeliveryChannels,
                             status, created_at, updated_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
                     `;
 
                     const insertValues = [
                         hostel_id,
-                        recurringName,
                         billFrequency,
-                        calculationFromDate,
+                        billingDateOfMonth,
                         "",
                         billingDateOfMonth,
                         dueDateOfMonth,
