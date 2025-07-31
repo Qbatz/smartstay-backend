@@ -90,7 +90,40 @@ const queries = [
 
     "ALTER TABLE `manage_plan_details` ADD COLUMN `hostel_id` VARCHAR(45) NULL AFTER `hosted_page_id`;",
 
-    "ALTER TABLE `hostel` CHANGE COLUMN `Address` `Address` TEXT NULL ;"
+    "ALTER TABLE `hostel` CHANGE COLUMN `Address` `Address` TEXT NULL ;",
+
+        `CREATE TABLE IF NOT EXISTS bill_template (
+    id INT NOT NULL AUTO_INCREMENT,
+    template_type VARCHAR(255) DEFAULT NULL,
+    logo_url VARCHAR(255) DEFAULT NULL,
+    common_logo_url VARCHAR(255) DEFAULT NULL,
+    is_logo_specific_template TINYINT(1) DEFAULT '0',
+    contact_number BIGINT DEFAULT NULL,
+    common_contact_number BIGINT DEFAULT NULL,
+    is_contact_specific_template TINYINT(1) DEFAULT '0',
+    email VARCHAR(255) DEFAULT NULL,
+    common_email VARCHAR(255) DEFAULT NULL,
+    is_email_specific_template TINYINT(1) DEFAULT '0',
+    digital_signature_url VARCHAR(255) DEFAULT NULL,
+    common_digital_signature_url VARCHAR(255) DEFAULT NULL,
+    is_signature_specific_template TINYINT(1) DEFAULT '0',
+    prefix VARCHAR(100) DEFAULT NULL,
+    suffix VARCHAR(100) DEFAULT NULL,
+    tax VARCHAR(100) DEFAULT NULL,
+    banking_id BIGINT DEFAULT NULL,
+    qr_url VARCHAR(255) DEFAULT NULL,
+    notes TEXT,
+    terms_and_condition TEXT,
+    template_theme VARCHAR(100) DEFAULT NULL,
+    hostel_Id VARCHAR(100) DEFAULT NULL,
+    future_column4 TEXT,
+    future_column3 TEXT,
+    future_column2 TEXT,
+    future_column1 TEXT,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;`
 ];
 
 queries.forEach(executeQuery);
