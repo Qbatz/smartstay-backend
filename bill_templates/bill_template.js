@@ -32,6 +32,8 @@ async function BillTemplateGlobalSetting(req, res) {
       is_email_specific_template,
       is_signature_specific_template,
       hostel_Id,
+      digital_signature_url,
+      logo_url,
     } = req.body;
 
     const logoFile = req.files?.["logo_url"]?.[0] || null;
@@ -91,8 +93,8 @@ async function BillTemplateGlobalSetting(req, res) {
           let completed = 0;
           template_type.forEach((type) => {
             const values = [
-              logoFileUrl,
-              logoFileUrl,
+              logoFileUrl || logo_url,
+              logoFileUrl || logo_url,
               toBool(is_logo_specific_template),
               contact_number,
               contact_number,
@@ -100,8 +102,8 @@ async function BillTemplateGlobalSetting(req, res) {
               email,
               email,
               toBool(is_email_specific_template),
-              signatureUrl,
-              signatureUrl,
+              signatureUrl || digital_signature_url,
+              signatureUrl || digital_signature_url,
               toBool(is_signature_specific_template),
               hostel_Id,
               type,
@@ -278,6 +280,9 @@ async function BillTemplateSetting(req, res) {
       notes,
       terms_and_condition,
       template_theme,
+      logo_url,
+      digital_signature_url,
+      qr_url
     } = req.body;
 
     const logoFile = req.files?.["logo_url"]?.[0] || null;
@@ -317,8 +322,17 @@ async function BillTemplateSetting(req, res) {
         qrurlFile
       );
     }
-
-    const updateQuery = `
+    const sqlSelect = `select * from bill_template where hostel_Id=? AND id=?;`;
+    console.log("sql",sqlSelect)
+    connection.query(sqlSelect, [hostel_Id, id], (err, result) => {
+      if (err) {
+        return res.status(404).json({
+          statusCode: 404,
+          message: err,
+        });
+      } else {
+        if(result.length>0){
+        const updateQuery = `
   UPDATE bill_template
   SET
     email = CASE
@@ -355,44 +369,53 @@ async function BillTemplateSetting(req, res) {
   WHERE hostel_Id = ? AND id = ?;
 `;
 
-    const values = [
-      toBool(is_email_specific_template),
-      email,
-      toBool(is_contact_specific_template),
-      contact_number,
-      toBool(is_logo_specific_template),
-      logoFileUrl,
-      toBool(is_signature_specific_template),
-      signatureUrl,
+        const values = [
+          toBool(is_email_specific_template),
+          email,
+          toBool(is_contact_specific_template),
+          contact_number,
+          toBool(is_logo_specific_template),
+          logoFileUrl ||logo_url,
+          toBool(is_signature_specific_template),
+          signatureUrl || digital_signature_url,
 
-      toBool(is_email_specific_template),
-      toBool(is_logo_specific_template),
-      toBool(is_contact_specific_template),
-      toBool(is_signature_specific_template),
+          toBool(is_email_specific_template),
+          toBool(is_logo_specific_template),
+          toBool(is_contact_specific_template),
+          toBool(is_signature_specific_template),
 
-      prefix,
-      suffix,
-      tax,
-      notes,
-      terms_and_condition,
-      template_theme,
-      banking_id,
-      QrFileUrl,
+          prefix,
+          suffix,
+          tax,
+          notes,
+          terms_and_condition,
+          template_theme,
+          banking_id,
+          QrFileUrl || qr_url,
 
-      hostel_Id,
-      id,
-    ];
+          hostel_Id,
+          id,
+        ];
 
-    connection.query(updateQuery, values, (err, result) => {
-      if (err) {
-        console.log("Update error for id", singleId, err);
-        return res.status(500).json({ error: err.message });
-      } else {
-        return res.status(200).json({
-          successCode: 200,
-          message: "Template updated successfully.",
+        connection.query(updateQuery, values, (err, result) => {
+          if (err) {
+            console.log("Update error for id", singleId, err);
+            return res.status(500).json({ error: err.message });
+          } else {
+            return res.status(200).json({
+              successCode: 200,
+              message: "Template updated successfully.",
+            });
+          }
         });
       }
+      else{
+         return res.status(404).json({
+          statusCode: 404,
+          message: "Please send Proper hostel ID and TemplateID",
+        });
+      }
+    }
     });
   } catch (error) {
     console.error("Unexpected Error:", error);
