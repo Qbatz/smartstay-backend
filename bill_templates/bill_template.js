@@ -210,8 +210,48 @@ FROM bill_template where hostel_Id=?;`;
 
 async function FetchTemplateListDetails(req, res) {
   const { hostel_Id } = req.body;
-  const Query = `SELECT 
+//   const Query = `SELECT 
+//   bt.*,
+//   IF(
+//     b.id IS NOT NULL,
+//     JSON_OBJECT(
+//       'id', b.id,
+//       'acc_num', b.acc_num,
+//       'ifsc_code', b.ifsc_code,
+//       'bank_name', b.bank_name,
+//       'acc_name', b.acc_name,
+//       'description', b.description,
+//       'setus_default', b.setus_default,
+//       'balance', b.balance,
+//       'hostel_id', b.hostel_id,
+//       'status', b.status,
+//       'type', b.type,
+//       'benificiary_name', b.benificiary_name,
+//       'upi_id', b.upi_id,
+//       'card_type', b.card_type,
+//       'card_holder', b.card_holder,
+//       'card_no', b.card_no
+//     ),
+//     NULL
+//   ) AS banking
+// FROM 
+//   bill_template bt
+// LEFT JOIN 
+//   bankings b ON bt.banking_id = b.id
+//   LEFT JOIN 
+//   hostel a ON bt.hostel_Id = a.ID
+// WHERE 
+//   bt.hostel_Id = ?;
+// `;
+ 
+const Query =  `SELECT 
   bt.*,
+  a.Name,
+  a.Address,
+  a.area,
+  a.city,
+  a.state,
+  a.landmark,
   IF(
     b.id IS NOT NULL,
     JSON_OBJECT(
@@ -238,6 +278,8 @@ FROM
   bill_template bt
 LEFT JOIN 
   bankings b ON bt.banking_id = b.id
+  LEFT JOIN 
+  hosteldetails a ON bt.hostel_Id = a.id
 WHERE 
   bt.hostel_Id = ?;
 `;
