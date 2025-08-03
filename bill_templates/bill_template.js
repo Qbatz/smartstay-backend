@@ -32,6 +32,8 @@ async function BillTemplateGlobalSetting(req, res) {
       is_email_specific_template,
       is_signature_specific_template,
       hostel_Id,
+      digital_signature_url,
+      logo_url,
     } = req.body;
 
     const logoFile = req.files?.["logo_url"]?.[0] || null;
@@ -91,8 +93,8 @@ async function BillTemplateGlobalSetting(req, res) {
           let completed = 0;
           template_type.forEach((type) => {
             const values = [
-              logoFileUrl,
-              logoFileUrl,
+              logoFileUrl || logo_url,
+              logoFileUrl || logo_url,
               toBool(is_logo_specific_template),
               contact_number,
               contact_number,
@@ -100,8 +102,8 @@ async function BillTemplateGlobalSetting(req, res) {
               email,
               email,
               toBool(is_email_specific_template),
-              signatureUrl,
-              signatureUrl,
+              signatureUrl || digital_signature_url,
+              signatureUrl || digital_signature_url,
               toBool(is_signature_specific_template),
               hostel_Id,
               type,
@@ -179,10 +181,17 @@ async function BillTemplateGlobalSetting(req, res) {
 }
 
 async function FetchTemplateList(req, res) {
-
   const { hostel_Id } = req.body;
-  const Query = `SELECT distinct common_logo_url, common_contact_number, common_email,common_digital_signature_url
-FROM bill_template where hostel_Id=?;`
+  const Query = `SELECT distinct 
+  common_logo_url, 
+  common_contact_number, 
+  common_email,
+  common_digital_signature_url,
+  is_logo_specific_template,
+  is_contact_specific_template,
+  is_email_specific_template,
+  is_signature_specific_template
+FROM bill_template where hostel_Id=?;`;
 
   connection.query(Query, [hostel_Id], (err, result) => {
     if (err) {
@@ -190,21 +199,59 @@ FROM bill_template where hostel_Id=?;`
         statusCode: 404,
         message: "No Data Found.",
       });
-    }
-    else {
+    } else {
       return res.status(200).json({
         statusCode: 200,
         message: result,
       });
     }
-  })
+  });
 }
 
 async function FetchTemplateListDetails(req, res) {
-
   const { hostel_Id } = req.body;
-  const Query = `SELECT 
+//   const Query = `SELECT 
+//   bt.*,
+//   IF(
+//     b.id IS NOT NULL,
+//     JSON_OBJECT(
+//       'id', b.id,
+//       'acc_num', b.acc_num,
+//       'ifsc_code', b.ifsc_code,
+//       'bank_name', b.bank_name,
+//       'acc_name', b.acc_name,
+//       'description', b.description,
+//       'setus_default', b.setus_default,
+//       'balance', b.balance,
+//       'hostel_id', b.hostel_id,
+//       'status', b.status,
+//       'type', b.type,
+//       'benificiary_name', b.benificiary_name,
+//       'upi_id', b.upi_id,
+//       'card_type', b.card_type,
+//       'card_holder', b.card_holder,
+//       'card_no', b.card_no
+//     ),
+//     NULL
+//   ) AS banking
+// FROM 
+//   bill_template bt
+// LEFT JOIN 
+//   bankings b ON bt.banking_id = b.id
+//   LEFT JOIN 
+//   hostel a ON bt.hostel_Id = a.ID
+// WHERE 
+//   bt.hostel_Id = ?;
+// `;
+ 
+const Query =  `SELECT 
   bt.*,
+  a.Name,
+  a.Address,
+  a.area,
+  a.city,
+  a.state,
+  a.landmark,
   IF(
     b.id IS NOT NULL,
     JSON_OBJECT(
@@ -231,9 +278,11 @@ FROM
   bill_template bt
 LEFT JOIN 
   bankings b ON bt.banking_id = b.id
+  LEFT JOIN 
+  hosteldetails a ON bt.hostel_Id = a.id
 WHERE 
   bt.hostel_Id = ?;
-`
+`;
 
   connection.query(Query, [hostel_Id], (err, result) => {
     if (err) {
@@ -241,14 +290,13 @@ WHERE
         statusCode: 404,
         message: "No Data Found.",
       });
-    }
-    else {
+    } else {
       return res.status(200).json({
         statusCode: 200,
         message: result,
       });
     }
-  })
+  });
 }
 
 async function BillTemplateSetting(req, res) {
@@ -256,7 +304,7 @@ async function BillTemplateSetting(req, res) {
     const timestamp = Date.now();
     const bucketName = process.env.AWS_BUCKET_NAME;
     const folderName = "Hostel-Payments/";
-    const toBool = (val) => val === "true" || val === true
+    const toBool = (val) => val === "true" || val === true;
 
     const {
       is_logo_specific_template,
@@ -274,6 +322,9 @@ async function BillTemplateSetting(req, res) {
       notes,
       terms_and_condition,
       template_theme,
+      logo_url,
+      digital_signature_url,
+      qr_url
     } = req.body;
 
     const logoFile = req.files?.["logo_url"]?.[0] || null;
@@ -313,8 +364,17 @@ async function BillTemplateSetting(req, res) {
         qrurlFile
       );
     }
-
-    const updateQuery = `
+    const sqlSelect = `select * from bill_template where hostel_Id=? AND id=?;`;
+    console.log("sql",sqlSelect)
+    connection.query(sqlSelect, [hostel_Id, id], (err, result) => {
+      if (err) {
+        return res.status(404).json({
+          statusCode: 404,
+          message: err,
+        });
+      } else {
+        if(result.length>0){
+        const updateQuery = `
   UPDATE bill_template
   SET
     email = CASE
@@ -351,45 +411,55 @@ async function BillTemplateSetting(req, res) {
   WHERE hostel_Id = ? AND id = ?;
 `;
 
-    const values = [
-      toBool(is_email_specific_template), email,
-      toBool(is_contact_specific_template), contact_number,
-      toBool(is_logo_specific_template), logoFileUrl,
-      toBool(is_signature_specific_template), signatureUrl,
+        const values = [
+          toBool(is_email_specific_template),
+          email,
+          toBool(is_contact_specific_template),
+          contact_number,
+          toBool(is_logo_specific_template),
+          logoFileUrl ||logo_url,
+          toBool(is_signature_specific_template),
+          signatureUrl || digital_signature_url,
 
-      toBool(is_email_specific_template),
-      toBool(is_logo_specific_template),
-      toBool(is_contact_specific_template),
-      toBool(is_signature_specific_template),
+          toBool(is_email_specific_template),
+          toBool(is_logo_specific_template),
+          toBool(is_contact_specific_template),
+          toBool(is_signature_specific_template),
 
-      prefix,
-      suffix,
-      tax,
-      notes,
-      terms_and_condition,
-      template_theme,
-      banking_id,
-      QrFileUrl,
+          prefix,
+          suffix,
+          tax,
+          notes,
+          terms_and_condition,
+          template_theme,
+          banking_id,
+          QrFileUrl || qr_url,
 
-      hostel_Id,
-      id,
-    ];
+          hostel_Id,
+          id,
+        ];
 
-    connection.query(updateQuery, values, (err, result) => {
-      if (err) {
-        console.log("Update error for id", singleId, err);
-        return res.status(500).json({ error: err.message });
-      }
-      else {
-        return res.status(200).json({
-          successCode: 200,
-          message: "Template updated successfully.",
+        connection.query(updateQuery, values, (err, result) => {
+          if (err) {
+            console.log("Update error for id", singleId, err);
+            return res.status(500).json({ error: err.message });
+          } else {
+            return res.status(200).json({
+              successCode: 200,
+              message: "Template updated successfully.",
+            });
+          }
         });
       }
+      else{
+         return res.status(404).json({
+          statusCode: 404,
+          message: "Please send Proper hostel ID and TemplateID",
+        });
+      }
+    }
     });
-
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Unexpected Error:", error);
     return res.status(500).json({
       statusCode: 500,
@@ -398,4 +468,9 @@ async function BillTemplateSetting(req, res) {
   }
 }
 
-module.exports = { BillTemplateGlobalSetting, FetchTemplateList, FetchTemplateListDetails, BillTemplateSetting };
+module.exports = {
+  BillTemplateGlobalSetting,
+  FetchTemplateList,
+  FetchTemplateListDetails,
+  BillTemplateSetting,
+};

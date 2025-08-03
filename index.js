@@ -1152,6 +1152,10 @@ app.post("/add_recuring_bill", (req, res) => {
 app.post("/all_recuring_bills", (req, res) => {
   invoiceQueries.all_recuring_bills(req, res);
 });
+app.post("/all_recuring_bills_stay_type", (req, res) => {
+  invoiceQueries.all_recuring_bills_stay_type(req, res);
+});
+
 
 app.post("/get_recuring_amounts", (req, res) => {
   invoiceQueries.get_recuring_amount(req, res);

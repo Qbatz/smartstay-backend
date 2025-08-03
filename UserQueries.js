@@ -350,7 +350,7 @@ function createUser(connection, request, response) {
                               atten.landmark || ""
                             }',pincode='${atten.pincode}',city='${
                               atten.city
-                            }',state='${atten.state}' WHERE ID='${atten.ID}'`,
+                            }',state='${atten.state}',stay_type='${atten.stay_type}' WHERE ID='${atten.ID}'`,
                             function (updateError, updateData) {
                               if (updateError) {
                                 response.status(201).json({
@@ -763,7 +763,7 @@ function createUser(connection, request, response) {
                           atten.AdvanceAmount - paid_advance;
 
                         connection.query(
-                          `INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance,created_by,country_code,joining_Date,area,landmark,pincode,city,state) VALUES ('${Circle}', '${Name}', '${
+                          `INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance,created_by,country_code,joining_Date,area,landmark,pincode,city,state,stay_type) VALUES ('${Circle}', '${Name}', '${
                             atten.Phone
                           }', '${atten.Email}', '${atten.Address || ""}', '${
                             atten.AadharNo
@@ -779,7 +779,7 @@ function createUser(connection, request, response) {
                             atten.joining_date
                           }','${area || ""}','${
                             landmark || ""
-                          }','${pincode}','${city}','${state}')`,
+                          }','${pincode}','${city}','${state}','${atten.stay_type}')`,
                           async function (insertError, insertData) {
                             if (insertError) {
                               console.log("insertError", insertError);
