@@ -3951,9 +3951,9 @@ WHERE user_id = ${user_id} AND status = 1;
                 console.log("error", err);
               }
             });
-            return res.status(201).json({
-              statusCode: 201,
-              message: "Already Added in this User!",
+            return res.status(200).json({
+              statusCode: 200,
+              message: "Bill status changed sucessfully!",
             });
           }
         });
@@ -4580,13 +4580,22 @@ function all_recuring_bills_stay_type(req, res) {
     hf.floor_name,
     DATE_FORMAT(inv.Date, '%Y-%m-%d') AS invoice_date_previous,
     inv.Invoices AS invoice_value_previous,
+    inv.BalanceDue AS last_billing_amount,
+    COALESCE(inv.bill_enable, 0) AS Bill_Enable,
+    CASE 
+        WHEN inv.bill_enable = 1 THEN 'Enabled'
+        WHEN inv.bill_enable = 0 THEN 'Disabled'
+        ELSE 'Not Set'
+    END AS Bill_Enable_Status,
+
+
     DATE_FORMAT(
-      MAKEDATE(YEAR(CURRENT_DATE + INTERVAL 1 MONTH), 1)
-      + INTERVAL (MONTH(CURRENT_DATE + INTERVAL 1 MONTH) - 1) MONTH
-      + INTERVAL LEAST(rb.billingDateOfMonth, DAY(LAST_DAY(CURRENT_DATE + INTERVAL 1 MONTH))) - 1 DAY,
-      '%d-%m-%Y'
-    ) AS next_billing_date,
-    inv.BalanceDue AS last_billing_amount
+        MAKEDATE(YEAR(CURRENT_DATE + INTERVAL 1 MONTH), 1)
+        + INTERVAL (MONTH(CURRENT_DATE + INTERVAL 1 MONTH) - 1) MONTH
+        + INTERVAL LEAST(rb.billingDateOfMonth, DAY(LAST_DAY(CURRENT_DATE + INTERVAL 1 MONTH))) - 1 DAY,
+        '%d-%m-%Y'
+    ) AS next_billing_date
+
 FROM hosteldetails AS hstlDetails 
 INNER JOIN hostel AS hstl 
     ON hstl.Hostel_Id = hstlDetails.id 
@@ -4606,10 +4615,12 @@ LEFT JOIN bed_details AS bd
 LEFT JOIN invoicedetails AS inv
     ON inv.id = (
         SELECT id FROM invoicedetails
-        WHERE Hostel_Id = hstl.Hostel_Id AND action='recuring'
-          AND Bed = bd.id
-          AND Date <= CURRENT_DATE
-        ORDER BY Date DESC
+        WHERE Hostel_Id = hstl.Hostel_Id 
+          AND Bed = bd.id 
+          AND action='recuring'
+        ORDER BY 
+          CASE WHEN Date <= CURRENT_DATE THEN 0 ELSE 1 END,
+          Date DESC
         LIMIT 1
     )
 
@@ -4617,7 +4628,7 @@ LEFT JOIN RecurringBilling AS rb
     ON rb.hostel_id = hstl.Hostel_Id
 
 WHERE hstl.Hostel_Id = ?
-  AND hstl.stay_type = ?;`;
+  AND hstl.stay_type = ? ORDER BY hstl.ID DESC;;`;
     connection.query(sql1, [hostel_id, stay_type], function (err, inv_data) {
       if (err) {
         return res
