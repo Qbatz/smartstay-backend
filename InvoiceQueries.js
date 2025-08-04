@@ -1179,12 +1179,10 @@ function InvoicePDf(connection, request, response) {
         "SELECT inv.*,man.*,hsv.email_id AS hostel_email,hsv.hostel_PhoneNo AS hostel_phone,hsv.area AS harea,hsv.landmark AS hlandmark,hsv.pin_code AS hpincode, hsv.state AS hstate,hsv.city AS hcity,hsv.Address AS hostel_address,hsv.profile AS hostel_profile,hs.Address AS user_address,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upincode, hs.state AS ustate,hs.city AS ucity,hs.joining_Date,Insett.bankingId,Insett.privacyPolicyHtml,ban.acc_num,ban.ifsc_code,ban.acc_name,ban.upi_id FROM invoicedetails AS inv JOIN hostel AS hs ON hs.ID=inv.hos_user_id LEFT JOIN manual_invoice_amenities AS man ON man.invoice_id=inv.id JOIN hosteldetails AS hsv ON hsv.id=inv.Hostel_Id LEFT JOIN InvoiceSettings AS Insett ON Insett.hostel_Id=hsv.id LEFT JOIN bankings AS ban ON ban.id=Insett.bankingId WHERE inv.id=?";
       connection.query(sql1, [reqBodyData.id], async function (err, inv_data) {
         if (err) {
-          return response
-            .status(201)
-            .json({
-              message: "Unable to Get Invoice Details",
-              statusCode: 201,
-            });
+          return response.status(201).json({
+            message: "Unable to Get Invoice Details",
+            statusCode: 201,
+          });
         } else if (inv_data.length != 0) {
           const currentDate = moment().format("YYYY-MM-DD");
           const currentMonth = moment(currentDate).month() + 1;
@@ -1575,12 +1573,10 @@ function InvoicePDf(connection, request, response) {
             console.log(err);
             return;
           } else {
-            response
-              .status(200)
-              .json({
-                message: "Insert PDF successfully",
-                pdf_url: data.Location,
-              });
+            response.status(200).json({
+              message: "Insert PDF successfully",
+              pdf_url: data.Location,
+            });
           }
         });
 
@@ -1590,13 +1586,11 @@ function InvoicePDf(connection, request, response) {
       }
     };
   } else {
-    response
-      .status(208)
-      .json({
-        message:
-          "Permission Denied. Please contact your administrator for access.",
-        statusCode: 208,
-      });
+    response.status(208).json({
+      message:
+        "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208,
+    });
   }
 }
 
@@ -2188,12 +2182,10 @@ function uploadToS31(response, pdfDetailsArray, connection) {
               .status(201)
               .json({ message: "Cannot Insert PDF to Database" });
           } else {
-            response
-              .status(200)
-              .json({
-                message: "Insert PDF successfully",
-                pdf_url: uploadData.Location,
-              });
+            response.status(200).json({
+              message: "Insert PDF successfully",
+              pdf_url: uploadData.Location,
+            });
           }
         }
       }
@@ -2343,12 +2335,10 @@ function EbAmount(connection, request, response) {
             if (err) {
               console.log(err);
 
-              return response
-                .status(201)
-                .json({
-                  message: "Unable to Get Eb Amount Details",
-                  error: err,
-                });
+              return response.status(201).json({
+                message: "Unable to Get Eb Amount Details",
+                error: err,
+              });
             } else if (eb_data_list.length == 0) {
               var sql_2 =
                 "INSERT INTO EbAmount (hostel_id,Floor,Room,initial_date,start_Meter_Reading,end_Meter_Reading,Eb_Unit,EbAmount) VALUES (?,?,?,?,?,0,0,0)";
@@ -2406,12 +2396,10 @@ function EbAmount(connection, request, response) {
                   function (err, data) {
                     if (err) {
                       console.error(err);
-                      return response
-                        .status(201)
-                        .json({
-                          message: "Unable to Update Eb Amount",
-                          error: err,
-                        });
+                      return response.status(201).json({
+                        message: "Unable to Update Eb Amount",
+                        error: err,
+                      });
                     } else {
                       var formattedDate = eb_data_list[0].initial_date;
                       var dateObject = new Date(formattedDate); // Create a Date object
@@ -2433,20 +2421,16 @@ function EbAmount(connection, request, response) {
                         eb_id,
                         function (result) {
                           if (result.statusCode === 200) {
-                            return response
-                              .status(200)
-                              .json({
-                                statusCode: 200,
-                                message: result.message,
-                              });
+                            return response.status(200).json({
+                              statusCode: 200,
+                              message: result.message,
+                            });
                           } else {
-                            return response
-                              .status(201)
-                              .json({
-                                statusCode: 201,
-                                message: result.message,
-                                error: result.error,
-                              });
+                            return response.status(201).json({
+                              statusCode: 201,
+                              message: result.message,
+                              error: result.error,
+                            });
                           }
                         }
                       );
@@ -2460,12 +2444,10 @@ function EbAmount(connection, request, response) {
                 connection.query(insertQuery, function (error, data) {
                   if (error) {
                     console.error(error);
-                    return response
-                      .status(202)
-                      .json({
-                        message: "Unable to Add Eb Amount",
-                        error: error,
-                      });
+                    return response.status(202).json({
+                      message: "Unable to Add Eb Amount",
+                      error: error,
+                    });
                   } else {
                     var formattedDate = eb_data_list[0].date;
                     var dateObject = new Date(formattedDate); // Create a Date object
@@ -2489,13 +2471,11 @@ function EbAmount(connection, request, response) {
                             .status(200)
                             .json({ statusCode: 200, message: result.message });
                         } else {
-                          return response
-                            .status(201)
-                            .json({
-                              statusCode: 201,
-                              message: result.message,
-                              result: response.error,
-                            });
+                          return response.status(201).json({
+                            statusCode: 201,
+                            message: result.message,
+                            result: response.error,
+                          });
                         }
                       }
                     );
@@ -2638,13 +2618,11 @@ function EbAmount(connection, request, response) {
             }
           });
         } else {
-          return response
-            .status(201)
-            .json({
-              statusCode: 201,
-              message:
-                "Date already has an added in this Room. Please select a different date.",
-            });
+          return response.status(201).json({
+            statusCode: 201,
+            message:
+              "Date already has an added in this Room. Please select a different date.",
+          });
         }
       });
     } else {
@@ -2735,13 +2713,11 @@ function getEbStart(connection, response, request) {
       }
     });
   } else {
-    response
-      .status(208)
-      .json({
-        message:
-          "Permission Denied. Please contact your administrator for access.",
-        statusCode: 208,
-      });
+    response.status(208).json({
+      message:
+        "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208,
+    });
   }
 }
 
@@ -2837,13 +2813,11 @@ function UpdateAmenitiesHistory(connection, response, request) {
       response.status(201).json({ message: "Missing Parameter" });
     }
   } else {
-    response
-      .status(208)
-      .json({
-        message:
-          "Permission Denied. Please contact your administrator for access.",
-        statusCode: 208,
-      });
+    response.status(208).json({
+      message:
+        "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208,
+    });
   }
 }
 // startdate to enddate
@@ -3069,12 +3043,10 @@ function GetAmenitiesHistory(connection, res, req) {
               AmenitiesPDF(hostelDetails, monthData, res);
               // res.status(200).json({ message: "Amenities History", amenity_details: monthData });
             } else {
-              res
-                .status(202)
-                .json({
-                  message:
-                    "No active amenities found for the specified months and year",
-                });
+              res.status(202).json({
+                message:
+                  "No active amenities found for the specified months and year",
+              });
             }
           }
         }
@@ -3224,13 +3196,11 @@ function AmenitiesPDF(hostelDetails, monthData, response) {
               });
 
               if (pdf_url.length > 0) {
-                response
-                  .status(200)
-                  .json({
-                    message: "Insert PDF successfully",
-                    pdf_url: pdf_url[0],
-                    amenity_details: monthData,
-                  });
+                response.status(200).json({
+                  message: "Insert PDF successfully",
+                  pdf_url: pdf_url[0],
+                  amenity_details: monthData,
+                });
                 deleteAmenityPDfs(res.filename);
               } else {
                 response
@@ -3298,12 +3268,10 @@ function add_manual_invoice(req, res) {
           function (err, ins_data) {
             if (err) {
               console.log(err);
-              return res
-                .status(201)
-                .json({
-                  statusCode: 201,
-                  message: "Unable to Add Invoice Details",
-                });
+              return res.status(201).json({
+                statusCode: 201,
+                message: "Unable to Add Invoice Details",
+              });
             } else {
               var inv_id = ins_data.insertId;
 
@@ -3321,23 +3289,19 @@ function add_manual_invoice(req, res) {
                       }
                       remaining -= 1;
                       if (remaining === 0) {
-                        return res
-                          .status(200)
-                          .json({
-                            statusCode: 200,
-                            message: "Invoice Added Successfully",
-                          });
+                        return res.status(200).json({
+                          statusCode: 200,
+                          message: "Invoice Added Successfully",
+                        });
                       }
                     }
                   );
                 });
               } else {
-                return res
-                  .status(200)
-                  .json({
-                    statusCode: 200,
-                    message: "Invoice Added Successfully",
-                  });
+                return res.status(200).json({
+                  statusCode: 200,
+                  message: "Invoice Added Successfully",
+                });
               }
             }
           }
@@ -3349,13 +3313,11 @@ function add_manual_invoice(req, res) {
       }
     });
   } else {
-    res
-      .status(208)
-      .json({
-        message:
-          "Permission Denied. Please contact your administrator for access.",
-        statusCode: 208,
-      });
+    res.status(208).json({
+      message:
+        "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208,
+    });
   }
 }
 
@@ -3384,13 +3346,11 @@ function edit_manual_invoice(req, res) {
     var sql1 = "SELECT * FROM invoicedetails WHERE id=? AND invoice_status=1";
     connection.query(sql1, [id], function (err, inv_data) {
       if (err) {
-        return res
-          .status(201)
-          .json({
-            statusCode: 201,
-            message: "Error to Get Invoice Details",
-            reason: err.message,
-          });
+        return res.status(201).json({
+          statusCode: 201,
+          message: "Error to Get Invoice Details",
+          reason: err.message,
+        });
       }
 
       if (inv_data.length == 0) {
@@ -3402,12 +3362,10 @@ function edit_manual_invoice(req, res) {
       var paid_amount = parseInt(inv_data[0].PaidAmount || 0);
 
       if (paid_amount > total_amount) {
-        return res
-          .status(201)
-          .json({
-            statusCode: 201,
-            message: "Paid Amount Greater Than Total Amount",
-          });
+        return res.status(201).json({
+          statusCode: 201,
+          message: "Paid Amount Greater Than Total Amount",
+        });
       }
 
       var balance_due = parseInt(total_amount) - parseInt(paid_amount);
@@ -3419,26 +3377,22 @@ function edit_manual_invoice(req, res) {
         [date, due_date, total_amount, balance_due, start_date, end_date, id],
         function (err, up_res) {
           if (err) {
-            return res
-              .status(201)
-              .json({
-                statusCode: 201,
-                message: "Error to Update Invoice Details",
-                reason: err.message,
-              });
+            return res.status(201).json({
+              statusCode: 201,
+              message: "Error to Update Invoice Details",
+              reason: err.message,
+            });
           }
 
           var sql3 =
             "DELETE FROM manual_invoice_amenities WHERE user_id=? AND invoice_id=?";
           connection.query(sql3, [user_id, id], function (err, del_inv) {
             if (err) {
-              return res
-                .status(201)
-                .json({
-                  statusCode: 201,
-                  message: "Error to Remove Old Invoice Details",
-                  reason: err.message,
-                });
+              return res.status(201).json({
+                statusCode: 201,
+                message: "Error to Remove Old Invoice Details",
+                reason: err.message,
+              });
             }
 
             if (amenity && amenity.length > 0) {
@@ -3456,36 +3410,30 @@ function edit_manual_invoice(req, res) {
                     }
                     remaining -= 1;
                     if (remaining === 0) {
-                      return res
-                        .status(200)
-                        .json({
-                          statusCode: 200,
-                          message: "Invoice Updated Successfully",
-                        });
+                      return res.status(200).json({
+                        statusCode: 200,
+                        message: "Invoice Updated Successfully",
+                      });
                     }
                   }
                 );
               });
             } else {
-              return res
-                .status(200)
-                .json({
-                  statusCode: 200,
-                  message: "Invoice Updated Successfully",
-                });
+              return res.status(200).json({
+                statusCode: 200,
+                message: "Invoice Updated Successfully",
+              });
             }
           });
         }
       );
     });
   } else {
-    res
-      .status(208)
-      .json({
-        message:
-          "Permission Denied. Please contact your administrator for access.",
-        statusCode: 208,
-      });
+    res.status(208).json({
+      message:
+        "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208,
+    });
   }
 }
 
@@ -3515,23 +3463,19 @@ function delete_manual_invoice(req, res) {
     var paid_amount = data[0].PaidAmount;
 
     if (paid_amount > 0) {
-      return res
-        .status(201)
-        .json({
-          statusCode: 201,
-          message: "Paid amount already added in this invoice, so can't delete",
-        });
+      return res.status(201).json({
+        statusCode: 201,
+        message: "Paid amount already added in this invoice, so can't delete",
+      });
     }
 
     var sql2 = "UPDATE invoicedetails SET invoice_status=0 WHERE id=?";
     connection.query(sql2, [id], function (err, up_res) {
       if (err) {
-        return res
-          .status(201)
-          .json({
-            statusCode: 201,
-            message: "Error to Delete Invoice Details",
-          });
+        return res.status(201).json({
+          statusCode: 201,
+          message: "Error to Delete Invoice Details",
+        });
       }
 
       return res
@@ -3563,13 +3507,11 @@ function customer_readings(req, res) {
       (role_permissions[12] && role_permissions[12].per_view == 1)
     )
   ) {
-    return res
-      .status(208)
-      .json({
-        message:
-          "Permission Denied. Please contact your administrator for access.",
-        statusCode: 208,
-      });
+    return res.status(208).json({
+      message:
+        "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208,
+    });
   }
 
   const ch_query = "SELECT * FROM eb_settings WHERE hostel_id=? AND status=1";
@@ -3646,28 +3588,17 @@ function customer_readings(req, res) {
           .json({ statusCode: 201, message: "Unable to Get Eb Details" });
       }
 
-      return res
-        .status(200)
-        .json({
-          statusCode: 200,
-          message: "Customer Eb Details",
-          eb_details: data,
-        });
+      return res.status(200).json({
+        statusCode: 200,
+        message: "Customer Eb Details",
+        eb_details: data,
+      });
     });
   });
 }
 
 function add_recuring_bill(req, res) {
-  var {
-    user_id,
-    due_date,
-    date,
-    invoice_id,
-    room_rent,
-    eb_amount,
-    amenity,
-    advance_amount,
-  } = req.body;
+  var { user_id, invoice_id, amenity } = req.body;
 
   var role_permissions = req.role_permissions;
   var is_admin = req.is_admin;
@@ -3697,12 +3628,10 @@ function add_recuring_bill(req, res) {
         var user_data = user_details[0];
 
         if (user_data.status == 0) {
-          return res
-            .status(201)
-            .json({
-              statusCode: 201,
-              message: "Please enable the Recurring in the",
-            });
+          return res.status(201).json({
+            statusCode: 201,
+            message: "Please enable the Recurring in the",
+          });
         }
 
         var total_am_amount =
@@ -3751,12 +3680,10 @@ function add_recuring_bill(req, res) {
           "SELECT * FROM recuring_inv_details WHERE user_id=? AND status=1";
         connection.query(sql2, [user_id], function (err, recure_data) {
           if (err) {
-            return res
-              .status(201)
-              .json({
-                statusCode: 201,
-                message: "Unable to Get Invoice Details",
-              });
+            return res.status(201).json({
+              statusCode: 201,
+              message: "Unable to Get Invoice Details",
+            });
           } else if (recure_data.length == 0) {
             var sql3 =
               "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Invoices,Status,User_Id,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id,invoice_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,2)";
@@ -3786,12 +3713,10 @@ function add_recuring_bill(req, res) {
               function (err, ins_data) {
                 if (err) {
                   console.log(err);
-                  return res
-                    .status(201)
-                    .json({
-                      statusCode: 201,
-                      message: "Unable to Add Invoice Details",
-                    });
+                  return res.status(201).json({
+                    statusCode: 201,
+                    message: "Unable to Add Invoice Details",
+                  });
                 } else {
                   var sql4 =
                     "INSERT INTO recuring_inv_details (user_id,invoice_date,due_date,advance,rent,aminity,eb,status,created_by) VALUES (?,?,?,?,?,?,?,?,?)";
@@ -3811,19 +3736,15 @@ function add_recuring_bill(req, res) {
                     function (err, ins_data) {
                       if (err) {
                         console.log(err);
-                        return res
-                          .status(201)
-                          .json({
-                            statusCode: 201,
-                            message: "Unable to Add Invoice Details",
-                          });
+                        return res.status(201).json({
+                          statusCode: 201,
+                          message: "Unable to Add Invoice Details",
+                        });
                       } else {
-                        return res
-                          .status(200)
-                          .json({
-                            statusCode: 200,
-                            message: "Recuring Bill Setup Added Successfully!",
-                          });
+                        return res.status(200).json({
+                          statusCode: 200,
+                          message: "Recuring Bill Setup Added Successfully!",
+                        });
                       }
                     }
                   );
@@ -3831,12 +3752,10 @@ function add_recuring_bill(req, res) {
               }
             );
           } else {
-            return res
-              .status(201)
-              .json({
-                statusCode: 201,
-                message: "Already Added in this User!",
-              });
+            return res.status(201).json({
+              statusCode: 201,
+              message: "Already Added in this User!",
+            });
           }
         });
       } else {
@@ -3846,13 +3765,210 @@ function add_recuring_bill(req, res) {
       }
     });
   } else {
-    res
-      .status(208)
-      .json({
-        message:
-          "Permission Denied. Please contact your administrator for access.",
-        statusCode: 208,
-      });
+    res.status(208).json({
+      message:
+        "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208,
+    });
+  }
+}
+function add_recuring_bill_enabled(req, res) {
+  var { user_id, bill_enable } = req.body;
+
+  var role_permissions = req.role_permissions;
+  var is_admin = req.is_admin;
+
+  if (
+    is_admin == 1 ||
+    (role_permissions[11] && role_permissions[11].per_create == 1)
+  ) {
+    if (!user_id) {
+      return res
+        .status(200)
+        .json({ statusCode: 201, message: "Missing Mandatory Fields" });
+    }
+
+    var created_by = req.user_details.id;
+
+    var sql1 =
+      "SELECT * FROM hosteldetails AS hstl JOIN hostel AS hos ON hos.Hostel_Id = hstl.id LEFT JOIN RecurringBilling AS rb ON rb.hostel_id = hstl.id WHERE hos.id =? AND hos.isActive = 1 AND hstl.isActive = 1;";
+
+    connection.query(sql1, [user_id], function (err, user_details) {
+      if (err) {
+        console.log(err);
+        return res
+          .status(201)
+          .json({ statusCode: 201, message: "Unable to Get User Details" });
+      } else if (user_details.length != 0) {
+        var user_data = user_details[0];
+
+        if (user_data.status == 0) {
+          return res.status(201).json({
+            statusCode: 201,
+            message: "Please enable the Recurring in the",
+          });
+        }
+
+        var total_am_amount = user_data.RoomRent;
+        // amenity && amenity?.length > 0
+        //   ? amenity.reduce((sum, user) => sum + user.amount, 0)
+        //   : 0;
+
+        if (total_am_amount) {
+          total_am_amount = total_am_amount;
+        } else {
+          total_am_amount = 0;
+        }
+
+        let today = moment(); // Current date
+
+        let inv_date = user_data.inv_date ? parseInt(user_data.inv_date) : 1;
+        let invoicedate = moment().set({
+          year: today.year(),
+          month: today.month(),
+          date: inv_date,
+        });
+
+        if (today.date() > inv_date || !user_data.inv_date) {
+          invoicedate.add(1, "month").set("date", 1); // Move to next month, set 1st day
+        }
+
+        let inv_day = invoicedate.format("YYYY-MM-DD");
+
+        let dueDay = user_data.due_date ? parseInt(user_data.due_date) : 5;
+        let dueDate = moment(invoicedate).set("date", dueDay);
+
+        if (dueDate.isBefore(invoicedate)) {
+          dueDate.add(1, "month").set("date", 5);
+        }
+
+        let due_day = dueDate.format("YYYY-MM-DD");
+
+        console.log("Upcoming Invoice Date:", inv_day);
+        console.log("Upcoming Due Date:", due_day);
+        var eb = 1;
+        var advance = 1;
+        var rent = 1;
+        var amen = 1;
+
+        var sql2 =
+          "SELECT * FROM recuring_inv_details WHERE user_id=? AND status=1";
+        connection.query(sql2, [user_id], function (err, recure_data) {
+          if (err) {
+            return res.status(201).json({
+              statusCode: 201,
+              message: "Unable to Get Invoice Details",
+            });
+          } else if (recure_data.length == 0) {
+            var sql3 =
+              "INSERT INTO invoicedetails (Name,PhoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,DueDate,Date,Status,User_Id,Amnities_deduction_Amount,Bed,BalanceDue,action,invoice_type,hos_user_id,invoice_status,bill_enable) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,2,?)";
+            connection.query(
+              sql3,
+              [
+                user_data.Name,
+                user_data.Phone,
+                user_data.Email,
+                user_data.HostelName,
+                user_data.Hostel_Id,
+                user_data.Floor,
+                user_data.Rooms,
+                total_am_amount,
+                due_day,
+                inv_day,
+                "pending",
+                user_data.User_Id,
+                0,
+                user_data.Bed,
+                total_am_amount,
+                "recuring",
+                2,
+                user_id,
+                bill_enable,
+              ],
+              function (err, ins_data) {
+                if (err) {
+                  console.log(err);
+                  return res.status(201).json({
+                    statusCode: 201,
+                    message: "Unable to Add Invoice Details",
+                  });
+                } else {
+                  var sql4 =
+                    "INSERT INTO recuring_inv_details (user_id,invoice_date,due_date,advance,rent,aminity,eb,status,created_by,bill_enable) VALUES (?,?,?,?,?,?,?,?,?,?)";
+                  connection.query(
+                    sql4,
+                    [
+                      user_id,
+                      inv_date,
+                      dueDay,
+                      advance,
+                      rent,
+                      amen,
+                      eb,
+                      1,
+                      created_by,
+                      bill_enable,
+                    ],
+                    function (err, ins_data) {
+                      if (err) {
+                        console.log(err);
+                        return res.status(201).json({
+                          statusCode: 201,
+                          message: "Unable to Add Invoice Details",
+                        });
+                      } else {
+                        return res.status(200).json({
+                          statusCode: 200,
+                          message: "Recuring Bill Setup Added Successfully!",
+                        });
+                      }
+                    }
+                  );
+                }
+              }
+            );
+          } else {
+            var billSelect = `select * from invoicedetails where hos_user_id=? AND invoice_type=2;`;
+            connection.query(billSelect, [user_id], function (err, inv_data) {
+              if (inv_data.length > 0) {
+                var billUpdate = `UPDATE invoicedetails
+SET bill_enable = ${bill_enable}
+WHERE hos_user_id = ${user_id} AND invoice_type = 2;
+`;
+                connection.query(billUpdate, [user_id], function (err, data) {
+                  if (err) {
+                    console.log("error", err);
+                  }
+                });
+              }
+            });
+            var billUpdate_recuring = `UPDATE recuring_inv_details
+SET bill_enable = ${bill_enable}
+WHERE user_id = ${user_id} AND status = 1;
+`;
+            connection.query(billUpdate_recuring, [user_id], function (err, data) {
+              if (err) {
+                console.log("error", err);
+              }
+            });
+            return res.status(201).json({
+              statusCode: 201,
+              message: "Already Added in this User!",
+            });
+          }
+        });
+      } else {
+        return res
+          .status(201)
+          .json({ statusCode: 201, message: "Invalid User Details" });
+      }
+    });
+  } else {
+    res.status(208).json({
+      message:
+        "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208,
+    });
   }
 }
 
@@ -3933,12 +4049,10 @@ function addRecurringBills(req, res) {
   connection.query(checkHostelSql, [hostel_id], (err, hostelResults) => {
     if (err) {
       console.error(err);
-      return res
-        .status(201)
-        .json({
-          statusCode: 201,
-          message: "Database error while verifying hostel.",
-        });
+      return res.status(201).json({
+        statusCode: 201,
+        message: "Database error while verifying hostel.",
+      });
     }
 
     if (hostelResults.length === 0) {
@@ -3965,12 +4079,10 @@ function addRecurringBills(req, res) {
     connection.query(invoiceUpdate, invoiceData, (err) => {
       if (err) {
         console.error(err);
-        return res
-          .status(201)
-          .json({
-            statusCode: 201,
-            message: "Unable to update invoice settings.",
-          });
+        return res.status(201).json({
+          statusCode: 201,
+          message: "Unable to update invoice settings.",
+        });
       }
 
       if (recure_id) {
@@ -3999,12 +4111,10 @@ function addRecurringBills(req, res) {
         connection.query(updateSql, updateValues, (err) => {
           if (err) {
             console.error(err);
-            return res
-              .status(201)
-              .json({
-                statusCode: 201,
-                message: "Unable to update recurring billing.",
-              });
+            return res.status(201).json({
+              statusCode: 201,
+              message: "Unable to update recurring billing.",
+            });
           }
 
           return res.status(200).json({
@@ -4021,12 +4131,10 @@ function addRecurringBills(req, res) {
           (err, existingRecords) => {
             if (err) {
               console.error(err);
-              return res
-                .status(201)
-                .json({
-                  statusCode: 201,
-                  message: "Database error while checking existing billing.",
-                });
+              return res.status(201).json({
+                statusCode: 201,
+                message: "Database error while checking existing billing.",
+              });
             }
 
             if (existingRecords.length > 0) {
@@ -4060,12 +4168,10 @@ function addRecurringBills(req, res) {
             connection.query(insertSql, insertValues, (err) => {
               if (err) {
                 console.error(err);
-                return res
-                  .status(201)
-                  .json({
-                    statusCode: 201,
-                    message: "Unable to add recurring billing.",
-                  });
+                return res.status(201).json({
+                  statusCode: 201,
+                  message: "Unable to add recurring billing.",
+                });
               }
 
               return res.status(200).json({
@@ -4300,21 +4406,17 @@ function get_recuring_amount(req, res) {
 
           console.log(total_array);
 
-          return res
-            .status(200)
-            .json({
-              statusCode: 200,
-              message: "Bill Amounts",
-              data: total_array,
-            });
+          return res.status(200).json({
+            statusCode: 200,
+            message: "Bill Amounts",
+            data: total_array,
+          });
         } else {
-          return res
-            .status(202)
-            .json({
-              message: "Kindly Enable Recuring Details",
-              statusCode: 202,
-              recure: 0,
-            });
+          return res.status(202).json({
+            message: "Kindly Enable Recuring Details",
+            statusCode: 202,
+            recure: 0,
+          });
         }
       } else {
         return res
@@ -4372,13 +4474,11 @@ function get_recuring_amount(req, res) {
     //     }
     // });
   } else {
-    res
-      .status(208)
-      .json({
-        message:
-          "Permission Denied. Please contact your administrator for access.",
-        statusCode: 208,
-      });
+    res.status(208).json({
+      message:
+        "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208,
+    });
   }
 }
 
@@ -4407,23 +4507,19 @@ function all_recuring_bills(req, res) {
           .status(201)
           .json({ message: "Unable to Get Bill Details", statusCode: 201 });
       } else {
-        return res
-          .status(200)
-          .json({
-            statusCode: 200,
-            message: "Recuring Bill Details",
-            data: inv_data,
-          });
+        return res.status(200).json({
+          statusCode: 200,
+          message: "Recuring Bill Details",
+          data: inv_data,
+        });
       }
     });
   } else {
-    res
-      .status(208)
-      .json({
-        message:
-          "Permission Denied. Please contact your administrator for access.",
-        statusCode: 208,
-      });
+    res.status(208).json({
+      message:
+        "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208,
+    });
   }
 }
 
@@ -4449,51 +4545,98 @@ function all_recuring_bills_stay_type(req, res) {
         .json({ statusCode: 201, message: "Missing stay_type Details" });
     }
 
+    // var sql1 = `SELECT
+    //     hstl.*,
+    //     CASE WHEN hstl.CheckoutDate IS NULL THEN 1 ELSE 0 END AS check_outed,
+    //     bd.bed_no AS Bed,
+    //     hstl.Bed AS hstl_Bed,
+    //     hsroom.Room_Id AS Rooms,
+    //     hstl.Rooms AS hstl_Rooms,
+    //     hsroom.id AS room_id,
+    //     hsroom.Room_Id,
+    //     DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,
+    //     hstl.Hostel_Id AS user_hostel,
+    //     hf.floor_name
+    //   FROM hosteldetails AS hstlDetails
+    //   INNER JOIN hostel AS hstl
+    //     ON hstl.Hostel_Id = hstlDetails.id AND hstl.isActive = TRUE
+    //   LEFT JOIN country_list AS cl ON hstl.country_code = cl.country_code
+    //   LEFT JOIN hostelrooms hsroom
+    //     ON hsroom.Hostel_Id = hstlDetails.id AND hsroom.Floor_Id = hstl.Floor AND hsroom.id = hstl.Rooms
+    //   LEFT JOIN Hostel_Floor AS hf ON hf.floor_id = hstl.Floor AND hf.hostel_id = hstl.Hostel_Id
+    //   LEFT JOIN bed_details AS bd ON bd.id = hstl.Bed
+    //   WHERE hstl.Hostel_Id = ? and hstl.stay_type =?`;
     var sql1 = `SELECT 
-        hstl.*, 
-        CASE WHEN hstl.CheckoutDate IS NULL THEN 1 ELSE 0 END AS check_outed,
-        bd.bed_no AS Bed,
-        hstl.Bed AS hstl_Bed,
-        hsroom.Room_Id AS Rooms,
-        hstl.Rooms AS hstl_Rooms,
-        hsroom.id AS room_id,
-        hsroom.Room_Id,
-        DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,
-        hstl.Hostel_Id AS user_hostel,
-        hf.floor_name 
-      FROM hosteldetails AS hstlDetails 
-      INNER JOIN hostel AS hstl 
-        ON hstl.Hostel_Id = hstlDetails.id AND hstl.isActive = TRUE 
-      LEFT JOIN country_list AS cl ON hstl.country_code = cl.country_code 
-      LEFT JOIN hostelrooms hsroom 
-        ON hsroom.Hostel_Id = hstlDetails.id AND hsroom.Floor_Id = hstl.Floor AND hsroom.id = hstl.Rooms 
-      LEFT JOIN Hostel_Floor AS hf ON hf.floor_id = hstl.Floor AND hf.hostel_id = hstl.Hostel_Id 
-      LEFT JOIN bed_details AS bd ON bd.id = hstl.Bed 
-      WHERE hstl.Hostel_Id = ? and hstl.stay_type =?`;
+    hstl.*, 
+    CASE WHEN hstl.CheckoutDate IS NULL THEN 1 ELSE 0 END AS check_outed,
+    bd.bed_no AS Bed,
+    hstl.Bed AS hstl_Bed,
+    hsroom.Room_Id AS Rooms,
+    hstl.Rooms AS hstl_Rooms,
+    hsroom.id AS room_id,
+    hsroom.Room_Id,
+    DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,
+    hstl.Hostel_Id AS user_hostel,
+    hf.floor_name,
+    DATE_FORMAT(inv.Date, '%Y-%m-%d') AS invoice_date_previous,
+    inv.Invoices AS invoice_value_previous,
+    DATE_FORMAT(
+      MAKEDATE(YEAR(CURRENT_DATE + INTERVAL 1 MONTH), 1)
+      + INTERVAL (MONTH(CURRENT_DATE + INTERVAL 1 MONTH) - 1) MONTH
+      + INTERVAL LEAST(rb.billingDateOfMonth, DAY(LAST_DAY(CURRENT_DATE + INTERVAL 1 MONTH))) - 1 DAY,
+      '%d-%m-%Y'
+    ) AS next_billing_date,
+    inv.BalanceDue AS last_billing_amount
+FROM hosteldetails AS hstlDetails 
+INNER JOIN hostel AS hstl 
+    ON hstl.Hostel_Id = hstlDetails.id 
+    AND hstl.isActive = TRUE 
+LEFT JOIN country_list AS cl 
+    ON hstl.country_code = cl.country_code 
+LEFT JOIN hostelrooms hsroom 
+    ON hsroom.Hostel_Id = hstlDetails.id 
+    AND hsroom.Floor_Id = hstl.Floor 
+    AND hsroom.id = hstl.Rooms 
+LEFT JOIN Hostel_Floor AS hf 
+    ON hf.floor_id = hstl.Floor 
+    AND hf.hostel_id = hstl.Hostel_Id 
+LEFT JOIN bed_details AS bd 
+    ON bd.id = hstl.Bed 
 
+LEFT JOIN invoicedetails AS inv
+    ON inv.id = (
+        SELECT id FROM invoicedetails
+        WHERE Hostel_Id = hstl.Hostel_Id AND action='recuring'
+          AND Bed = bd.id
+          AND Date <= CURRENT_DATE
+        ORDER BY Date DESC
+        LIMIT 1
+    )
+
+LEFT JOIN RecurringBilling AS rb 
+    ON rb.hostel_id = hstl.Hostel_Id
+
+WHERE hstl.Hostel_Id = ?
+  AND hstl.stay_type = ?;`;
     connection.query(sql1, [hostel_id, stay_type], function (err, inv_data) {
       if (err) {
         return res
           .status(201)
           .json({ message: "Unable to Get Bill Details", statusCode: 201 });
       } else {
-        return res
-          .status(200)
-          .json({
-            statusCode: 200,
-            message: "Recuring Bill Details",
-            data: inv_data,
-          });
+        return res.status(200).json({
+          statusCode: 200,
+          message: "Recuring Bill Details",
+          data: inv_data,
+        });
       }
     });
   } else {
-    res
-      .status(208)
-      .json({
-        message:
-          "Permission Denied. Please contact your administrator for access.",
-        statusCode: 208,
-      });
+    res.status(208).json({
+      message:
+        "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208,
+    });
   }
 }
 
@@ -4516,40 +4659,32 @@ function delete_recuring_bill(req, res) {
     var sql1 = "SELECT * FROM recuring_inv_details WHERE id=? AND user_id=?";
     connection.query(sql1, [id, user_id], function (err, data) {
       if (err) {
-        return res
-          .status(201)
-          .json({
-            statusCode: 201,
-            message: "Unable to Get Recuring Bill Details",
-          });
+        return res.status(201).json({
+          statusCode: 201,
+          message: "Unable to Get Recuring Bill Details",
+        });
       } else if (data.length != 0) {
         var sql2 = "UPDATE recuring_inv_details SET status=0 WHERE id=?";
         connection.query(sql2, [id], function (err, data) {
           if (err) {
-            return res
-              .status(201)
-              .json({
-                statusCode: 201,
-                message: "Unable to Delete Recuring Bill Details",
-              });
+            return res.status(201).json({
+              statusCode: 201,
+              message: "Unable to Delete Recuring Bill Details",
+            });
           } else {
             var sql3 =
               "UPDATE invoicedetails SET invoice_status=0 WHERE id=? AND action='recuring'";
             connection.query(sql3, [user_id], function (err, data) {
               if (err) {
-                return res
-                  .status(201)
-                  .json({
-                    statusCode: 201,
-                    message: "Unable to Delete Recuring Bill Details",
-                  });
+                return res.status(201).json({
+                  statusCode: 201,
+                  message: "Unable to Delete Recuring Bill Details",
+                });
               } else {
-                return res
-                  .status(200)
-                  .json({
-                    statusCode: 200,
-                    message: "Recuring Bill Deleted Successfully!",
-                  });
+                return res.status(200).json({
+                  statusCode: 200,
+                  message: "Recuring Bill Deleted Successfully!",
+                });
               }
             });
           }
@@ -4561,13 +4696,11 @@ function delete_recuring_bill(req, res) {
       }
     });
   } else {
-    res
-      .status(208)
-      .json({
-        message:
-          "Permission Denied. Please contact your administrator for access.",
-        statusCode: 208,
-      });
+    res.status(208).json({
+      message:
+        "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208,
+    });
   }
 }
 
@@ -4617,12 +4750,10 @@ function update_recuring_bill(req, res) {
         [inv_day, due_day, advance, rent, aminity, eb_amount],
         function (err, data) {
           if (err) {
-            return res
-              .status(201)
-              .json({
-                statusCode: 201,
-                message: "Unable to Update Invoice Details",
-              });
+            return res.status(201).json({
+              statusCode: 201,
+              message: "Unable to Update Invoice Details",
+            });
           } else {
             return res
               .status(201)
@@ -4673,19 +4804,15 @@ function edit_eb_readings(req, res) {
         var sql2 = "UPDATE EbAmount SET start_Meter_Reading=? WHERE id=?";
         connection.query(sql2, [current_reading, id], function (err, up_res) {
           if (err) {
-            return res
-              .status(201)
-              .json({
-                statusCode: 201,
-                message: "Unable to Update Eb Details",
-              });
+            return res.status(201).json({
+              statusCode: 201,
+              message: "Unable to Update Eb Details",
+            });
           } else {
-            return res
-              .status(200)
-              .json({
-                statusCode: 200,
-                message: "Changes Saved Successfully1",
-              });
+            return res.status(200).json({
+              statusCode: 200,
+              message: "Changes Saved Successfully1",
+            });
           }
         });
       } else {
@@ -4705,33 +4832,27 @@ function edit_eb_readings(req, res) {
           ],
           function (err, up_res) {
             if (err) {
-              return res
-                .status(201)
-                .json({
-                  statusCode: 201,
-                  message: "Unable to Update Eb Details",
-                });
+              return res.status(201).json({
+                statusCode: 201,
+                message: "Unable to Update Eb Details",
+              });
             } else {
               var sql3 = "SELECT * FROM customer_eb_amount WHERE eb_id=?";
               connection.query(sql3, [id], function (err, split_data) {
                 if (err) {
-                  return res
-                    .status(201)
-                    .json({
-                      statusCode: 201,
-                      message: "Unable to Update Customer Details",
-                    });
+                  return res.status(201).json({
+                    statusCode: 201,
+                    message: "Unable to Update Customer Details",
+                  });
                 } else if (split_data.length != 0) {
                   var del_query =
                     "DELETE FROM customer_eb_amount WHERE eb_id=?";
                   connection.query(del_query, [id], function (err, del_data) {
                     if (err) {
-                      return res
-                        .status(201)
-                        .json({
-                          statusCode: 201,
-                          message: "Unable to Update Customer Details",
-                        });
+                      return res.status(201).json({
+                        statusCode: 201,
+                        message: "Unable to Update Customer Details",
+                      });
                     } else {
                       split_eb_amounts(
                         atten,
@@ -4743,12 +4864,10 @@ function edit_eb_readings(req, res) {
                         id,
                         function (result) {
                           if (result.statusCode == 201) {
-                            return res
-                              .status(201)
-                              .json({
-                                statusCode: 201,
-                                message: result.message,
-                              });
+                            return res.status(201).json({
+                              statusCode: 201,
+                              message: result.message,
+                            });
                           } else {
                             console.log("First Step is ok");
 
@@ -4780,13 +4899,11 @@ function edit_eb_readings(req, res) {
                                     ],
                                     function (err) {
                                       if (err) {
-                                        return res
-                                          .status(201)
-                                          .json({
-                                            statusCode: 201,
-                                            message:
-                                              "Unable to Update Next Entry Start Meter Reading",
-                                          });
+                                        return res.status(201).json({
+                                          statusCode: 201,
+                                          message:
+                                            "Unable to Update Next Entry Start Meter Reading",
+                                        });
                                       } else {
                                         var del_query =
                                           "DELETE FROM customer_eb_amount WHERE eb_id=?";
@@ -4795,13 +4912,11 @@ function edit_eb_readings(req, res) {
                                           [nextId],
                                           function (err, del_data) {
                                             if (err) {
-                                              return res
-                                                .status(201)
-                                                .json({
-                                                  statusCode: 201,
-                                                  message:
-                                                    "Unable to Update Customer Details",
-                                                });
+                                              return res.status(201).json({
+                                                statusCode: 201,
+                                                message:
+                                                  "Unable to Update Customer Details",
+                                              });
                                             } else {
                                               // Second call to split_eb_amounts with next data
                                               split_eb_amounts(
@@ -4843,12 +4958,10 @@ function edit_eb_readings(req, res) {
                                     }
                                   );
                                 } else {
-                                  return res
-                                    .status(200)
-                                    .json({
-                                      statusCode: 200,
-                                      message: "Changes Saved Successfully",
-                                    });
+                                  return res.status(200).json({
+                                    statusCode: 200,
+                                    message: "Changes Saved Successfully",
+                                  });
                                 }
                               }
                             );
@@ -4860,12 +4973,10 @@ function edit_eb_readings(req, res) {
                     }
                   });
                 } else {
-                  return res
-                    .status(200)
-                    .json({
-                      statusCode: 200,
-                      message: "Changes Saved Successfully",
-                    });
+                  return res.status(200).json({
+                    statusCode: 200,
+                    message: "Changes Saved Successfully",
+                  });
                 }
               });
             }
@@ -5028,35 +5139,29 @@ function advance_invoice(req, res) {
     "SELECT * FROM invoicedetails WHERE hos_user_id=? AND invoice_status=1 AND action='advance'";
   connection.query(sql1, [user_id], function (err, check_data) {
     if (err) {
-      return res
-        .status(201)
-        .json({
-          statusCode: 201,
-          message: "Error to Fetch Invoice Details",
-          reason: err.message,
-        });
+      return res.status(201).json({
+        statusCode: 201,
+        message: "Error to Fetch Invoice Details",
+        reason: err.message,
+      });
     }
 
     if (check_data.length != 0) {
-      return res
-        .status(201)
-        .json({
-          statusCode: 201,
-          message: "Advance Invoice Already Generated",
-        });
+      return res.status(201).json({
+        statusCode: 201,
+        message: "Advance Invoice Already Generated",
+      });
     }
 
     var sql2 =
       "SELECT rms.Price,rms.Hostel_Id AS roomHostel_Id,rms.Floor_Id AS roomFloor_Id,rms.Room_Id AS roomRoom_Id,dtls.id AS detHostel_Id,dtls.isHostelBased,dtls.prefix,dtls.suffix,dtls.Name,hstl.ID AS hos_user_id,hstl.User_Id,hstl.Address,hstl.Name AS UserName,hstl.Hostel_Id AS hosHostel_Id,hstl.Rooms AS hosRoom,hstl.Floor AS hosFloor,hstl.Bed,hstl.RoomRent,hstl.Name AS user_name,hstl.Phone,hstl.Email,hstl.Address,hstl.paid_advance,hstl.pending_advance,hstl.AdvanceAmount AS advance_amount, hstl.CheckoutDate,CASE WHEN dtls.isHostelBased = true THEN (SELECT eb.EbAmount FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id ORDER BY eb.id DESC LIMIT 1)ELSE (SELECT eb.EbAmount FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id AND eb.Floor = hstl.Floor AND eb.Room = hstl.Rooms ORDER BY eb.id DESC LIMIT 1)END AS ebBill,(SELECT eb.Floor FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id ORDER BY eb.id DESC LIMIT 1) AS ebFloor, (SELECT eb.hostel_Id FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id ORDER BY eb.id DESC LIMIT 1 ) AS ebhostel_Id,(SELECT eb.Room FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id ORDER BY eb.id DESC LIMIT 1) AS ebRoom,(SELECT eb.createAt FROM EbAmount eb WHERE eb.hostel_Id = hstl.Hostel_Id AND eb.Floor = hstl.Floor AND eb.Room = hstl.Rooms ORDER BY eb.id DESC LIMIT 1) AS createdAt,( SELECT invd.Invoices FROM invoicedetails invd WHERE invd.Invoices LIKE CONCAT(dtls.prefix, '%')ORDER BY CAST(SUBSTRING(invd.Invoices, LENGTH(dtls.prefix) + 1) AS UNSIGNED) DESC LIMIT 1) AS InvoiceDetails FROM hostel hstl INNER JOIN hosteldetails dtls ON dtls.id = hstl.Hostel_Id INNER JOIN hostelrooms rms ON rms.Hostel_Id = hstl.Hostel_Id AND rms.Floor_Id = hstl.Floor AND rms.id = hstl.Rooms WHERE hstl.isActive = true AND hstl.id =?;";
     connection.query(sql2, [user_id], async function (sel_err, sel_res) {
       if (sel_err) {
-        return res
-          .status(201)
-          .json({
-            statusCode: 201,
-            message: "Error to Fetch User Details",
-            reason: err.message,
-          });
+        return res.status(201).json({
+          statusCode: 201,
+          message: "Error to Fetch User Details",
+          reason: err.message,
+        });
       } else if (sel_res.length != 0) {
         var inv_data = sel_res[0];
 
@@ -5144,13 +5249,11 @@ function advance_invoice(req, res) {
           function (ins_err, ins_res) {
             if (ins_err) {
               console.log("Insert Error", ins_err);
-              return res
-                .status(201)
-                .json({
-                  statusCode: 201,
-                  message: "Error to Add Invoice Details",
-                  reason: err?.message,
-                });
+              return res.status(201).json({
+                statusCode: 201,
+                message: "Error to Add Invoice Details",
+                reason: err?.message,
+              });
             } else {
               var inv_id = ins_res.insertId;
 
@@ -5161,21 +5264,17 @@ function advance_invoice(req, res) {
                 [user_id, pending_advance, inv_id],
                 function (err, ins_res) {
                   if (err) {
-                    return res
-                      .status(201)
-                      .json({
-                        statusCode: 201,
-                        message: "Error to Add Invoice Details",
-                        reason: err?.message,
-                      });
+                    return res.status(201).json({
+                      statusCode: 201,
+                      message: "Error to Add Invoice Details",
+                      reason: err?.message,
+                    });
                   } else {
                     console.log("Insert Successfully");
-                    return res
-                      .status(200)
-                      .json({
-                        statusCode: 200,
-                        message: "Successfully Invoice Generated !",
-                      });
+                    return res.status(200).json({
+                      statusCode: 200,
+                      message: "Successfully Invoice Generated !",
+                    });
                   }
                 }
               );
@@ -5209,6 +5308,7 @@ module.exports = {
   add_manual_invoice,
   customer_readings,
   add_recuring_bill,
+  add_recuring_bill_enabled,
   get_recuring_amount,
   all_recuring_bills,
   delete_recuring_bill,
