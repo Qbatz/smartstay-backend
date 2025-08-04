@@ -111,7 +111,7 @@ async function generateInvoiceForDate (inv_data, inv_startdate, inv_enddate) {
 
           const totalRent = Math.round(oneDayAmount * total_days);
 
-          total_array.push({ key: "room_rent", amount: totalRent });
+          total_array.push({ key: "room_rent", amount: room_rent });
 
           let eb_start_date;
           let eb_end_date;

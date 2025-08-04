@@ -183,12 +183,12 @@ async function add_room_reading(req, res) {
 
         const isValid = await dateValidation.isValidHostelAndPurchaseDate(hostel_id,date)
 
-        if(!isValid){
-             return res.status(201).json({
-            statusCode: 201,
-            message: "Date is before hostel created date"
-        });
-        }
+        // if(!isValid){
+        //      return res.status(201).json({
+        //     statusCode: 201,
+        //     message: "Date is before hostel created date"
+        // });
+        // }
 
         var sql1 = "SELECT * FROM eb_settings WHERE hostel_id=? AND status=1";
         connection.query(sql1, [hostel_id], function (err, amount_details) {
@@ -222,6 +222,7 @@ async function add_room_reading(req, res) {
 
                                 var sql3 = "SELECT *,DATE_FORMAT(date, '%Y-%m-%d') AS get_date FROM room_readings WHERE hostel_id = ? AND floor_id= ? AND room_id= ? AND status=1 ORDER BY id DESC";
                                 connection.query(sql3, [hostel_id, floor_id, room_id], function (err, data_res) {
+                                    console.log(data_res.length,"data_res.length")
                                     if (err) {
                                         return res.status(201).json({ message: 'Unable to Get Eb Amount Details', error: err });
                                     } else if (data_res.length == 0) {
