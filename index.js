@@ -1149,6 +1149,13 @@ app.post("/add_recuring_bill", (req, res) => {
   invoiceQueries.add_recuring_bill(req, res);
 });
 
+// Recuring Bills
+app.post("/add_recuring_bill_enabled", (req, res) => {
+  invoiceQueries.add_recuring_bill_enabled(req, res);
+});
+
+
+
 app.post("/all_recuring_bills", (req, res) => {
   invoiceQueries.all_recuring_bills(req, res);
 });
@@ -1612,3 +1619,4 @@ app.post(
   user_middleware,
   user_list_routes.download_bill
 );
+app.get('/TestCron',invoiceGenerationCrons.TestCron)
