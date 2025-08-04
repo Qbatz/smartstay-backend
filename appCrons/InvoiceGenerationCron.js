@@ -326,7 +326,7 @@ async function generateInvoiceForDate (inv_data, inv_startdate, inv_enddate) {
             // return;
 
             var sql2 =
-              "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id,rec_invstartdate,rec_invenddate,rec_ebstartdate,rec_ebenddate,rec_ebunit) VALUES (?)";
+              "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id,rec_invstartdate,rec_invenddate,rec_ebstartdate,rec_ebenddate,rec_ebunit,bill_enable) VALUES (?)";
             var params = [
               inv_data.Name,
               inv_data.Phone,
@@ -353,6 +353,7 @@ async function generateInvoiceForDate (inv_data, inv_startdate, inv_enddate) {
               eb_start_date,
               eb_end_date,
               eb_unit_amount,
+              true
             ];
             connection.query(sql2, [params], function (err, ins_data) {
               if (err) {

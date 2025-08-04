@@ -3951,9 +3951,9 @@ WHERE user_id = ${user_id} AND status = 1;
                 console.log("error", err);
               }
             });
-            return res.status(201).json({
-              statusCode: 201,
-              message: "Already Added in this User!",
+            return res.status(200).json({
+              statusCode: 200,
+              message: "Bill status changed sucessfully!",
             });
           }
         });
@@ -4628,7 +4628,7 @@ LEFT JOIN RecurringBilling AS rb
     ON rb.hostel_id = hstl.Hostel_Id
 
 WHERE hstl.Hostel_Id = ?
-  AND hstl.stay_type = ?;`;
+  AND hstl.stay_type = ? ORDER BY hstl.ID DESC;;`;
     connection.query(sql1, [hostel_id, stay_type], function (err, inv_data) {
       if (err) {
         return res
