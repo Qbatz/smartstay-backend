@@ -3773,7 +3773,7 @@ function add_recuring_bill(req, res) {
   }
 }
 function add_recuring_bill_enabled(req, res) {
-  var { user_id, bill_enable } = req.body;
+  var { user_id, bill_enable,Inv_ID } = req.body;
 
   var role_permissions = req.role_permissions;
   var is_admin = req.is_admin;
@@ -3928,8 +3928,25 @@ function add_recuring_bill_enabled(req, res) {
               }
             );
           } else {
-            var billSelect = `select * from invoicedetails where hos_user_id=? AND invoice_type=2;`;
-            connection.query(billSelect, [user_id], function (err, inv_data) {
+            if(Inv_ID){
+    var billSelect = `select * from invoicedetails where hos_user_id=? AND id=?;`;
+            connection.query(billSelect, [user_id,Inv_ID], function (err, inv_data) {
+              if (inv_data.length > 0) {
+                var billUpdate = `UPDATE invoicedetails
+SET bill_enable = ${bill_enable}
+WHERE hos_user_id = ${user_id} AND id=${Inv_ID};
+`;
+                connection.query(billUpdate, [user_id], function (err, data) {
+                  if (err) {
+                    console.log("error", err);
+                  }
+                });
+              }
+            });
+            }
+        else{
+              var billSelectup = `select * from invoicedetails where hos_user_id=? AND invoice_type = 2;`;
+            connection.query(billSelectup, [user_id], function (err, inv_data) {
               if (inv_data.length > 0) {
                 var billUpdate = `UPDATE invoicedetails
 SET bill_enable = ${bill_enable}
@@ -3942,6 +3959,7 @@ WHERE hos_user_id = ${user_id} AND invoice_type = 2;
                 });
               }
             });
+        }
             var billUpdate_recuring = `UPDATE recuring_inv_details
 SET bill_enable = ${bill_enable}
 WHERE user_id = ${user_id} AND status = 1;
@@ -4581,6 +4599,7 @@ function all_recuring_bills_stay_type(req, res) {
     DATE_FORMAT(inv.Date, '%Y-%m-%d') AS invoice_date_previous,
     inv.Invoices AS invoice_value_previous,
     inv.BalanceDue AS last_billing_amount,
+    inv.id AS Inv_ID,
     COALESCE(inv.bill_enable, 0) AS Bill_Enable,
     CASE 
         WHEN inv.bill_enable = 1 THEN 'Enabled'
