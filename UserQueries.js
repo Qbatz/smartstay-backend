@@ -190,7 +190,7 @@ function createUser(connection, request, response) {
           var paid_advance1 = atten.paid_advance ? atten.paid_advance : 0;
           var overall_advance = atten.AdvanceAmount;
           var paid_advance = paid_advance1;
-          var pending_advance = overall_advance - paid_advance;
+          var pending_advagitnce = overall_advance - paid_advance;
           var old_profile = sel_res[0].profile;
           var old_hostel = sel_res[0].Hostel_Id;
           var old_room = sel_res[0].Rooms;
@@ -350,7 +350,9 @@ function createUser(connection, request, response) {
                               atten.landmark || ""
                             }',pincode='${atten.pincode}',city='${
                               atten.city
-                            }',state='${atten.state}',stay_type='${atten.stay_type}' WHERE ID='${atten.ID}'`,
+                            }',state='${atten.state}',stay_type='${
+                              atten.stay_type
+                            }' WHERE ID='${atten.ID}'`,
                             function (updateError, updateData) {
                               if (updateError) {
                                 response.status(201).json({
@@ -779,7 +781,9 @@ function createUser(connection, request, response) {
                             atten.joining_date
                           }','${area || ""}','${
                             landmark || ""
-                          }','${pincode}','${city}','${state}','${atten.stay_type}')`,
+                          }','${pincode}','${city}','${state}','${
+                            atten.stay_type
+                          }')`,
                           async function (insertError, insertData) {
                             if (insertError) {
                               console.log("insertError", insertError);
@@ -912,7 +916,7 @@ function createUser(connection, request, response) {
                                             atten.Floor,
                                             atten.Rooms,
                                             advance_amount,
-                                            atten.Address |"",
+                                            atten.Address | "",
                                             due_date,
                                             invoice_date,
                                             invoice_number,
@@ -938,47 +942,53 @@ function createUser(connection, request, response) {
                                                   "Advance Bill Generated"
                                                 );
                                                 var sql2 =
-                                                "SELECT * FROM checkout_deductions WHERE user_id=?";
-                                              connection.query(
-                                                sql2,
-                                                [user_ids],
-                                                function (err, reasonDatas) {
-                                                  if (err) {
-                                                    console.log(err);
-                                                  } else {
-                                                reasonDatas.push({
-                                                  reason: "Advance",
-                                                  user_id: user_ids,
-                                                  amount: atten.AdvanceAmount,
-                                                  inv_id: inv_id,
-                                                });
-                                                reasonDatas.forEach((item) => {
-                                                  var sql2 =
-                                                    "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
-                                                  connection.query(
-                                                    sql2,
-                                                    [
-                                                      item.reason,
-                                                      item.user_id,
-                                                      item.amount,
-                                                      inv_id,
-                                                    ],
-                                                    async function (
-                                                      err,
-                                                      insdata
-                                                    ) {
-                                                      if (err) {
-                                                        console.log(err);
-                                                      } else {
-                                                        console.log(
-                                                          "Advance Bill Details Generated"
-                                                        );
-                                                      }
+                                                  "SELECT * FROM checkout_deductions WHERE user_id=?";
+                                                connection.query(
+                                                  sql2,
+                                                  [user_ids],
+                                                  function (err, reasonDatas) {
+                                                    if (err) {
+                                                      console.log(err);
+                                                    } else {
+                                                      reasonDatas.push({
+                                                        reason: "Advance",
+                                                        user_id: user_ids,
+                                                        amount:
+                                                          atten.AdvanceAmount,
+                                                        inv_id: inv_id,
+                                                      });
+                                                      reasonDatas.forEach(
+                                                        (item) => {
+                                                          var sql2 =
+                                                            "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
+                                                          connection.query(
+                                                            sql2,
+                                                            [
+                                                              item.reason,
+                                                              item.user_id,
+                                                              item.amount,
+                                                              inv_id,
+                                                            ],
+                                                            async function (
+                                                              err,
+                                                              insdata
+                                                            ) {
+                                                              if (err) {
+                                                                console.log(
+                                                                  err
+                                                                );
+                                                              } else {
+                                                                console.log(
+                                                                  "Advance Bill Details Generated"
+                                                                );
+                                                              }
+                                                            }
+                                                          );
+                                                        }
+                                                      );
                                                     }
-                                                  );
-                                                });
-                                              }
-                                               } )
+                                                  }
+                                                );
                                                 // var sql2 =
                                                 //   "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
                                                 // connection.query(
@@ -2221,6 +2231,7 @@ function conutry_list(req, res) {
 
 function get_invoice_id(req, res) {
   var user_id = req.body.user_id;
+  var template_type = req.body.template_type;
 
   if (!user_id) {
     return res
@@ -2237,101 +2248,130 @@ function get_invoice_id(req, res) {
     } else if (user_data.length > 0) {
       var hostel_id = user_data[0].Hostel_Id;
 
-      var sql1 = "SELECT * FROM hosteldetails WHERE id=? AND isActive=1";
-      connection.query(sql1, [hostel_id], function (err, hos_details) {
-        if (err) {
-          return res
-            .status(201)
-            .json({ statusCode: 201, message: "Unable to Get Hostel Details" });
-        } else if (hos_details.length > 0) {
-          let prefix = (
-            hos_details[0].prefix ||
-            hos_details[0].Name ||
-            "INV"
-          ).replace(/\s+/g, "-");
-          let suffix = "001"; // Default suffix is 001
-
-          var sql2 =
-            "SELECT * FROM invoicedetails WHERE Hostel_Id=? AND action != 'advance' ORDER BY id DESC LIMIT 1;";
-          connection.query(sql2, [hostel_id], function (err, inv_data) {
-            if (err) {
-              return res.status(201).json({
-                statusCode: 201,
-                message: "Unable to Get Invoice Details",
-              });
-            } else {
-              let newInvoiceNumber;
-
-              if (inv_data.length > 0) {
-                let lastInvoice = inv_data[0].Invoices || "";
-
-                // Extract previous prefix and suffix
-                let lastPrefix = lastInvoice.replace(/-\d+$/, ""); // Remove suffix
-                let lastSuffix = lastInvoice.match(/-(\d+)$/); // Extract numbers
-                lastSuffix = lastSuffix ? lastSuffix[1] : "001";
-
-                // If the prefix has changed, reset suffix to 001
-                if (prefix !== lastPrefix) {
-                  newInvoiceNumber = `${prefix}-001`;
+      var sql1 = `select * from bill_template where hostel_Id=? AND template_type=?;`;
+      connection.query(
+        sql1,
+        [hostel_id, template_type],
+        function (err, bill_template) {
+          if (err) {
+            return res.status(201).json({
+              statusCode: 201,
+              message: "Unable to Get Hostel Details",
+            });
+          } else if (bill_template.length > 0) {
+              var PrefixBillTemplate = bill_template[0]?.prefix;
+              var SuffixBillTemplate = bill_template[0]?.suffix;
+              if (template_type == "Rental Invoice") {
+              var sql2 =
+                "SELECT * FROM invoicedetails WHERE Hostel_Id=? AND action != 'advance' AND invoice_type=1 ORDER BY id DESC LIMIT 1;";
+              connection.query(sql2, [hostel_id], function (err, inv_data) {
+                if (err) {
+                  return res.status(201).json({
+                    statusCode: 201,
+                    message: "Unable to Get Invoice Details",
+                  });
                 } else {
-                  let newSuffix = (parseInt(lastSuffix) + 1)
-                    .toString()
-                    .padStart(3, "0"); // Ensure 3 digits
-                  newInvoiceNumber = `${prefix}-${newSuffix}`;
+                  console.log("inv_data1",inv_data)
+                  if (inv_data.length > 0) {
+                    const lastHyphenIndex =
+                      inv_data[0].Invoices.lastIndexOf("-");
+                    const prefixInvoiceDetails = inv_data[0].Invoices.substring(
+                      0,
+                      lastHyphenIndex
+                    );
+                    const suffixInvoiceDetails = inv_data[0].Invoices.substring(
+                      lastHyphenIndex + 1
+                    );
+                    var nextInvoice;
+                    console.log("inv_data2",PrefixBillTemplate,prefixInvoiceDetails)
+                    if (PrefixBillTemplate == prefixInvoiceDetails) {
+                      const nextSuffix = String(
+                        parseInt(suffixInvoiceDetails, 10) + 1
+                      ).padStart(3, "0");
+                      nextInvoice = `${prefixInvoiceDetails}-${nextSuffix}`; // "Sara-Hostel-002"
+                    } else {
+                      nextInvoice = `${PrefixBillTemplate}-${SuffixBillTemplate}`;
+                    }
+                    return res.status(200).json({
+                      statusCode: 200,
+                      message: "Generated Invoice Number",
+                      invoice_number:nextInvoice,
+                      hostel_id,
+                    });
+                  } else {
+                    var nextInvoice = `${PrefixBillTemplate}-${SuffixBillTemplate}`;
+                    return res.status(200).json({
+                      statusCode: 200,
+                      message: "Generated Invoice Number",
+                      invoice_number:nextInvoice,
+                      hostel_id,
+                    });
+                  }
                 }
-              } else {
-                // First Invoice Case
-                newInvoiceNumber = `${prefix}-001`;
-              }
-
-              check_inv_validation(newInvoiceNumber, hostel_id, res);
+              });
+            } else if(template_type == 'Security Deposit Invoice' ) {
+             var sql2Advance =
+                "SELECT * FROM invoicedetails WHERE Hostel_Id=? AND action = 'advance' AND invoice_type=1 ORDER BY id DESC LIMIT 1;";
+              connection.query(
+                sql2Advance,
+                [hostel_id],
+                function (err, ADV_data) {
+                  if (err) {
+                    return res.status(201).json({
+                      statusCode: 201,
+                      message: "Unable to Get Invoice Details",
+                    });
+                  } else {
+                    if (ADV_data.length > 0) {
+                      const lastHyphenIndex =
+                        ADV_data[0].Invoices.lastIndexOf("-");
+                      const prefixInvoiceDetails =
+                        ADV_data[0].Invoices.substring(0, lastHyphenIndex);
+                      const suffixInvoiceDetails =
+                        ADV_data[0].Invoices.substring(lastHyphenIndex + 1);
+                      var nextInvoice;
+                      if (PrefixBillTemplate == prefixInvoiceDetails) {
+                        const nextSuffix = String(
+                          parseInt(suffixInvoiceDetails, 10) + 1
+                        ).padStart(3, "0");
+                        nextInvoice = `${prefixInvoiceDetails}-${nextSuffix}`; // "Sara-Hostel-002"
+                      } else {
+                        nextInvoice = `${PrefixBillTemplate}-${SuffixBillTemplate}`;
+                      }
+                      return res.status(200).json({
+                        statusCode: 200,
+                        message: "Generated Invoice Number",
+                        invoice_number:nextInvoice,
+                        hostel_id,
+                      });
+                    } else {
+                      var nextInvoice = `${PrefixBillTemplate}-${SuffixBillTemplate}`;
+                      return res.status(200).json({
+                        statusCode: 200,
+                        message: "Generated Advance Invoice Number",
+                        invoice_number:nextInvoice,
+                        hostel_id,
+                      });
+                    }
+                  }
+                }
+              );
             }
-          });
-        } else {
-          return res
-            .status(201)
-            .json({ statusCode: 201, message: "Invalid Hostel Details" });
+          }
+          else {
+            return res
+              .status(201)
+              .json({ statusCode: 201, message: "Invalid Hostel Details" });
+          }
         }
-      });
+      );
     } else {
       return res
         .status(201)
         .json({ statusCode: 201, message: "Invalid User Details" });
     }
   });
-
-  function check_inv_validation(invoice_number, hostel_id, res) {
-    var ch_query =
-      "SELECT * FROM invoicedetails WHERE Invoices=? AND invoice_status=1";
-    connection.query(ch_query, [invoice_number], function (err, data) {
-      if (err) {
-        return res
-          .status(201)
-          .json({ statusCode: 201, message: "Check Invoice Query Error" });
-      }
-
-      if (data.length > 0) {
-        console.log("Invoice Number Already Exists");
-        let invoicePrefix = invoice_number.replace(/-\d+$/, "");
-        let lastNumber = invoice_number.match(/-(\d+)$/);
-        lastNumber = lastNumber ? lastNumber[1] : "001";
-        let newNumber = (parseInt(lastNumber) + 1).toString().padStart(3, "0"); // Ensure 3 digits
-
-        let newInvoiceNumber = `${invoicePrefix}-${newNumber}`;
-        check_inv_validation(newInvoiceNumber, hostel_id, res);
-      } else {
-        console.log("Success");
-        return res.status(200).json({
-          statusCode: 200,
-          message: "Generated Invoice Number",
-          invoice_number,
-          hostel_id,
-        });
-      }
-    });
-  }
 }
-
 function getInvoiceIDNew(req, res) {
   const user_id = req.body.user_id;
   if (!user_id) {
