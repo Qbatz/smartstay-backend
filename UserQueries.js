@@ -355,12 +355,7 @@ function createUser(connection, request, response) {
                           // var sql3 =
                           //   "INSERT INTO customer_reasons (reason_name, user_id, amount,invoice_id) VALUES (?, ?, ?,?)";
                         });
-                      } else {
-                        return response.status(200).json({
-                          statusCode: 200,
-                          message: "Reasons Added Successfully",
-                        });
-                      }
+                      } 
                       bedDetails
                         .check_bed_details(bed_details_obj)
                         .then((okda) => {
@@ -1087,24 +1082,24 @@ function createUser(connection, request, response) {
                                   console.log(error);
                                   var del_query =
                                     "DELETE FROM hostel WHERE ID=?";
-                                  connection.query(
-                                    del_query,
-                                    [user_ids],
-                                    function (err, del_res) {
-                                      if (err) {
-                                        return response.status(201).json({
-                                          message:
-                                            "Unable to Delete Bed Details",
-                                          statusCode: 205,
-                                        });
-                                      } else {
-                                        return response.status(201).json({
-                                          message: "Invalid Bed Details",
-                                          statusCode: 201,
-                                        });
-                                      }
-                                    }
-                                  );
+                                  // connection.query(
+                                  //   del_query,
+                                  //   [user_ids],
+                                  //   function (err, del_res) {
+                                  //     if (err) {
+                                  //       return response.status(201).json({
+                                  //         message:
+                                  //           "Unable to Delete Bed Details",
+                                  //         statusCode: 205,
+                                  //       });
+                                  //     } else {
+                                  //       return response.status(201).json({
+                                  //         message: "Invalid Bed Details",
+                                  //         statusCode: 201,
+                                  //       });
+                                  //     }
+                                  //   }
+                                  // );
                                 });
                             }
                           }
