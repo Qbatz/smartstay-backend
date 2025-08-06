@@ -87,7 +87,6 @@ function getUsers(connection, response, request) {
           .json({ message: "Error fetching hostel data" });
       }
 
-      
       let completed = 0;
       if (hostelData.length > 0) {
         hostelData.forEach((reasondata, index) => {
@@ -289,39 +288,72 @@ function createUser(connection, request, response) {
                         bed: atten.Bed,
                         user_id: atten.ID,
                       };
-                      console.log(atten.reasons, typeof atten.reasons);
+                      
                       if (atten.reasons && atten.reasons.length > 0) {
                         let reasons = atten.reasons;
+                        
+                        console.log(reasons,typeof reasons);
                         if (typeof reasons === "string") {
                           reasons = JSON.parse(reasons); // Convert string to array
                         }
+                         console.log(reasons,typeof reasons);
                         let inv_id = atten.invoice_id || null;
                         var remaining = atten.reasons.length;
                         reasons.forEach((item) => {
+                          console.log("item",item)
+                          if (item.isDeleted && item.id) {
+                            const sqlDelete =
+                              "DELETE FROM checkout_deductions WHERE id = ?";
+                              console.log("iem",item.id)
+                            connection.query(
+                              sqlDelete,
+                              [item.id],
+                              function (err, result) {
+                                if (err) throw err;
+                                console.log("Row deleted");
+                              }
+                            );
+                          } else if (!item.isDelete && item.id) {
+                            var sqlupdate =
+                              "UPDATE checkout_deductions  SET reason =?,amount=?,user_id=? WHERE id = ?";
+                            connection.query(
+                              sqlupdate,
+                              [item.reason_name, item.amount, user_id, item.id],
+                              function (err) {
+                                if (err) {
+                                  return response.status(200).json({
+                                    statusCode: 200,
+                                    message: "Reasons updated Successfully",
+                                  });
+                                }
+                              }
+                            );
+                          } else {
+                            var sql3 =
+                              "INSERT INTO checkout_deductions (reason, user_id, amount,receipt_id) VALUES (?, ?, ?,?)";
+
+                            connection.query(
+                              sql3,
+                              [item.reason_name, user_id, item.amount, null],
+                              function (err) {
+                                if (err) {
+                                  console.log(
+                                    "Error inserting amenity details:",
+                                    err
+                                  );
+                                }
+                                remaining -= 1;
+                                if (remaining === 0) {
+                                  return response.status(200).json({
+                                    statusCode: 200,
+                                    message: "Reasons Added Successfully",
+                                  });
+                                }
+                              }
+                            );
+                          }
                           // var sql3 =
                           //   "INSERT INTO customer_reasons (reason_name, user_id, amount,invoice_id) VALUES (?, ?, ?,?)";
-                          var sql3 =
-                            "INSERT INTO checkout_deductions (reason, user_id, amount,receipt_id) VALUES (?, ?, ?,?)";
-
-                          connection.query(
-                            sql3,
-                            [item.reason_name, user_id, item.amount, null],
-                            function (err) {
-                              if (err) {
-                                console.log(
-                                  "Error inserting amenity details:",
-                                  err
-                                );
-                              }
-                              remaining -= 1;
-                              if (remaining === 0) {
-                                return response.status(200).json({
-                                  statusCode: 200,
-                                  message: "Reasons Added Successfully",
-                                });
-                              }
-                            }
-                          );
                         });
                       } else {
                         return response.status(200).json({
