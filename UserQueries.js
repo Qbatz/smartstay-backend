@@ -308,7 +308,7 @@ function createUser(connection, request, response) {
                               }
                               remaining -= 1;
                               if (remaining === 0) {
-                                return res.status(200).json({
+                                return response.status(200).json({
                                   statusCode: 200,
                                   message: "Reasons Added Successfully",
                                 });
@@ -317,7 +317,7 @@ function createUser(connection, request, response) {
                           );
                         });
                       } else {
-                        return res.status(200).json({
+                        return response.status(200).json({
                           statusCode: 200,
                           message: "Reasons Added Successfully",
                         });
