@@ -87,25 +87,32 @@ function getUsers(connection, response, request) {
           .json({ message: "Error fetching hostel data" });
       }
 
-      // console.log("hostelData",hostelData)
+      
       let completed = 0;
-      hostelData.forEach((reasondata, index) => {
-        // var sql2 = "SELECT * FROM customer_reasons WHERE user_id=?";
-        var sql2 = "SELECT * FROM checkout_deductions WHERE user_id=?";
-        connection.query(sql2, [reasondata.ID], function (err, reasonDatas) {
-          if (err) {
-            console.log(err);
-            hostelData[index]["reasonData"] = [];
-          } else {
-            hostelData[index]["reasonData"] = reasonDatas || [];
-          }
+      if (hostelData.length > 0) {
+        hostelData.forEach((reasondata, index) => {
+          // var sql2 = "SELECT * FROM customer_reasons WHERE user_id=?";
+          var sql2 = "SELECT * FROM checkout_deductions WHERE user_id=?";
+          connection.query(sql2, [reasondata.ID], function (err, reasonDatas) {
+            if (err) {
+              console.log(err);
+              hostelData[index]["reasonData"] = [];
+            } else {
+              hostelData[index]["reasonData"] = reasonDatas || [];
+            }
 
-          completed++;
-          if (completed === hostelData.length) {
-            return response.status(200).json({ hostelData });
-          }
+            completed++;
+            if (completed === hostelData.length) {
+              return response.status(200).json({ hostelData });
+            }
+          });
         });
-      });
+      } else {
+        response.status(201).json({
+          message: "No Data Found",
+          statusCode: 208,
+        });
+      }
 
       // response.status(200).json({ hostelData });
     });
@@ -350,7 +357,9 @@ function createUser(connection, request, response) {
                               atten.landmark || ""
                             }',pincode='${atten.pincode}',city='${
                               atten.city
-                            }',state='${atten.state}',stay_type='${atten.stay_type}' WHERE ID='${atten.ID}'`,
+                            }',state='${atten.state}',stay_type='${
+                              atten.stay_type
+                            }' WHERE ID='${atten.ID}'`,
                             function (updateError, updateData) {
                               if (updateError) {
                                 response.status(201).json({
@@ -779,7 +788,9 @@ function createUser(connection, request, response) {
                             atten.joining_date
                           }','${area || ""}','${
                             landmark || ""
-                          }','${pincode}','${city}','${state}','${atten.stay_type}')`,
+                          }','${pincode}','${city}','${state}','${
+                            atten.stay_type
+                          }')`,
                           async function (insertError, insertData) {
                             if (insertError) {
                               console.log("insertError", insertError);
@@ -912,7 +923,7 @@ function createUser(connection, request, response) {
                                             atten.Floor,
                                             atten.Rooms,
                                             advance_amount,
-                                            atten.Address |"",
+                                            atten.Address | "",
                                             due_date,
                                             invoice_date,
                                             invoice_number,
@@ -938,47 +949,53 @@ function createUser(connection, request, response) {
                                                   "Advance Bill Generated"
                                                 );
                                                 var sql2 =
-                                                "SELECT * FROM checkout_deductions WHERE user_id=?";
-                                              connection.query(
-                                                sql2,
-                                                [user_ids],
-                                                function (err, reasonDatas) {
-                                                  if (err) {
-                                                    console.log(err);
-                                                  } else {
-                                                reasonDatas.push({
-                                                  reason: "Advance",
-                                                  user_id: user_ids,
-                                                  amount: atten.AdvanceAmount,
-                                                  inv_id: inv_id,
-                                                });
-                                                reasonDatas.forEach((item) => {
-                                                  var sql2 =
-                                                    "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
-                                                  connection.query(
-                                                    sql2,
-                                                    [
-                                                      item.reason,
-                                                      item.user_id,
-                                                      item.amount,
-                                                      inv_id,
-                                                    ],
-                                                    async function (
-                                                      err,
-                                                      insdata
-                                                    ) {
-                                                      if (err) {
-                                                        console.log(err);
-                                                      } else {
-                                                        console.log(
-                                                          "Advance Bill Details Generated"
-                                                        );
-                                                      }
+                                                  "SELECT * FROM checkout_deductions WHERE user_id=?";
+                                                connection.query(
+                                                  sql2,
+                                                  [user_ids],
+                                                  function (err, reasonDatas) {
+                                                    if (err) {
+                                                      console.log(err);
+                                                    } else {
+                                                      reasonDatas.push({
+                                                        reason: "Advance",
+                                                        user_id: user_ids,
+                                                        amount:
+                                                          atten.AdvanceAmount,
+                                                        inv_id: inv_id,
+                                                      });
+                                                      reasonDatas.forEach(
+                                                        (item) => {
+                                                          var sql2 =
+                                                            "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
+                                                          connection.query(
+                                                            sql2,
+                                                            [
+                                                              item.reason,
+                                                              item.user_id,
+                                                              item.amount,
+                                                              inv_id,
+                                                            ],
+                                                            async function (
+                                                              err,
+                                                              insdata
+                                                            ) {
+                                                              if (err) {
+                                                                console.log(
+                                                                  err
+                                                                );
+                                                              } else {
+                                                                console.log(
+                                                                  "Advance Bill Details Generated"
+                                                                );
+                                                              }
+                                                            }
+                                                          );
+                                                        }
+                                                      );
                                                     }
-                                                  );
-                                                });
-                                              }
-                                               } )
+                                                  }
+                                                );
                                                 // var sql2 =
                                                 //   "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
                                                 // connection.query(
@@ -1623,18 +1640,40 @@ function customer_details(req, res) {
                                                 if (
                                                   completed === inv_res.length
                                                 ) {
-                                                  res.status(200).json({
-                                                    statusCode: 200,
-                                                    message:
-                                                      "View Customer Details",
-                                                    data: user_data,
-                                                    eb_data: eb_data,
-                                                    invoice_details: inv_res,
-                                                    transactions: trans_res,
-                                                    all_amenities: am_res,
-                                                    comp_data: comp_data,
-                                                    contact_details: Data,
-                                                  });
+                                                  var SqlReason = `SELECT * FROM checkout_deductions WHERE user_id=?`;
+                                                  connection.query(
+                                                    SqlReason,
+                                                    [user_id],
+                                                    function (err, reasonData) {
+                                                      if (err) {
+                                                        return res
+                                                          .status(201)
+                                                          .json({
+                                                            message:
+                                                              "Unable to  Get Reason Details",
+                                                            statusCode: 201,
+                                                          });
+                                                      } else {
+                                                        res.status(200).json({
+                                                          statusCode: 200,
+                                                          message:
+                                                            "View Customer Details",
+                                                          data: user_data,
+                                                          eb_data: eb_data,
+                                                          invoice_details:
+                                                            inv_res,
+                                                          transactions:
+                                                            trans_res,
+                                                          all_amenities: am_res,
+                                                          comp_data: comp_data,
+                                                          contact_details: Data,
+                                                          reasonData:
+                                                            reasonData,
+                                                        });
+                                                      }
+                                                    }
+                                                  );
+
                                                   // return res.status(200).json({ message: "All Bill Details", statusCode: 200, bill_details: invoices });
                                                 }
                                               }
