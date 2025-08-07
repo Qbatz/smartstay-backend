@@ -3346,6 +3346,9 @@ function user_check_out(req, res) {
   }
 }
 
+
+
+
 function get_confirm_checkout(req, res) {
   var { id, hostel_id } = req.body;
 

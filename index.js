@@ -1127,6 +1127,14 @@ app.post("/add/confirm_checkout", (req, res) => {
   newBookings.add_confirm_checkout(req, res);
 });
 
+app.post(
+  "/update/confirm_checkout_due_customer",
+  upload.fields([{ name: "profile", maxCount: 1 }]),
+  (req, res) => {
+     newBookings.update_confirm_checkout_due_amount(req, res);
+  }
+);
+
 app.post("/edit/confirm_checkout", (req, res) => {
   newBookings.edit_confirm_checkout(req, res);
 });
