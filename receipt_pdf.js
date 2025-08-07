@@ -70,7 +70,14 @@ exports.get_receipt_detailsbyid = async (req, res) => {
               total_amount = advance - others;
             }
             console.log("total_amount", total_amount, formattedAmenities);
-            const finalresponse = {
+            
+            var sql2Template =
+                "select * from bill_template where hostel_Id=? AND template_type=?;";
+              connection.query(
+                sql2Template,
+                [hostel_id, 'NOC Receipt'],
+                function (err, bill_template) {
+           const finalresponse = {
               reference_id: data[0].reference_id,
               payment_date: moment(data[0].payment_date).format("YYYY-MM-DD"),
               payment_mode: data[0].payment_mode,
@@ -106,13 +113,16 @@ exports.get_receipt_detailsbyid = async (req, res) => {
                 city: data[0].hcity || "",
                 state: data[0].hstate || "",
               },
+              bill_template:bill_template[0] || null,
               amenities: formattedAmenities || [],
             };
-
-            return res
+             return res
               .status(200)
               .json({ statusCode: 200, receipt: finalresponse });
 
+          });
+
+           
             // })
           } else {
             return res.status(201).json({
@@ -152,12 +162,20 @@ exports.get_receipt_detailsbyid = async (req, res) => {
                       reason: err.message,
                     });
                   }
-
+var template_type = action =='advance'? 'Security Deposit Receipt':'Rental Receipt';
                   var total_amount = amenities.reduce(
                     (sum, item) => sum + item.amount,
                     0
                   );
-
+  var sql2Template =
+                "select * from bill_template where hostel_Id=? AND template_type=?;";
+              connection.query(
+                sql2Template,
+                [hostel_id, template_type],
+                function (err, bill_template) {
+                  if(err){
+                    console.log("err")
+                  }
                   const finalresponse = {
                     reference_id: data[0].reference_id,
                     payment_date: moment(data[0].payment_date).format(
@@ -196,12 +214,15 @@ exports.get_receipt_detailsbyid = async (req, res) => {
                       city: data[0].hcity || "",
                       state: data[0].hstate || "",
                     },
+                    bill_template:bill_template[0] || null,
                     amenities: amenities || [],
                   };
 
                   return res
                     .status(200)
                     .json({ statusCode: 200, receipt: finalresponse });
+                }
+              );
                 }
               );
             } else {
