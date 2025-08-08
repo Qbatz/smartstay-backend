@@ -33,8 +33,8 @@ function getUsers(connection, response, request) {
     }
 
     // let query = `
-    //   SELECT 
-    //     hstl.*, 
+    //   SELECT
+    //     hstl.*,
     //     CASE WHEN hstl.CheckoutDate IS NULL THEN 1 ELSE 0 END AS check_outed,
     //     bd.bed_no AS Bed,
     //     hstl.Bed AS hstl_Bed,
@@ -44,64 +44,64 @@ function getUsers(connection, response, request) {
     //     hsroom.Room_Id,
     //     DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,
     //     hstl.Hostel_Id AS user_hostel,
-    //     hf.floor_name 
-    //   FROM hosteldetails AS hstlDetails 
-    //   INNER JOIN hostel AS hstl 
-    //     ON hstl.Hostel_Id = hstlDetails.id AND hstl.isActive = TRUE 
-    //   LEFT JOIN country_list AS cl ON hstl.country_code = cl.country_code 
-    //   LEFT JOIN hostelrooms hsroom 
-    //     ON hsroom.Hostel_Id = hstlDetails.id AND hsroom.Floor_Id = hstl.Floor AND hsroom.id = hstl.Rooms 
-    //   LEFT JOIN Hostel_Floor AS hf ON hf.floor_id = hstl.Floor AND hf.hostel_id = hstl.Hostel_Id 
-    //   LEFT JOIN bed_details AS bd ON bd.id = hstl.Bed 
+    //     hf.floor_name
+    //   FROM hosteldetails AS hstlDetails
+    //   INNER JOIN hostel AS hstl
+    //     ON hstl.Hostel_Id = hstlDetails.id AND hstl.isActive = TRUE
+    //   LEFT JOIN country_list AS cl ON hstl.country_code = cl.country_code
+    //   LEFT JOIN hostelrooms hsroom
+    //     ON hsroom.Hostel_Id = hstlDetails.id AND hsroom.Floor_Id = hstl.Floor AND hsroom.id = hstl.Rooms
+    //   LEFT JOIN Hostel_Floor AS hf ON hf.floor_id = hstl.Floor AND hf.hostel_id = hstl.Hostel_Id
+    //   LEFT JOIN bed_details AS bd ON bd.id = hstl.Bed
     //   WHERE hstl.Hostel_Id = ?
     // `;
-// let query = `SELECT 
-//   hstl.*, 
-//   CASE 
-//     WHEN hstl.CheckoutDate IS NULL THEN 1 
-//     ELSE 0 
-//   END AS check_outed,
-//   bd.bed_no AS Bed,
-//   hstl.Bed AS hstl_Bed,
-//   hsroom.Room_Id AS Rooms,
-//   hstl.Rooms AS hstl_Rooms,
-//   hsroom.id AS room_id,
-//   hsroom.Room_Id,
-//   DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,
-//   hstl.Hostel_Id AS user_hostel,
-//   hf.floor_name,
+    // let query = `SELECT
+    //   hstl.*,
+    //   CASE
+    //     WHEN hstl.CheckoutDate IS NULL THEN 1
+    //     ELSE 0
+    //   END AS check_outed,
+    //   bd.bed_no AS Bed,
+    //   hstl.Bed AS hstl_Bed,
+    //   hsroom.Room_Id AS Rooms,
+    //   hstl.Rooms AS hstl_Rooms,
+    //   hsroom.id AS room_id,
+    //   hsroom.Room_Id,
+    //   DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,
+    //   hstl.Hostel_Id AS user_hostel,
+    //   hf.floor_name,
 
-//   CASE 
-//     WHEN bk.id IS NOT NULL THEN 'booking'
-//     WHEN bd.id IS NULL THEN 'unassigned'
-//     ELSE 'checkIn'
-//   END AS bed_status,
+    //   CASE
+    //     WHEN bk.id IS NOT NULL THEN 'booking'
+    //     WHEN bd.id IS NULL THEN 'unassigned'
+    //     ELSE 'checkIn'
+    //   END AS bed_status,
 
-//   bk.id AS booking_id,
-//   bk.booking_date
+    //   bk.id AS booking_id,
+    //   bk.booking_date
 
-// FROM hosteldetails AS hstlDetails 
+    // FROM hosteldetails AS hstlDetails
 
-// INNER JOIN hostel AS hstl 
-//   ON hstl.Hostel_Id = hstlDetails.id AND hstl.isActive = TRUE 
+    // INNER JOIN hostel AS hstl
+    //   ON hstl.Hostel_Id = hstlDetails.id AND hstl.isActive = TRUE
 
-// LEFT JOIN bookings AS bk 
-//   ON bk.hostel_id = hstl.Hostel_Id AND bk.customer_id = hstl.ID
+    // LEFT JOIN bookings AS bk
+    //   ON bk.hostel_id = hstl.Hostel_Id AND bk.customer_id = hstl.ID
 
-// LEFT JOIN country_list AS cl 
-//   ON hstl.country_code = cl.country_code 
+    // LEFT JOIN country_list AS cl
+    //   ON hstl.country_code = cl.country_code
 
-// LEFT JOIN hostelrooms hsroom 
-//   ON hsroom.Hostel_Id = hstlDetails.id AND hsroom.Floor_Id = hstl.Floor AND hsroom.id = hstl.Rooms 
+    // LEFT JOIN hostelrooms hsroom
+    //   ON hsroom.Hostel_Id = hstlDetails.id AND hsroom.Floor_Id = hstl.Floor AND hsroom.id = hstl.Rooms
 
-// LEFT JOIN Hostel_Floor AS hf 
-//   ON hf.floor_id = hstl.Floor AND hf.hostel_id = hstl.Hostel_Id 
+    // LEFT JOIN Hostel_Floor AS hf
+    //   ON hf.floor_id = hstl.Floor AND hf.hostel_id = hstl.Hostel_Id
 
-// LEFT JOIN bed_details AS bd 
-//   ON bd.id = hstl.Bed 
+    // LEFT JOIN bed_details AS bd
+    //   ON bd.id = hstl.Bed
 
-// WHERE hstl.Hostel_Id =?`
-let query =`SELECT 
+    // WHERE hstl.Hostel_Id =?`
+    let query = `SELECT 
   hstl.*, 
   CASE 
     WHEN hstl.CheckoutDate IS NULL THEN 1 
@@ -124,6 +124,7 @@ let query =`SELECT
   END AS bed_status,
 
   bk.id AS booking_id,
+  bk.amount AS booking_amount,
   bk.booking_date As booking_booking_date,
   bk.joining_date AS booking_joining_date,
   bk.room_id AS booking_room_id,
@@ -138,7 +139,7 @@ INNER JOIN hostel AS hstl
   ON hstl.Hostel_Id = hstlDetails.id AND hstl.isActive = TRUE 
 
 LEFT JOIN bookings AS bk 
-  ON bk.hostel_id = hstl.Hostel_Id AND bk.customer_id = hstl.ID
+  ON bk.hostel_id = hstl.Hostel_Id AND bk.customer_id = hstl.ID AND bk.status=1
   
   -- ✅ Bed from booking
 LEFT JOIN bed_details AS bd_booking 
@@ -165,7 +166,7 @@ LEFT JOIN bed_details AS bd
   ON bd.id = hstl.Bed 
 
 WHERE hstl.Hostel_Id = ? 
-`
+`;
     const queryParams = [hostel_id];
 
     if (searchName) {
@@ -308,11 +309,12 @@ function createUser(connection, request, response) {
           var paid_advance = paid_advance1;
           var pending_advance = overall_advance - paid_advance;
           var old_profile = sel_res[0].profile;
-          var old_hostel = sel_res[0].Hostel_Id;
-          var old_room = sel_res[0].Rooms;
-          var old_floor = sel_res[0].Floor;
-          var old_bed = sel_res[0].Bed;
-
+          var old_hostel = atten.booking_id
+            ? atten.hostel_Id
+            : sel_res[0].Hostel_Id;
+          var old_room = atten.booking_id ? atten.Rooms : sel_res[0].Rooms;
+          var old_floor = atten.booking_id ? atten.Floor : sel_res[0].Floor;
+          var old_bed = atten.booking_id ? atten.Bed : sel_res[0].Bed;
           var booking_id = atten.booking_id;
 
           connection.query(
@@ -324,423 +326,424 @@ function createUser(connection, request, response) {
                   statusCode: 201,
                 });
               }
-              if (data.length > 0) {
-                response.status(202).json({
-                  message: "Phone Number Already Exists",
-                  statusCode: 202,
-                });
-              } else {
-                // Need to Check for the Mail Exist Error
-                connection.query(
-                  `SELECT * FROM hostel WHERE Email='${atten.Email}' AND Email !='N/A' AND Hostel_Id='${atten.hostel_Id}' AND isActive = 1 AND ID !='${atten.ID}'`,
-                  async function (error, data) {
-                    if (error) {
-                      return response.status(201).json({
-                        message: "Unable to Get Hostel Details",
-                        statusCode: 201,
-                      });
-                    }
-                    if (data.length > 0) {
-                      return response.status(203).json({
-                        message: "Email Already Exists",
-                        statusCode: 203,
-                      });
-                    } else {
-                      if (profile) {
-                        try {
-                          const timestamp = Date.now();
-                          profile_url =
-                            await uploadImage.uploadProfilePictureToS3Bucket(
-                              bucketName,
-                              "users/",
-                              "profile" + unique_user_id + timestamp + ".jpg",
-                              profile
-                            );
+              // if (data.length > 0) {
+              //   response.status(202).json({
+              //     message: "Phone Number Already Exists",
+              //     statusCode: 202,
+              //   });
+              // } else {
+              // Need to Check for the Mail Exist Error
+              connection.query(
+                `SELECT * FROM hostel WHERE Email='${atten.Email}' AND Email !='N/A' AND Hostel_Id='${atten.hostel_Id}' AND isActive = 1 AND ID !='${atten.ID}'`,
+                async function (error, data) {
+                  if (error) {
+                    return response.status(201).json({
+                      message: "Unable to Get Hostel Details",
+                      statusCode: 201,
+                    });
+                  }
+                  // if (data.length > 0) {
+                  //   return response.status(203).json({
+                  //     message: "Email Already Exists",
+                  //     statusCode: 203,
+                  //   });
+                  // } else {
+                  if (profile) {
+                    try {
+                      const timestamp = Date.now();
+                      profile_url =
+                        await uploadImage.uploadProfilePictureToS3Bucket(
+                          bucketName,
+                          "users/",
+                          "profile" + unique_user_id + timestamp + ".jpg",
+                          profile
+                        );
 
-                          if (
-                            old_profile != null &&
-                            old_profile != undefined &&
-                            old_profile != 0
-                          ) {
-                            const old_profile_key = getKeyFromUrl(old_profile);
-                            var deleteResponse =
-                              await uploadImage.deleteImageFromS3Bucket(
-                                bucketName,
-                                old_profile_key
-                              );
-                            console.log("Image deleted successfully");
-                          } else {
-                            console.error(
-                              "Failed to extract key from URL:",
-                              old_profile
-                            );
-                          }
-                        } catch (err) {
-                          console.error(err);
-                          profile_url = 0;
-                        }
+                      if (
+                        old_profile != null &&
+                        old_profile != undefined &&
+                        old_profile != 0
+                      ) {
+                        const old_profile_key = getKeyFromUrl(old_profile);
+                        var deleteResponse =
+                          await uploadImage.deleteImageFromS3Bucket(
+                            bucketName,
+                            old_profile_key
+                          );
+                        console.log("Image deleted successfully");
                       } else {
-                        profile_url = 0;
+                        console.error(
+                          "Failed to extract key from URL:",
+                          old_profile
+                        );
                       }
+                    } catch (err) {
+                      console.error(err);
+                      profile_url = 0;
+                    }
+                  } else {
+                    profile_url = 0;
+                  }
 
-                      if (!profile) {
-                        var profile_url = request.body.profile || 0;
-                      }
+                  if (!profile) {
+                    var profile_url = request.body.profile || 0;
+                  }
 
-                      var bed_details_obj = {
-                        old_bed: old_bed,
-                        old_room: old_room,
-                        old_floor: old_floor,
-                        old_hostel: old_hostel,
-                        hostel_id: atten.hostel_Id,
-                        floor_id: atten.Floor,
-                        room: atten.Rooms,
-                        bed: atten.Bed,
-                        user_id: atten.ID,
-                      };
-                      
-                      if (atten.reasons && atten.reasons.length > 0) {
-                        let reasons = atten.reasons;
-                        
-                        console.log(reasons,typeof reasons);
-                        if (typeof reasons === "string") {
-                          reasons = JSON.parse(reasons); // Convert string to array
-                        }
-                         console.log(reasons,typeof reasons);
-                        let inv_id = atten.invoice_id || null;
-                        var remaining = atten.reasons.length;
-                        reasons.forEach((item) => {
-                          console.log("item",item)
-                          if (item.isDeleted && item.id) {
-                            const sqlDelete =
-                              "DELETE FROM checkout_deductions WHERE id = ?";
-                              console.log("iem",item.id)
-                            connection.query(
-                              sqlDelete,
-                              [item.id],
-                              function (err, result) {
-                                if (err) throw err;
-                                console.log("Row deleted");
-                              }
-                            );
-                          } else if (!item.isDelete && item.id) {
-                            var sqlupdate =
-                              "UPDATE checkout_deductions  SET reason =?,amount=?,user_id=? WHERE id = ?";
-                            connection.query(
-                              sqlupdate,
-                              [item.reason_name, item.amount, user_id, item.id],
-                              function (err) {
-                                if (err) {
-                                  return response.status(200).json({
-                                    statusCode: 200,
-                                    message: "Reasons updated Successfully",
-                                  });
-                                }
-                              }
-                            );
-                          } else {
-                            var sql3 =
-                              "INSERT INTO checkout_deductions (reason, user_id, amount,receipt_id) VALUES (?, ?, ?,?)";
+                  var bed_details_obj = {
+                    old_bed: old_bed,
+                    old_room: old_room,
+                    old_floor: old_floor,
+                    old_hostel: old_hostel,
+                    hostel_id: atten.hostel_Id,
+                    floor_id: atten.Floor,
+                    room: atten.Rooms,
+                    bed: atten.Bed,
+                    user_id: atten.ID,
+                  };
 
-                            connection.query(
-                              sql3,
-                              [item.reason_name, user_id, item.amount, null],
-                              function (err) {
-                                if (err) {
-                                  console.log(
-                                    "Error inserting amenity details:",
-                                    err
-                                  );
-                                }
-                                remaining -= 1;
-                                if (remaining === 0) {
-                                  return response.status(200).json({
-                                    statusCode: 200,
-                                    message: "Reasons Added Successfully",
-                                  });
-                                }
-                              }
-                            );
+                  if (atten.reasons && atten.reasons.length > 0) {
+                    let reasons = atten.reasons;
+
+                    console.log(reasons, typeof reasons);
+                    if (typeof reasons === "string") {
+                      reasons = JSON.parse(reasons); // Convert string to array
+                    }
+                    console.log(reasons, typeof reasons);
+                    let inv_id = atten.invoice_id || null;
+                    var remaining = atten.reasons.length;
+                    reasons.forEach((item) => {
+                      console.log("item", item);
+                      if (item.isDeleted && item.id) {
+                        const sqlDelete =
+                          "DELETE FROM checkout_deductions WHERE id = ?";
+                        console.log("iem", item.id);
+                        connection.query(
+                          sqlDelete,
+                          [item.id],
+                          function (err, result) {
+                            if (err) throw err;
+                            console.log("Row deleted");
                           }
-                          // var sql3 =
-                          //   "INSERT INTO customer_reasons (reason_name, user_id, amount,invoice_id) VALUES (?, ?, ?,?)";
-                        });
-                      } 
-                      bedDetails
-                        .check_bed_details(bed_details_obj)
-                        .then((okda) => {
-                          connection.query(
-                            `UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${
-                              atten.Phone
-                            }', Email='${atten.Email}', Address='${
-                              atten.Address || ""
-                            }', AadharNo='${atten.AadharNo}', PancardNo='${
-                              atten.PancardNo
-                            }',licence='${atten.licence}',HostelName='${
-                              atten.HostelName
-                            }',Hostel_Id='${atten.hostel_Id}', Floor='${
-                              atten.Floor
-                            }', Rooms='${atten.Rooms}', Bed='${
-                              atten.Bed
-                            }',profile='${profile_url}', AdvanceAmount='${
-                              atten.AdvanceAmount
-                            }', RoomRent='${atten.RoomRent}', BalanceDue='${
-                              atten.BalanceDue
-                            }', PaymentType='${
-                              atten.PaymentType
-                            }', Status='${Status}',paid_advance='${paid_advance}',pending_advance='${pending_advance}',country_code='${country_code}',joining_Date='${
-                              atten.joining_date
-                            }' ,area='${atten.area || ""}',landmark='${
-                              atten.landmark || ""
-                            }',pincode='${atten.pincode}',city='${
-                              atten.city
-                            }',state='${atten.state}',stay_type='${
-                              atten.stay_type
-                            }' WHERE ID='${atten.ID}'`,
-                            function (updateError, updateData) {
-                              if (updateError) {
-                                response.status(201).json({
-                                  message: "Internal Server Error",
-                                  statusCode: 201,
-                                });
-                              } else {
-                                var update_complaice_query =
-                                  "SELECT * FROM compliance WHERE User_id=?";
-                                connection.query(
-                                  update_complaice_query,
-                                  [unique_user_id],
-                                  function (up_com_err, up_com_res) {
-                                    if (up_com_err) {
-                                      console.log("up_com_err", up_com_err);
-                                      return;
-                                    } else if (up_com_res.length != 0) {
-                                      var up_query =
-                                        "UPDATE compliance SET Circle='" +
-                                        Circle +
-                                        "',Name='" +
-                                        Name +
-                                        "',Phone='" +
-                                        atten.Phone +
-                                        "',Hostel_id='" +
-                                        atten.hostel_Id +
-                                        "',Floor_id='" +
-                                        atten.Floor +
-                                        "',Room='" +
-                                        atten.Rooms +
-                                        "',hostelname='" +
-                                        atten.HostelName +
-                                        "' WHERE User_id='" +
-                                        unique_user_id +
-                                        "';";
-                                      connection.query(
-                                        up_query,
-                                        function (up_err, up_res) {
-                                          if (up_err) {
-                                            console.log("up_err", up_err);
-                                          }
-                                        }
-                                      );
-                                    }
-                                  }
-                                );
+                        );
+                      } else if (!item.isDelete && item.id) {
+                        var sqlupdate =
+                          "UPDATE checkout_deductions  SET reason =?,amount=?,user_id=? WHERE id = ?";
+                        connection.query(
+                          sqlupdate,
+                          [item.reason_name, item.amount, user_id, item.id],
+                          function (err) {
+                            if (err) {
+                              return response.status(200).json({
+                                statusCode: 200,
+                                message: "Reasons updated Successfully",
+                              });
+                            }
+                          }
+                        );
+                      } else {
+                        var sql3 =
+                          "INSERT INTO checkout_deductions (reason, user_id, amount,receipt_id) VALUES (?, ?, ?,?)";
 
-                                if (booking_id) {
-                                  var sql123 =
-                                    "UPDATE bookings SET status=0 WHERE id=?";
+                        connection.query(
+                          sql3,
+                          [item.reason_name, user_id, item.amount, null],
+                          function (err) {
+                            if (err) {
+                              console.log(
+                                "Error inserting amenity details:",
+                                err
+                              );
+                            }
+                            remaining -= 1;
+                            if (remaining === 0) {
+                              return response.status(200).json({
+                                statusCode: 200,
+                                message: "Reasons Added Successfully",
+                              });
+                            }
+                          }
+                        );
+                      }
+                      // var sql3 =
+                      //   "INSERT INTO customer_reasons (reason_name, user_id, amount,invoice_id) VALUES (?, ?, ?,?)";
+                    });
+                  }
+                  bedDetails
+                    .check_bed_details(bed_details_obj)
+                    .then((okda) => {
+                      connection.query(
+                        `UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${
+                          atten.Phone
+                        }', Email='${atten.Email}', Address='${
+                          atten.Address || ""
+                        }', AadharNo='${atten.AadharNo}', PancardNo='${
+                          atten.PancardNo
+                        }',licence='${atten.licence}',HostelName='${
+                          atten.HostelName
+                        }',Hostel_Id='${atten.hostel_Id}', Floor='${
+                          atten.Floor
+                        }', Rooms='${atten.Rooms}', Bed='${
+                          atten.Bed
+                        }',profile='${profile_url}', AdvanceAmount='${
+                          atten.AdvanceAmount
+                        }', RoomRent='${atten.RoomRent}', BalanceDue='${
+                          atten.BalanceDue
+                        }', PaymentType='${
+                          atten.PaymentType
+                        }', Status='${Status}',paid_advance='${paid_advance}',pending_advance='${pending_advance}',country_code='${country_code}',joining_Date='${
+                          atten.joining_date
+                        }' ,area='${atten.area || ""}',landmark='${
+                          atten.landmark || ""
+                        }',pincode='${atten.pincode}',city='${
+                          atten.city
+                        }',state='${atten.state}',stay_type='${
+                          atten.stay_type
+                        }' , booking_Id ='${
+                          atten.booking_id
+                        }' , booking_date ='${
+                          atten.booking_date
+                        }' , booking_amount ='${
+                          atten.booking_amount
+                        }' WHERE ID='${atten.ID}'`,
+                        function (updateError, updateData) {
+                          if (updateError) {
+                            response.status(201).json({
+                              message: "Internal Server Error",
+                              statusCode: 201,
+                            });
+                          } else {
+                            var update_complaice_query =
+                              "SELECT * FROM compliance WHERE User_id=?";
+                            connection.query(
+                              update_complaice_query,
+                              [unique_user_id],
+                              function (up_com_err, up_com_res) {
+                                if (up_com_err) {
+                                  console.log("up_com_err", up_com_err);
+                                  return;
+                                } else if (up_com_res.length != 0) {
+                                  var up_query =
+                                    "UPDATE compliance SET Circle='" +
+                                    Circle +
+                                    "',Name='" +
+                                    Name +
+                                    "',Phone='" +
+                                    atten.Phone +
+                                    "',Hostel_id='" +
+                                    atten.hostel_Id +
+                                    "',Floor_id='" +
+                                    atten.Floor +
+                                    "',Room='" +
+                                    atten.Rooms +
+                                    "',hostelname='" +
+                                    atten.HostelName +
+                                    "' WHERE User_id='" +
+                                    unique_user_id +
+                                    "';";
                                   connection.query(
-                                    sql123,
-                                    [booking_id],
-                                    function (err, data) {
-                                      if (err) {
-                                        console.log("Not Remove Booking", err);
-                                      } else {
-                                        console.log("Booking Removed");
+                                    up_query,
+                                    function (up_err, up_res) {
+                                      if (up_err) {
+                                        console.log("up_err", up_err);
                                       }
                                     }
                                   );
                                 }
+                              }
+                            );
 
-                                if (advance_amount && isadvance == 1) {
-                                  var hostel_id = atten.hostel_Id;
+                            if (booking_id) {
+                              var sql123 =
+                                "UPDATE bookings SET status=0 WHERE id=?";
+                              connection.query(
+                                sql123,
+                                [booking_id],
+                                function (err, data) {
+                                  if (err) {
+                                    console.log("Not Remove Booking", err);
+                                  } else {
+                                    console.log("Booking Removed");
+                                  }
+                                }
+                              );
+                            }
 
-                                  var sql1 =
-                                    "SELECT * FROM invoicedetails WHERE hos_user_id=? AND action='advance'";
-                                  connection.query(
-                                    sql1,
-                                    [user_id],
-                                    async function (err, data) {
-                                      if (err) {
-                                        console.log(err);
-                                      } else if (data.length != 0) {
-                                        console.log(
-                                          "Advance Invoice Already Generated"
-                                        );
-                                      } else {
-                                        var invoice_number =
-                                          await uploadImage.generateNewInvoiceNumber(
-                                            hostel_id
-                                          );
+                            if (advance_amount && isadvance == 1) {
+                              var hostel_id = atten.hostel_Id;
 
-                                        // console.log(invoice_number);
-                                        // var due_date = moment(atten.joining_date).add(5, 'days').format('YYYY-MM-DD');
-                                        // console.log(due_date);
+                              var sql1 =
+                                "SELECT * FROM invoicedetails WHERE hos_user_id=? AND action='advance'";
+                              connection.query(
+                                sql1,
+                                [user_id],
+                                async function (err, data) {
+                                  if (err) {
+                                    console.log(err);
+                                  } else if (data.length != 0) {
+                                    console.log(
+                                      "Advance Invoice Already Generated"
+                                    );
+                                  } else {
+                                    var invoice_number =
+                                      await uploadImage.generateNewInvoiceNumber(
+                                        hostel_id
+                                      );
 
-                                        var invoice_query =
-                                          "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id) VALUES (?)";
-                                        var params = [
-                                          user_details.Name,
-                                          user_details.Phone,
-                                          user_details.Email,
-                                          user_details.HostelName,
-                                          user_details.Hostel_Id,
-                                          atten.Floor,
-                                          atten.Rooms,
-                                          advance_amount,
-                                          user_details.Address,
-                                          due_date,
-                                          invoice_date,
-                                          invoice_number,
-                                          "Pending",
-                                          user_details.User_Id,
-                                          atten.Bed,
-                                          advance_amount,
-                                          0,
-                                          "advance",
-                                          1,
-                                          user_id,
-                                        ];
+                                    // console.log(invoice_number);
+                                    // var due_date = moment(atten.joining_date).add(5, 'days').format('YYYY-MM-DD');
+                                    // console.log(due_date);
 
-                                        connection.query(
-                                          invoice_query,
-                                          [params],
-                                          async function (err, insdata) {
-                                            if (err) {
-                                              console.log(err);
-                                            } else {
-                                              var inv_id = insdata.insertId;
-                                              console.log(
-                                                "Advance Bill Generated"
-                                              );
+                                    var invoice_query =
+                                      "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id) VALUES (?)";
+                                    var params = [
+                                      user_details.Name,
+                                      user_details.Phone,
+                                      user_details.Email,
+                                      user_details.HostelName,
+                                      user_details.Hostel_Id,
+                                      atten.Floor,
+                                      atten.Rooms,
+                                      advance_amount,
+                                      user_details.Address,
+                                      due_date,
+                                      invoice_date,
+                                      invoice_number,
+                                      "Pending",
+                                      user_details.User_Id,
+                                      atten.Bed,
+                                      advance_amount,
+                                      0,
+                                      "advance",
+                                      1,
+                                      user_id,
+                                    ];
 
-                                              // var sql2 =
-                                              //   "SELECT * FROM customer_reasons WHERE user_id=?";
-                                              var sql2 =
-                                                "SELECT * FROM checkout_deductions WHERE user_id=?";
-                                              connection.query(
-                                                sql2,
-                                                [user_id],
-                                                function (err, reasonDatas) {
-                                                  if (err) {
-                                                    console.log(err);
-                                                  } else {
-                                                    reasonDatas.push({
-                                                      reason: "Advance",
-                                                      user_id: atten.ID,
-                                                      amount:
-                                                        atten.AdvanceAmount,
-                                                      inv_id: inv_id,
-                                                    });
-                                                    reasonDatas.forEach(
-                                                      (item) => {
-                                                        var sql2 =
-                                                          "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
-                                                        connection.query(
-                                                          sql2,
-                                                          [
-                                                            item.reason,
-                                                            item.user_id,
-                                                            item.amount,
-                                                            inv_id,
-                                                          ],
-                                                          async function (
-                                                            err,
-                                                            insdata
-                                                          ) {
-                                                            if (err) {
-                                                              console.log(err);
-                                                            } else {
-                                                              // const sql =
-                                                              //   "UPDATE customer_reasons SET invoice_id = ? WHERE id = ?";
-                                                              // connection.query(
-                                                              //   sql,
-                                                              //   [
-                                                              //     inv_id,
-                                                              //     item.id,
-                                                              //   ],
-                                                              //   (
-                                                              //     err,
-                                                              //     result
-                                                              //   ) => {
-                                                              //     if (err) {
-                                                              //       console.error(
-                                                              //         `Error updating ID ${item.id}:`,
-                                                              //         err
-                                                              //       );
-                                                              //     } else {
-                                                              //       console.log(
-                                                              //         `Updated ID ${item.id} with invoice_id ${inv_id}`
-                                                              //       );
-                                                              //     }
-                                                              //   }
-                                                              // );
-                                                              console.log(
-                                                                "Advance Bill Details Generated"
-                                                              );
-                                                            }
-                                                          }
+                                    connection.query(
+                                      invoice_query,
+                                      [params],
+                                      async function (err, insdata) {
+                                        if (err) {
+                                          console.log(err);
+                                        } else {
+                                          var inv_id = insdata.insertId;
+                                          console.log("Advance Bill Generated");
+
+                                          // var sql2 =
+                                          //   "SELECT * FROM customer_reasons WHERE user_id=?";
+                                          var sql2 =
+                                            "SELECT * FROM checkout_deductions WHERE user_id=?";
+                                          connection.query(
+                                            sql2,
+                                            [user_id],
+                                            function (err, reasonDatas) {
+                                              if (err) {
+                                                console.log(err);
+                                              } else {
+                                                reasonDatas.push({
+                                                  reason: "Advance",
+                                                  user_id: atten.ID,
+                                                  amount: atten.AdvanceAmount,
+                                                  inv_id: inv_id,
+                                                });
+                                                reasonDatas.forEach((item) => {
+                                                  var sql2 =
+                                                    "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
+                                                  connection.query(
+                                                    sql2,
+                                                    [
+                                                      item.reason,
+                                                      item.user_id,
+                                                      item.amount,
+                                                      inv_id,
+                                                    ],
+                                                    async function (
+                                                      err,
+                                                      insdata
+                                                    ) {
+                                                      if (err) {
+                                                        console.log(err);
+                                                      } else {
+                                                        // const sql =
+                                                        //   "UPDATE customer_reasons SET invoice_id = ? WHERE id = ?";
+                                                        // connection.query(
+                                                        //   sql,
+                                                        //   [
+                                                        //     inv_id,
+                                                        //     item.id,
+                                                        //   ],
+                                                        //   (
+                                                        //     err,
+                                                        //     result
+                                                        //   ) => {
+                                                        //     if (err) {
+                                                        //       console.error(
+                                                        //         `Error updating ID ${item.id}:`,
+                                                        //         err
+                                                        //       );
+                                                        //     } else {
+                                                        //       console.log(
+                                                        //         `Updated ID ${item.id} with invoice_id ${inv_id}`
+                                                        //       );
+                                                        //     }
+                                                        //   }
+                                                        // );
+                                                        console.log(
+                                                          "Advance Bill Details Generated"
                                                         );
                                                       }
-                                                    );
-                                                  }
-                                                }
-                                              );
-
-                                              // var sql2 =
-                                              //   "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
-                                              // connection.query(
-                                              //   sql2,
-                                              //   [
-                                              //     "Advance",
-                                              //     user_id,
-                                              //     advance_amount,
-                                              //     inv_id,
-                                              //   ],
-                                              //   async function (err, insdata) {
-                                              //     if (err) {
-                                              //       console.log(err);
-                                              //     } else {
-                                              //       console.log(
-                                              //         "Advance Bill Details Generated"
-                                              //       );
-                                              //     }
-                                              //   }
-                                              // );
+                                                    }
+                                                  );
+                                                });
+                                              }
                                             }
-                                          }
-                                        );
+                                          );
+
+                                          // var sql2 =
+                                          //   "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
+                                          // connection.query(
+                                          //   sql2,
+                                          //   [
+                                          //     "Advance",
+                                          //     user_id,
+                                          //     advance_amount,
+                                          //     inv_id,
+                                          //   ],
+                                          //   async function (err, insdata) {
+                                          //     if (err) {
+                                          //       console.log(err);
+                                          //     } else {
+                                          //       console.log(
+                                          //         "Advance Bill Details Generated"
+                                          //       );
+                                          //     }
+                                          //   }
+                                          // );
+                                        }
                                       }
-                                    }
-                                  );
+                                    );
+                                  }
                                 }
-                                return response.status(200).json({
-                                  statusCode: 200,
-                                  message: "Changes Saved Successfully!",
-                                });
-                              }
+                              );
                             }
-                          );
-                        })
-                        .catch((error) => {
-                          console.log(error);
-                          return response.status(205).json({
-                            message: "Invalid Bed Details",
-                            statusCode: 205,
-                          });
-                        });
-                    }
-                  }
-                );
-              }
+                            return response.status(200).json({
+                              statusCode: 200,
+                              message: "Changes Saved Successfully!",
+                            });
+                          }
+                        }
+                      );
+                    })
+                    .catch((error) => {
+                      console.log(error);
+                      return response.status(205).json({
+                        message: "Invalid Bed Details",
+                        statusCode: 205,
+                      });
+                    });
+                  // }
+                }
+              );
+              // }
             }
           );
         } else {
@@ -1231,6 +1234,39 @@ function createUser(connection, request, response) {
       });
     }
   }
+}
+
+function unAssignedUserList(request, response) {
+  const { hostel_Id } = request.body;
+  if (!hostel_Id) {
+    response
+      .status(201)
+      .json({ message: "Missing Mandatory Field", statusCode: 201 });
+  }
+
+  var Query = `SELECT 
+    h.Name,
+    h.id
+FROM hostel AS h
+LEFT JOIN bookings AS bk 
+    ON bk.customer_Id = h.ID 
+    AND bk.status = 1
+WHERE h.Hostel_Id = ? AND isActive=1
+  AND h.Bed = 'undefined'
+   AND h.Floor = 'undefined'
+    AND h.Rooms = 'undefined';`;
+  connection.query(Query, [hostel_Id], function (error, UpdateData) {
+    if (error) {
+      response.status(201).json({ message: "No Data Found", statusCode: 201 });
+    }
+    response
+      .status(200)
+      .json({
+        message: "Data Fetched sucessfully",
+        statusCode: 200,
+        data: UpdateData,
+      });
+  });
 }
 
 function generateUserId(firstName, user_id) {
@@ -3456,9 +3492,6 @@ function user_check_out(req, res) {
   }
 }
 
-
-
-
 function get_confirm_checkout(req, res) {
   var { id, hostel_id } = req.body;
 
@@ -3549,24 +3582,78 @@ function checkout_list(req, res) {
     });
   }
 
-  let sql1 = `
-    SELECT hs.Hostel_Id, hs.ID, hs.HostelName, hs.Name, hs.checkout_comment, 
-      DATE_FORMAT(hs.CheckoutDate, '%Y-%m-%d') AS CheckoutDate,
-      hs.profile AS user_profile,
-      DATEDIFF(hs.checkoutDate, ?) AS notice_period,
-      hos_de.profile, hs.Floor, hs.Bed,
-      DATE_FORMAT(hs.req_date, '%Y-%m-%d') AS req_date,
-      hs.isActive, hs.Phone, hf.floor_name AS floor_name,
-      hosroom.Room_Id AS room_name, bed.bed_no AS bed_name,hs.user_id AS userID
-    FROM hostel AS hs 
-    JOIN hosteldetails AS hos_de ON hos_de.id = hs.Hostel_Id 
-    LEFT JOIN Hostel_Floor AS hf ON hf.floor_id = hs.Floor AND hf.hostel_id = hs.Hostel_Id 
-    LEFT JOIN hostelrooms AS hosroom ON hosroom.id = hs.Rooms 
-    LEFT JOIN bed_details AS bed ON bed.id = hs.Bed 
-    WHERE hs.Hostel_Id = ?
-      AND hs.CheckoutDate IS NOT NULL
-  `;
+  // let sql1 = `
+  //   SELECT hs.Hostel_Id, hs.ID, hs.HostelName, hs.Name, hs.checkout_comment,
+  //     DATE_FORMAT(hs.CheckoutDate, '%Y-%m-%d') AS CheckoutDate,
+  //     hs.profile AS user_profile,
+  //     DATEDIFF(hs.checkoutDate, ?) AS notice_period,
+  //     hos_de.profile, hs.Floor, hs.Bed,
+  //     DATE_FORMAT(hs.req_date, '%Y-%m-%d') AS req_date,
+  //     hs.isActive, hs.Phone, hf.floor_name AS floor_name,
+  //     hosroom.Room_Id AS room_name, bed.bed_no AS bed_name,hs.user_id AS userID
+  //   FROM hostel AS hs
+  //   JOIN hosteldetails AS hos_de ON hos_de.id = hs.Hostel_Id
+  //   LEFT JOIN Hostel_Floor AS hf ON hf.floor_id = hs.Floor AND hf.hostel_id = hs.Hostel_Id
+  //   LEFT JOIN hostelrooms AS hosroom ON hosroom.id = hs.Rooms
+  //   LEFT JOIN bed_details AS bed ON bed.id = hs.Bed
+  //   WHERE hs.Hostel_Id = ?
+  //     AND hs.CheckoutDate IS NOT NULL
+  // `;
+  let sql1 = `SELECT 
+  hs.Hostel_Id, 
+  hs.ID, 
+  hs.HostelName, 
+  hs.Name, 
+  hs.checkout_comment, 
+  DATE_FORMAT(COALESCE(hs.CheckoutDate, b.inactive_date), '%Y-%m-%d') AS CheckoutDate,
+  hs.profile AS user_profile,
+  DATEDIFF(COALESCE(hs.CheckoutDate, b.inactive_date), ?) AS notice_period,
+  hos_de.profile, 
+  hs.Floor, 
+  hs.Bed,
+  DATE_FORMAT(hs.req_date, '%Y-%m-%d') AS req_date,
+  hs.isActive, 
+  hs.Phone, 
+  hf.floor_name AS floor_name,
+  hosroom.Room_Id AS room_name, 
+  bed.bed_no AS bed_name,
+  hs.user_id AS userID,
+  b.customer_inactive,
+  b.inactive_reason,
+  DATE_FORMAT(b.inactive_date, '%Y-%m-%d') AS inactive_date
 
+FROM hostel AS hs 
+
+JOIN hosteldetails AS hos_de 
+  ON hos_de.id = hs.Hostel_Id 
+
+LEFT JOIN Hostel_Floor AS hf 
+  ON hf.floor_id = hs.Floor AND hf.hostel_id = hs.Hostel_Id 
+
+LEFT JOIN hostelrooms AS hosroom 
+  ON hosroom.id = hs.Rooms 
+
+LEFT JOIN bed_details AS bed 
+  ON bed.id = hs.Bed 
+
+LEFT JOIN (
+    SELECT b1.*
+    FROM bookings b1
+    INNER JOIN (
+        SELECT customer_Id, MAX(id) AS max_id
+        FROM bookings
+        GROUP BY customer_Id
+    ) latest_booking 
+      ON b1.customer_Id = latest_booking.customer_Id 
+     AND b1.id = latest_booking.max_id
+) AS b 
+  ON b.customer_Id = hs.ID AND b.hostel_id = hs.Hostel_Id
+
+WHERE hs.Hostel_Id = ?
+  AND (
+    hs.CheckoutDate IS NOT NULL
+    OR b.id IS NOT NULL 
+  )`;
   const queryParams = [current_date, hostel_id];
 
   // Add name filter if present
@@ -3592,7 +3679,7 @@ function checkout_list(req, res) {
     queryParams.push(formatted_start, formatted_end);
   }
 
-  sql1 += ` ORDER BY hs.CheckoutDate DESC`;
+  sql1 += ` ORDER BY COALESCE(hs.CheckoutDate, b.inactive_date) DESC;`;
 
   connection.query(sql1, queryParams, function (err, ch_list) {
     if (err) {
@@ -3864,4 +3951,5 @@ module.exports = {
   available_beds,
   get_confirm_checkout,
   getInvoiceIDNew,
+  unAssignedUserList
 };
