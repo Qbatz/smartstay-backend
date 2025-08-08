@@ -3492,6 +3492,72 @@ function user_check_out(req, res) {
   }
 }
 
+
+
+
+// function get_confirm_checkout(req, res) {
+//   var { id, hostel_id } = req.body;
+
+//   if (!id || !hostel_id) {
+//     return res
+//       .status(201)
+//       .json({ statusCode: 201, message: "Missing Mandatory Fields" });
+//   }
+
+//   var sql1 = "SELECT * FROM hostel WHERE ID=? AND Hostel_Id=?";
+//   connection.query(sql1, [id, hostel_id], function (err, data) {
+//     if (err) {
+//       return res.status(201).json({
+//         statusCode: 201,
+//         message: "Unable to Get User Details",
+//         reason: err.message,
+//       });
+//     } else if (data.length != 0) {
+//       var user_details = {
+//         advance_amount: data[0].AdvanceAmount,
+//         comments: data[0].checkout_comment,
+//       };
+
+//       var sql2 =
+//         "SELECT * FROM invoicedetails WHERE hos_user_id=? AND invoice_status=1";
+//       connection.query(sql2, [id], function (err, inv_data) {
+//         if (err) {
+//           return res.status(201).json({
+//             statusCode: 201,
+//             message: "Unable to Get User Details",
+//             reason: err.message,
+//           });
+//         } else if (inv_data.length != 0) {
+//           const bill_details = inv_data.map((row) => ({
+//             invoiceid: row.Invoices,
+//             balance: row.BalanceDue,
+//           }));
+
+//           return res.status(200).json({
+//             statusCode: 200,
+//             message: "Success",
+//             bill_details: bill_details,
+//             checkout_details: user_details,
+//           });
+//         } else {
+//           return res.status(200).json({
+//             statusCode: 200,
+//             message: "No Due Amounts",
+//             bill_details: [],
+//             checkout_details: user_details,
+//           });
+//         }
+//       });
+//     } else {
+//       return res
+//         .status(201)
+//         .json({ statusCode: 201, message: "Invalid User Details" });
+//     }
+//   });
+// }
+
+
+
 function get_confirm_checkout(req, res) {
   var { id, hostel_id } = req.body;
 
@@ -3524,26 +3590,36 @@ function get_confirm_checkout(req, res) {
             message: "Unable to Get User Details",
             reason: err.message,
           });
-        } else if (inv_data.length != 0) {
-          const bill_details = inv_data.map((row) => ({
-            invoiceid: row.Invoices,
-            balance: row.BalanceDue,
-          }));
+        }
+
+        const bill_details =
+          inv_data.length > 0
+            ? inv_data.map((row) => ({
+                invoiceid: row.Invoices,
+                balance: row.BalanceDue,
+              }))
+            : [];
+
+        var sql3 =
+          "SELECT * FROM checkout_deductions WHERE user_id=?";
+        connection.query(sql3, [id], function (err, deduction_data) {
+          if (err) {
+            return res.status(201).json({
+              statusCode: 201,
+              message: "Unable to Get Deduction Details",
+              reason: err.message,
+            });
+          }
 
           return res.status(200).json({
             statusCode: 200,
-            message: "Success",
+            message:
+              inv_data.length > 0 ? "Success" : "No Due Amounts",
             bill_details: bill_details,
             checkout_details: user_details,
+            deduction_details: deduction_data || [], 
           });
-        } else {
-          return res.status(200).json({
-            statusCode: 200,
-            message: "No Due Amounts",
-            bill_details: [],
-            checkout_details: user_details,
-          });
-        }
+        });
       });
     } else {
       return res
@@ -3552,6 +3628,17 @@ function get_confirm_checkout(req, res) {
     }
   });
 }
+
+
+
+
+
+
+
+
+
+
+
 
 function checkout_list(req, res) {
   const created_by = req.user_details.id;

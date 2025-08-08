@@ -654,8 +654,8 @@ WHERE
                   ? existingData[i].ebBill == null
                     ? 0
                     : Number(
-                        existingData[i].ebBill / (filteredArray.length + 1)
-                      )
+                      existingData[i].ebBill / (filteredArray.length + 1)
+                    )
                   : 0;
               roomBasedEb = 0;
             } else {
@@ -702,7 +702,7 @@ WHERE
 
                   AdvanceAmount =
                     (roomPrice / moment(formattedCheckOutDate).daysInMonth()) *
-                      Number(numberOfDays) +
+                    Number(numberOfDays) +
                     totalAmenitiesAmount +
                     HostelBasedEb +
                     roomBasedEb;
@@ -970,7 +970,7 @@ function InsertManualInvoice(connection, users, reqData, ParticularUser) {
 
                   AdvanceAmount =
                     (roomPrice / moment(dueDate).daysInMonth()) *
-                      Number(numberOfDays) +
+                    Number(numberOfDays) +
                     totalAmenitiesAmount +
                     HostelBasedEb +
                     roomBasedEb;
@@ -1175,8 +1175,78 @@ function InvoicePDf(connection, request, response) {
       var inv_details = sel2_res[0];
       var action = inv_details.action;
 
-      var sql1 =
-        "SELECT inv.*,man.*,hsv.email_id AS hostel_email,hsv.hostel_PhoneNo AS hostel_phone,hsv.area AS harea,hsv.landmark AS hlandmark,hsv.pin_code AS hpincode, hsv.state AS hstate,hsv.city AS hcity,hsv.Address AS hostel_address,hsv.profile AS hostel_profile,hs.Address AS user_address,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upincode, hs.state AS ustate,hs.city AS ucity,hs.joining_Date,Insett.bankingId,Insett.privacyPolicyHtml,ban.acc_num,ban.ifsc_code,ban.acc_name,ban.upi_id FROM invoicedetails AS inv JOIN hostel AS hs ON hs.ID=inv.hos_user_id LEFT JOIN manual_invoice_amenities AS man ON man.invoice_id=inv.id JOIN hosteldetails AS hsv ON hsv.id=inv.Hostel_Id LEFT JOIN InvoiceSettings AS Insett ON Insett.hostel_Id=hsv.id LEFT JOIN bankings AS ban ON ban.id=Insett.bankingId WHERE inv.id=?";
+      var sql1 = `SELECT
+   inv.*,
+   man.*,
+   hsv.email_id AS hostel_email,
+   hsv.hostel_PhoneNo AS hostel_phone,
+   hsv.area AS harea,
+   hsv.landmark AS hlandmark,
+   hsv.pin_code AS hpincode,
+   hsv.state AS hstate,
+   hsv.city AS hcity,
+   hsv.Address AS hostel_address,
+   hsv.profile AS hostel_profile,
+   hs.Address AS user_address,
+   hs.area AS uarea,
+   hs.landmark AS ulandmark,
+   hs.pincode AS upincode,
+   hs.state AS ustate,
+   hs.city AS ucity,
+   hs.joining_Date,
+   Insett.bankingId,
+   Insett.privacyPolicyHtml,
+   bt.*,
+    IF(
+    b.id IS NOT NULL,
+    JSON_OBJECT(
+      'id', b.id,
+      'acc_num', b.acc_num,
+      'ifsc_code', b.ifsc_code,
+      'bank_name', b.bank_name,
+      'acc_name', b.acc_name,
+      'description', b.description,
+      'setus_default', b.setus_default,
+      'balance', b.balance,
+      'hostel_id', b.hostel_id,
+      'status', b.status,
+      'type', b.type,
+      'benificiary_name', b.benificiary_name,
+      'upi_id', b.upi_id,
+      'card_type', b.card_type,
+      'card_holder', b.card_holder,
+      'card_no', b.card_no
+    ),
+    NULL
+  ) AS banking
+FROM
+   invoicedetails AS inv 
+   JOIN
+      hostel AS hs 
+      ON hs.ID = inv.hos_user_id 
+   LEFT JOIN
+      manual_invoice_amenities AS man 
+      ON man.invoice_id = inv.id 
+   JOIN
+      hosteldetails AS hsv 
+      ON hsv.id = inv.Hostel_Id 
+   LEFT JOIN
+      InvoiceSettings AS Insett 
+      ON Insett.hostel_Id = hsv.id 
+   LEFT JOIN
+      bankings AS b 
+      ON b.id = Insett.bankingId 
+      LEFT JOIN bill_template AS bt
+  ON bt.Hostel_Id = inv.hostel_Id
+  AND (
+    (inv.action = 'advance' AND bt.template_type = 'Security Deposit Invoice')
+    OR
+    (inv.action != 'advance' AND bt.template_type = 'Rental Invoice')
+  )
+WHERE
+   inv.id =764?`;
+      // var sql1 =
+      //   "SELECT inv.*,man.*,hsv.email_id AS hostel_email,hsv.hostel_PhoneNo AS hostel_phone,hsv.area AS harea,hsv.landmark AS hlandmark,hsv.pin_code AS hpincode, hsv.state AS hstate,hsv.city AS hcity,hsv.Address AS hostel_address,hsv.profile AS hostel_profile,hs.Address AS user_address,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upincode, hs.state AS ustate,hs.city AS ucity,hs.joining_Date,Insett.bankingId,Insett.privacyPolicyHtml,ban.acc_num,ban.ifsc_code,ban.acc_name,ban.upi_id FROM invoicedetails AS inv JOIN hostel AS hs ON hs.ID=inv.hos_user_id LEFT JOIN manual_invoice_amenities AS man ON man.invoice_id=inv.id JOIN hosteldetails AS hsv ON hsv.id=inv.Hostel_Id LEFT JOIN InvoiceSettings AS Insett ON Insett.hostel_Id=hsv.id LEFT JOIN bankings AS ban ON ban.id=Insett.bankingId WHERE inv.id=?";
       connection.query(sql1, [reqBodyData.id], async function (err, inv_data) {
         if (err) {
           return response.status(201).json({
@@ -1821,9 +1891,9 @@ function generatePDFFor(
           .fontSize(10)
           .text(
             "We have received your payment of " +
-              convertAmountToWords(hostel.Amount.toFixed(0)) +
-              " Rupees and Zero Paise at " +
-              moment().format("hh:mm A"),
+            convertAmountToWords(hostel.Amount.toFixed(0)) +
+            " Rupees and Zero Paise at " +
+            moment().format("hh:mm A"),
             startX,
             dataY + 20,
             { align: "left", wordSpacing: 1.5 }
@@ -2024,9 +2094,9 @@ function generatePDFFor(
       .fontSize(10)
       .text(
         "We have received your payment of " +
-          convertAmountToWords(hostel.Amount.toFixed(0)) +
-          " Rupees and Zero Paise at " +
-          moment().format("hh:mm A"),
+        convertAmountToWords(hostel.Amount.toFixed(0)) +
+        " Rupees and Zero Paise at " +
+        moment().format("hh:mm A"),
         startX,
         dataY + 20,
         { align: "left", wordSpacing: 1.5 }
@@ -3101,13 +3171,11 @@ function AmenitiesPDF(hostelDetails, monthData, response) {
           invoiceRows += `
              <tr>
                  <td>${monthData[i].Month}</td>
-                 <td>Room Rent : ${monthData[i].room_rent}<br/>${
-            monthData[i].amenity_fees &&
+                 <td>Room Rent : ${monthData[i].room_rent}<br/>${monthData[i].amenity_fees &&
             monthData[i].amenity_name + " : " + amenityFees + "<br/>"
-          }  EB Amount : ${monthData[i].eb_amount}</td>
-                 <td> you have paid ${
-                   monthData[i].paid_amount[paid].PaidAmount
-                 } on ${monthData[i].paid_amount[paid].PaidDate} </td>
+            }  EB Amount : ${monthData[i].eb_amount}</td>
+                 <td> you have paid ${monthData[i].paid_amount[paid].PaidAmount
+            } on ${monthData[i].paid_amount[paid].PaidDate} </td>
                  <td>${monthData[i].total_amount}</td>
              </tr>
          `;
@@ -3117,10 +3185,9 @@ function AmenitiesPDF(hostelDetails, monthData, response) {
       invoiceRows += `
             <tr>
                 <td>${monthData[i].Month}</td>
-                <td>Room Rent : ${monthData[i].room_rent}<br/>${
-        monthData[i].amenity_fees &&
+                <td>Room Rent : ${monthData[i].room_rent}<br/>${monthData[i].amenity_fees &&
         monthData[i].amenity_name + " : " + amenityFees + "<br/>"
-      }  EB Amount : ${monthData[i].eb_amount}</td>
+        }  EB Amount : ${monthData[i].eb_amount}</td>
                 <td>you have not Paid for this month</td>
                 <td>${monthData[i].total_amount}</td>
             </tr>
@@ -3773,7 +3840,7 @@ function add_recuring_bill(req, res) {
   }
 }
 function add_recuring_bill_enabled(req, res) {
-  var { user_id, bill_enable,Inv_ID } = req.body;
+  var { user_id, bill_enable, Inv_ID } = req.body;
 
   var role_permissions = req.role_permissions;
   var is_admin = req.is_admin;
@@ -3928,38 +3995,38 @@ function add_recuring_bill_enabled(req, res) {
               }
             );
           } else {
-            if(Inv_ID){
-    var billSelect = `select * from invoicedetails where hos_user_id=? AND id=?;`;
-            connection.query(billSelect, [user_id,Inv_ID], function (err, inv_data) {
-              if (inv_data.length > 0) {
-                var billUpdate = `UPDATE invoicedetails
+            if (Inv_ID) {
+              var billSelect = `select * from invoicedetails where hos_user_id=? AND id=?;`;
+              connection.query(billSelect, [user_id, Inv_ID], function (err, inv_data) {
+                if (inv_data.length > 0) {
+                  var billUpdate = `UPDATE invoicedetails
 SET bill_enable = ${bill_enable}
 WHERE hos_user_id = ${user_id} AND id=${Inv_ID};
 `;
-                connection.query(billUpdate, [user_id], function (err, data) {
-                  if (err) {
-                    console.log("error", err);
-                  }
-                });
-              }
-            });
+                  connection.query(billUpdate, [user_id], function (err, data) {
+                    if (err) {
+                      console.log("error", err);
+                    }
+                  });
+                }
+              });
             }
-        else{
+            else {
               var billSelectup = `select * from invoicedetails where hos_user_id=? AND invoice_type = 2;`;
-            connection.query(billSelectup, [user_id], function (err, inv_data) {
-              if (inv_data.length > 0) {
-                var billUpdate = `UPDATE invoicedetails
+              connection.query(billSelectup, [user_id], function (err, inv_data) {
+                if (inv_data.length > 0) {
+                  var billUpdate = `UPDATE invoicedetails
 SET bill_enable = ${bill_enable}
 WHERE hos_user_id = ${user_id} AND invoice_type = 2;
 `;
-                connection.query(billUpdate, [user_id], function (err, data) {
-                  if (err) {
-                    console.log("error", err);
-                  }
-                });
-              }
-            });
-        }
+                  connection.query(billUpdate, [user_id], function (err, data) {
+                    if (err) {
+                      console.log("error", err);
+                    }
+                  });
+                }
+              });
+            }
             var billUpdate_recuring = `UPDATE recuring_inv_details
 SET bill_enable = ${bill_enable}
 WHERE user_id = ${user_id} AND status = 1;

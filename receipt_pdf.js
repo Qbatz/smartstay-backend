@@ -70,7 +70,14 @@ exports.get_receipt_detailsbyid = async (req, res) => {
               total_amount = advance - others;
             }
             console.log("total_amount", total_amount, formattedAmenities);
-            const finalresponse = {
+            
+            var sql2Template =
+                "select * from bill_template where hostel_Id=? AND template_type=?;";
+              connection.query(
+                sql2Template,
+                [hostel_id, 'NOC Receipt'],
+                function (err, bill_template) {
+           const finalresponse = {
               reference_id: data[0].reference_id,
               payment_date: moment(data[0].payment_date).format("YYYY-MM-DD"),
               payment_mode: data[0].payment_mode,
@@ -106,13 +113,16 @@ exports.get_receipt_detailsbyid = async (req, res) => {
                 city: data[0].hcity || "",
                 state: data[0].hstate || "",
               },
+              bill_template:bill_template[0] || null,
               amenities: formattedAmenities || [],
             };
-
-            return res
+             return res
               .status(200)
               .json({ statusCode: 200, receipt: finalresponse });
 
+          });
+
+           
             // })
           } else {
             return res.status(201).json({
@@ -152,12 +162,20 @@ exports.get_receipt_detailsbyid = async (req, res) => {
                       reason: err.message,
                     });
                   }
-
+var template_type = action =='advance'? 'Security Deposit Receipt':'Rental Receipt';
                   var total_amount = amenities.reduce(
                     (sum, item) => sum + item.amount,
                     0
                   );
-
+  var sql2Template =
+                "select * from bill_template where hostel_Id=? AND template_type=?;";
+              connection.query(
+                sql2Template,
+                [hostel_id, template_type],
+                function (err, bill_template) {
+                  if(err){
+                    console.log("err")
+                  }
                   const finalresponse = {
                     reference_id: data[0].reference_id,
                     payment_date: moment(data[0].payment_date).format(
@@ -196,12 +214,15 @@ exports.get_receipt_detailsbyid = async (req, res) => {
                       city: data[0].hcity || "",
                       state: data[0].hstate || "",
                     },
+                    bill_template:bill_template[0] || null,
                     amenities: amenities || [],
                   };
 
                   return res
                     .status(200)
                     .json({ statusCode: 200, receipt: finalresponse });
+                }
+              );
                 }
               );
             } else {
@@ -230,8 +251,86 @@ exports.get_bill_detailsbyid = async (req, res) => {
   }
 
   try {
-    var sql1 =
-      "SELECT inv.id AS invoice_id,inv.Invoices,inv.Date,inv.DueDate,inv.Status,inv.rec_invstartdate,inv.rec_invenddate,inv.action,hs.Name AS uname,hs.Phone AS uphone,hs.Email AS uemail,hs.Address AS uaddress,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upin_code,hs.city AS ucity,hs.state AS ustate,hos.Name AS hname,hos.email_id AS hemail,hos.hostel_PhoneNo AS hphone,hos.Address AS haddress,hos.area AS harea,hos.landmark AS hlandmark,hos.pin_code AS hpincode,hos.city AS hcity,hos.state AS hstate,hs.joining_Date,hr.Room_Id,bd.bed_no FROM invoicedetails AS inv JOIN hosteldetails AS hos ON hos.id=inv.Hostel_Id JOIN hostel AS hs ON hs.id=inv.hos_user_id JOIN hostelrooms AS hr ON hr.id=hs.Rooms JOIN bed_details AS bd ON bd.id=hs.Bed WHERE inv.id=?;";
+    var sql1 = `SELECT
+   inv.id AS invoice_id,
+   inv.Invoices,
+   inv.Date,
+   inv.DueDate,
+   inv.Status,
+   inv.rec_invstartdate,
+   inv.rec_invenddate,
+   inv.action,
+   hs.Name AS uname,
+   hs.Phone AS uphone,
+   hs.Email AS uemail,
+   hs.Address AS uaddress,
+   hs.area AS uarea,
+   hs.landmark AS ulandmark,
+   hs.pincode AS upin_code,
+   hs.city AS ucity,
+   hs.state AS ustate,
+   hos.Name AS hname,
+   hos.email_id AS hemail,
+   hos.hostel_PhoneNo AS hphone,
+   hos.Address AS haddress,
+   hos.area AS harea,
+   hos.landmark AS hlandmark,
+   hos.pin_code AS hpincode,
+   hos.city AS hcity,
+   hos.state AS hstate,
+   hs.joining_Date,
+   hr.Room_Id,
+   bd.bed_no,
+bt.*,
+   IF(
+    b.id IS NOT NULL,
+    JSON_OBJECT(
+      'id', b.id,
+      'acc_num', b.acc_num,
+      'ifsc_code', b.ifsc_code,
+      'bank_name', b.bank_name,
+      'acc_name', b.acc_name,
+      'description', b.description,
+      'setus_default', b.setus_default,
+      'balance', b.balance,
+      'hostel_id', b.hostel_id,
+      'status', b.status,
+      'type', b.type,
+      'benificiary_name', b.benificiary_name,
+      'upi_id', b.upi_id,
+      'card_type', b.card_type,
+      'card_holder', b.card_holder,
+      'card_no', b.card_no
+    ),
+    NULL
+  ) AS banking
+FROM
+   invoicedetails AS inv 
+   JOIN
+      hosteldetails AS hos 
+      ON hos.id = inv.Hostel_Id 
+   JOIN
+      hostel AS hs 
+      ON hs.id = inv.hos_user_id 
+   JOIN
+      hostelrooms AS hr 
+      ON hr.id = hs.Rooms 
+   JOIN
+      bed_details AS bd 
+      ON bd.id = hs.Bed 
+LEFT JOIN bill_template AS bt
+  ON bt.Hostel_Id = hs.hostel_Id
+  AND (
+    (inv.action = 'advance' AND bt.template_type = 'Security Deposit Invoice')
+    OR
+    (inv.action != 'advance' AND bt.template_type = 'Rental Invoice')
+  )
+     left JOIN 
+  bankings b ON  b.id = bt.banking_id
+WHERE
+   inv.id = ? ;`
+    // var sql1 =
+    //   "SELECT inv.id AS invoice_id,inv.Invoices,inv.Date,inv.DueDate,inv.Status,inv.rec_invstartdate,inv.rec_invenddate,inv.action,hs.Name AS uname,hs.Phone AS uphone,hs.Email AS uemail,hs.Address AS uaddress,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upin_code,hs.city AS ucity,hs.state AS ustate,hos.Name AS hname,hos.email_id AS hemail,hos.hostel_PhoneNo AS hphone,hos.Address AS haddress,hos.area AS harea,hos.landmark AS hlandmark,hos.pin_code AS hpincode,hos.city AS hcity,hos.state AS hstate,hs.joining_Date,hr.Room_Id,bd.bed_no FROM invoicedetails AS inv JOIN hosteldetails AS hos ON hos.id=inv.Hostel_Id JOIN hostel AS hs ON hs.id=inv.hos_user_id JOIN hostelrooms AS hr ON hr.id=hs.Rooms JOIN bed_details AS bd ON bd.id=hs.Bed WHERE inv.id=?;";
     connection.query(sql1, bill_id, function (err, Data) {
       if (err) {
         return res.status(201).json({
