@@ -55,7 +55,53 @@ function getUsers(connection, response, request) {
     //   LEFT JOIN bed_details AS bd ON bd.id = hstl.Bed 
     //   WHERE hstl.Hostel_Id = ?
     // `;
-let query = `SELECT 
+// let query = `SELECT 
+//   hstl.*, 
+//   CASE 
+//     WHEN hstl.CheckoutDate IS NULL THEN 1 
+//     ELSE 0 
+//   END AS check_outed,
+//   bd.bed_no AS Bed,
+//   hstl.Bed AS hstl_Bed,
+//   hsroom.Room_Id AS Rooms,
+//   hstl.Rooms AS hstl_Rooms,
+//   hsroom.id AS room_id,
+//   hsroom.Room_Id,
+//   DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,
+//   hstl.Hostel_Id AS user_hostel,
+//   hf.floor_name,
+
+//   CASE 
+//     WHEN bk.id IS NOT NULL THEN 'booking'
+//     WHEN bd.id IS NULL THEN 'unassigned'
+//     ELSE 'checkIn'
+//   END AS bed_status,
+
+//   bk.id AS booking_id,
+//   bk.booking_date
+
+// FROM hosteldetails AS hstlDetails 
+
+// INNER JOIN hostel AS hstl 
+//   ON hstl.Hostel_Id = hstlDetails.id AND hstl.isActive = TRUE 
+
+// LEFT JOIN bookings AS bk 
+//   ON bk.hostel_id = hstl.Hostel_Id AND bk.customer_id = hstl.ID
+
+// LEFT JOIN country_list AS cl 
+//   ON hstl.country_code = cl.country_code 
+
+// LEFT JOIN hostelrooms hsroom 
+//   ON hsroom.Hostel_Id = hstlDetails.id AND hsroom.Floor_Id = hstl.Floor AND hsroom.id = hstl.Rooms 
+
+// LEFT JOIN Hostel_Floor AS hf 
+//   ON hf.floor_id = hstl.Floor AND hf.hostel_id = hstl.Hostel_Id 
+
+// LEFT JOIN bed_details AS bd 
+//   ON bd.id = hstl.Bed 
+
+// WHERE hstl.Hostel_Id =?`
+let query =`SELECT 
   hstl.*, 
   CASE 
     WHEN hstl.CheckoutDate IS NULL THEN 1 
@@ -78,7 +124,13 @@ let query = `SELECT
   END AS bed_status,
 
   bk.id AS booking_id,
-  bk.booking_date
+  bk.booking_date As booking_booking_date,
+  bk.joining_date AS booking_joining_date,
+  bk.room_id AS booking_room_id,
+  bk.floor_id AS booking_floor_id,bk.bed_id AS booking_bed_id,
+  bookinghsRoom.Room_Id AS Booking_Rooms,
+  Bk_hr.floor_name AS Booking_FloorName,
+  bd_booking.bed_no As Booking_Bed
 
 FROM hosteldetails AS hstlDetails 
 
@@ -87,112 +139,33 @@ INNER JOIN hostel AS hstl
 
 LEFT JOIN bookings AS bk 
   ON bk.hostel_id = hstl.Hostel_Id AND bk.customer_id = hstl.ID
+  
+  -- ✅ Bed from booking
+LEFT JOIN bed_details AS bd_booking 
+  ON bd_booking.id = bk.bed_id
 
 LEFT JOIN country_list AS cl 
   ON hstl.country_code = cl.country_code 
 
 LEFT JOIN hostelrooms hsroom 
   ON hsroom.Hostel_Id = hstlDetails.id AND hsroom.Floor_Id = hstl.Floor AND hsroom.id = hstl.Rooms 
+  
+  LEFT JOIN hostelrooms bookinghsRoom 
+  ON bookinghsRoom.Hostel_Id = bk.hostel_id AND bookinghsRoom.Floor_Id = bk.floor_id AND bookinghsRoom.id = bk.room_id 
+
+LEFT JOIN Hostel_Floor AS Bk_hr 
+  ON Bk_hr.floor_id = bk.floor_id AND Bk_hr.hostel_id = bk.hostel_id 
 
 LEFT JOIN Hostel_Floor AS hf 
   ON hf.floor_id = hstl.Floor AND hf.hostel_id = hstl.Hostel_Id 
+  
+  
 
 LEFT JOIN bed_details AS bd 
   ON bd.id = hstl.Bed 
 
-WHERE hstl.Hostel_Id =?`
-// let query =`SELECT 
-//   hstl.*, 
-//   CASE 
-//     WHEN hstl.CheckoutDate IS NULL THEN 1 
-//     ELSE 0 
-//   END AS check_outed,
-
-//   -- Beds, Rooms and Floors chosen based on status
-//   CASE 
-//     WHEN bk.id IS NOT NULL THEN bd_bk.bed_no
-//     ELSE bd.bed_no
-//   END AS Bed,
-
-//   hstl.Bed AS hstl_Bed,
-
-//   CASE 
-//     WHEN bk.id IS NOT NULL THEN hsroom_bk.Room_Id
-//     ELSE hsroom.Room_Id
-//   END AS Rooms,
-
-//   hstl.Rooms AS hstl_Rooms,
-
-//   CASE 
-//     WHEN bk.id IS NOT NULL THEN hsroom_bk.id
-//     ELSE hsroom.id
-//   END AS room_id,
-
-//   CASE 
-//     WHEN bk.id IS NOT NULL THEN hsroom_bk.Room_Id
-//     ELSE hsroom.Room_Id
-//   END AS Room_Id,
-
-//   DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,
-//   hstl.Hostel_Id AS user_hostel,
-
-//   CASE 
-//     WHEN bk.id IS NOT NULL THEN hf_bk.floor_name
-//     ELSE hf.floor_name
-//   END AS floor_name,
-
-//   -- Bed Status
-//   CASE 
-//     WHEN bk.id IS NOT NULL THEN 'booking'
-//     WHEN bd.id IS NULL THEN 'unassigned'
-//     ELSE 'checkIn'
-//   END AS bed_status,
-
-//   bk.id AS booking_id,
-//   bk.booking_date
-
-// FROM hosteldetails AS hstlDetails 
-
-// INNER JOIN hostel AS hstl 
-//   ON hstl.Hostel_Id = hstlDetails.id AND hstl.isActive = TRUE 
-
-// LEFT JOIN bookings AS bk 
-//   ON bk.hostel_id = hstl.Hostel_Id AND bk.customer_id = hstl.ID
-
-// LEFT JOIN country_list AS cl 
-//   ON hstl.country_code = cl.country_code 
-
-// -- Existing room
-// LEFT JOIN hostelrooms AS hsroom 
-//   ON hsroom.Hostel_Id = hstlDetails.id 
-//   AND hsroom.Floor_Id = hstl.Floor 
-//   AND hsroom.id = hstl.Rooms
-
-// -- Booking room
-// LEFT JOIN hostelrooms AS hsroom_bk 
-//   ON hsroom_bk.Hostel_Id = bk.hostel_id 
-//   AND hsroom_bk.id = bk.room_id
-
-// -- Existing floor
-// LEFT JOIN Hostel_Floor AS hf 
-//   ON hf.floor_id = hstl.Floor 
-//   AND hf.hostel_id = hstl.Hostel_Id
-
-// -- Booking floor
-// LEFT JOIN Hostel_Floor AS hf_bk 
-//   ON hf_bk.floor_id = bk.floor_id 
-//   AND hf_bk.hostel_id = bk.hostel_id
-
-// -- Existing bed
-// LEFT JOIN bed_details AS bd 
-//   ON bd.id = hstl.Bed
-
-// -- Booking bed
-// LEFT JOIN bed_details AS bd_bk 
-//   ON bd_bk.id = bk.bed_id
-
-// WHERE hstl.Hostel_Id = ? 
-// `
+WHERE hstl.Hostel_Id = ? 
+`
     const queryParams = [hostel_id];
 
     if (searchName) {
