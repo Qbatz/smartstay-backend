@@ -160,10 +160,24 @@ function GetComplianceList(connection, response, request) {
         // Append date range filter if provided
         if (from_date && to_date) {
             sql1 += ` AND comp.createdat BETWEEN ? AND ?`;
-            params.push(from_date, to_date);
+            const dt = new Date(to_date);
+            const endDate = new Date(Date.UTC(
+                dt.getUTCFullYear(),
+                dt.getUTCMonth(),
+                dt.getUTCDate(),
+                23, 59, 59, 999
+            )).toISOString();
+            params.push(from_date, endDate);
         } else if (from_date) {
-            sql1 += ` AND comp.createdat >= ?`;
-            params.push(from_date);
+            const dt = new Date(from_date);
+            const endDate = new Date(Date.UTC(
+                dt.getUTCFullYear(),
+                dt.getUTCMonth(),
+                dt.getUTCDate(),
+                23, 59, 59, 999
+            )).toISOString();
+            sql1 += ` AND comp.createdat BETWEEN ? AND ?`;
+            params.push(from_date.toISOString(), endDate);
         } else if (to_date) {
             sql1 += ` AND comp.createdat <= ?`;
             params.push(to_date);
@@ -176,7 +190,18 @@ function GetComplianceList(connection, response, request) {
                 console.error(error);
                 return response.status(201).json({ message: 'Error fetching hostel data' });
             }
-            return response.status(200).json({ hostelData: hostelData });
+
+            const data = hostelData;
+            const filterOptions = []
+            hostelData.map(item => {
+                if (filterOptions.length > 0) {
+                    filterOptions.filter(opt => opt.User_id === item.User_id).length === 0 ? filterOptions.push(item) : null;
+                }
+                else {
+                    filterOptions.push(item)
+                }
+            });
+            return response.status(200).json({ hostelData: data, filterOptions: filterOptions });
         });
 
     } else {

@@ -40,6 +40,9 @@ jobs:
             sudo git pull origin main
             sudo npm install
 
+            rm -f .env
+            sudo sh -c "> .env"
+
             echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID}}" | sudo tee -a .env > /dev/null
             echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY}}" | sudo tee -a .env > /dev/null
             echo "AWS_REGION=${{ secrets.AWS_REGION}}" | sudo tee -a .env > /dev/null
@@ -67,5 +70,7 @@ jobs:
             echo "SMS_SENDERID=${{ secrets.SMS_SENDERID}}" | sudo tee -a .env > /dev/null
             echo "SMS_DLTTEMPLATEID=${{ secrets.SMS_DLTTEMPLATEID}}" | sudo tee -a .env > /dev/null
             echo "PORT=${{ vars.APP_PORT}}" | sudo tee -a .env > /dev/null
+
+            sudo chmod 777 .env
 
             pm2 restart smartstay-dev-api.s3remotica.com || pm2 start index.js --name smartstay-dev-api.s3remotica.com
