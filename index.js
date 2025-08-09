@@ -220,6 +220,12 @@ app.post("/add/adduser-list", upload.single("profile"), (request, response) => {
   userQueries.createUser(connection, request, response);
 });
 
+app.post("/unassigned-user-list", (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  userQueries.unAssignedUserList(req, res);
+});
+
+
 app.post("/generate/advance_invoice", (req, res) => {
   invoiceQueries.advance_invoice(req, res);
 });
@@ -1077,6 +1083,10 @@ app.post(
     newBookings.add_booking(req, res);
   }
 );
+app.post("/Booking_Inactive", (req, res) => {
+  bookings.Booking_Inactive(req, res);
+});
+
 
 app.post("/all_bookings", (req, res) => {
   bookings.all_bookings(req, res);
