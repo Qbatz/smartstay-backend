@@ -567,6 +567,19 @@ function createUser(connection, request, response) {
                                       if (err) {
                                         console.log("Not Remove Booking", err);
                                       } else {
+                                        
+                                     var sql124 = `UPDATE bed_details SET isbooked=0,booking_id=0 WHERE user_id=?`;
+                                      connection.query(
+                                    sql124,
+                                    [atten.ID],
+                                    function (err, data) {
+                                      if (err) {
+                                        console.log("err",err)
+                                      }
+                                      else{
+                                         console.log("Booking beddetails Removed");
+                                      }
+                                    })
                                         console.log("Booking Removed");
                                       }
                                     }
@@ -797,7 +810,9 @@ function createUser(connection, request, response) {
                                                   "Pending",
                                                   user_details.User_Id,
                                                   atten.Bed,
-                                                  advance_amount,
+                                                  remainingRent.toFixed(
+                                                    2
+                                                  ),
                                                   0,
                                                   "checkIn",
                                                   1,
