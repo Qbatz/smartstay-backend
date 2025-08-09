@@ -1157,16 +1157,22 @@ function InvoicePDf(connection, request, response) {
     if (!invocice_type || invocice_type == undefined) {
       var invocice_type = 1;
     }
-
+console.log("reqBodyData",reqBodyData)
     // if (action_type == 'manual') {
 
     var sql2 = "SELECT * FROM invoicedetails WHERE id=?";
+
+console.log("sql2",sql2)
+
     connection.query(sql2, [reqBodyData.id], function (err, sel2_res) {
+
+console.log("sel2_res",sel2_res.length)
+
       if (err) {
         return response
           .status(201)
           .json({ message: "Unable to Get Invoice Details", statusCode: 201 });
-      } else if (sel2_res.length == 0) {
+      } else if (sel2_res.length === 0) {
         return response
           .status(201)
           .json({ message: "Invalid Invoice Details", statusCode: 201 });
@@ -1244,10 +1250,12 @@ FROM
     (inv.action != 'advance' AND bt.template_type = 'Rental Invoice')
   )
 WHERE
-   inv.id =764?`;
+   inv.id =?`;
       // var sql1 =
       //   "SELECT inv.*,man.*,hsv.email_id AS hostel_email,hsv.hostel_PhoneNo AS hostel_phone,hsv.area AS harea,hsv.landmark AS hlandmark,hsv.pin_code AS hpincode, hsv.state AS hstate,hsv.city AS hcity,hsv.Address AS hostel_address,hsv.profile AS hostel_profile,hs.Address AS user_address,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upincode, hs.state AS ustate,hs.city AS ucity,hs.joining_Date,Insett.bankingId,Insett.privacyPolicyHtml,ban.acc_num,ban.ifsc_code,ban.acc_name,ban.upi_id FROM invoicedetails AS inv JOIN hostel AS hs ON hs.ID=inv.hos_user_id LEFT JOIN manual_invoice_amenities AS man ON man.invoice_id=inv.id JOIN hosteldetails AS hsv ON hsv.id=inv.Hostel_Id LEFT JOIN InvoiceSettings AS Insett ON Insett.hostel_Id=hsv.id LEFT JOIN bankings AS ban ON ban.id=Insett.bankingId WHERE inv.id=?";
       connection.query(sql1, [reqBodyData.id], async function (err, inv_data) {
+
+
         if (err) {
           return response.status(201).json({
             message: "Unable to Get Invoice Details",
