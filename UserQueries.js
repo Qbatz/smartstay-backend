@@ -1236,6 +1236,45 @@ function createUser(connection, request, response) {
   }
 }
 
+function reassidn_checkIn( request, response) {
+  const { userId, RecheckIn_Reason,RecheckIn_Date} = request.body;
+
+  var Query = `select * from hostel where id = 270 AND isActive=1;`;
+  connection.query(Query, [userId], function (err, data) {
+    if (err) {
+      response
+        .status(201)
+        .json({ message: "user not found in checkout list", statusCode: 201 });
+    }
+    if (data.length > 0) {
+      var update_Query = `update hostel set 
+CheckoutDate =null ,
+checkout_comment = null,
+RecheckIn_Reason=?,
+RecheckIn_Date=?
+where id = ? AND isActive=1`;
+      connection.query(
+        update_Query,
+        [RecheckIn_Reason, RecheckIn_Date, userId],
+        function (err, result) {
+          if (err) {
+            response
+              .status(201)
+              .json({
+                message: "user not found in checkout list",
+                statusCode: 201,
+              });
+          } else {
+            response
+              .status(200)
+              .json({ message: "Recheck_In Sucessfully", statusCode: 200 });
+          }
+        }
+      );
+    }
+  });
+}
+
 function unAssignedUserList(request, response) {
   const { hostel_Id } = request.body;
   if (!hostel_Id) {
@@ -1259,13 +1298,11 @@ WHERE h.Hostel_Id = ? AND isActive=1
     if (error) {
       response.status(201).json({ message: "No Data Found", statusCode: 201 });
     }
-    response
-      .status(200)
-      .json({
-        message: "Data Fetched sucessfully",
-        statusCode: 200,
-        data: UpdateData,
-      });
+    response.status(200).json({
+      message: "Data Fetched sucessfully",
+      statusCode: 200,
+      data: UpdateData,
+    });
   });
 }
 
@@ -3492,9 +3529,6 @@ function user_check_out(req, res) {
   }
 }
 
-
-
-
 // function get_confirm_checkout(req, res) {
 //   var { id, hostel_id } = req.body;
 
@@ -3556,8 +3590,6 @@ function user_check_out(req, res) {
 //   });
 // }
 
-
-
 function get_confirm_checkout(req, res) {
   var { id, hostel_id } = req.body;
 
@@ -3600,8 +3632,7 @@ function get_confirm_checkout(req, res) {
               }))
             : [];
 
-        var sql3 =
-          "SELECT * FROM checkout_deductions WHERE user_id=?";
+        var sql3 = "SELECT * FROM checkout_deductions WHERE user_id=?";
         connection.query(sql3, [id], function (err, deduction_data) {
           if (err) {
             return res.status(201).json({
@@ -3613,11 +3644,10 @@ function get_confirm_checkout(req, res) {
 
           return res.status(200).json({
             statusCode: 200,
-            message:
-              inv_data.length > 0 ? "Success" : "No Due Amounts",
+            message: inv_data.length > 0 ? "Success" : "No Due Amounts",
             bill_details: bill_details,
             checkout_details: user_details,
-            deduction_details: deduction_data || [], 
+            deduction_details: deduction_data || [],
           });
         });
       });
@@ -3628,17 +3658,6 @@ function get_confirm_checkout(req, res) {
     }
   });
 }
-
-
-
-
-
-
-
-
-
-
-
 
 function checkout_list(req, res) {
   const created_by = req.user_details.id;
@@ -4038,5 +4057,6 @@ module.exports = {
   available_beds,
   get_confirm_checkout,
   getInvoiceIDNew,
-  unAssignedUserList
+  unAssignedUserList,
+  reassidn_checkIn
 };
