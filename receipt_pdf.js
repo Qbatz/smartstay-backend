@@ -474,6 +474,7 @@ WHERE
               hostel_Id:Data[0].hostel_Id,
             },
             amenities: amenitiesWithInvoiceId,
+            banking_details:Data[0].banking ||[]
           };
 
           return res
