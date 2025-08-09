@@ -5296,7 +5296,7 @@ function advance_invoice(req, res) {
             url: process.env.BASEURL + "/get_invoice_id",
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user_id: user_id }),
+            body: JSON.stringify({ user_id: user_id,template_type:"Security Deposit Invoice" }),
           };
 
           request(options, (error, response, body) => {
