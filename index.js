@@ -215,6 +215,12 @@ app.post("/users/delete", (req, res) => {
   newBookings.delete_user(req, res);
 });
 
+app.post("/reassidn_checkIn", (req, res) => {
+  userQueries.reassidn_checkIn(req, res);
+});
+
+
+
 app.post("/add/adduser-list", upload.single("profile"), (request, response) => {
   response.set("Access-Control-Allow-Origin", "*");
   userQueries.createUser(connection, request, response);
