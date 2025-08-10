@@ -126,6 +126,7 @@ const queries = [
   "ALTER TABLE hostel ADD COLUMN stay_type varchar(100);",
   "ALTER TABLE bookings ADD COLUMN customer_Id BIGINT(20),ADD COLUMN customer_inactive BOOLEAN DEFAULT FALSE,ADD COLUMN inactive_reason VARCHAR(255),ADD COLUMN inactive_date DATE;;",
   "ALTER TABLE hostel ADD COLUMN booking_Id BIGINT(20) ,ADD COLUMN booking_date DATE ,ADD COLUMN booking_amount DECIMAL(10, 2); ",
+  "ALTER TABLE bed_details ADD COLUMN isNoticePeriod  BOOLEAN DEFAULT FALSE;",
 ];
 
 queries.forEach(executeQuery);
