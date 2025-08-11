@@ -8,7 +8,7 @@ const numberToWords = require('number-to-words');
 
 
 
-
+// Recurring receipt
 
 async function generateReceipt(data, invoiceDetails, outputPath) {
   const doc = new PDFDocument({ size: 'A4', margin: 0 });
@@ -171,9 +171,9 @@ function drawHostelDetails(doc, invoiceDetails, pageWidth) {
     doc.fillColor('white').text(line, hostelInfoX, y, { width: hostelInfoWidth });
 
     if (index === 0) {
-      y += 22;
+      y += 12;
     } else {
-      y += 15;
+      y += 12;
     }
   });
 
@@ -230,10 +230,10 @@ function drawBillToSection(doc, invoiceDetails) {
   }
 
 
-  const profileIcon = path.resolve(__dirname, '../Asset/user.png');
-  const phoneIcon = path.resolve(__dirname, '../Asset/call.png');
-  const bedIcon = path.resolve(__dirname, '../Asset/bed.png');
-  const locationIcon = path.resolve(__dirname, '../Asset/location.png');
+  const profileIcon = path.resolve(__dirname, '../Asset/usertwo.png');
+  const phoneIcon = path.resolve(__dirname, '../Asset/Rectangle 77.png');
+    const bedIcon = path.resolve(__dirname, '../Asset/Group.png');
+  const locationIcon = path.resolve(__dirname, '../Asset/Subtract.png');
 
 
   drawIconText(profileIcon, invoiceDetails.uname);
@@ -495,7 +495,7 @@ function drawAccountDetails(doc, invoiceDetails) {
   doc
     .fontSize(12)
     .fillColor('#00A32E')
-    .text(
+    .text(invoiceDetails?.notes ||
       'Thank you for choosing SmartStay.\nYour transaction is completed.',
       50, 
       y,
@@ -569,9 +569,10 @@ function drawFooter(doc, invoiceDetails) {
   doc.fillColor('white').fontSize(10).font('Gilroy-Medium');
 
 
-  doc.text(`email: ${invoiceDetails.email || "N/A"}`, footerX + padding, footerY + 13);
+  doc.text(`email: ${invoiceDetails.common_email ? invoiceDetails.common_email : invoiceDetails.hemail}`, footerX + padding, footerY + 13);
 
-  const phoneText = `Contact: ${invoiceDetails.contact_number || ""}`;
+ 
+  const phoneText = `Contact: ${invoiceDetails.common_contact_number ?  invoiceDetails.common_contact_number : invoiceDetails.hphone}`;
   const phoneTextWidth = doc.widthOfString(phoneText);
 
   doc.text(phoneText, footerX + footerWidth - phoneTextWidth - padding, footerY + 13);
