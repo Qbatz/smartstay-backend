@@ -3868,6 +3868,14 @@ function user_check_out(req, res) {
                   message: "Unable to Update User Details",
                 });
               } else {
+                var Bed_update = `Update bed_details set isNoticePeriod=1 where user_id ='${user_id}' `;
+        connection.query(Bed_update, function (error, UpdateData) {
+          if (error) {
+            console.log("err", error);
+          } else {
+            console.log("BedDetails Updated ");
+          }
+        });
                 const msg =
                   action === 1
                     ? "Check-out Added Successfully!"
