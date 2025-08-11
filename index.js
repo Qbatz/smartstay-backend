@@ -215,10 +215,22 @@ app.post("/users/delete", (req, res) => {
   newBookings.delete_user(req, res);
 });
 
+app.post("/reassidn_checkIn", (req, res) => {
+  userQueries.reassidn_checkIn(req, res);
+});
+
+
+
 app.post("/add/adduser-list", upload.single("profile"), (request, response) => {
   response.set("Access-Control-Allow-Origin", "*");
   userQueries.createUser(connection, request, response);
 });
+
+app.post("/unassigned-user-list", (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  userQueries.unAssignedUserList(req, res);
+});
+
 
 app.post("/generate/advance_invoice", (req, res) => {
   invoiceQueries.advance_invoice(req, res);
@@ -1077,6 +1089,10 @@ app.post(
     newBookings.add_booking(req, res);
   }
 );
+app.post("/Booking_Inactive", (req, res) => {
+  bookings.Booking_Inactive(req, res);
+});
+
 
 app.post("/all_bookings", (req, res) => {
   bookings.all_bookings(req, res);
@@ -1127,6 +1143,14 @@ app.post("/add/confirm_checkout", (req, res) => {
   newBookings.add_confirm_checkout(req, res);
 });
 
+app.post(
+  "/update/confirm_checkout_due_customer",
+  upload.fields([{ name: "profile", maxCount: 1 }]),
+  (req, res) => {
+     newBookings.update_confirm_checkout_due_amount(req, res);
+  }
+);
+
 app.post("/edit/confirm_checkout", (req, res) => {
   newBookings.edit_confirm_checkout(req, res);
 });
@@ -1148,6 +1172,13 @@ app.post("/delete_hostel_image", (req, res) => {
 app.post("/add_recuring_bill", (req, res) => {
   invoiceQueries.add_recuring_bill(req, res);
 });
+
+// Recuring Bills
+app.post("/add_recuring_bill_enabled", (req, res) => {
+  invoiceQueries.add_recuring_bill_enabled(req, res);
+});
+
+
 
 app.post("/all_recuring_bills", (req, res) => {
   invoiceQueries.all_recuring_bills(req, res);
@@ -1612,3 +1643,4 @@ app.post(
   user_middleware,
   user_list_routes.download_bill
 );
+app.get('/TestCron',invoiceGenerationCrons.TestCron)

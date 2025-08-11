@@ -1,6 +1,10 @@
 node_modules
 package-lock.json
 
+/.github/*
+/.github
+/.github/workflows/npm-publish.yml
+
 /node_modules
 /package-lock.json
 

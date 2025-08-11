@@ -29,7 +29,34 @@ nodeCron.schedule("0 0 * * *", async () => {
   });
 });
 
-function generateInvoiceForDate(inv_data, inv_startdate, inv_enddate) {
+function TestCron (){
+   const today = moment().date();
+  var sql1 =
+    "SELECT rec.*,hs.*,hos.Name AS hostel_name,hos.inv_startdate,hos.inv_enddate,hos.bill_date FROM recuring_inv_details AS rec JOIN hostel AS hs ON hs.ID=rec.user_id JOIN hosteldetails AS hos ON hos.id=hs.Hostel_Id WHERE rec.status=1 AND hs.isActive=1;";
+  connection.query(sql1, function (err, data) {
+    if (err) {
+      console.log(err);
+    } else if (data.length != 0) {
+      data.forEach((inv_data) => {
+        const billingDate = parseInt(inv_data.bill_date, 10) || 0;
+        let start_day = parseInt(inv_data.inv_startdate, 10) || 1;
+        const lastMonth = moment().subtract(1, "months");
+        const inv_startdate = lastMonth.date(start_day).format("YYYY-MM-DD");
+        const inv_enddate = moment(inv_startdate)
+          .add(30, "days")
+          .format("YYYY-MM-DD");
+          
+        if (billingDate === today) {
+          generateInvoiceForDate(inv_data, inv_startdate, inv_enddate);
+        }
+      });
+    } else {
+      console.log("No need to Check in this Cron");
+    }
+  });
+}
+
+async function generateInvoiceForDate (inv_data, inv_startdate, inv_enddate) {
   var total_array = [];
 
   var currentdate = moment().format("YYYY-MM-DD");
@@ -65,7 +92,7 @@ function generateInvoiceForDate(inv_data, inv_startdate, inv_enddate) {
 
           if (effectiveStartDate > endDate) {
             // total_array.push({ key: "room_rent", amount: 0 });
-            console.log("Amount is 0");
+            console.log("Amount is 0",effectiveStartDate,endDate);
           }
 
           const total_days = Math.max(
@@ -79,11 +106,12 @@ function generateInvoiceForDate(inv_data, inv_startdate, inv_enddate) {
             startDate.getMonth() + 1,
             0
           ).getDate();
+                    // console.log('*****',daysInMonth)
           const oneDayAmount = room_rent / daysInMonth;
 
           const totalRent = Math.round(oneDayAmount * total_days);
 
-          total_array.push({ key: "room_rent", amount: totalRent });
+          total_array.push({ key: "room_rent", amount: room_rent });
 
           let eb_start_date;
           let eb_end_date;
@@ -298,7 +326,7 @@ function generateInvoiceForDate(inv_data, inv_startdate, inv_enddate) {
             // return;
 
             var sql2 =
-              "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id,rec_invstartdate,rec_invenddate,rec_ebstartdate,rec_ebenddate,rec_ebunit) VALUES (?)";
+              "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id,rec_invstartdate,rec_invenddate,rec_ebstartdate,rec_ebenddate,rec_ebunit,bill_enable) VALUES (?)";
             var params = [
               inv_data.Name,
               inv_data.Phone,
@@ -325,6 +353,7 @@ function generateInvoiceForDate(inv_data, inv_startdate, inv_enddate) {
               eb_start_date,
               eb_end_date,
               eb_unit_amount,
+              true
             ];
             connection.query(sql2, [params], function (err, ins_data) {
               if (err) {
@@ -365,3 +394,6 @@ function generateInvoiceForDate(inv_data, inv_startdate, inv_enddate) {
     }
   );
 }
+
+
+module.exports ={TestCron}
