@@ -897,7 +897,7 @@ function RoomCount(connection, request, response) {
                     };
 
                     // Query to get bed details
-                    const bed_query = `SELECT bd.id, bd.bed_no, bd.bed_amount, bd.isfilled 
+                    const bed_query = `SELECT bd.id, bd.bed_no, bd.bed_amount, bd.isfilled,bd.isbooked  
                                        FROM hostelrooms AS hr 
                                        JOIN bed_details AS bd ON bd.hos_detail_id = hr.id 
                                        WHERE hr.Hostel_Id = ? AND hr.Floor_Id = ? AND hr.id = ? 

@@ -120,6 +120,7 @@ function getUsers(connection, response, request) {
   CASE 
     WHEN bk.id IS NOT NULL THEN 'booking'
     WHEN bd.id IS NULL THEN 'unassigned'
+    WHEN bd.isNoticePeriod = TRUE THEN 'noticeperiod'
     ELSE 'checkIn'
   END AS bed_status,
 
@@ -139,11 +140,11 @@ INNER JOIN hostel AS hstl
   ON hstl.Hostel_Id = hstlDetails.id AND hstl.isActive = TRUE 
 
 LEFT JOIN bookings AS bk 
-  ON bk.hostel_id = hstl.Hostel_Id AND bk.customer_id = hstl.ID AND bk.status=1
+  ON bk.hostel_id = hstl.Hostel_Id AND bk.customer_id = hstl.ID AND bk.status=1 
   
   -- ✅ Bed from booking
 LEFT JOIN bed_details AS bd_booking 
-  ON bd_booking.id = bk.bed_id
+  ON bd_booking.id = bk.bed_id 
 
 LEFT JOIN country_list AS cl 
   ON hstl.country_code = cl.country_code 
@@ -165,7 +166,7 @@ LEFT JOIN Hostel_Floor AS hf
 LEFT JOIN bed_details AS bd 
   ON bd.id = hstl.Bed 
 
-WHERE hstl.Hostel_Id = ? 
+WHERE hstl.Hostel_Id = ?
 `;
     const queryParams = [hostel_id];
 
@@ -567,6 +568,20 @@ function createUser(connection, request, response) {
                                       if (err) {
                                         console.log("Not Remove Booking", err);
                                       } else {
+                                        var sql124 = `UPDATE bed_details SET isbooked=0,booking_id=0,isfilled=1 WHERE user_id=?`;
+                                        connection.query(
+                                          sql124,
+                                          [atten.ID],
+                                          function (err, data) {
+                                            if (err) {
+                                              console.log("err", err);
+                                            } else {
+                                              console.log(
+                                                "Booking beddetails Removed"
+                                              );
+                                            }
+                                          }
+                                        );
                                         console.log("Booking Removed");
                                       }
                                     }
@@ -797,7 +812,7 @@ function createUser(connection, request, response) {
                                                   "Pending",
                                                   user_details.User_Id,
                                                   atten.Bed,
-                                                  advance_amount,
+                                                  remainingRent.toFixed(2),
                                                   0,
                                                   "checkIn",
                                                   1,
@@ -1482,6 +1497,14 @@ where id = ? AND isActive=1`;
               statusCode: 201,
             });
           } else {
+            var UpdateBed = `update bed_details set isNoticePeriod=0 where user_id='${userId}'`;
+            connection.query(UpdateBed, function (err) {
+              if (err) {
+                console.log(err);
+              } else {
+                console.log("Bed Details Updated");
+              }
+            });
             response
               .status(200)
               .json({ message: "Recheck_In Sucessfully", statusCode: 200 });
@@ -1557,6 +1580,14 @@ function CheckOutUser(connection, response, attenData) {
       if (error) {
         response.status(201).json({ message: "No Data Found" });
       } else {
+        var Bed_update = `Update bed_details set isNoticePeriod=1 where user_id ='${attenData.User_Id}' `;
+        connection.query(Bed_update, function (error, UpdateData) {
+          if (error) {
+            console.log("err", error);
+          } else {
+            console.log("BedDetails Updated ");
+          }
+        });
         response.status(200).json({ message: "Update Successfully" });
       }
     });

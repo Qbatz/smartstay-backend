@@ -467,12 +467,14 @@ function add_booking(req, res) {
               reason: err.message,
             });
           } else {
+             var booking_id = ins_data.insertId;
             var updateBed = `UPDATE bed_details
-                  SET isfilled = 1,
+                  SET isbooked = 1,
+                  booking_id= ?,
                   user_id= ?
                   WHERE id = ?;`;
-            connection.query(updateBed, [customer_Id,bed_id], function (err, ins_data) {
-              if (err) {
+            connection.query(updateBed, [booking_id,customer_Id,bed_id], function (err, ins_data) {
+               if (err) {
                 console.log(err);
               }
               return res.status(200).json({
@@ -846,7 +848,7 @@ function add_confirm_checkout(req, res) {
 function finalizeCheckout(id, bed_id, advance_return, comments, res) {
   const sql = `
         UPDATE hostel SET isActive = 0, return_advance = ?, checkout_comment = ? WHERE ID = ?;
-        UPDATE bed_details SET user_id = 0, isfilled = 0 WHERE id = ?;
+        UPDATE bed_details SET user_id = 0, isfilled = 0,isNoticePeriod=0 WHERE id = ?;
     `;
   connection.query(sql, [advance_return, comments, id, bed_id], (err) => {
     if (err) {
