@@ -7,7 +7,7 @@ const request = require('sync-request');
 const numberToWords = require('number-to-words');
 
 
-
+// advance receipt
 
 
 async function generateReceipt(data, invoiceDetails, outputPath) {
@@ -171,9 +171,9 @@ function drawHostelDetails(doc, invoiceDetails, pageWidth) {
     doc.fillColor('white').text(line, hostelInfoX, y, { width: hostelInfoWidth });
 
     if (index === 0) {
-      y += 22;
+      y += 12;
     } else {
-      y += 15;
+      y += 12;
     }
   });
 
@@ -230,10 +230,10 @@ function drawBillToSection(doc, invoiceDetails) {
   }
 
 
-  const profileIcon = path.resolve(__dirname, '../Asset/user.png');
-  const phoneIcon = path.resolve(__dirname, '../Asset/call.png');
-  const bedIcon = path.resolve(__dirname, '../Asset/bed.png');
-  const locationIcon = path.resolve(__dirname, '../Asset/location.png');
+  const profileIcon = path.resolve(__dirname, '../Asset/usertwo.png');
+    const phoneIcon = path.resolve(__dirname, '../Asset/Rectangle 77.png');
+    const bedIcon = path.resolve(__dirname, '../Asset/Group.png');
+    const locationIcon = path.resolve(__dirname, '../Asset/Subtract.png');
 
 
   drawIconText(profileIcon, invoiceDetails.uname);
@@ -486,29 +486,36 @@ function drawAccountDetails(doc, invoiceDetails) {
 doc.fontSize(12).fillColor('#00A32E');
 
 if (invoiceDetails?.notes) {
-  const rows = invoiceDetails.notes.split('\n'); 
-  rows.forEach((row, rowIndex) => {
-    doc.text(
-      row,
-      50,
-      y + (rowIndex * 15), 
-      {
-        width: pageWidth - 100,
-        align: 'right'
-      }
-    );
-  });
-} else {
+  const text = invoiceDetails.notes.replace(/<br\s*\/?>/gi, '\n');
+
+  const boxWidth = 600;
+  const xPos = pageWidth - 50 - boxWidth; 
+
   doc.text(
-    'Thank you for choosing SmartStay.\nYour transaction is completed.',
-    50,
+    text,
+    xPos,
     y,
     {
-      width: pageWidth - 100,
+      width: boxWidth,
+      align: 'right'
+    }
+  );
+} else {
+  const boxWidth = pageWidth - 100; 
+  const xPos = 50;
+
+  doc.text(
+    'Thank you for choosing SmartStay.\nYour transaction is completed.',
+    xPos,
+    y,
+    {
+      width: boxWidth,
       align: 'right'
     }
   );
 }
+
+
 
 
 
@@ -575,9 +582,10 @@ function drawFooter(doc, invoiceDetails) {
   doc.fillColor('white').fontSize(10).font('Gilroy-Medium');
 
 
-  doc.text(`email: ${invoiceDetails.email || "N/A"}`, footerX + padding, footerY + 13);
+  doc.text(`email: ${invoiceDetails.common_email ? invoiceDetails.common_email : invoiceDetails.hemail}`, footerX + padding, footerY + 13);
 
-  const phoneText = `Contact: ${invoiceDetails.contact_number || ""}`;
+ 
+  const phoneText = `Contact: ${invoiceDetails.common_contact_number ?  invoiceDetails.common_contact_number : invoiceDetails.hphone}`;
   const phoneTextWidth = doc.widthOfString(phoneText);
 
   doc.text(phoneText, footerX + footerWidth - phoneTextWidth - padding, footerY + 13);

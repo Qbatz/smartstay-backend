@@ -13,7 +13,7 @@ async function generateInvoice(data, invoiceDetails, outputPath) {
     const doc = new PDFDocument({ size: 'A4', margin: 0 });
     doc.pipe(fs.createWriteStream(outputPath));
 
-    console.log("invoiceDetails", invoiceDetails)
+    console.log("invoiceDetails advance bill", invoiceDetails)
     doc.registerFont('Gilroy-Bold', path.join(__dirname, '..', 'Asset', 'Fonts', 'Gilroy-Bold_0.ttf'));
     doc.registerFont('Gilroy-Regular', path.join(__dirname, '..', 'Asset', 'Fonts', 'Gilroy-Regular_0.ttf'));
     doc.registerFont('Gilroy-Medium', path.join(__dirname, '..', 'Asset', 'Fonts', 'Gilroy-Medium_0.ttf'));
@@ -160,11 +160,11 @@ function drawHostelDetails(doc, invoiceDetails, pageWidth) {
 nonEmptyLines.forEach((line, index) => {
   doc.fillColor('white').text(line, hostelInfoX, y, { width: hostelInfoWidth });
 
-  if (index === 0) {
-      y += 22;
-  } else {
-    y += 15;
-  }
+ if (index === 0) {
+      y += 12;
+    } else {
+      y += 12;
+    }
 });
 
 
@@ -480,10 +480,10 @@ function drawFooter(doc, invoiceDetails) {
   doc.fillColor('white').fontSize(10).font('Gilroy-Medium');
 
  
-  doc.text(`email: ${invoiceDetails.hostel_email || ""}`, footerX + padding, footerY + 13);
+  doc.text(`email: ${invoiceDetails.common_email ? invoiceDetails.common_email : invoiceDetails.hemail}`, footerX + padding, footerY + 13);
 
  
-  const phoneText = `Contact: ${invoiceDetails.hostel_phone || ""}`;
+  const phoneText = `Contact: ${invoiceDetails.common_contact_number ?  invoiceDetails.common_contact_number : invoiceDetails.hphone}`;
   const phoneTextWidth = doc.widthOfString(phoneText);
 
   doc.text(phoneText, footerX + footerWidth - phoneTextWidth - padding, footerY + 13);

@@ -166,9 +166,9 @@ function drawHostelDetails(doc, invoiceDetails, pageWidth) {
     doc.fillColor('white').text(line, hostelInfoX, y, { width: hostelInfoWidth });
 
     if (index === 0) {
-      y += 22;
+      y += 12;
     } else {
-      y += 15;
+      y += 12;
     }
   });
 
@@ -501,9 +501,10 @@ function drawFooter(doc, invoiceDetails) {
   doc.fillColor('white').fontSize(10).font('Gilroy-Medium');
 
 
-  doc.text(`email: ${invoiceDetails.email || "N/A"}`, footerX + padding, footerY + 13);
+  doc.text(`email: ${invoiceDetails.common_email ? invoiceDetails.common_email : invoiceDetails.hemail}`, footerX + padding, footerY + 13);
 
-  const phoneText = `Contact: ${invoiceDetails.contact_number || ""}`;
+ 
+  const phoneText = `Contact: ${invoiceDetails.common_contact_number ?  invoiceDetails.common_contact_number : invoiceDetails.hphone}`;
   const phoneTextWidth = doc.widthOfString(phoneText);
 
   doc.text(phoneText, footerX + footerWidth - phoneTextWidth - padding, footerY + 13);
