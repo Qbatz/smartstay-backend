@@ -5,7 +5,7 @@ const moment = require('moment');
 const axios = require('axios');
 const request = require('sync-request');
 
-
+// manual invoice, recurring, checkout invoice
 
 async function generateInvoice(data, invoiceDetails, outputPath) {
   const doc = new PDFDocument({ size: 'A4', margin: 0 });
@@ -330,7 +330,7 @@ function drawInvoiceTable(doc, data, invoiceDetails) {
 
 
 
-  const tax = invoiceDetails?.tax || 0;
+  const tax = Number(invoiceDetails?.tax) || 0;
 
   const subtotal = data.reduce((sum, i) => sum + i.amount, 0);
   const total = subtotal + tax;
@@ -342,12 +342,12 @@ function drawInvoiceTable(doc, data, invoiceDetails) {
   doc.moveTo(leftX, y).lineTo(leftX + tableWidth, y).strokeColor('#E0E0E0').lineWidth(1).stroke();
 
   y += 10;
-  doc.font('Gilroy-Regular').text('Tax', leftX + 300, y).text(`Rs. ${tax.toFixed(2)}`, leftX + 400, y);
+  doc.font('Gilroy-Regular').text('Tax', leftX + 300, y).text(`Rs. ${tax?.toFixed(2)}`, leftX + 400, y);
   y += 20;
 
-  doc.font('Gilroy-Regular').text('Sub Total', leftX + 300, y).text(`Rs. ${subtotal.toFixed(2)}`, leftX + 400, y);
+  doc.font('Gilroy-Regular').text('Sub Total', leftX + 300, y).text(`Rs. ${subtotal?.toFixed(2)}`, leftX + 400, y);
   y += 20;
-  doc.font('Gilroy-Bold').text('Total', leftX + 300, y).text(`Rs. ${total.toFixed(2)}`, leftX + 400, y);
+  doc.font('Gilroy-Bold').text('Total', leftX + 300, y).text(`Rs. ${total?.toFixed(2)}`, leftX + 400, y);
 
 
 
@@ -367,16 +367,16 @@ function drawAccountDetails(doc, invoiceDetails) {
   y += 20;
 
   doc.fontSize(10).fillColor('black').font('Gilroy-Medium');
-  doc.text('Account No', leftX, y).text(`: ${invoiceDetails.acc_num || "NA"}`, valueX, y);
+  doc.text('Account No', leftX, y).text(`: ${invoiceDetails.banking.acc_num || "NA"}`, valueX, y);
   y += 15;
 
-  doc.text('IFSC Code', leftX, y).text(`: ${invoiceDetails.ifsc_code || "NA"}`, valueX, y);
+  doc.text('IFSC Code', leftX, y).text(`: ${invoiceDetails.banking.ifsc_code || "NA"}`, valueX, y);
   y += 15;
 
-  doc.text('Bank Name', leftX, y).text(`: ${invoiceDetails.acc_name || "NA"}`, valueX, y);
+  doc.text('Bank Name', leftX, y).text(`: ${invoiceDetails.banking.bank_name || "NA"}`, valueX, y);
   y += 15;
 
-  doc.text('UPI ID', leftX, y).text(`: ${invoiceDetails.upi_id || "NA"}`, valueX, y);
+  doc.text('UPI ID', leftX, y).text(`: ${invoiceDetails.banking.upi_id || "NA"}`, valueX, y);
 
 
   const qrImagePath = invoiceDetails?.digital_signature_url || path.resolve(__dirname, '../Asset/barcode.png');
@@ -459,12 +459,14 @@ function drawFooter(doc, invoiceDetails) {
   const margin = 20;
   const pageWidth = doc.page.width;
   const footerHeight = 26;
-  const sideSpacing = 20;
+  const sideSpacing = 60;
   const footerWidth = pageWidth - margin * 2 - sideSpacing * 2;
   const footerX = margin + sideSpacing;
   const footerY = doc.page.height - margin - footerHeight;
   const cornerRadius = 20;
+  const padding = 30;  
 
+  
   doc.save();
   doc.moveTo(footerX + cornerRadius, footerY)
     .lineTo(footerX + footerWidth - cornerRadius, footerY)
@@ -476,11 +478,16 @@ function drawFooter(doc, invoiceDetails) {
     .fill('#1E45E1');
   doc.restore();
 
-  doc.fillColor('white').fontSize(10).font('Gilroy-Medium')
-    .text(`email: ${invoiceDetails.hostel_email || ""}  |  Contact: ${invoiceDetails.hostel_phone}`, footerX, footerY + 13, {
-      width: footerWidth,
-      align: 'center'
-    });
+  doc.fillColor('white').fontSize(10).font('Gilroy-Medium');
+
+ 
+  doc.text(`email: ${invoiceDetails.hostel_email || ""}`, footerX + padding, footerY + 13);
+
+ 
+  const phoneText = `Contact: ${invoiceDetails.hostel_phone || ""}`;
+  const phoneTextWidth = doc.widthOfString(phoneText);
+
+  doc.text(phoneText, footerX + footerWidth - phoneTextWidth - padding, footerY + 13);
 }
 
 
