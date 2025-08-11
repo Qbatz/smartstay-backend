@@ -367,16 +367,16 @@ function drawAccountDetails(doc, invoiceDetails) {
   y += 20;
 
   doc.fontSize(10).fillColor('black').font('Gilroy-Medium');
-  doc.text('Account No', leftX, y).text(`: ${invoiceDetails.banking.acc_num || "NA"}`, valueX, y);
+  doc.text('Account No', leftX, y).text(`: ${invoiceDetails.banking?.acc_num || "NA"}`, valueX, y);
   y += 15;
 
-  doc.text('IFSC Code', leftX, y).text(`: ${invoiceDetails.banking.ifsc_code || "NA"}`, valueX, y);
+  doc.text('IFSC Code', leftX, y).text(`: ${invoiceDetails.banking?.ifsc_code || "NA"}`, valueX, y);
   y += 15;
 
-  doc.text('Bank Name', leftX, y).text(`: ${invoiceDetails.banking.bank_name || "NA"}`, valueX, y);
+  doc.text('Bank Name', leftX, y).text(`: ${invoiceDetails.banking?.bank_name || "NA"}`, valueX, y);
   y += 15;
 
-  doc.text('UPI ID', leftX, y).text(`: ${invoiceDetails.banking.upi_id || "NA"}`, valueX, y);
+  doc.text('UPI ID', leftX, y).text(`: ${invoiceDetails.banking?.upi_id || "NA"}`, valueX, y);
 
 
   const qrImagePath = invoiceDetails?.qr_url && invoiceDetails?.qr_url;
@@ -392,7 +392,7 @@ function drawAccountDetails(doc, invoiceDetails) {
   const qrY = 500;
 
 
-  if (qrImagePath.startsWith('http')) {
+  if (qrImagePath?.startsWith('http')) {
 
     try {
       const res = request('GET', qrImagePath);
