@@ -4,7 +4,7 @@ const crypto = require("crypto");
 
 const { sendTemplateMessage } = require("./whatsappTemplate");
 
-function add_booking(req, res) {
+function add_booking1(req, res) {
   var created_by = req.user_details.id;
 
   var role_permissions = req.role_permissions;
@@ -292,7 +292,8 @@ function add_booking(req, res) {
     customer_Id,
     mob_no,
     email,
-    profile
+    profile,
+    name,
   } = req.body;
 
   if (
@@ -300,7 +301,11 @@ function add_booking(req, res) {
     !amount ||
     !hostel_id ||
     !booking_date ||
-    !floor_id || !room_id || !bed_id ||!customer_Id ||!mob_no 
+    !floor_id ||
+    !room_id ||
+    !bed_id ||
+    !customer_Id ||
+    !mob_no
   ) {
     return res
       .status(201)
@@ -420,66 +425,76 @@ function add_booking(req, res) {
   //     });
   //   }
   // } else {
-    if (
-      is_admin == 1 ||
-      (role_permissions[5] && role_permissions[5].per_create == 1)
-    ) {
-      var sql1 =
-        "SELECT * FROM bookings WHERE phone_number=? AND status=1 AND hostel_id=?";
-      connection.query(sql1, [mob_no, hostel_id],async function (err, ph_data) {
-        if (err) {
-          return res.status(201).json({
-            statusCode: 201,
-            message: "Unable to Get Phone Details",
-            reason: err.message,
-          });
-        } else if (ph_data.length == 0) {
-            let profile_url = 0; 
-              profile_url = profile || 0;
-            var sql3 =
-              "INSERT INTO bookings (joining_date,amount,hostel_id,phone_number,email_id,created_by,profile,booking_date,customer_Id,floor_id,room_id,bed_id) VALUES (?)";
-            var params = [
-              joining_date,
-              amount,
-              hostel_id,
-              mob_no,
-              email || null,
-              created_by,
-              profile_url,
-              booking_date,
-              customer_Id,
-              floor_id,
-              room_id,
-              bed_id
-            ];
+  if (
+    is_admin == 1 ||
+    (role_permissions[5] && role_permissions[5].per_create == 1)
+  ) {
+    var sql1 =
+      "SELECT * FROM bookings WHERE phone_number=? AND status=1 AND hostel_id=?";
+    connection.query(sql1, [mob_no, hostel_id], async function (err, ph_data) {
+      if (err) {
+        return res.status(201).json({
+          statusCode: 201,
+          message: "Unable to Get Phone Details",
+          reason: err.message,
+        });
+      } else if (ph_data.length == 0) {
+        let profile_url = 0;
+        profile_url = profile || 0;
+        var sql3 =
+          "INSERT INTO bookings (joining_date,amount,hostel_id,phone_number,email_id,created_by,profile,booking_date,customer_Id,floor_id,room_id,bed_id,first_name) VALUES (?)";
+        var params = [
+          joining_date,
+          amount,
+          hostel_id,
+          mob_no,
+          email || null,
+          created_by,
+          profile_url,
+          booking_date,
+          customer_Id,
+          floor_id,
+          room_id,
+          bed_id,
+          name,
+        ];
 
-            connection.query(sql3, [params], function (err, ins_data) {
-              if (err) {
-                return res.status(201).json({
-                  statusCode: 201,
-                  message: "Unable to Add Booking Details",
-                  reason: err.message,
-                });
-              } else {
-                return res.status(200).json({
-                  statusCode: 200,
-                  message: "Booking Added Successfully!",
-                });
-              }
+        connection.query(sql3, [params], function (err, ins_data) {
+          if (err) {
+            return res.status(201).json({
+              statusCode: 201,
+              message: "Unable to Add Booking Details",
+              reason: err.message,
             });
-        } else {
-          return res
-            .status(203)
-            .json({ statusCode: 203, message: "Phone Number Already Exists" });
-        }
-      });
-    } else {
-      res.status(208).json({
-        message:
-          "Permission Denied. Please contact your administrator for access.",
-        statusCode: 208,
-      });
-    }
+          } else {
+            var updateBed = `UPDATE bed_details
+                  SET isfilled = 1,
+                  user_id= ?
+                  WHERE id = ?;`;
+            connection.query(updateBed, [customer_Id,bed_id], function (err, ins_data) {
+              if (err) {
+                console.log(err);
+              }
+              return res.status(200).json({
+                statusCode: 200,
+                message: "Booking Added Successfully!",
+              });
+            });
+          }
+        });
+      } else {
+        return res
+          .status(203)
+          .json({ statusCode: 203, message: "Phone Number Already Exists" });
+      }
+    });
+  } else {
+    res.status(208).json({
+      message:
+        "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208,
+    });
+  }
   // }
 }
 
@@ -489,6 +504,8 @@ function generateUserId(firstName, user_id) {
   const userId = userIdPrefix + user_ids;
   return userId;
 }
+
+
 
 function assign_booking(req, res) {
   var { id, floor, room, hostel_id, bed, join_date, ad_amount, rent_amount } =

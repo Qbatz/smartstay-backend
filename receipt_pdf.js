@@ -458,7 +458,23 @@ WHERE
               city: Data[0].hcity || "",
               state: Data[0].hstate || "",
             },
+              bill_template: {
+              id: Data[0].id || "",
+              template_type: Data[0].template_type || "",
+              logo_url: Data[0].logo_url || "",
+              contact_number: Data[0].contact_number || "",
+              email: Data[0].email || "",
+              digital_signature_url: Data[0].digital_signature_url || "",
+              tax: Data[0].tax || "",
+              banking_id: Data[0].banking_id || "",
+              qr_url: Data[0].qr_url || "",
+              notes: Data[0].notes,
+              terms_and_condition: Data[0].terms_and_condition,
+              template_theme: Data[0].template_theme,
+              hostel_Id:Data[0].hostel_Id,
+            },
             amenities: amenitiesWithInvoiceId,
+            banking_details:Data[0].banking ||[]
           };
 
           return res
