@@ -27,11 +27,8 @@ async function generateReceipt(data, invoiceDetails, outputPath) {
   await drawInvoiceHeading(doc, 'Final Settlement Receipt');
   await drawBillToSection(doc, invoiceDetails);
   await drawInvoiceDetails(doc, invoiceDetails);
-   
-
-  await drawInvoiceTable(doc, data, invoiceDetails);
+     await drawInvoiceTable(doc, data, invoiceDetails);
   
-  // await drawAccountDetails(doc, invoiceDetails);
   const signatureEndY = drawTermsAndSignature(doc, invoiceDetails);
 drawNotes(doc, invoiceDetails, signatureEndY);
   await drawFooter(doc, invoiceDetails);
@@ -363,87 +360,55 @@ console.log("Data***  Final settle ment",data)
     doc.font('Gilroy-Regular').text('Refundable Amount', leftX + 300, y).text(`Rs. ${total.toFixed(2)}`, leftX + 400, y);
 
 }
-// function drawAccountDetails(doc, invoiceDetails) {
-//   let y = 500;
-//   const leftX = 50;
-//   const valueX = leftX + 100;
-//   const pageWidth = doc.page.width;
-
-//   doc.fillColor('#1E45E1').font('Gilroy-Bold').fontSize(11).text('ACCOUNT DETAILS', leftX, y);
-//   y += 20;
-
-//   doc.fontSize(10).fillColor('black').font('Gilroy-Medium');
-//   doc.text('Payment Mode', leftX, y).text(`: ${invoiceDetails.banking.type || "NA"}`, valueX, y);
-//   y += 15;
-
-//   doc.text('Payment Recorded By', leftX, y).text(` : ${" "} ${invoiceDetails.benificiary_name || ""}`, valueX, y);
-//   y += 15;
- 
-//   doc.text('Status', leftX, y).text(`: ${"Paid"}`, valueX, y);
-//   y += 15;
-
-//    const immage1 = path.resolve(__dirname, '../Asset/image 32.png');
-  
-
-//   const qrX = 400;
-//   const qrY = 500;
-
-//    if (fs.existsSync(immage1)) {
-//     doc.image(immage1, qrX, qrY, { width: 100, height:70 });
-//   }
-
-//    y = Math.max(y, qrY + 70) + 20; 
 
 
-//   doc
-//     .fontSize(12)
-//     .fillColor('#1E45E1')
-//     .text(
-//       'Thank you for choosing SmartStay.\nYour transaction is completed.',
-//       50, 
-//       y,
-//       {
-//         width: pageWidth - 100, 
-//         align: 'right'
-//       }
-//     );
+async function drawTermsAndSignature(doc, invoiceDetails) {
+    let y = 700;
+    const leftX = 50;
+    const rightX = 400;
 
+    doc.fillColor('#1E45E1')
+        .font('Gilroy-Bold')
+        .fontSize(10)
+        .text('Terms and Conditions', leftX, y);
 
-// }
+   
+    if (invoiceDetails.digital_signature_url) {
+        const response = await axios.get(invoiceDetails.digital_signature_url, { responseType: 'arraybuffer' });
+        const imageBuffer = Buffer.from(response.data, 'binary');
 
+        const signatureWidth = 100;
+        const signatureHeight = 60;
+        const sigX = rightX + 50;
+        const sigY = y - signatureHeight - 5;
 
-function drawTermsAndSignature(doc, invoiceDetails) {
-  let y = 500;
-  const leftX = 50;
-  const rightX = 400;
+        doc.image(imageBuffer, sigX, sigY, {
+            width: signatureWidth,
+            height: signatureHeight
+        });
+    }
 
+    doc.fillColor('black')
+        .font('Gilroy-Bold')
+        .fontSize(10)
+        .text('Authorized Signature', rightX, y, { align: 'right', width: 150 });
 
-  doc.fillColor('#1E45E1')
-    .font('Gilroy-Bold')
-    .fontSize(10)
-    .text('Terms and Conditions', leftX, y);
+    y += 15;
 
-
-  doc.fillColor('black')
-    .font('Gilroy-Bold')
-    .fontSize(10)
-    .text('Authorized Signature', rightX, y, { align: 'right', width: 150 });
-
-  y += 15;
-
-
-  doc.fontSize(9)
-    .fillColor('gray')
-    .font('Gilroy-Medium')
-    .text(
-      invoiceDetails.terms_and_condition ? invoiceDetails.terms_and_condition :
-            "Tenants must pay all dues on or before the due date, maintain cleanliness, and follow PG rules; failure may lead to penalties or termination of stay.",
-      leftX,
-      y,
-      { width: 300 }
-    );
-    return doc.y;
+    doc.fontSize(9)
+        .fillColor('gray')
+        .font('Gilroy-Medium')
+        .text(
+            invoiceDetails.terms_and_condition
+                ? invoiceDetails.terms_and_condition
+                : "Tenants must pay all dues on or before the due date, maintain cleanliness, and follow PG rules; failure may lead to penalties or termination of stay.",
+            leftX,
+            y,
+            { width: 300 }
+        );
+         return doc.y;
 }
+
 
 function drawNotes(doc, invoiceDetails, startY) {
   const paidIcon = path.resolve(__dirname, '../Asset/paidfull (2).png');

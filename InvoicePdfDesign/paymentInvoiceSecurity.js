@@ -378,7 +378,7 @@ function drawAccountDetails(doc, invoiceDetails) {
   doc.text('UPI ID', leftX, y).text(`: ${invoiceDetails.banking.upi_id || "NA"}`, valueX, y);
 
   
-    const qrImagePath = invoiceDetails?.digital_signature_url || path.resolve(__dirname, '../Asset/barcode.png');
+    const qrImagePath = invoiceDetails?.qr_url && invoiceDetails?.qr_url;
 
     const paytmLogo = path.resolve(__dirname, '../Asset/paytm.png');
     const phonepeLogo = path.resolve(__dirname, '../Asset/download.png');
@@ -421,17 +421,32 @@ function drawAccountDetails(doc, invoiceDetails) {
 }
 
 
-function drawTermsAndSignature(doc,invoiceDetails) {
+
+async function drawTermsAndSignature(doc, invoiceDetails) {
     let y = 700;
     const leftX = 50;
     const rightX = 400;
-
 
     doc.fillColor('#1E45E1')
         .font('Gilroy-Bold')
         .fontSize(10)
         .text('Terms and Conditions', leftX, y);
 
+   
+    if (invoiceDetails.digital_signature_url) {
+        const response = await axios.get(invoiceDetails.digital_signature_url, { responseType: 'arraybuffer' });
+        const imageBuffer = Buffer.from(response.data, 'binary');
+
+        const signatureWidth = 100;
+        const signatureHeight = 60;
+        const sigX = rightX + 50;
+        const sigY = y - signatureHeight - 5;
+
+        doc.image(imageBuffer, sigX, sigY, {
+            width: signatureWidth,
+            height: signatureHeight
+        });
+    }
 
     doc.fillColor('black')
         .font('Gilroy-Bold')
@@ -440,17 +455,22 @@ function drawTermsAndSignature(doc,invoiceDetails) {
 
     y += 15;
 
-
     doc.fontSize(9)
         .fillColor('gray')
         .font('Gilroy-Medium')
-        .text(invoiceDetails.terms_and_condition ? invoiceDetails.terms_and_condition :
-            "Tenants must pay all dues on or before the due date, maintain cleanliness, and follow PG rules; failure may lead to penalties or termination of stay.",
+        .text(
+            invoiceDetails.terms_and_condition
+                ? invoiceDetails.terms_and_condition
+                : "Tenants must pay all dues on or before the due date, maintain cleanliness, and follow PG rules; failure may lead to penalties or termination of stay.",
             leftX,
             y,
             { width: 300 }
         );
 }
+
+
+
+
 
 
 
