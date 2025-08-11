@@ -470,10 +470,10 @@ function drawAccountDetails(doc, invoiceDetails) {
   y += 20;
 
   doc.fontSize(10).fillColor('black').font('Gilroy-Medium');
-  doc.text('Payment Mode', leftX, y).text(`: ${invoiceDetails.banking.type || "NA"}`, valueX, y);
+  doc.text('Payment Mode', leftX, y).text(`: ${invoiceDetails?.banking?.type || "NA"}`, valueX, y);
   y += 15;
 
-  doc.text('Payment Recorded By', leftX, y).text(` : ${" "} ${invoiceDetails.benificiary_name || ""}`, valueX, y);
+  doc.text('Payment Recorded By', leftX, y).text(` : ${" "} ${invoiceDetails?.Payment_Recorded_By || ""}`, valueX, y);
   y += 15;
  
   doc.text('Status', leftX, y).text(`: ${"Paid"}`, valueX, y);
@@ -514,7 +514,7 @@ async function drawTermsAndSignature(doc, invoiceDetails) {
     const leftX = 50;
     const rightX = 400;
 
-    doc.fillColor('#1E45E1')
+    doc.fillColor('#00A32E')
         .font('Gilroy-Bold')
         .fontSize(10)
         .text('Terms and Conditions', leftX, y);
@@ -583,10 +583,10 @@ function drawFooter(doc, invoiceDetails) {
   doc.fillColor('white').fontSize(10).font('Gilroy-Medium');
 
 
-  doc.text(`email: ${invoiceDetails.common_email ? invoiceDetails.common_email : invoiceDetails.hemail}`, footerX + padding, footerY + 13);
+  doc.text(`email: ${invoiceDetails.common_email ? invoiceDetails.common_email : invoiceDetails.hemail || '-'}`, footerX + padding, footerY + 13);
 
  
-  const phoneText = `Contact: ${invoiceDetails.common_contact_number ?  invoiceDetails.common_contact_number : invoiceDetails.hphone}`;
+  const phoneText = `Contact: ${invoiceDetails.common_contact_number ?  invoiceDetails.common_contact_number : invoiceDetails.hphone || '-'}`;
   const phoneTextWidth = doc.widthOfString(phoneText);
 
   doc.text(phoneText, footerX + footerWidth - phoneTextWidth - padding, footerY + 13);
