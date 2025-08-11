@@ -366,16 +366,16 @@ function drawAccountDetails(doc, invoiceDetails) {
     y += 20;
 
     doc.fontSize(10).fillColor('black').font('Gilroy-Medium');
-    doc.text('Account No', leftX, y).text(`: ${invoiceDetails.acc_num || "NA"}`, valueX, y);
-    y += 15;
+   doc.text('Account No', leftX, y).text(`: ${invoiceDetails.banking.acc_num || "NA"}`, valueX, y);
+  y += 15;
 
-    doc.text('IFSC Code', leftX, y).text(`: ${invoiceDetails.ifsc_code || "NA"}`, valueX, y);
-    y += 15;
+  doc.text('IFSC Code', leftX, y).text(`: ${invoiceDetails.banking.ifsc_code || "NA"}`, valueX, y);
+  y += 15;
 
-    doc.text('Bank Name', leftX, y).text(`: ${invoiceDetails.acc_name || "NA"}`, valueX, y);
-    y += 15;
+  doc.text('Bank Name', leftX, y).text(`: ${invoiceDetails.banking.bank_name || "NA"}`, valueX, y);
+  y += 15;
 
-    doc.text('UPI ID', leftX, y).text(`: ${invoiceDetails.upi_id || "NA"}`, valueX, y);
+  doc.text('UPI ID', leftX, y).text(`: ${invoiceDetails.banking.upi_id || "NA"}`, valueX, y);
 
   
     const qrImagePath = invoiceDetails?.digital_signature_url || path.resolve(__dirname, '../Asset/barcode.png');
@@ -474,7 +474,7 @@ function drawFooter(doc, invoiceDetails) {
     .lineTo(footerX, footerY + footerHeight)
     .lineTo(footerX, footerY + cornerRadius)
     .quadraticCurveTo(footerX, footerY, footerX + cornerRadius, footerY)
-    .fill('#00A32E');
+    .fill('#1E45E1');
   doc.restore();
 
   doc.fillColor('white').fontSize(10).font('Gilroy-Medium');

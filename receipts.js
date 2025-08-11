@@ -635,6 +635,8 @@ exports.pdf_generate = (req, res) => {
             var sql1 = `SELECT
    rs.*,
    hs.Name AS uname,
+       hs.Rooms AS uRooms,
+     hs.Bed AS uBed,
    hs.Phone AS uphone,
    hs.Email AS uemail,
    hs.Address AS uaddress,
@@ -718,6 +720,8 @@ WHERE
             var sql1 = `SELECT
    rs.*,
    hs.Name AS uname,
+   hs.Rooms AS uRooms,
+     hs.Bed AS uBed,
    hs.Phone AS uphone,
    hs.Email AS uemail,
    hs.Address AS uaddress,

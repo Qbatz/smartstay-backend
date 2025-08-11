@@ -330,7 +330,7 @@ function drawInvoiceTable(doc, data, invoiceDetails) {
 
 
 
-  const tax = invoiceDetails?.tax || 0;
+  const tax = Number(invoiceDetails?.tax) || 0;
 
   const subtotal = data.reduce((sum, i) => sum + i.amount, 0);
   const total = subtotal + tax;
@@ -342,12 +342,12 @@ function drawInvoiceTable(doc, data, invoiceDetails) {
   doc.moveTo(leftX, y).lineTo(leftX + tableWidth, y).strokeColor('#E0E0E0').lineWidth(1).stroke();
 
   y += 10;
-  doc.font('Gilroy-Regular').text('Tax', leftX + 300, y).text(`Rs. ${tax.toFixed(2)}`, leftX + 400, y);
+  doc.font('Gilroy-Regular').text('Tax', leftX + 300, y).text(`Rs. ${tax?.toFixed(2)}`, leftX + 400, y);
   y += 20;
 
-  doc.font('Gilroy-Regular').text('Sub Total', leftX + 300, y).text(`Rs. ${subtotal.toFixed(2)}`, leftX + 400, y);
+  doc.font('Gilroy-Regular').text('Sub Total', leftX + 300, y).text(`Rs. ${subtotal?.toFixed(2)}`, leftX + 400, y);
   y += 20;
-  doc.font('Gilroy-Bold').text('Total', leftX + 300, y).text(`Rs. ${total.toFixed(2)}`, leftX + 400, y);
+  doc.font('Gilroy-Bold').text('Total', leftX + 300, y).text(`Rs. ${total?.toFixed(2)}`, leftX + 400, y);
 
 
 
@@ -367,16 +367,16 @@ function drawAccountDetails(doc, invoiceDetails) {
   y += 20;
 
   doc.fontSize(10).fillColor('black').font('Gilroy-Medium');
-  doc.text('Account No', leftX, y).text(`: ${invoiceDetails.acc_num || "NA"}`, valueX, y);
+  doc.text('Account No', leftX, y).text(`: ${invoiceDetails.banking.acc_num || "NA"}`, valueX, y);
   y += 15;
 
-  doc.text('IFSC Code', leftX, y).text(`: ${invoiceDetails.ifsc_code || "NA"}`, valueX, y);
+  doc.text('IFSC Code', leftX, y).text(`: ${invoiceDetails.banking.ifsc_code || "NA"}`, valueX, y);
   y += 15;
 
-  doc.text('Bank Name', leftX, y).text(`: ${invoiceDetails.acc_name || "NA"}`, valueX, y);
+  doc.text('Bank Name', leftX, y).text(`: ${invoiceDetails.banking.bank_name || "NA"}`, valueX, y);
   y += 15;
 
-  doc.text('UPI ID', leftX, y).text(`: ${invoiceDetails.upi_id || "NA"}`, valueX, y);
+  doc.text('UPI ID', leftX, y).text(`: ${invoiceDetails.banking.upi_id || "NA"}`, valueX, y);
 
 
   const qrImagePath = invoiceDetails?.digital_signature_url || path.resolve(__dirname, '../Asset/barcode.png');
@@ -475,7 +475,7 @@ function drawFooter(doc, invoiceDetails) {
     .lineTo(footerX, footerY + footerHeight)
     .lineTo(footerX, footerY + cornerRadius)
     .quadraticCurveTo(footerX, footerY, footerX + cornerRadius, footerY)
-    .fill('#00A32E');
+    .fill('#1E45E1');
   doc.restore();
 
   doc.fillColor('white').fontSize(10).font('Gilroy-Medium');
