@@ -1829,7 +1829,7 @@ function transitionlist(request, response) {
                                       });
                                     } else {
                                       var sql1 =
-                                        "INSERT INTO receipts (user_id,reference_id,invoice_number,amount_received,payment_date,payment_mode,created_by) VALUES (?)";
+                                        "INSERT INTO receipts (user_id,reference_id,invoice_number,amount_received,payment_date,payment_mode,created_by,trans_Id) VALUES (?)";
                                       var params = [
                                         ID,
                                         reference_id,
@@ -1838,6 +1838,7 @@ function transitionlist(request, response) {
                                         payment_date,
                                         payment_by,
                                         created_by,
+                                        ins_res.insertId
                                       ];
                                       connection.query(
                                         sql1,
