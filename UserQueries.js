@@ -118,10 +118,10 @@ function getUsers(connection, response, request) {
   hf.floor_name,
 
   CASE 
-    WHEN bk.id IS NOT NULL THEN 'booking'
-    WHEN bd.id IS NULL THEN 'unassigned'
-    WHEN bd.isNoticePeriod = TRUE THEN 'noticeperiod'
-    ELSE 'checkIn'
+    WHEN bk.id IS NOT NULL THEN 'Booking'
+    WHEN bd.id IS NULL THEN 'Un-Assigned'
+    WHEN bd.isNoticePeriod = TRUE THEN 'Notice period'
+    ELSE 'Check In'
   END AS bed_status,
 
   bk.id AS booking_id,
@@ -4099,7 +4099,12 @@ function checkout_list(req, res) {
   hs.user_id AS userID,
   b.customer_inactive,
   b.inactive_reason,
-  DATE_FORMAT(b.inactive_date, '%Y-%m-%d') AS inactive_date
+  DATE_FORMAT(b.inactive_date, '%Y-%m-%d') AS inactive_date,
+  CASE
+    WHEN inv.status = 'Right-Off' THEN 'Right-Off'
+    WHEN b.customer_inactive = 1 THEN 'In-Active'
+    ELSE 'Check-Out'
+  END AS status
 
 FROM hostel AS hs 
 
@@ -4127,6 +4132,9 @@ LEFT JOIN (
      AND b1.id = latest_booking.max_id
 ) AS b 
   ON b.customer_Id = hs.ID AND b.hostel_id = hs.Hostel_Id
+  
+  LEFT JOIN invoicedetails AS inv
+  ON inv.id = hs.ID
 
 WHERE hs.Hostel_Id = ?
   AND (
