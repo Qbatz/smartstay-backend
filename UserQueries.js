@@ -129,7 +129,8 @@ function getUsers(connection, response, request) {
   bk.booking_date As booking_booking_date,
   bk.joining_date AS booking_joining_date,
   bk.room_id AS booking_room_id,
-  bk.floor_id AS booking_floor_id,bk.bed_id AS booking_bed_id,
+  bk.floor_id AS booking_floor_id,
+  bk.bed_id AS booking_bed_id,
   bookinghsRoom.Room_Id AS Booking_Rooms,
   Bk_hr.floor_name AS Booking_FloorName,
   bd_booking.bed_no As Booking_Bed
@@ -137,12 +138,15 @@ function getUsers(connection, response, request) {
 FROM hosteldetails AS hstlDetails 
 
 INNER JOIN hostel AS hstl 
-  ON hstl.Hostel_Id = hstlDetails.id AND hstl.isActive = TRUE 
+  ON hstl.Hostel_Id = hstlDetails.id 
+  AND hstl.isActive = TRUE 
 
 LEFT JOIN bookings AS bk 
-  ON bk.hostel_id = hstl.Hostel_Id AND bk.customer_id = hstl.ID AND bk.status=1 
+  ON bk.hostel_id = hstl.Hostel_Id 
+  AND bk.customer_id = hstl.ID  
+  AND bk.status = 1
   
-  -- ✅ Bed from booking
+-- ✅ Bed from booking
 LEFT JOIN bed_details AS bd_booking 
   ON bd_booking.id = bk.bed_id 
 
@@ -150,23 +154,30 @@ LEFT JOIN country_list AS cl
   ON hstl.country_code = cl.country_code 
 
 LEFT JOIN hostelrooms hsroom 
-  ON hsroom.Hostel_Id = hstlDetails.id AND hsroom.Floor_Id = hstl.Floor AND hsroom.id = hstl.Rooms 
+  ON hsroom.Hostel_Id = hstlDetails.id 
+  AND hsroom.Floor_Id = hstl.Floor 
+  AND hsroom.id = hstl.Rooms 
   
-  LEFT JOIN hostelrooms bookinghsRoom 
-  ON bookinghsRoom.Hostel_Id = bk.hostel_id AND bookinghsRoom.Floor_Id = bk.floor_id AND bookinghsRoom.id = bk.room_id 
+LEFT JOIN hostelrooms bookinghsRoom 
+  ON bookinghsRoom.Hostel_Id = bk.hostel_id 
+  AND bookinghsRoom.Floor_Id = bk.floor_id 
+  AND bookinghsRoom.id = bk.room_id 
 
 LEFT JOIN Hostel_Floor AS Bk_hr 
-  ON Bk_hr.floor_id = bk.floor_id AND Bk_hr.hostel_id = bk.hostel_id 
+  ON Bk_hr.floor_id = bk.floor_id 
+  AND Bk_hr.hostel_id = bk.hostel_id 
 
 LEFT JOIN Hostel_Floor AS hf 
-  ON hf.floor_id = hstl.Floor AND hf.hostel_id = hstl.Hostel_Id 
+  ON hf.floor_id = hstl.Floor 
+  AND hf.hostel_id = hstl.Hostel_Id 
   
-  
-
 LEFT JOIN bed_details AS bd 
   ON bd.id = hstl.Bed 
 
-WHERE hstl.Hostel_Id = ?
+WHERE hstl.Hostel_Id = ? AND (
+       bk.id IS NULL
+       OR (bk.status = 1 AND bk.customer_inactive = FALSE)
+  );
 `;
     const queryParams = [hostel_id];
 
@@ -4118,7 +4129,7 @@ function checkout_list(req, res) {
   b.inactive_reason,
   DATE_FORMAT(b.inactive_date, '%Y-%m-%d') AS inactive_date,
   CASE
-    WHEN inv.status = 'Right-Off' THEN 'Right-Off'
+    WHEN inv.status = 'Write-Off' THEN 'Write-Off'
     WHEN b.customer_inactive = 1 THEN 'In-Active'
     ELSE 'Check-Out'
   END AS status
@@ -4156,7 +4167,7 @@ LEFT JOIN (
 WHERE hs.Hostel_Id = ?
   AND (
     hs.CheckoutDate IS NOT NULL
-    OR b.id IS NOT NULL 
+    OR (b.id IS NOT NULL AND b.status = 0) OR b.customer_inactive =1
   )`;
   const queryParams = [current_date, hostel_id];
 
