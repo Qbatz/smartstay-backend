@@ -1470,10 +1470,10 @@ function createUser(connection, request, response) {
   }
 }
 
-function reassidn_checkIn(request, response) {
+function reassign_checkIn(request, response) {
   const { userId, RecheckIn_Reason, RecheckIn_Date } = request.body;
 
-  var Query = `select * from hostel where id = 270 AND isActive=1;`;
+  var Query = `select * from hostel where id = ? AND isActive=1;`;
   connection.query(Query, [userId], function (err, data) {
     if (err) {
       response
@@ -4431,5 +4431,5 @@ module.exports = {
   get_confirm_checkout,
   getInvoiceIDNew,
   unAssignedUserList,
-  reassidn_checkIn,
+  reassign_checkIn,
 };

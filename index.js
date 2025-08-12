@@ -215,8 +215,8 @@ app.post("/users/delete", (req, res) => {
   newBookings.delete_user(req, res);
 });
 
-app.post("/reassidn_checkIn", (req, res) => {
-  userQueries.reassidn_checkIn(req, res);
+app.post("/reassign_checkIn", (req, res) => {
+  userQueries.reassign_checkIn(req, res);
 });
 
 
