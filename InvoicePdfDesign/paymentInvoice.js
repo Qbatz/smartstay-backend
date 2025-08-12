@@ -4,6 +4,7 @@ const path = require('path');
 const moment = require('moment');
 const axios = require('axios');
 const request = require('sync-request');
+const sharp = require('sharp');
 
 // manual invoice, recurring, checkout invoice
 
@@ -17,17 +18,26 @@ async function generateInvoice(data, invoiceDetails, outputPath) {
   doc.registerFont('Gilroy-Medium', path.join(__dirname, '..', 'Asset', 'Fonts', 'Gilroy-Medium_0.ttf'));
   console.log(path.join(__dirname, '..', 'Asset', 'Fonts', 'Gilroy-Bold_0.ttf'));
 
+let themeColor = invoiceDetails?.template_theme || '#1E45E1';
 
+
+
+  if (themeColor.startsWith('rgba')) {
+    const match = themeColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+      themeColor = [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])];
+    }
+  }
 
   await drawOuterBorder(doc);
-  await drawHeader(doc, invoiceDetails);
-  await drawInvoiceHeading(doc, 'Payment Invoice');
-  await drawBillToSection(doc, invoiceDetails);
-  await drawInvoiceDetails(doc, invoiceDetails);
-  await drawInvoiceTable(doc, data, invoiceDetails);
-  await drawAccountDetails(doc, invoiceDetails);
-  await drawTermsAndSignature(doc, invoiceDetails);
-  await drawFooter(doc, invoiceDetails);
+  await drawHeader(doc, invoiceDetails,themeColor);
+  await drawInvoiceHeading(doc, 'Payment Invoice',themeColor);
+  await drawBillToSection(doc, invoiceDetails,themeColor);
+  await drawInvoiceDetails(doc, invoiceDetails,themeColor);
+  await drawInvoiceTable(doc, data, invoiceDetails,themeColor);
+  await drawAccountDetails(doc, invoiceDetails,themeColor);
+  await drawTermsAndSignature(doc, invoiceDetails,themeColor);
+  await drawFooter(doc, invoiceDetails,themeColor);
 
   doc.end();
 }
@@ -55,17 +65,17 @@ function drawOuterBorder(doc) {
 
 
 
-async function drawHeader(doc, invoiceDetails) {
+async function drawHeader(doc, invoiceDetails,themeColor) {
   const margin = 20;
   const pageWidth = doc.page.width;
   const headerHeight = 80;
 
-  drawHeaderBackground(doc, margin, pageWidth, headerHeight);
+  drawHeaderBackground(doc, margin, pageWidth, headerHeight,themeColor);
   await drawLogo(doc, invoiceDetails, margin);
-  drawHostelDetails(doc, invoiceDetails, pageWidth);
+  drawHostelDetails(doc, invoiceDetails, pageWidth,themeColor);
 }
 
-function drawHeaderBackground(doc, margin, pageWidth, headerHeight) {
+function drawHeaderBackground(doc, margin, pageWidth, headerHeight,themeColor) {
   const radius = 10;
   const x = margin;
   const y = margin;
@@ -79,7 +89,7 @@ function drawHeaderBackground(doc, margin, pageWidth, headerHeight) {
     .lineTo(x, y + h)
     .lineTo(x, y + radius)
     .quadraticCurveTo(x, y, x + radius, y)
-    .fill('#1E45E1');
+    .fill(themeColor);
 }
 
 
@@ -117,7 +127,7 @@ async function drawLogo(doc, invoiceDetails, margin) {
 }
 
 
-function drawHostelDetails(doc, invoiceDetails, pageWidth) {
+function drawHostelDetails(doc, invoiceDetails, pageWidth,themeColor) {
     const hostelInfoX = pageWidth - 200;
     const hostelInfoWidth = 150;
 
@@ -168,7 +178,7 @@ nonEmptyLines.forEach((line, index) => {
 
 }
 
-function drawInvoiceHeading(doc, headingText) {
+function drawInvoiceHeading(doc, headingText,themeColor) {
   const x = 230;
   const y = 130;
   const paddingX = 10;
@@ -189,43 +199,89 @@ function drawInvoiceHeading(doc, headingText) {
     .fill('#fff');
 
   doc
-    .fillColor('#1E45E1')
+    .fillColor(themeColor)
     .text(headingText, x, y, { align: 'left', continued: false });
 
 
-  doc.fillColor('#1E45E1');
+  doc.fillColor(themeColor);
 }
 
 
 
-function drawBillToSection(doc, invoiceDetails) {
+async function drawBillToSection(doc, invoiceDetails, themeColor) {
   const leftX = 50;
   const infoY = 170;
   const lineGap = 18;
 
 
-  doc.fillColor('#1E45E1').font('Gilroy-Bold').fontSize(10).text('Bill To:', leftX, infoY);
+  doc.fillColor(themeColor).font('Gilroy-Bold').fontSize(10).text('Bill To:', leftX, infoY);
   doc.fillColor('black').font('Gilroy-Medium');
 
   let y = infoY + lineGap;
 
-  function drawIconText(iconPath, text) {
+
+
+  async function loadThemedSVGAsPNG(filePath, themeColor) {
+    let colorStr = Array.isArray(themeColor)
+      ? `rgb(${themeColor[0]}, ${themeColor[1]}, ${themeColor[2]})`
+      : themeColor;
+
+    let svgContent = fs.readFileSync(filePath, 'utf8');
+
+    
+    svgContent = svgContent.replace(/\sfill="[^"]*"/g, '');
+    svgContent = svgContent.replace(/\sstroke="[^"]*"/g, '');
+
+    svgContent = svgContent.replace(
+      /<(path|rect|circle|polygon|ellipse)([^>]*?)(\/?)>/g,
+      `<$1$2 fill="${colorStr}"$3>`
+    );
+
+
+    svgContent = svgContent.replace(
+      /<svg([^>]*)>/,
+      `<svg$1 fill="${colorStr}" stroke="${colorStr}">`
+    );
+
+    try {
+      const buffer = await sharp(Buffer.from(svgContent)).png().toBuffer();
+      if (!buffer || buffer.length === 0) {
+        throw new Error('Empty PNG buffer after conversion');
+      }
+      return buffer;
+    } catch (err) {
+      console.error(`SVG to PNG conversion failed for ${filePath}:`, err);
+      throw err;
+    }
+  }
+
+
+
+
+
+
+  async function drawIconText(iconPath, text) {
     if (!text) return;
-    doc.image(iconPath, leftX, y - 2, { width: 10, height: 10 });
+    const iconBuffer = await loadThemedSVGAsPNG(iconPath, themeColor);
+    if (!iconBuffer || iconBuffer.length < 100) {
+      throw new Error(`Invalid icon buffer for ${iconPath}`);
+    }
+    doc.image(iconBuffer, leftX, y - 2, { width: 10, height: 10 });
     doc.text(text, leftX + 15, y);
     y += lineGap;
   }
 
 
-  const profileIcon = path.resolve(__dirname, '../Asset/user.png');
-  const phoneIcon = path.resolve(__dirname, '../Asset/call.png');
-  const bedIcon = path.resolve(__dirname, '../Asset/bed.png');
-  const locationIcon = path.resolve(__dirname, '../Asset/location.png');
+
+  const profileIcon = path.resolve(__dirname, '../Asset/Name.svg');
+  const phoneIcon = path.resolve(__dirname, '../Asset/Phone.svg');
+  const bedIcon = path.resolve(__dirname, '../Asset/Bed.svg');
+  const locationIcon = path.resolve(__dirname, '../Asset/location.svg');
 
 
-  drawIconText(profileIcon, invoiceDetails.Name);
-  drawIconText(phoneIcon, invoiceDetails.phoneNo);
-  drawIconText(bedIcon, invoiceDetails.Room_No ? `${invoiceDetails.Room_No} - ${invoiceDetails.Bed}` : null);
+  await drawIconText(profileIcon, invoiceDetails.Name);
+  await drawIconText(phoneIcon, invoiceDetails.phoneNo);
+  await drawIconText(bedIcon, invoiceDetails.Room_No ? `${invoiceDetails.Room_No} - ${invoiceDetails.Bed}` : null);
 
 
   const safe = value => {
@@ -243,10 +299,15 @@ function drawBillToSection(doc, invoiceDetails) {
   ].filter(line => line.trim()).join('\n');
 
   if (addressText) {
-    doc.image(locationIcon, leftX, y - 2, { width: 10, height: 10 });
-    doc.font('Gilroy-Medium').text(addressText, leftX + 15, y, { width: 450 });
-    y += doc.heightOfString(addressText, { width: 250 }) + 2;
+  const locationBuffer = await loadThemedSVGAsPNG(locationIcon, themeColor);
+  if (!locationBuffer || locationBuffer.length < 100) {
+    throw new Error(`Invalid icon buffer for ${locationIcon}`);
   }
+  doc.image(locationBuffer, leftX, y - 2, { width: 10, height: 10 });
+  doc.font('Gilroy-Medium').text(addressText, leftX + 15, y, { width: 450 });
+  y += doc.heightOfString(addressText, { width: 250 }) + 2;
+}
+
 
 
 
@@ -265,7 +326,7 @@ function formatDate(date) {
   return `${day}-${month}-${year}`;
 }
 
-function drawInvoiceDetails(doc, invoiceDetails) {
+function drawInvoiceDetails(doc, invoiceDetails, themeColor ) {
   const rightX = 350;
   const startY = 170;
   const lineGap = 18;
@@ -297,7 +358,7 @@ function drawInvoiceDetails(doc, invoiceDetails) {
 
 
 
-function drawInvoiceTable(doc, data, invoiceDetails) {
+function drawInvoiceTable(doc, data, invoiceDetails, themeColor) {
 
   console.log("Data***", data)
 
@@ -306,7 +367,7 @@ function drawInvoiceTable(doc, data, invoiceDetails) {
   const tableWidth = doc.page.width - 100;
 
 
-  doc.roundedRect(leftX, tableY, tableWidth, 25, 5).fill('#4768EA');
+  doc.roundedRect(leftX, tableY, tableWidth, 25, 5).fill(themeColor);
   doc.font('Gilroy-Regular').fillColor('white').font('Gilroy-Bold').fontSize(10)
     .text('S.No', leftX + 10, tableY + 7)
     .text('INV', leftX + 70, tableY + 7)
@@ -363,13 +424,13 @@ const total = subtotal + tax;
 
 
 
-function drawAccountDetails(doc, invoiceDetails) {
+function drawAccountDetails(doc, invoiceDetails,themeColor) {
   let y = 500;
   const leftX = 50;
   const valueX = leftX + 100;
   const pageWidth = doc.page.width;
 
-  doc.fillColor('#1E45E1').font('Gilroy-Bold').fontSize(11).text('ACCOUNT DETAILS', leftX, y);
+  doc.fillColor(themeColor).font('Gilroy-Bold').fontSize(11).text('ACCOUNT DETAILS', leftX, y);
   y += 20;
 
   doc.fontSize(10).fillColor('black').font('Gilroy-Medium');
@@ -428,25 +489,38 @@ function drawAccountDetails(doc, invoiceDetails) {
 }
 
 
-async function drawTermsAndSignature(doc, invoiceDetails) {
-    let y = 700;
+async function drawTermsAndSignature(doc, invoiceDetails,themeColor) {
     const leftX = 50;
     const rightX = 400;
+    const blockY = 700;
+    const signatureWidth = 100;
+    const signatureHeight = 60;
 
-    doc.fillColor('#1E45E1')
+    
+    doc.fillColor(themeColor)
         .font('Gilroy-Bold')
         .fontSize(10)
-        .text('Terms and Conditions', leftX, y);
+        .text('Terms and Conditions', leftX, blockY);
+
+
+    const termsText = invoiceDetails.terms_and_condition
+        ? invoiceDetails.terms_and_condition
+        : "Tenants must pay all dues on or before the due date, maintain cleanliness, and follow PG rules; failure may lead to penalties or termination of stay.";
+
+    const termsHeight = doc.heightOfString(termsText, { width: 300 });
+
+    doc.fillColor('gray')
+        .font('Gilroy-Medium')
+        .fontSize(9)
+        .text(termsText, leftX, blockY + 15, { width: 300 });
 
    
+    const sigY = blockY + (termsHeight / 2) - (signatureHeight / 2);
+    const sigX = rightX + 50; 
+
     if (invoiceDetails.digital_signature_url) {
         const response = await axios.get(invoiceDetails.digital_signature_url, { responseType: 'arraybuffer' });
         const imageBuffer = Buffer.from(response.data, 'binary');
-
-        const signatureWidth = 100;
-        const signatureHeight = 60;
-        const sigX = rightX + 50;
-        const sigY = y - signatureHeight - 5;
 
         doc.image(imageBuffer, sigX, sigY, {
             width: signatureWidth,
@@ -454,29 +528,19 @@ async function drawTermsAndSignature(doc, invoiceDetails) {
         });
     }
 
+    
     doc.fillColor('black')
         .font('Gilroy-Bold')
         .fontSize(10)
-        .text('Authorized Signature', rightX, y, { align: 'right', width: 150 });
-
-    y += 15;
-
-    doc.fontSize(9)
-        .fillColor('gray')
-        .font('Gilroy-Medium')
-        .text(
-            invoiceDetails.terms_and_condition
-                ? invoiceDetails.terms_and_condition
-                : "Tenants must pay all dues on or before the due date, maintain cleanliness, and follow PG rules; failure may lead to penalties or termination of stay.",
-            leftX,
-            y,
-            { width: 300 }
-        );
+        .text('Authorized Signature', sigX, sigY + signatureHeight + 5, {
+            align: 'center',
+            width: signatureWidth 
+        });
 }
 
 
 
-function drawFooter(doc, invoiceDetails) {
+function drawFooter(doc, invoiceDetails,themeColor) {
   const margin = 20;
   const pageWidth = doc.page.width;
   const footerHeight = 26;
@@ -496,7 +560,7 @@ function drawFooter(doc, invoiceDetails) {
     .lineTo(footerX, footerY + footerHeight)
     .lineTo(footerX, footerY + cornerRadius)
     .quadraticCurveTo(footerX, footerY, footerX + cornerRadius, footerY)
-    .fill('#1E45E1');
+    .fill(themeColor);
   doc.restore();
 
   doc.fillColor('white').fontSize(10).font('Gilroy-Medium');
