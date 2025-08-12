@@ -330,10 +330,16 @@ function drawInvoiceTable(doc, data, invoiceDetails) {
 
 
 
-  const tax = Number(invoiceDetails?.tax) || 0;
+  const taxPercent = Number(invoiceDetails?.tax) || 0; 
 
-  const subtotal = data.reduce((sum, i) => sum + i.amount, 0);
-  const total = subtotal + tax;
+
+const subtotal = data.reduce((sum, i) => sum + i.amount, 0);
+
+
+const tax = (subtotal * taxPercent) / 100;
+
+
+const total = subtotal + tax;
 
 
 
