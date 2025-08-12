@@ -705,7 +705,7 @@ FROM
       ON b.id = rs.payment_mode 
    LEFT JOIN
       checkout_deductions AS ch 
-      ON ch.receipt_id = rs.id 
+      ON ch.user_id = rs.user_id
             LEFT JOIN bill_template AS bt
   ON bt.Hostel_Id = inv.hostel_Id
   AND (
@@ -797,7 +797,7 @@ FROM
       ON Insett.hostel_Id = hos.id 
    LEFT JOIN
       checkout_deductions AS ch 
-      ON ch.receipt_id = rs.id 
+      ON ch.user_id = rs.user_id
             LEFT JOIN bill_template AS bt
   ON bt.Hostel_Id = inv.hostel_Id
   AND (
