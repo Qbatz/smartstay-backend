@@ -362,18 +362,19 @@ WHERE
 FROM transactions t
 LEFT JOIN receipts r 
     ON t.invoice_id = r.invoice_number AND t.id = r.trans_Id
-WHERE t.invoice_id = ?`;
+WHERE t.invoice_id = ? AND t.user_id =?`;
           connection.query(
             sql2,
-            [Data[0].Invoices],
+            [Data[0].Invoices,amenities[0].user_id],
             function (err, Transaction) {
               if (err) {
                 return res.status(201).json({
                   statusCode: 201,
-                  message: "Error to Get Bill Details",
+                  message: "Error to transaction Bill Details",
                   reason: err.message,
                 });
               } else {
+                console.log("Transaction",Transaction)
                 let total_amount = 0;
 
                 // Check once if "advance" is present in any item
