@@ -416,18 +416,59 @@ SET
   inactive_date = ?
 WHERE id = ?;
 `;
-  connection.query(bookingUpdate,[Inactive_Reason,Inactive_date,booking_id], function (err, sel_data) {
-    if (err) {
-        console.log(err)
-      return res
-        .status(201)
-        .json({ statusCode: 201, message: "Unable to Move Inactive Customer" });
-    } else {
-         return res
-        .status(200)
-        .json({ statusCode: 200, message: "User Inactive Sucessfully" });
+  connection.query(
+    bookingUpdate,
+    [Inactive_Reason, Inactive_date, booking_id],
+    function (err, sel_data) {
+      if (err) {
+        console.log(err);
+        return res
+          .status(201)
+          .json({
+            statusCode: 201,
+            message: "Unable to Move Inactive Customer",
+          });
+      } else {
+        var selectBedID = `select id from bed_details where booking_id=?`;
+        connection.query(selectBedID, [booking_id], function (err, bedData) {
+          if (err) {
+            console.log(err);
+            return res
+              .status(201)
+              .json({
+                statusCode: 201,
+                message: "Unable to Move Inactive Customer",
+              });
+          } else {
+            var bedUpdate = `UPDATE bed_details
+SET 
+  booking_id = 0,
+  isbooked =0,
+  user_id=0
+WHERE id=?;
+`;
+            connection.query(bedUpdate, [bedData[0].id], function (err) {
+              if (err) {
+                console.log(err);
+                return res
+                  .status(201)
+                  .json({
+                    statusCode: 201,
+                    message: "Unable to Move Inactive Customer",
+                  });
+              } else {
+                console.log("Bed Changed sucessfully");
+              }
+            });
+          }
+        });
+
+        return res
+          .status(200)
+          .json({ statusCode: 200, message: "User Inactive Sucessfully" });
+      }
     }
-  });
+  );
 }
 
 function delete_booking(req, res) {
@@ -588,4 +629,10 @@ function assign_booking(req, res) {
   }
 }
 
-module.exports = { add_booking, all_bookings, delete_booking, assign_booking ,Booking_Inactive };
+module.exports = {
+  add_booking,
+  all_bookings,
+  delete_booking,
+  assign_booking,
+  Booking_Inactive,
+};
