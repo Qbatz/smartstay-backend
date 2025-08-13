@@ -177,7 +177,7 @@ LEFT JOIN bed_details AS bd
 WHERE hstl.Hostel_Id = ? AND (
        bk.id IS NULL
        OR (bk.status = 1 AND bk.customer_inactive = FALSE)
-  );
+  )
 `;
     const queryParams = [hostel_id];
 
@@ -3385,7 +3385,8 @@ function get_beduser_details(req, res) {
   hs.Phone,
   hs.RoomRent,
   hs.createdAt,
-  hs.User_Id
+  hs.User_Id,
+  hs.id
 FROM hostel AS hs
 LEFT JOIN bookings AS bk
   ON bk.customer_Id = hs.ID
