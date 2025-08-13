@@ -895,6 +895,7 @@ async function processInvoicesAndFinalizeCheckout(
       reasons?.reduce((acc, item) => acc + Number(item.amount || 0), 0) || 0;
     const finalInvoiceAmount = Number(totalBalanceDue || 0) + reasonTotalAmount;
 
+
     var sql1 = "SELECT * FROM bankings WHERE id=? AND status=1";
     connection.query(sql1, [payment_id], async function (err, bank_data) {
       if (err) {
@@ -904,17 +905,21 @@ async function processInvoicesAndFinalizeCheckout(
           reason: err.message,
         });
       }
-
-      if (bank_data.length == 0) {
+      if (advance_return > 0 || bank_data.length == 0) {
         return res
           .status(201)
           .json({ statusCode: 201, message: "Invalid Bank Details" });
       }
 
-      var bankamount = Number(bank_data[0].balance);
+      var bankamount = isNaN(Number(bank_data?.[0]?.balance)) ? 0 : Number(bank_data?.[0]?.balance);
 
+      var bankamount1 = Number(bank_data[0]?.balance ? bank_data[0]?.balance : 0);
+
+      console.log("bankamount1", bankamount1);
+      console.log("bankamount", bankamount);
       var new_amount = bankamount - advance_return;
 
+      console.log("new_amount", new_amount);
       //   if (bankamount >= advance_return) {
       if (invoices.length === 0) {
         const receipt_no = await generateUniqueReceiptNumber();
@@ -1083,6 +1088,7 @@ async function processInvoicesAndFinalizeCheckout(
               //   finalizeCheckout(id, bed_id, advance_return, comments, res);
               // }
               if (insertValues.length > 0) {
+                console.log("insertValues", insertValues)
                 const insertQuery = `
                                   INSERT INTO checkout_deductions (reason, amount, user_id, created_by, receipt_id)
                                   VALUES ?
@@ -1331,6 +1337,7 @@ async function processInvoicesAndFinalizeCheckout(
       //       .json({ statusCode: 201, message: "Insufficient Bank Balance" });
       //   }
     });
+
 
     // CASE: No previous pending invoices
   });
