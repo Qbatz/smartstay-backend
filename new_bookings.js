@@ -866,7 +866,7 @@ function finalizeCheckout(id, bed_id, advance_return, comments, res) {
   });
 }
 
-async function processInvoicesAndFinalizeCheckout(
+async function processInvoicesAndFinalizeCheckout_old(
   id,
   totalBalanceDue,
   roomRent,
@@ -1342,6 +1342,409 @@ async function processInvoicesAndFinalizeCheckout(
     // CASE: No previous pending invoices
   });
 }
+
+async function processInvoicesAndFinalizeCheckout(
+  id,
+  totalBalanceDue,
+  roomRent,
+  created_by,
+  checkout_date,
+  bed_id,
+  advance_return,
+  comments,
+  reasons,
+  new_hosdetails,
+  payment_id,
+  hostel_id,
+  res
+) {
+  const sql = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
+  connection.query(sql, [id], async (err, invoices) => {
+    if (err) {
+      return res.status(201).json({
+        statusCode: 201,
+        message: "Unable to fetch invoices for processing",
+        reason: err.message,
+      });
+    }
+
+    const reasonTotalAmount =
+      reasons?.reduce((acc, item) => acc + Number(item.amount || 0), 0) || 0;
+    const finalInvoiceAmount = Number(totalBalanceDue || 0) + reasonTotalAmount;
+
+    var sql1 = "SELECT * FROM bankings WHERE id=? AND status=1";
+    connection.query(sql1, [payment_id], async function (err, bank_data) {
+      if (err) {
+        return res.status(201).json({
+          statusCode: 201,
+          message: "Error to Get Bank Details",
+          reason: err.message,
+        });
+      }
+
+      if (advance_return > 0 && bank_data.length === 0) {
+        return res
+          .status(201)
+          .json({ statusCode: 201, message: "Invalid Bank Details" });
+      }
+
+      var bankamount = isNaN(Number(bank_data?.[0]?.balance))
+        ? 0
+        : Number(bank_data?.[0]?.balance);
+
+      var new_amount = bankamount - advance_return;
+
+      if (invoices.length === 0) {
+        const receipt_no = await generateUniqueReceiptNumber();
+        const receiptAmount =
+          finalInvoiceAmount > 0 ? finalInvoiceAmount : advance_return;
+
+        const insertReceiptSQL = `
+          INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date, created_by)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
+        const receiptParams = [
+          id,
+          "",
+          receiptAmount,
+          payment_id || null,
+          receipt_no,
+          checkout_date,
+          created_by,
+        ];
+
+        connection.query(insertReceiptSQL, receiptParams, (err, receipt_data) => {
+          if (err) {
+            return res.status(201).json({
+              statusCode: 201,
+              message: "Error inserting receipt",
+              reason: err.message,
+            });
+          }
+
+          const receipt_id = receipt_data.insertId;
+
+          if (advance_return > 0) {
+            let sql4 = `INSERT INTO bank_transactions 
+                        (bank_id, date, amount, \`desc\`, type, status, createdby, edit_id, hostel_id)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            connection.query(
+              sql4,
+              [
+                payment_id,
+                checkout_date,
+                advance_return,
+                "Receipt",
+                2,
+                1,
+                created_by,
+                receipt_id,
+                hostel_id,
+              ],
+              function (err) {
+                if (err) {
+                  console.log("Insert Transactions Error", err);
+                  return res.status(201).json({
+                    statusCode: 201,
+                    message: "Error processing bank transaction",
+                  });
+                }
+
+                let sql5 = "UPDATE bankings SET balance=? WHERE id=?";
+                connection.query(sql5, [new_amount, payment_id], function (err) {
+                  if (err) {
+                    console.log("Update Amount Error", err);
+                  }
+                });
+              }
+            );
+          }
+
+          const insertValues = [];
+
+          if (Array.isArray(reasons)) {
+            insertValues.push(
+              ...reasons.map((item) => [
+                item.reason_name || "",
+                Number(item.amount || 0),
+                id,
+                created_by,
+                receipt_id,
+              ])
+            );
+          }
+
+          if (
+            totalBalanceDue &&
+            !reasons?.some(
+              r =>
+                Number(r.amount) === Number(totalBalanceDue) ||
+                r.reason_name?.toLowerCase().includes("due")
+            )
+          ) {
+            insertValues.push([
+              "Outstanding Due",
+              Number(totalBalanceDue),
+              id,
+              created_by,
+              receipt_id,
+            ]);
+          }
+
+          if (
+            (!Array.isArray(reasons) || reasons.length === 0) &&
+            !totalBalanceDue
+          ) {
+            insertValues.push([
+              "Advance Return",
+              Number(advance_return),
+              id,
+              created_by,
+              receipt_id,
+            ]);
+          }
+
+          if (insertValues.length > 0) {
+            const insertQuery = `
+              INSERT INTO checkout_deductions (reason, amount, user_id, created_by, receipt_id)
+              VALUES ?
+            `;
+            connection.query(insertQuery, [insertValues], (err) => {
+              if (err) {
+                return res.status(201).json({
+                  statusCode: 201,
+                  message: "Error inserting checkout deductions",
+                  reason: err.message,
+                });
+              }
+              finalizeCheckout(id, bed_id, advance_return, comments, res);
+            });
+          } else {
+            finalizeCheckout(id, bed_id, advance_return, comments, res);
+          }
+        });
+      } else {
+        const queries = invoices.map((invoice) => {
+          const {
+            BalanceDue,
+            Invoices: invoiceId,
+            id: inv_id,
+            PaidAmount,
+          } = invoice;
+          const all_amount = Number(PaidAmount) + Number(BalanceDue);
+
+          return new Promise(async (resolve, reject) => {
+            try {
+              const receipt_no = await generateUniqueReceiptNumber();
+
+              const insertReceiptSQL = `
+                                    INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date, created_by)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                                `;
+              const receiptParams = [
+                id,
+                invoiceId,
+                advance_return,
+                payment_id,
+                receipt_no,
+                checkout_date,
+                created_by,
+              ];
+
+              connection.query(insertReceiptSQL, receiptParams, (err) => {
+                if (err) return reject(err);
+
+                const updateInvoiceSQL = `
+                                        UPDATE invoicedetails
+                                        SET PaidAmount = ?, BalanceDue = 0, Status = 'Paid'
+                                        WHERE id = ?
+                                    `;
+                connection.query(
+                  updateInvoiceSQL,
+                  [all_amount, inv_id],
+                  (err) => {
+                    if (err) return reject(err);
+                    resolve();
+                  }
+                );
+              });
+            } catch (error) {
+              reject(error);
+            }
+          });
+        });
+
+        Promise.all(queries)
+          .then(async () => {
+            const receipt_no = await generateUniqueReceiptNumber();
+            const insertReceiptSQL = `
+                                INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date, created_by)
+                                VALUES (?, ?, ?, ?, ?, ?, ?)
+                            `;
+            const receiptParams = [
+              id,
+              0,
+              advance_return,
+              payment_id,
+              receipt_no,
+              checkout_date,
+              created_by,
+            ];
+
+            connection.query(
+              insertReceiptSQL,
+              receiptParams,
+              (err, receipt_data) => {
+                if (err) {
+                  return res.status(201).json({
+                    statusCode: 201,
+                    message: "Error inserting final receipt",
+                    reason: err.message,
+                  });
+                }
+
+                const receipt_id = receipt_data.insertId;
+
+                let sql4 =
+                  "INSERT INTO bank_transactions (bank_id, date, amount, `desc`, type, status, createdby, edit_id, hostel_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                connection.query(
+                  sql4,
+                  [
+                    payment_id,
+                    checkout_date,
+                    advance_return,
+                    "Receipt",
+                    2,
+                    1,
+                    created_by,
+                    receipt_id,
+                    hostel_id,
+                  ],
+                  function (err) {
+                    if (err) {
+                      console.log("Insert Transactions Error", err);
+                      return res.status(201).json({
+                        statusCode: 201,
+                        message: "Error processing bank transaction",
+                      });
+                    }
+
+                    let sql5 = "UPDATE bankings SET balance=? WHERE id=?";
+                    connection.query(
+                      sql5,
+                      [new_amount, payment_id],
+                      function (err) {
+                        if (err) {
+                          console.log("Update Amount Error", err);
+                        }
+                      }
+                    );
+                  }
+                );
+
+                const insertValues = [];
+
+                if (Array.isArray(reasons) && reasons.length > 0) {
+                  insertValues.push(
+                    ...reasons.map((item) => [
+                      item.reason_name,
+                      item.amount,
+                      id,
+                      created_by,
+                      receipt_id,
+                    ])
+                  );
+                }
+
+                console.log("totalBalanceDue", totalBalanceDue)
+                if (
+                  totalBalanceDue &&
+                  !reasons?.some(
+                    r =>
+                      Number(r.amount) === Number(totalBalanceDue) ||
+                      r.reason_name?.toLowerCase().includes("due")
+                  )
+                ) {
+                  insertValues.push([
+                    "Outstanding Due",
+                    Number(totalBalanceDue),
+                    id,
+                    created_by,
+                    receipt_id,
+                  ]);
+                }
+
+                else if (advance_return) {
+                  insertValues.push([
+                    "Advance Return",
+                    advance_return,
+                    id,
+                    created_by,
+                    receipt_id,
+                  ]);
+                }
+                console.log("insertValues", insertValues)
+
+                const insertQuery = `
+                                    INSERT INTO checkout_deductions (reason, amount, user_id, created_by, receipt_id)
+                                    VALUES ?
+                                `;
+
+                connection.query(
+                  "DELETE FROM checkout_deductions WHERE user_id = ?",
+                  [id],
+                  (err) => {
+                    if (err) {
+                      return res.status(201).json({
+                        statusCode: 201,
+                        message: "Error deleting previous reasons",
+                        reason: err.message,
+                      });
+                    }
+
+                    if (insertValues.length > 0) {
+                      connection.query(insertQuery, [insertValues], (err) => {
+                        if (err) {
+                          return res.status(201).json({
+                            statusCode: 201,
+                            message: "Error inserting checkout deductions",
+                            reason: err.message,
+                          });
+                        }
+                        finalizeCheckout(
+                          id,
+                          bed_id,
+                          advance_return,
+                          comments,
+                          res
+                        );
+                      });
+                    } else {
+                      finalizeCheckout(
+                        id,
+                        bed_id,
+                        advance_return,
+                        comments,
+                        res
+                      );
+                    }
+                  }
+                );
+              }
+            );
+          })
+          .catch((err) => {
+            return res.status(201).json({
+              statusCode: 201,
+              message: "Error processing previous invoices",
+              reason: err.message,
+            });
+          });
+      }
+    });
+  });
+}
+
 
 const generateUniqueReceiptNumber = () => {
   return new Promise((resolve, reject) => {
