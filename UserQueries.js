@@ -1544,7 +1544,7 @@ LEFT JOIN bookings AS bk
 WHERE h.Hostel_Id = ? AND isActive=1
   AND h.Bed = 'undefined'
    AND h.Floor = 'undefined'
-    AND h.Rooms = 'undefined';`;
+    AND h.Rooms = 'undefined' AND bk.id IS Null;;`;
   connection.query(Query, [hostel_Id], function (error, UpdateData) {
     if (error) {
       response.status(201).json({ message: "No Data Found", statusCode: 201 });
