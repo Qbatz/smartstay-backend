@@ -467,14 +467,14 @@ function add_booking(req, res) {
               reason: err.message,
             });
           } else {
-             var booking_id = ins_data.insertId;
+            var booking_id = ins_data.insertId;
             var updateBed = `UPDATE bed_details
                   SET isbooked = 1,
                   booking_id= ?,
                   user_id= ?
                   WHERE id = ?;`;
-            connection.query(updateBed, [booking_id,customer_Id,bed_id], function (err, ins_data) {
-               if (err) {
+            connection.query(updateBed, [booking_id, customer_Id, bed_id], function (err, ins_data) {
+              if (err) {
                 console.log(err);
               }
               return res.status(200).json({
@@ -736,7 +736,7 @@ function add_confirm_checkout(req, res) {
   var payment_id = req.body.payment_id;
 
   // Validate mandatory fields
-  if (!id || !hostel_id || !checkout_date || !payment_id) {
+  if (!id || !hostel_id || !checkout_date || (advance_return > 0 && !payment_id)) {
     return res
       .status(201)
       .json({ statusCode: 201, message: "Missing Mandatory Fields" });
@@ -814,10 +814,17 @@ function add_confirm_checkout(req, res) {
           reasons?.reduce((acc, item) => acc + Number(item.amount || 0), 0) ||
           0;
 
-        var check_amount =
-          Number(advance_amount) -
-          (Number(totalBalanceDue) + Number(reasonTotalAmount));
-        if (Number(advance_amount) >= check_amount && check_amount > 0) {
+        console.log("totalBalanceDue", totalBalanceDue);
+        console.log("advance_amount", advance_amount);
+        console.log("reasonTotalAmount", reasonTotalAmount);
+
+        if (reasonTotalAmount > advance_amount) {
+          return res.status(201).json({
+            statusCode: 201,
+            message: "Advance Amount is Less than Total Balance Due",
+          });
+        }
+        else {
           processInvoicesAndFinalizeCheckout(
             id,
             totalBalanceDue,
@@ -833,11 +840,6 @@ function add_confirm_checkout(req, res) {
             hostel_id,
             res
           );
-        } else {
-          return res.status(201).json({
-            statusCode: 201,
-            message: "Advance Amount is Less than Total Balance Due",
-          });
         }
       });
     }
