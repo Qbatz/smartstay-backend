@@ -174,10 +174,10 @@ LEFT JOIN Hostel_Floor AS hf
 LEFT JOIN bed_details AS bd 
   ON bd.id = hstl.Bed 
 
-WHERE hstl.Hostel_Id = ? AND (
+WHERE hstl.Hostel_Id = 136 AND (
        bk.id IS NULL
        OR (bk.status = 1 AND bk.customer_inactive = FALSE)
-  ) AND hstl.CheckoutDate IS NULL
+  ) 
 `;
     const queryParams = [hostel_id];
 
@@ -4132,11 +4132,10 @@ function checkout_list(req, res) {
   CASE
     WHEN inv.status = 'Write-Off' THEN 'Write-Off'
     WHEN b.customer_inactive = 1 THEN 'In-Active'
-    ELSE 'Check-Out'
+    WHEN hs.isActive = 0 THEN 'Check-Out'
   END AS status
 
 FROM hostel AS hs 
-
 JOIN hosteldetails AS hos_de 
   ON hos_de.id = hs.Hostel_Id 
 
@@ -4167,8 +4166,8 @@ LEFT JOIN (
 
 WHERE hs.Hostel_Id = ?
   AND (
-    hs.CheckoutDate IS NOT NULL
-    OR (b.id IS NOT NULL AND b.status = 0) OR b.customer_inactive =1
+    (hs.CheckoutDate IS NOT NULL AND bed.isnoticeperiod <> 1)
+    OR b.customer_inactive = 1
   )`;
   const queryParams = [current_date, hostel_id];
 
