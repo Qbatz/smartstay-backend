@@ -174,7 +174,7 @@ LEFT JOIN Hostel_Floor AS hf
 LEFT JOIN bed_details AS bd 
   ON bd.id = hstl.Bed 
 
-WHERE hstl.Hostel_Id = 136 AND (
+WHERE hstl.Hostel_Id = ? AND (
        bk.id IS NULL
        OR (bk.status = 1 AND bk.customer_inactive = FALSE)
   ) 
