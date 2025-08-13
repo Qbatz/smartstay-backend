@@ -34,8 +34,8 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /usr/share/nginx/html/smartstay-testing-api.s3remotica.com
-            git config --global --add safe.directory /usr/share/nginx/html/smartstay-testing-api.s3remotica.com
+            cd /usr/share/nginx/html/smartstay-dev-api.s3remotica.com
+            git config --global --add safe.directory /usr/share/nginx/html/smartstay-dev-api.s3remotica.com
 
             sudo git pull origin main
             sudo npm install

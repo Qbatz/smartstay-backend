@@ -2106,7 +2106,7 @@ async function update_confirm_checkout_due_amount(req, res) {
 
           const updateInvoiceSQL = `
                                         UPDATE invoicedetails
-                                        SET BalanceDue = ?, Status = 'Right-off'
+                                        SET BalanceDue = ?, Status = 'Write-off'
                                         WHERE id = ?
                                     `;
 
