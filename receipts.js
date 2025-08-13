@@ -708,7 +708,7 @@ FROM
      )
      JOIN createaccount As ca
   ON ca.id = rs.created_by
-  WHERE rs.id = ?;`;
+  WHERE rs.id = ? ;`;
             // var sql1 = "SELECT rs.*,hs.Name AS uname,hs.Phone AS uphone,hs.Email AS uemail,hs.Address AS uaddress,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upincode,hs.city AS ucity,hs.state AS ustate,hos.Name AS hname,hos.email_id AS hemail,hos.hostel_PhoneNo AS hphone,hos.area AS harea,hos.Address AS haddress,hos.landmark AS hlandmark,hos.pin_code AS hpincode,hos.city AS hcity,hos.state AS hstate,man.*,ban.type AS bank_type,ban.benificiary_name,inv.Date,inv.DueDate,inv.action,Insett.bankingId,Insett.privacyPolicyHtml FROM receipts AS rs JOIN hostel AS hs ON rs.user_id=hs.ID JOIN invoicedetails AS inv ON inv.Invoices=rs.invoice_number AND inv.hos_user_id=rs.user_id JOIN manual_invoice_amenities AS man ON man.invoice_id=inv.id JOIN hosteldetails AS hos ON hos.id=hs.Hostel_Id LEFT JOIN bankings AS ban ON ban.id=rs.payment_mode LEFT JOIN InvoiceSettings AS Insett ON Insett.hostel_Id=hos.id WHERE rs.id=?;";
 
         } else {
@@ -734,6 +734,7 @@ FROM
   hos.pin_code AS hpincode, 
   hos.city AS hcity, 
   hos.state AS hstate, 
+  man.*, 
   inv.Date, 
   inv.DueDate, 
   inv.action, 
@@ -767,28 +768,23 @@ FROM
     ),
     NULL
   ) AS banking
-FROM 
-  receipts AS rs 
-  JOIN hostel AS hs ON rs.user_id = hs.ID 
-  LEFT JOIN invoicedetails AS inv ON inv.Invoices = rs.invoice_number 
-  AND inv.hos_user_id = rs.user_id 
-  JOIN hosteldetails AS hos ON hos.id = hs.Hostel_Id 
-  LEFT JOIN bankings AS b ON b.id = rs.payment_mode 
-       LEFT JOIN
-      checkout_deductions AS ch 
-      ON ch.user_id = rs.user_id
-            LEFT JOIN bill_template AS bt
+FROM receipts AS rs 
+JOIN hostel AS hs ON rs.user_id = hs.ID 
+LEFT JOIN invoicedetails AS inv ON inv.User_Id = rs.user_id 
+LEFT JOIN manual_invoice_amenities AS man ON man.invoice_id = inv.id 
+JOIN hosteldetails AS hos ON hos.id = hs.Hostel_Id 
+LEFT JOIN bankings AS b ON b.id = rs.payment_mode 
+LEFT JOIN checkout_deductions AS ch ON ch.user_id = rs.user_id
+LEFT JOIN bill_template AS bt
   ON bt.Hostel_Id = inv.hostel_Id
-     AND (
-       (inv.action = 'advance' AND bt.template_type = 'Security Deposit Invoice')
-       OR (inv.action IN ('recurring', 'manual', 'checkout-invoice') AND bt.template_type = 'Payment Receipt')
-       OR (inv.action = 'checkout' AND bt.template_type = 'Final Settlement Receipt')
-       OR (inv.action NOT IN ('advance', 'recurring', 'manual', 'checkout-invoice', 'checkout') AND bt.template_type = 'Rental Invoice')
-     )
-     JOIN createaccount As ca
-  ON ca.id = rs.created_by
-WHERE 
-  rs.id = ? ;`;
+  AND (
+    (inv.action = 'advance' AND bt.template_type = 'Security Deposit Invoice')
+    OR (inv.action IN ('recurring', 'manual', 'checkout-invoice') AND bt.template_type = 'Payment Receipt')
+    OR (inv.action = 'checkout' AND bt.template_type = 'Final Settlement Receipt')
+    OR (inv.action NOT IN ('advance', 'recurring', 'manual', 'checkout-invoice', 'checkout') AND bt.template_type = 'Rental Invoice')
+  )
+JOIN createaccount AS ca ON ca.id = rs.created_by
+WHERE rs.id = ? `;
             // var sql1 = "SELECT rs.*, hs.Name AS uname, hs.Phone AS uphone, hs.Email AS uemail, hs.Address AS uaddress, hs.area AS uarea, hs.landmark AS ulandmark, hs.pincode AS upincode, hs.city AS ucity, hs.state AS ustate, hos.Name AS hname, hos.email_id AS hemail, hos.hostel_PhoneNo AS hphone, hos.area AS harea, hos.Address AS haddress, hos.landmark AS hlandmark, hos.pin_code AS hpincode, hos.city AS hcity, hos.state AS hstate, ban.type AS bank_type, ban.benificiary_name, inv.Date, inv.DueDate,inv.action,Insett.bankingId, Insett.privacyPolicyHtml,ch.* FROM receipts AS rs JOIN hostel AS hs ON rs.user_id = hs.ID LEFT JOIN invoicedetails AS inv ON inv.Invoices = rs.invoice_number AND inv.hos_user_id = rs.user_id JOIN hosteldetails AS hos ON hos.id = hs.Hostel_Id LEFT JOIN bankings AS ban ON ban.id = rs.payment_mode LEFT JOIN InvoiceSettings AS Insett ON Insett.hostel_Id = hos.id LEFT JOIN checkout_deductions AS ch ON ch.receipt_id=rs.id WHERE rs.id = ?;"
 
         }
