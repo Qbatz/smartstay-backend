@@ -177,7 +177,7 @@ LEFT JOIN bed_details AS bd
 WHERE hstl.Hostel_Id = ? AND (
        bk.id IS NULL
        OR (bk.status = 1 AND bk.customer_inactive = FALSE)
-  )
+  ) AND hstl.CheckoutDate IS NULL
 `;
     const queryParams = [hostel_id];
 
