@@ -2607,7 +2607,7 @@ function finalizeCheckoutDueCustomer(
     WHERE ID = ?;
 
     UPDATE bed_details 
-    SET user_id = 0, isfilled = 0 
+    SET user_id = 0, isfilled = 0 ,isNoticePeriod=0,
     WHERE id = ?;
   `;
 
