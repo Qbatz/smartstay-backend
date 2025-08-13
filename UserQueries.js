@@ -118,10 +118,10 @@ function getUsers(connection, response, request) {
   hf.floor_name,
 
   CASE 
-    WHEN bk.id IS NOT NULL THEN 'booking'
-    WHEN bd.id IS NULL THEN 'unassigned'
-    WHEN bd.isNoticePeriod = TRUE THEN 'noticeperiod'
-    ELSE 'checkIn'
+    WHEN bk.id IS NOT NULL THEN 'Booking'
+    WHEN bd.id IS NULL THEN 'Un-Assigned'
+    WHEN bd.isNoticePeriod = TRUE THEN 'Notice period'
+    ELSE 'Check In'
   END AS bed_status,
 
   bk.id AS booking_id,
@@ -129,7 +129,8 @@ function getUsers(connection, response, request) {
   bk.booking_date As booking_booking_date,
   bk.joining_date AS booking_joining_date,
   bk.room_id AS booking_room_id,
-  bk.floor_id AS booking_floor_id,bk.bed_id AS booking_bed_id,
+  bk.floor_id AS booking_floor_id,
+  bk.bed_id AS booking_bed_id,
   bookinghsRoom.Room_Id AS Booking_Rooms,
   Bk_hr.floor_name AS Booking_FloorName,
   bd_booking.bed_no As Booking_Bed
@@ -137,12 +138,15 @@ function getUsers(connection, response, request) {
 FROM hosteldetails AS hstlDetails 
 
 INNER JOIN hostel AS hstl 
-  ON hstl.Hostel_Id = hstlDetails.id AND hstl.isActive = TRUE 
+  ON hstl.Hostel_Id = hstlDetails.id 
+  AND hstl.isActive = TRUE 
 
 LEFT JOIN bookings AS bk 
-  ON bk.hostel_id = hstl.Hostel_Id AND bk.customer_id = hstl.ID AND bk.status=1 
+  ON bk.hostel_id = hstl.Hostel_Id 
+  AND bk.customer_id = hstl.ID  
+  AND bk.status = 1
   
-  -- ✅ Bed from booking
+-- ✅ Bed from booking
 LEFT JOIN bed_details AS bd_booking 
   ON bd_booking.id = bk.bed_id 
 
@@ -150,23 +154,30 @@ LEFT JOIN country_list AS cl
   ON hstl.country_code = cl.country_code 
 
 LEFT JOIN hostelrooms hsroom 
-  ON hsroom.Hostel_Id = hstlDetails.id AND hsroom.Floor_Id = hstl.Floor AND hsroom.id = hstl.Rooms 
+  ON hsroom.Hostel_Id = hstlDetails.id 
+  AND hsroom.Floor_Id = hstl.Floor 
+  AND hsroom.id = hstl.Rooms 
   
-  LEFT JOIN hostelrooms bookinghsRoom 
-  ON bookinghsRoom.Hostel_Id = bk.hostel_id AND bookinghsRoom.Floor_Id = bk.floor_id AND bookinghsRoom.id = bk.room_id 
+LEFT JOIN hostelrooms bookinghsRoom 
+  ON bookinghsRoom.Hostel_Id = bk.hostel_id 
+  AND bookinghsRoom.Floor_Id = bk.floor_id 
+  AND bookinghsRoom.id = bk.room_id 
 
 LEFT JOIN Hostel_Floor AS Bk_hr 
-  ON Bk_hr.floor_id = bk.floor_id AND Bk_hr.hostel_id = bk.hostel_id 
+  ON Bk_hr.floor_id = bk.floor_id 
+  AND Bk_hr.hostel_id = bk.hostel_id 
 
 LEFT JOIN Hostel_Floor AS hf 
-  ON hf.floor_id = hstl.Floor AND hf.hostel_id = hstl.Hostel_Id 
+  ON hf.floor_id = hstl.Floor 
+  AND hf.hostel_id = hstl.Hostel_Id 
   
-  
-
 LEFT JOIN bed_details AS bd 
   ON bd.id = hstl.Bed 
 
-WHERE hstl.Hostel_Id = ?
+WHERE hstl.Hostel_Id = ? AND (
+       bk.id IS NULL
+       OR (bk.status = 1 AND bk.customer_inactive = FALSE)
+  )
 `;
     const queryParams = [hostel_id];
 
@@ -1470,10 +1481,10 @@ function createUser(connection, request, response) {
   }
 }
 
-function reassidn_checkIn(request, response) {
+function reassign_checkIn(request, response) {
   const { userId, RecheckIn_Reason, RecheckIn_Date } = request.body;
 
-  var Query = `select * from hostel where id = 270 AND isActive=1;`;
+  var Query = `select * from hostel where id = ? AND isActive=1;`;
   connection.query(Query, [userId], function (err, data) {
     if (err) {
       response
@@ -1533,7 +1544,7 @@ LEFT JOIN bookings AS bk
 WHERE h.Hostel_Id = ? AND isActive=1
   AND h.Bed = 'undefined'
    AND h.Floor = 'undefined'
-    AND h.Rooms = 'undefined';`;
+    AND h.Rooms = 'undefined' AND bk.id IS Null;;`;
   connection.query(Query, [hostel_Id], function (error, UpdateData) {
     if (error) {
       response.status(201).json({ message: "No Data Found", statusCode: 201 });
@@ -1829,7 +1840,7 @@ function transitionlist(request, response) {
                                       });
                                     } else {
                                       var sql1 =
-                                        "INSERT INTO receipts (user_id,reference_id,invoice_number,amount_received,payment_date,payment_mode,created_by) VALUES (?)";
+                                        "INSERT INTO receipts (user_id,reference_id,invoice_number,amount_received,payment_date,payment_mode,created_by,trans_Id) VALUES (?)";
                                       var params = [
                                         ID,
                                         reference_id,
@@ -1838,6 +1849,7 @@ function transitionlist(request, response) {
                                         payment_date,
                                         payment_by,
                                         created_by,
+                                        ins_res.insertId
                                       ];
                                       connection.query(
                                         sql1,
@@ -3366,8 +3378,25 @@ function get_beduser_details(req, res) {
         .json({ message: "Missing Mandatory Fields", statusCode: 201 });
     }
 
-    var sql1 =
-      "SELECT Name,Phone,RoomRent,createdAt,User_Id FROM hostel WHERE Hostel_Id=? AND Floor =? AND Rooms=? AND Bed=? AND isActive=1 AND created_by=?";
+    // var sql1 =
+    //   "SELECT Name,Phone,RoomRent,createdAt,User_Id FROM hostel WHERE Hostel_Id=? AND Floor =? AND Rooms=? AND Bed=? AND isActive=1 AND created_by=?";
+   var sql1 =`SELECT 
+  hs.Name,
+  hs.Phone,
+  hs.RoomRent,
+  hs.createdAt,
+  hs.User_Id,
+  hs.id
+FROM hostel AS hs
+LEFT JOIN bookings AS bk
+  ON bk.customer_Id = hs.ID
+  AND bk.hostel_id = hs.Hostel_Id
+  AND bk.status = 1
+WHERE hs.Hostel_Id = ?
+  AND COALESCE(NULLIF(hs.Floor, 'undefined'), bk.floor_id) = ?
+  AND COALESCE(NULLIF(hs.Rooms, 'undefined'), bk.room_id) = ?
+  AND COALESCE(NULLIF(hs.Bed, 'undefined'), bk.bed_id) = ?
+  AND hs.isActive = 1;`
     connection.query(
       sql1,
       [hostel_id, floor_id, room_id, bed, created_by],
@@ -4099,7 +4128,12 @@ function checkout_list(req, res) {
   hs.user_id AS userID,
   b.customer_inactive,
   b.inactive_reason,
-  DATE_FORMAT(b.inactive_date, '%Y-%m-%d') AS inactive_date
+  DATE_FORMAT(b.inactive_date, '%Y-%m-%d') AS inactive_date,
+  CASE
+    WHEN inv.status = 'Write-Off' THEN 'Write-Off'
+    WHEN b.customer_inactive = 1 THEN 'In-Active'
+    ELSE 'Check-Out'
+  END AS status
 
 FROM hostel AS hs 
 
@@ -4127,11 +4161,14 @@ LEFT JOIN (
      AND b1.id = latest_booking.max_id
 ) AS b 
   ON b.customer_Id = hs.ID AND b.hostel_id = hs.Hostel_Id
+  
+  LEFT JOIN invoicedetails AS inv
+  ON inv.id = hs.ID
 
 WHERE hs.Hostel_Id = ?
   AND (
     hs.CheckoutDate IS NOT NULL
-    OR b.id IS NOT NULL 
+    OR (b.id IS NOT NULL AND b.status = 0) OR b.customer_inactive =1
   )`;
   const queryParams = [current_date, hostel_id];
 
@@ -4431,5 +4468,5 @@ module.exports = {
   get_confirm_checkout,
   getInvoiceIDNew,
   unAssignedUserList,
-  reassidn_checkIn,
+  reassign_checkIn,
 };

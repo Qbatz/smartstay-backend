@@ -3,8 +3,12 @@ const PDFDocument = require('pdfkit');
 const path = require('path');
 const moment = require('moment');
 const axios = require('axios');
-const request = require('sync-request');
 const numberToWords = require('number-to-words');
+const sharp = require('sharp');
+
+
+
+
 
 
 // advance receipt
@@ -14,32 +18,40 @@ async function generateReceipt(data, invoiceDetails, outputPath) {
   const doc = new PDFDocument({ size: 'A4', margin: 0 });
   doc.pipe(fs.createWriteStream(outputPath));
 
-  console.log("invoiceDetails", invoiceDetails)
+  console.log("invoiceDetails advance receipt", invoiceDetails)
   doc.registerFont('Gilroy-Bold', path.join(__dirname, '..', 'Asset', 'Fonts', 'Gilroy-Bold_0.ttf'));
   doc.registerFont('Gilroy-Regular', path.join(__dirname, '..', 'Asset', 'Fonts', 'Gilroy-Regular_0.ttf'));
   doc.registerFont('Gilroy-Medium', path.join(__dirname, '..', 'Asset', 'Fonts', 'Gilroy-Medium_0.ttf'));
-  console.log(path.join(__dirname, '..', 'Asset', 'Fonts', 'Gilroy-Bold_0.ttf'));
+
+  let themeColor = invoiceDetails?.template_theme || '#00B14F';
 
 
+
+  if (themeColor.startsWith('rgba')) {
+    const match = themeColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+      themeColor = [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])];
+    }
+  }
 
   await drawOuterBorder(doc);
-  await drawHeader(doc, invoiceDetails);
-  await drawInvoiceHeading(doc, 'Security Deposit Receipt');
-  await drawBillToSection(doc, invoiceDetails);
-  await drawInvoiceDetails(doc, invoiceDetails);
+  await drawHeader(doc, invoiceDetails, themeColor);
+  await drawInvoiceHeading(doc, 'Security Deposit Receipt', themeColor);
+  await drawBillToSection(doc, invoiceDetails, themeColor);
+  await drawInvoiceDetails(doc, invoiceDetails, themeColor);
   const amountBoxX = 360;
-  const amountBoxY = 300;  
+  const amountBoxY = 300;
 
-  await drawAmountBox(doc, data, invoiceDetails, amountBoxX, amountBoxY);
+  await drawAmountBox(doc, data, invoiceDetails, amountBoxX, amountBoxY, themeColor);
 
- 
-  const tableStartY = amountBoxY + 60 + 20; 
 
-  await drawInvoiceTable(doc, data, invoiceDetails, tableStartY);
-  
-  await drawAccountDetails(doc, invoiceDetails);
-  await drawTermsAndSignature(doc, invoiceDetails);
-  await drawFooter(doc, invoiceDetails);
+  const tableStartY = amountBoxY + 60 + 20;
+
+  await drawInvoiceTable(doc, data, invoiceDetails, tableStartY, themeColor);
+
+  await drawAccountDetails(doc, invoiceDetails, themeColor);
+  await drawTermsAndSignature(doc, invoiceDetails, themeColor);
+  await drawFooter(doc, invoiceDetails, themeColor);
 
   doc.end();
 }
@@ -67,17 +79,16 @@ function drawOuterBorder(doc) {
 
 
 
-async function drawHeader(doc, invoiceDetails) {
+async function drawHeader(doc, invoiceDetails, themeColor) {
   const margin = 20;
   const pageWidth = doc.page.width;
   const headerHeight = 80;
-
-  drawHeaderBackground(doc, margin, pageWidth, headerHeight);
+  await drawHeaderBackground(doc, margin, pageWidth, headerHeight, themeColor);
   await drawLogo(doc, invoiceDetails, margin);
-  drawHostelDetails(doc, invoiceDetails, pageWidth);
+  await drawHostelDetails(doc, invoiceDetails, pageWidth, themeColor);
 }
 
-function drawHeaderBackground(doc, margin, pageWidth, headerHeight) {
+function drawHeaderBackground(doc, margin, pageWidth, headerHeight, themeColor) {
   const radius = 10;
   const x = margin;
   const y = margin;
@@ -91,17 +102,19 @@ function drawHeaderBackground(doc, margin, pageWidth, headerHeight) {
     .lineTo(x, y + h)
     .lineTo(x, y + radius)
     .quadraticCurveTo(x, y, x + radius, y)
-    .fill('#00A32E');
+    .fillColor(themeColor)
+    .fill();
 }
 
 
 
 
+
 async function drawLogo(doc, invoiceDetails, margin) {
-  const logoPath = path.resolve(__dirname, '../Asset/Group@2x.png');
+  const logoPath = path.resolve(__dirname, '../Asset/receiptlogo.png');
   const x = margin + 18;
   const y = 34;
-  const width = 100;
+  const width = 60;
   const height = 60;
   const radius = 2;
 
@@ -129,7 +142,7 @@ async function drawLogo(doc, invoiceDetails, margin) {
 }
 
 
-function drawHostelDetails(doc, invoiceDetails, pageWidth) {
+function drawHostelDetails(doc, invoiceDetails, pageWidth, themeColor) {
   const hostelInfoX = pageWidth - 200;
   const hostelInfoWidth = 150;
 
@@ -181,7 +194,7 @@ function drawHostelDetails(doc, invoiceDetails, pageWidth) {
 }
 
 
-function drawInvoiceHeading(doc, headingText) {
+function drawInvoiceHeading(doc, headingText, themeColor) {
   const x = 230;
   const y = 130;
   const paddingX = 10;
@@ -202,43 +215,90 @@ function drawInvoiceHeading(doc, headingText) {
     .fill('#fff');
 
   doc
-    .fillColor('#00A32E')
+    .fillColor(themeColor)
     .text(headingText, x, y, { align: 'left', continued: false });
 
 
-  doc.fillColor('#00A32E');
+  doc.fillColor(themeColor);
 }
 
 
 
-function drawBillToSection(doc, invoiceDetails) {
+async function drawBillToSection(doc, invoiceDetails, themeColor) {
   const leftX = 50;
   const infoY = 170;
   const lineGap = 18;
 
 
-  doc.fillColor('#00A32E').font('Gilroy-Bold').fontSize(10).text('Bill To:', leftX, infoY);
+  doc.fillColor(themeColor).font('Gilroy-Bold').fontSize(10).text('Bill To:', leftX, infoY);
   doc.fillColor('black').font('Gilroy-Medium');
 
   let y = infoY + lineGap;
 
-  function drawIconText(iconPath, text) {
+
+
+  async function loadThemedSVGAsPNG(filePath, themeColor) {
+    let colorStr = Array.isArray(themeColor)
+      ? `rgb(${themeColor[0]}, ${themeColor[1]}, ${themeColor[2]})`
+      : themeColor;
+
+    let svgContent = fs.readFileSync(filePath, 'utf8');
+
+    // Remove fill and stroke without breaking self-closing tags
+    svgContent = svgContent.replace(/\sfill="[^"]*"/g, '');
+    svgContent = svgContent.replace(/\sstroke="[^"]*"/g, '');
+
+    // Apply fill to elements
+    svgContent = svgContent.replace(
+      /<(path|rect|circle|polygon|ellipse)([^>]*?)(\/?)>/g,
+      `<$1$2 fill="${colorStr}"$3>`
+    );
+
+    // Apply default fill/stroke to root
+    svgContent = svgContent.replace(
+      /<svg([^>]*)>/,
+      `<svg$1 fill="${colorStr}" stroke="${colorStr}">`
+    );
+
+    try {
+      const buffer = await sharp(Buffer.from(svgContent)).png().toBuffer();
+      if (!buffer || buffer.length === 0) {
+        throw new Error('Empty PNG buffer after conversion');
+      }
+      return buffer;
+    } catch (err) {
+      console.error(`SVG to PNG conversion failed for ${filePath}:`, err);
+      throw err;
+    }
+  }
+
+
+
+
+
+
+  async function drawIconText(iconPath, text) {
     if (!text) return;
-    doc.image(iconPath, leftX, y - 2, { width: 10, height: 10 });
+    const iconBuffer = await loadThemedSVGAsPNG(iconPath, themeColor);
+    if (!iconBuffer || iconBuffer.length < 100) {
+      throw new Error(`Invalid icon buffer for ${iconPath}`);
+    }
+    doc.image(iconBuffer, leftX, y - 2, { width: 10, height: 10 });
     doc.text(text, leftX + 15, y);
     y += lineGap;
   }
 
 
-  const profileIcon = path.resolve(__dirname, '../Asset/usertwo.png');
-    const phoneIcon = path.resolve(__dirname, '../Asset/Rectangle 77.png');
-    const bedIcon = path.resolve(__dirname, '../Asset/Group.png');
-    const locationIcon = path.resolve(__dirname, '../Asset/Subtract.png');
+
+  const profileIcon = path.resolve(__dirname, '../Asset/Name.svg');
+  const phoneIcon = path.resolve(__dirname, '../Asset/Phone.svg');
+  const bedIcon = path.resolve(__dirname, '../Asset/Bed.svg');
+  const locationIcon = path.resolve(__dirname, '../Asset/location.svg');
 
 
-  drawIconText(profileIcon, invoiceDetails.uname);
-  drawIconText(phoneIcon, invoiceDetails.uphone);
-  drawIconText(bedIcon, invoiceDetails.uRooms ? `${invoiceDetails.uRooms} - ${invoiceDetails.uBed}` : null);
+  await drawIconText(profileIcon, invoiceDetails.uname);
+  await drawIconText(phoneIcon, invoiceDetails.uphone);
+  await drawIconText(bedIcon, invoiceDetails.uRooms ? `${invoiceDetails.uRooms} - ${invoiceDetails.uBed}` : null);
 
 
   const safe = value => {
@@ -256,10 +316,15 @@ function drawBillToSection(doc, invoiceDetails) {
   ].filter(line => line.trim()).join('\n');
 
   if (addressText) {
-    doc.image(locationIcon, leftX, y - 2, { width: 10, height: 10 });
-    doc.font('Gilroy-Medium').text(addressText, leftX + 15, y, { width: 450 });
-    y += doc.heightOfString(addressText, { width: 250 }) + 2;
+  const locationBuffer = await loadThemedSVGAsPNG(locationIcon, themeColor);
+  if (!locationBuffer || locationBuffer.length < 100) {
+    throw new Error(`Invalid icon buffer for ${locationIcon}`);
   }
+  doc.image(locationBuffer, leftX, y - 2, { width: 10, height: 10 });
+  doc.font('Gilroy-Medium').text(addressText, leftX + 15, y, { width: 450 });
+  y += doc.heightOfString(addressText, { width: 250 }) + 2;
+}
+
 
 
 
@@ -318,26 +383,26 @@ function convertAmountToWords(amount) {
     words += " and " + numberToWords.toWords(decimalPart) + " Paise";
   }
   words += " Only";
-  return words.charAt(0).toUpperCase() + words.slice(1);  
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 
 
 
 
-function drawAmountBox(doc, data, invoiceDetails, boxX, boxY) {
+function drawAmountBox(doc, data, invoiceDetails, boxX, boxY, themeColor) {
   const pageWidth = doc.page.width;
   const margin = 50;
   const lineY = boxY;
 
-  
+
   doc
     .fontSize(12)
     .fillColor('black')
     .font('Gilroy-Regular')
     .text('Payment For', margin, lineY);
 
-  
+
   const amountReceivedText = 'Amount received';
   const textWidth = doc.widthOfString(amountReceivedText);
   const centerX = pageWidth / 2 - textWidth / 2;
@@ -348,13 +413,13 @@ function drawAmountBox(doc, data, invoiceDetails, boxX, boxY) {
     .font('Gilroy-Regular')
     .text(amountReceivedText, centerX, lineY);
 
- 
+
   const rectWidth = 200;
   const rectHeight = 50;
 
   doc
     .roundedRect(boxX, lineY - 5, rectWidth, rectHeight, 5)
-    .strokeColor('#00B14F')
+    .strokeColor(themeColor)
     .lineWidth(1)
     .stroke();
 
@@ -363,34 +428,34 @@ function drawAmountBox(doc, data, invoiceDetails, boxX, boxY) {
   const tax = parseFloat(invoiceDetails.tax || 0);
   const total = subtotal;
 
-  
+
   doc
     .fontSize(14)
-    .fillColor('#00B14F')
+    .fillColor(themeColor)
     .font('Gilroy-Bold')
     .text(total.toFixed(2), boxX, lineY, {
       width: rectWidth,
       align: 'center',
     });
 
-  
+
   const amountInWords = convertAmountToWords(total);
   doc
     .fontSize(9)
     .fillColor('#555555')
     .font('Gilroy-Bold')
-    .text(amountInWords, boxX + 5, lineY + 18, { 
+    .text(amountInWords, boxX + 5, lineY + 18, {
       width: rectWidth - 10,
       align: 'center',
     });
 }
 
 
-function drawInvoiceTable(doc, data, invoiceDetails, tableY = 280) {
+function drawInvoiceTable(doc, data, invoiceDetails, tableY = 280, themeColor) {
   const leftX = 50;
   const tableWidth = doc.page.width - 100;
 
-  doc.roundedRect(leftX, tableY, tableWidth, 25, 5).fill('#00A32E');
+  doc.roundedRect(leftX, tableY, tableWidth, 25, 5).fill(themeColor);
   doc.font('Gilroy-Regular').fillColor('white').font('Gilroy-Bold').fontSize(10)
     .text('S.No', leftX + 10, tableY + 7)
     .text('INV', leftX + 70, tableY + 7)
@@ -401,176 +466,152 @@ function drawInvoiceTable(doc, data, invoiceDetails, tableY = 280) {
   doc.font('Gilroy-Regular').fillColor('black');
 
 
-console.log("data details PDF", data)
+  console.log("data details PDF", data)
 
-data.forEach((item, i) => {
-  doc
-    .text(i + 1, leftX + 10, y) 
-    .text(item.invoice_number || '-', leftX + 70, y)
-    .text(item.action || '-', leftX + 200, y) 
-    .text(
-      parseFloat(item.amount_received ?? 0).toFixed(2), 
-      leftX + 400,
-      y
-    );
+  data.forEach((item, i) => {
+    doc
+      .text(i + 1, leftX + 10, y)
+      .text(item.invoice_number || '-', leftX + 70, y)
+      .text(item.action || '-', leftX + 200, y)
+      .text(
+        parseFloat(item.amount_received ?? 0).toFixed(2),
+        leftX + 400,
+        y
+      );
 
-  y += 25; 
-  doc.moveTo(leftX, y).lineTo(leftX + tableWidth, y).strokeColor('#E0E0E0').lineWidth(1).stroke();
-});
+    y += 25;
+    doc.moveTo(leftX, y).lineTo(leftX + tableWidth, y).strokeColor('#E0E0E0').lineWidth(1).stroke();
+  });
 
 
-
-  // data.forEach((item, i) => {
-  //   doc.text(i + 1, leftX + 10, y)
-  //     .text(item.Invoices || '-', leftX + 70, y)
-  //     .text(item.action || '-', leftX + 200, y)
-  //     .text((item?.amount_received ?? 0).toFixed(2), leftX + 400, y);
-  //   y += 25;
-  // });
-
-  // const RefundableTotal = data
-  //   .filter(item => item.am_name?.toLowerCase() !== 'advance')
-  //   .reduce((sum, item) => sum + (item.amount || 0), 0);
-
-  // const subtotal = data.reduce((sum, i) => sum + i.amount_received, 0);
-
-  // const total = subtotal;
-
-  // y += 10;
-  // doc.moveTo(leftX, y).lineTo(leftX + tableWidth, y).strokeColor('#E0E0E0').lineWidth(1).stroke();
-
-  // y += 10;
-  // doc.font('Gilroy-Regular').text('Payable Amount', leftX + 300, y).text(`Rs. ${subtotal.toFixed(2)}`, leftX + 400, y);
-  // y += 20;
-  // doc.font('Gilroy-Regular').text('Non Refundable', leftX + 300, y).text(`Rs. ${RefundableTotal.toFixed(2)}`, leftX + 400, y);
-  // y += 20;
-  // doc.font('Gilroy-Regular').text('Refundable Amount', leftX + 300, y).text(`Rs. ${total.toFixed(2)}`, leftX + 400, y);
 }
 
 
 
 
 
-function drawAccountDetails(doc, invoiceDetails) {
+function drawAccountDetails(doc, invoiceDetails, themeColor) {
   let y = 500;
   const leftX = 50;
   const valueX = leftX + 100;
   const pageWidth = doc.page.width;
 
-  doc.fillColor('#00A32E').font('Gilroy-Bold').fontSize(11).text('ACCOUNT DETAILS', leftX, y);
+  doc.fillColor(themeColor).font('Gilroy-Bold').fontSize(11).text('ACCOUNT DETAILS', leftX, y);
   y += 20;
 
   doc.fontSize(10).fillColor('black').font('Gilroy-Medium');
-  doc.text('Payment Mode', leftX, y).text(`: ${invoiceDetails.banking.type || "NA"}`, valueX, y);
+  doc.text('Payment Mode', leftX, y).text(`: ${invoiceDetails?.banking?.type || "NA"}`, valueX, y);
   y += 15;
 
-  doc.text('Payment Recorded By', leftX, y).text(` : ${" "} ${invoiceDetails.benificiary_name || ""}`, valueX, y);
+  doc.text('Payment Recorded By', leftX, y).text(` : ${" "} ${invoiceDetails?.Payment_Recorded_By || ""}`, valueX, y);
   y += 15;
- 
+
   doc.text('Status', leftX, y).text(`: ${"Paid"}`, valueX, y);
   y += 15;
 
-   const immage1 = path.resolve(__dirname, '../Asset/image 32.png');
-  
+  const immage1 = path.resolve(__dirname, '../Asset/image 32.png');
+
 
   const qrX = 400;
   const qrY = 500;
 
-   if (fs.existsSync(immage1)) {
-    doc.image(immage1, qrX, qrY, { width: 100, height:70 });
+  if (fs.existsSync(immage1)) {
+    doc.image(immage1, qrX, qrY, { width: 100, height: 70 });
   }
 
-   y = Math.max(y, qrY + 70) + 20; 
+  y = Math.max(y, qrY + 70) + 20;
 
 
-doc.fontSize(12).fillColor('#00A32E');
+  doc.fontSize(12).fillColor(themeColor);
 
-if (invoiceDetails?.notes) {
-  const text = invoiceDetails.notes.replace(/<br\s*\/?>/gi, '\n');
+  if (invoiceDetails?.notes) {
+    const text = invoiceDetails.notes.replace(/<br\s*\/?>/gi, '\n');
 
-  const boxWidth = 600;
-  const xPos = pageWidth - 50 - boxWidth; 
+    const boxWidth = 600;
+    const xPos = pageWidth - 50 - boxWidth;
 
-  doc.text(
-    text,
-    xPos,
-    y,
-    {
-      width: boxWidth,
-      align: 'right'
-    }
-  );
-} else {
-  const boxWidth = pageWidth - 100; 
-  const xPos = 50;
+    doc.text(
+      text,
+      xPos,
+      y,
+      {
+        width: boxWidth,
+        align: 'right'
+      }
+    );
+  } else {
+    const boxWidth = pageWidth - 100;
+    const xPos = 50;
 
-  doc.text(
-    'Thank you for choosing SmartStay.\nYour transaction is completed.',
-    xPos,
-    y,
-    {
-      width: boxWidth,
-      align: 'right'
-    }
-  );
+    doc.text(
+      'Thank you for choosing SmartStay.\nYour transaction is completed.',
+      xPos,
+      y,
+      {
+        width: boxWidth,
+        align: 'right'
+      }
+    );
+  }
+
+
+
+
+
 }
 
 
+async function drawTermsAndSignature(doc, invoiceDetails, themeColor) {
+  const leftX = 50;
+  const rightX = 400;
+  const blockY = 700;
+  const signatureWidth = 100;
+  const signatureHeight = 60;
 
 
+  doc.fillColor('themeColor')
+    .font('Gilroy-Bold')
+    .fontSize(10)
+    .text('Terms and Conditions', leftX, blockY);
 
+
+  const termsText = invoiceDetails.terms_and_condition
+    ? invoiceDetails.terms_and_condition
+    : "Tenants must pay all dues on or before the due date, maintain cleanliness, and follow PG rules; failure may lead to penalties or termination of stay.";
+
+  const termsHeight = doc.heightOfString(termsText, { width: 300 });
+
+  doc.fillColor('gray')
+    .font('Gilroy-Medium')
+    .fontSize(9)
+    .text(termsText, leftX, blockY + 15, { width: 300 });
+
+
+  const sigY = blockY + (termsHeight / 2) - (signatureHeight / 2);
+  const sigX = rightX + 50;
+
+  if (invoiceDetails.digital_signature_url) {
+    const response = await axios.get(invoiceDetails.digital_signature_url, { responseType: 'arraybuffer' });
+    const imageBuffer = Buffer.from(response.data, 'binary');
+
+    doc.image(imageBuffer, sigX, sigY, {
+      width: signatureWidth,
+      height: signatureHeight
+    });
+  }
+
+
+  doc.fillColor('black')
+    .font('Gilroy-Bold')
+    .fontSize(10)
+    .text('Authorized Signature', sigX, sigY + signatureHeight + 5, {
+      align: 'center',
+      width: signatureWidth
+    });
 }
 
 
-async function drawTermsAndSignature(doc, invoiceDetails) {
-    let y = 700;
-    const leftX = 50;
-    const rightX = 400;
-
-    doc.fillColor('#1E45E1')
-        .font('Gilroy-Bold')
-        .fontSize(10)
-        .text('Terms and Conditions', leftX, y);
-
-   
-    if (invoiceDetails.digital_signature_url) {
-        const response = await axios.get(invoiceDetails.digital_signature_url, { responseType: 'arraybuffer' });
-        const imageBuffer = Buffer.from(response.data, 'binary');
-
-        const signatureWidth = 100;
-        const signatureHeight = 60;
-        const sigX = rightX + 50;
-        const sigY = y - signatureHeight - 5;
-
-        doc.image(imageBuffer, sigX, sigY, {
-            width: signatureWidth,
-            height: signatureHeight
-        });
-    }
-
-    doc.fillColor('black')
-        .font('Gilroy-Bold')
-        .fontSize(10)
-        .text('Authorized Signature', rightX, y, { align: 'right', width: 150 });
-
-    y += 15;
-
-    doc.fontSize(9)
-        .fillColor('gray')
-        .font('Gilroy-Medium')
-        .text(
-            invoiceDetails.terms_and_condition
-                ? invoiceDetails.terms_and_condition
-                : "Tenants must pay all dues on or before the due date, maintain cleanliness, and follow PG rules; failure may lead to penalties or termination of stay.",
-            leftX,
-            y,
-            { width: 300 }
-        );
-}
-
-
-
-function drawFooter(doc, invoiceDetails) {
+function drawFooter(doc, invoiceDetails, themeColor) {
   const margin = 20;
   const pageWidth = doc.page.width;
   const footerHeight = 26;
@@ -579,9 +620,9 @@ function drawFooter(doc, invoiceDetails) {
   const footerX = margin + sideSpacing;
   const footerY = doc.page.height - margin - footerHeight;
   const cornerRadius = 20;
-  const padding = 30;  
+  const padding = 30;
 
- 
+
   doc.save();
   doc.moveTo(footerX + cornerRadius, footerY)
     .lineTo(footerX + footerWidth - cornerRadius, footerY)
@@ -590,7 +631,7 @@ function drawFooter(doc, invoiceDetails) {
     .lineTo(footerX, footerY + footerHeight)
     .lineTo(footerX, footerY + cornerRadius)
     .quadraticCurveTo(footerX, footerY, footerX + cornerRadius, footerY)
-    .fill('#00A32E');
+    .fill(themeColor);
   doc.restore();
 
   doc.fillColor('white').fontSize(10).font('Gilroy-Medium');
@@ -598,8 +639,8 @@ function drawFooter(doc, invoiceDetails) {
 
   doc.text(`email: ${invoiceDetails.common_email ? invoiceDetails.common_email : invoiceDetails.hemail}`, footerX + padding, footerY + 13);
 
- 
-  const phoneText = `Contact: ${invoiceDetails.common_contact_number ?  invoiceDetails.common_contact_number : invoiceDetails.hphone}`;
+
+  const phoneText = `Contact: ${invoiceDetails.common_contact_number ? invoiceDetails.common_contact_number : invoiceDetails.hphone}`;
   const phoneTextWidth = doc.widthOfString(phoneText);
 
   doc.text(phoneText, footerX + footerWidth - phoneTextWidth - padding, footerY + 13);
@@ -956,7 +997,7 @@ module.exports = { generateReceipt };
 //            y += 30;
 // const outerPadding = 20;
 // doc
-//   .moveTo(outerPadding, y) 
+//   .moveTo(outerPadding, y)
 //   .lineTo(pageWidth - outerPadding, y) // Respect outer padding on right too
 //   .lineWidth(1)
 //   .strokeColor('#E0E0E0') // Light gray line like in Figma
