@@ -408,7 +408,7 @@ function drawInvoiceTable(doc, data, invoiceDetails ,themeColor) {
   doc.moveTo(leftX, y).lineTo(leftX + tableWidth, y).strokeColor('#E0E0E0').lineWidth(1).stroke();
 
   y += 10;
-  doc.font('Gilroy-Regular').text('Advance Amount', leftX + 300, y).text(`Rs. ${invoiceDetails?.AdvanceAmount.toFixed(2)}`, leftX + 400, y);
+  doc.font('Gilroy-Regular').text('Advance Amount', leftX + 300, y).text(`Rs. ${invoiceDetails?.AdvanceAmount ?? 0}`, leftX + 400, y);
   y += 20;
   doc.font('Gilroy-Regular').text('Refundabled ', leftX + 300, y).text(`Rs. ${total.toFixed(2)}`, leftX + 400, y);
 
