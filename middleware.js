@@ -34,6 +34,7 @@ module.exports = (req, res, next) => {
         '/reviews/all_review',
         '/webhook',
         '/send-whatsapp',
+        '/TestCron'
         // '/invoice_redirect/:invoiceUrl'
     ];
 
