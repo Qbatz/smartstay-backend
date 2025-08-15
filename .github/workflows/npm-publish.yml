@@ -5,14 +5,14 @@ name: Node.js Package
 
 on:
   push:
-    branches: ["qa-build"]
+    branches: ["prod", "production"]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     environment:
-      name: testing
+      name: prod
 
     strategy:
       matrix:
@@ -34,10 +34,10 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /usr/share/nginx/html/smartstay-testing-api.s3remotica.com
-            git config --global --add safe.directory /usr/share/nginx/html/smartstay-testing-api.s3remotica.com
+            cd /usr/share/nginx/html/smartstay-prod-api.qbatz.com
+            git config --global --add safe.directory /usr/share/nginx/html/smartstay-prod-api.qbatz.com
 
-            sudo git pull origin qa-build
+            sudo git pull origin prod
             sudo npm install
 
             rm -f .env
@@ -73,5 +73,5 @@ jobs:
             echo "PORT=${{ vars.APP_PORT}}" | sudo tee -a .env > /dev/null
 
             sudo chmod 777 .env
-
-            pm2 restart smartstay-testing-api.s3remotica.com || pm2 start index.js --name smartstay-testing-api.s3remotica.com
+            
+            pm2 restart smartstay-prod-api.qbatz.com || pm2 start index.js --name smartstay-prod-api.qbatz.com
