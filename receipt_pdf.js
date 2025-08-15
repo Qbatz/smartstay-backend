@@ -365,7 +365,7 @@ LEFT JOIN receipts r
 WHERE t.invoice_id = ? AND t.user_id =?`;
           connection.query(
             sql2,
-            [Data[0].Invoices,amenities[0].user_id],
+            [Data[0].Invoices, amenities[0].user_id],
             function (err, Transaction) {
               if (err) {
                 return res.status(201).json({
@@ -374,7 +374,12 @@ WHERE t.invoice_id = ? AND t.user_id =?`;
                   reason: err.message,
                 });
               } else {
-                console.log("Transaction",Transaction)
+                let paymentMode = 0;
+                if (Transaction.length > 0) {
+                  Transaction.forEach((item) => {
+                    paymentMode += item.amount;
+                  });
+                }
                 let total_amount = 0;
 
                 // Check once if "advance" is present in any item
@@ -439,9 +444,26 @@ WHERE t.invoice_id = ? AND t.user_id =?`;
                     duration: duration,
                   };
                 });
-
+                let subtotal = hasAdvance ? advance : total_amount;
+                 let totalBillAmount=0;
+                 let taxAmount =0;
+                 BalanceDueAmount=0;
+                if(Data[0].tax){
+                totalBillAmount =
+                  subtotal + (subtotal * Number(Data[0].tax)) / 100;
+                taxAmount = (subtotal * Number(Data[0].tax)) / 100;
+                }
+                else{
+                  totalBillAmount = subtotal
+                }
+                BalanceDueAmount = totalBillAmount - paymentMode;
                 const finalresponse = {
                   id: invoice_id,
+                  subtotal: subtotal,
+                  tax: Data[0].tax || 0  + "%",
+                  taxAmount: taxAmount,
+                  totalBillAmount: totalBillAmount,
+                  BalanceDueAmount:BalanceDueAmount,
                   invoice_details: {
                     invoice_id: Data[0].Invoices,
                     invioice_date:

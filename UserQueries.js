@@ -4130,7 +4130,7 @@ function checkout_list(req, res) {
   b.inactive_reason,
   DATE_FORMAT(b.inactive_date, '%Y-%m-%d') AS inactive_date,
   CASE
-    WHEN inv.status = 'Write-Off' THEN 'Write-Off'
+    WHEN inv.status = 'Write-off' THEN 'Write-Off'
     WHEN b.customer_inactive = 1 THEN 'In-Active'
     WHEN hs.isActive = 0 THEN 'Check-Out'
   END AS status
@@ -4162,7 +4162,7 @@ LEFT JOIN (
   ON b.customer_Id = hs.ID AND b.hostel_id = hs.Hostel_Id
   
   LEFT JOIN invoicedetails AS inv
-  ON inv.id = hs.ID
+  ON inv.id = hs.ID AND inv.status = 'Write-off'
 
 WHERE hs.Hostel_Id = ?
   AND (
