@@ -76,4 +76,3 @@ jobs:
             
 
             pm2 restart smartstay-prod-api.qbatz.com || pm2 start index.js --name smartstay-prod-api.qbatz.com
-
