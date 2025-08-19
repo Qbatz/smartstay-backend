@@ -204,8 +204,8 @@ async function fetchAndUpdateCustomerKycStatus(req, res, customer_id) {
 
         });
       } else {
-        const retryAfter = new Date(Date.now() + 5 * 60 * 1000); 
-        const isRetryCompleted = Date.now() >= retryAfter;
+        const updatedAt = new Date(kycResponse?.updated_at).getTime();
+        const isRetryCompleted = Date.now() >= updatedAt;
         return res.status(200).json({
           statusCode: 200,
           message: 'KYC Pending',
