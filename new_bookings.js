@@ -1556,7 +1556,7 @@ async function processInvoicesAndFinalizeCheckout(
 
                 const updateInvoiceSQL = `
                                         UPDATE invoicedetails
-                                        SET PaidAmount = ?, BalanceDue = 0, Status = 'Paid'
+                                        SET PaidAmount = ?, BalanceDue = 0, Status = 'Paid' ,action = 'checkout'
                                         WHERE id = ?
                                     `;
                 connection.query(
