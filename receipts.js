@@ -704,7 +704,6 @@ FROM
        (inv.action = 'advance' AND bt.template_type = 'Security Deposit Invoice')
        OR (inv.action IN ('recurring', 'manual', 'checkout-invoice') AND bt.template_type = 'Payment Receipt')
        OR (inv.action = 'checkout' AND bt.template_type = 'Final Settlement Receipt')
-       OR (inv.action NOT IN ('advance', 'recurring', 'manual', 'checkout-invoice', 'checkout') AND bt.template_type = 'Rental Invoice')
      )
      JOIN createaccount As ca
   ON ca.id = rs.created_by
@@ -781,7 +780,6 @@ LEFT JOIN bill_template AS bt
     (inv.action = 'advance' AND bt.template_type = 'Security Deposit Invoice')
     OR (inv.action IN ('recurring', 'manual', 'checkout-invoice') AND bt.template_type = 'Payment Receipt')
     OR (inv.action = 'checkout' AND bt.template_type = 'Final Settlement Receipt')
-    OR (inv.action NOT IN ('advance', 'recurring', 'manual', 'checkout-invoice', 'checkout') AND bt.template_type = 'Rental Invoice')
   )
 JOIN createaccount AS ca ON ca.id = rs.created_by
 WHERE rs.id = ? `;
