@@ -204,11 +204,16 @@ async function fetchAndUpdateCustomerKycStatus(req, res, customer_id) {
 
         });
       } else {
+        const updatedAt = new Date(kycResponse?.updated_at).getTime();
+        const retryAfter = updatedAt + 5 * 60 * 1000; 
+        const isRetryCompleted = Date.now() >= retryAfter;
+
         return res.status(200).json({
           statusCode: 200,
           message: 'KYC Pending',
           status: kycResponse.status,
-          updated_at: kycResponse.updated_at || null
+          updated_at: kycResponse.updated_at || null,
+          retry_completed: isRetryCompleted
         });
       }
     }
@@ -402,15 +407,15 @@ async function insertOrUpdateKycDataApproved(customer_id, kycResponse) {
 
 
 //const payload = {
-    //   customer_identifier: cleanedPhone,
-    //   notify_customer: true,
-    //   customer_notification_mode: 'SMS',
-    //   customer_name: hostel.Name,
-    //   template_name: process.env.KYC_TEMPLATE_NAME,
-    //    identifier: email || '',
-    //    type: 'geo_location',
-    //   generate_access_token: true
-    // };
+//   customer_identifier: cleanedPhone,
+//   notify_customer: true,
+//   customer_notification_mode: 'SMS',
+//   customer_name: hostel.Name,
+//   template_name: process.env.KYC_TEMPLATE_NAME,
+//    identifier: email || '',
+//    type: 'geo_location',
+//   generate_access_token: true
+// };
 
 module.exports = { verifyAndStoreKyc, fetchAndUpdateKycStatus, fetchAndUpdateCustomerKycStatus };
 
