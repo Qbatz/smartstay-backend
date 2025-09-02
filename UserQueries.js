@@ -1849,7 +1849,7 @@ function transitionlist(request, response) {
                                         payment_date,
                                         payment_by,
                                         created_by,
-                                        ins_res.insertId
+                                        ins_res.insertId,
                                       ];
                                       connection.query(
                                         sql1,
@@ -3380,7 +3380,7 @@ function get_beduser_details(req, res) {
 
     // var sql1 =
     //   "SELECT Name,Phone,RoomRent,createdAt,User_Id FROM hostel WHERE Hostel_Id=? AND Floor =? AND Rooms=? AND Bed=? AND isActive=1 AND created_by=?";
-   var sql1 =`SELECT 
+    var sql1 = `SELECT 
   hs.Name,
   hs.Phone,
   hs.RoomRent,
@@ -3396,7 +3396,7 @@ WHERE hs.Hostel_Id = ?
   AND COALESCE(NULLIF(hs.Floor, 'undefined'), bk.floor_id) = ?
   AND COALESCE(NULLIF(hs.Rooms, 'undefined'), bk.room_id) = ?
   AND COALESCE(NULLIF(hs.Bed, 'undefined'), bk.bed_id) = ?
-  AND hs.isActive = 1;`
+  AND hs.isActive = 1;`;
     connection.query(
       sql1,
       [hostel_id, floor_id, room_id, bed, created_by],
@@ -3898,13 +3898,13 @@ function user_check_out(req, res) {
                 });
               } else {
                 var Bed_update = `Update bed_details set isNoticePeriod=1 where user_id ='${user_id}' `;
-        connection.query(Bed_update, function (error, UpdateData) {
-          if (error) {
-            console.log("err", error);
-          } else {
-            console.log("BedDetails Updated ");
-          }
-        });
+                connection.query(Bed_update, function (error, UpdateData) {
+                  if (error) {
+                    console.log("err", error);
+                  } else {
+                    console.log("BedDetails Updated ");
+                  }
+                });
                 const msg =
                   action === 1
                     ? "Check-out Added Successfully!"
@@ -4031,8 +4031,19 @@ function get_confirm_checkout(req, res) {
             ? inv_data.map((row) => ({
                 invoiceid: row.Invoices,
                 balance: row.BalanceDue,
+                paidAmount: row.PaidAmount,
+                action: row.action == "checkIn" ? "Rent" : row.action,
               }))
             : [];
+        const totalPaidAmount = inv_data.reduce(
+          (sum, row) => sum + Number(row.PaidAmount || 0),
+          0
+        );
+
+           const totalDueAmount = inv_data.reduce(
+          (sum, row) => sum + Number(row.BalanceDue || 0),
+          0
+        );
 
         var sql3 = "SELECT * FROM checkout_deductions WHERE user_id=?";
         connection.query(sql3, [id], function (err, deduction_data) {
@@ -4044,12 +4055,84 @@ function get_confirm_checkout(req, res) {
             });
           }
 
-          return res.status(200).json({
-            statusCode: 200,
-            message: inv_data.length > 0 ? "Success" : "No Due Amounts",
-            bill_details: bill_details,
-            checkout_details: user_details,
-            deduction_details: deduction_data || [],
+          var sqlGet = `SELECT DISTINCT
+    h.ID,
+    h.Name,
+    h.Phone,
+    h.HostelName,
+    h.joining_Date,
+    h.req_date AS request_checkout_date,
+    h.AdvanceAmount,
+    h.RoomRent,
+    h.CheckoutDate,
+    f.floor_name,
+     r.Room_Id as 'Room Name',
+    b.bed_no as 'Bed Name'
+FROM hostel h
+LEFT JOIN Hostel_Floor f ON h.Floor = f.floor_id AND f.hostel_id=h.Hostel_Id
+LEFT JOIN hostelrooms r ON h.Rooms = r.id
+ LEFT JOIN bed_details b ON h.Bed = b.id
+WHERE h.Hostel_Id = ? AND h.ID = ?;`;
+          connection.query(sqlGet, [hostel_id, id], function (err, hostelData) {
+            if (err) {
+              // return res.status(201).json({
+              //   statusCode: 201,
+              //   message: "Unable to Get User Details",
+              //   reason: err.message,
+              // });
+              console.log("err", err);
+            }
+
+            if (hostelData.length > 0) {
+              const joinDate = new Date(hostelData[0].joining_Date);
+              const checkoutDate = new Date(hostelData[0].CheckoutDate);
+
+              // Days stayed
+              const diffTime = checkoutDate - joinDate;
+              const stayedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+              // Days in the month of joining date
+              const year = joinDate.getFullYear();
+              const month = joinDate.getMonth() + 1; // JS months are 0-indexed
+              const totalDaysInMonth = new Date(year, month, 0).getDate();
+              console.log("stayedDays", stayedDays, totalDaysInMonth);
+              const ratePerDay = hostelData[0].RoomRent / totalDaysInMonth;
+              const stayDeduction = Math.round(ratePerDay * stayedDays);
+              // const dueAmount = advancePaid - stayDeduction;
+//  const remainingRentRefund = Math.round(unusedDays * ratePerDay);
+  const unusedDays = totalDaysInMonth - stayedDays;
+
+  const remainingRentRefund = Math.round(unusedDays * ratePerDay)
+ const securityDepositRefund = bill_details
+    .filter(item => item.action.toLowerCase() === "advance")
+    .reduce((sum, item) => sum + Number(item.paidAmount || 0), 0);
+              console.log("ratePerDay", ratePerDay, stayDeduction);
+
+              var Deduction = {
+                stayedDays: stayedDays,
+                ratePerDay: ratePerDay.toFixed(2),
+                stayDeductionAmount: stayDeduction,
+                DueAmount : totalDueAmount
+              };
+              var Refundable_details={
+                
+              remainingRentRefund: remainingRentRefund,
+              securityDepositRefund:securityDepositRefund,
+              totalRefund: remainingRentRefund + securityDepositRefund
+              }
+            }
+
+            return res.status(200).json({
+              statusCode: 200,
+              message: inv_data.length > 0 ? "Success" : "No Due Amounts",
+              bill_details: bill_details,
+              checkout_details: user_details,
+              totalPaidAmount: totalPaidAmount,
+              deduction_details: deduction_data || [],
+              Deduction: Deduction,
+              Refundable_details:Refundable_details,
+              hostelData: hostelData.length > 0 ? hostelData[0] : {},
+            });
           });
         });
       });
