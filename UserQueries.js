@@ -815,7 +815,7 @@ function createUser(connection, request, response) {
                                                   user_details.Hostel_Id,
                                                   atten.Floor,
                                                   atten.Rooms,
-                                                  advance_amount,
+                                                  remainingRent.toFixed(2),
                                                   user_details.Address,
                                                   due_date,
                                                   atten.joining_date,
@@ -3460,7 +3460,7 @@ function get_bill_details(req, res) {
       }
 
       let completed = 0;
-
+console.log("invoices",invoices[0])
       invoices.forEach((invoice, index) => {
         var sql2 = "SELECT * FROM manual_invoice_amenities WHERE invoice_id=?";
         connection.query(sql2, [invoice.id], function (err, amenities) {
