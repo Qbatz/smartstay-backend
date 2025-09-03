@@ -3868,15 +3868,15 @@ function user_check_out(req, res) {
           const checkOutDate = new Date(checkout_date);
           const requestDate = new Date(req_date);
 
-          if (checkOutDate <= joiningDate) {
-            return res.status(201).json({
-              statusCode: 201,
-              message:
-                "Check-out date must be after the joining date (" +
-                joiningDate.toISOString().split("T")[0] +
-                ")",
-            });
-          }
+          // if (checkOutDate <= joiningDate) {
+          //   return res.status(201).json({
+          //     statusCode: 201,
+          //     message:
+          //       "Check-out date must be after the joining date (" +
+          //       joiningDate.toISOString().split("T")[0] +
+          //       ")",
+          //   });
+          // }
 
           if (requestDate >= checkOutDate) {
             return res.status(201).json({
