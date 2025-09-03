@@ -2630,7 +2630,7 @@ function bed_details(req, res) {
               var sql3 =
                 "SELECT * FROM bed_details WHERE hos_detail_id='" +
                 hos_detail_id +
-                "' AND status=1 AND isfilled=0 AND createdby='" +
+                "' AND status=1 AND isfilled=0 AND isbooked =0 AND createdby='" +
                 created_by +
                 "'";
               connection.query(sql3, (err, bed_data) => {
