@@ -403,7 +403,7 @@ function all_bookings(req, res) {
   });
 }
 function Booking_Inactive(req, res) {
-  const { booking_id, Inactive_date, Inactive_Reason } = req.body;
+  const { booking_id, Inactive_date, Inactive_Reason, ID } = req.body;
   if (!Inactive_date) {
     return res
       .status(201)
@@ -460,6 +460,25 @@ WHERE id=?;
                 console.log("Bed Changed sucessfully");
               }
             });
+          }
+        });
+
+        var sqlhsl = `
+UPDATE hostel
+SET 
+  isActive = 0
+WHERE ID = ?;`
+        connection.query(sqlhsl, [ID], function (err) {
+          if (err) {
+            console.log(err);
+            // return res
+            //   .status(201)
+            //   .json({
+            //     statusCode: 201,
+            //     message: "Unable to Move Inactive Customer",
+            //   });
+          } else {
+            console.log("Hostel Inactive sucessfully");
           }
         });
 
