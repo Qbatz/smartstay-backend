@@ -729,6 +729,7 @@ function add_confirm_checkout(req, res) {
     comments,
     reinburse,
     reasons,
+    transaction_id
   } = req.body;
 
   const created_by = req.user_details.id;
@@ -838,7 +839,8 @@ function add_confirm_checkout(req, res) {
             new_hosdetails,
             payment_id,
             hostel_id,
-            res
+            res,
+            transaction_id
           );
         }
       });
@@ -1356,7 +1358,8 @@ async function processInvoicesAndFinalizeCheckout(
   new_hosdetails,
   payment_id,
   hostel_id,
-  res
+  res,
+  transaction_id
 ) {
   const sql = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
   connection.query(sql, [id], async (err, invoices) => {
@@ -1400,8 +1403,8 @@ async function processInvoicesAndFinalizeCheckout(
           finalInvoiceAmount > 0 ? finalInvoiceAmount : advance_return;
 
         const insertReceiptSQL = `
-          INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date, created_by)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date, created_by,transaction_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?,?)
         `;
         const receiptParams = [
           id,
@@ -1411,6 +1414,7 @@ async function processInvoicesAndFinalizeCheckout(
           receipt_no,
           checkout_date,
           created_by,
+          transaction_id
         ];
 
         connection.query(insertReceiptSQL, receiptParams, (err, receipt_data) => {
