@@ -4143,6 +4143,213 @@ WHERE h.Hostel_Id = ? AND h.ID = ?;`;
     }
   });
 }
+function checkout_detail_view(req, res) {
+  var { id, hostel_id } = req.body;
+
+  if (!id || !hostel_id) {
+    return res
+      .status(201)
+      .json({ statusCode: 201, message: "Missing Mandatory Fields" });
+  }
+
+  var sql1 = "SELECT * FROM hostel WHERE ID=? AND Hostel_Id=? AND isActive=0";
+  connection.query(sql1, [id, hostel_id], function (err, data) {
+    if (err) {
+      return res.status(201).json({
+        statusCode: 201,
+        message: "Unable to Get User Details",
+        reason: err.message,
+      });
+    } else if (data.length != 0) {
+
+      var sqlhsl =`SELECT DISTINCT
+    h.ID,
+    h.HostelName,
+    h.Name,
+    h.Phone,
+    h.Email,
+    f.floor_name,
+	r.Room_Id as 'Room Name',
+    b.bed_no as 'Bed Name',
+    h.joining_Date,
+    h.CheckoutDate,
+    h.booking_date,
+    h.AdvanceAmount,
+	h.RoomRent,
+    h.booking_amount,
+    h.return_advance as 'final settlement',
+h.Address,
+h.area,
+h.landmark,
+h.city,
+h.state,
+h.doc1,
+h.doc2
+FROM hostel h
+LEFT JOIN Hostel_Floor f ON h.Floor = f.floor_id AND f.hostel_id=h.Hostel_Id
+LEFT JOIN hostelrooms r ON h.Rooms = r.id
+ LEFT JOIN bed_details b ON h.Bed = b.id
+WHERE h.Hostel_Id = ? AND h.ID = ?;`
+      connection.query(sqlhsl, [hostel_id,id], function (err, hostelData) {
+         if (err) {
+          return res.status(201).json({
+            statusCode: 201,
+            message: "Unable to Get User Details",
+            reason: err.message,
+          });
+        }
+        else{
+           var sql3 = "SELECT * FROM checkout_deductions WHERE user_id=?";
+        connection.query(sql3, [id], function (err, deduction_data) {
+          
+ return res.status(200).json({
+              statusCode: 200,
+              message: "Success",
+              // bill_details: bill_details,
+              // checkout_details: user_details,
+              // totalPaidAmount: totalPaidAmount,
+              deduction_details: deduction_data || [],
+              // Deduction: Deduction,
+              // Refundable_details:Refundable_details,
+              hostelData: hostelData.length > 0 ? hostelData[0] : {},
+            });
+        })
+
+        }
+      })
+//       var user_details = {
+//         advance_amount: data[0].AdvanceAmount,
+//         comments: data[0].checkout_comment,
+//       };
+
+//       var sql2 =
+//         "SELECT * FROM invoicedetails WHERE hos_user_id=? AND invoice_status=1";
+//       connection.query(sql2, [id], function (err, inv_data) {
+//         if (err) {
+//           return res.status(201).json({
+//             statusCode: 201,
+//             message: "Unable to Get User Details",
+//             reason: err.message,
+//           });
+//         }
+
+//         const bill_details =
+//           inv_data.length > 0
+//             ? inv_data.map((row) => ({
+//                 invoiceid: row.Invoices,
+//                 balance: row.BalanceDue,
+//                 paidAmount: row.PaidAmount,
+//                 action: row.action == "checkIn" ? "Rent" : row.action,
+//               }))
+//             : [];
+//         const totalPaidAmount = inv_data.reduce(
+//           (sum, row) => sum + Number(row.PaidAmount || 0),
+//           0
+//         );
+
+//            const totalDueAmount = inv_data.reduce(
+//           (sum, row) => sum + Number(row.BalanceDue || 0),
+//           0
+//         );
+
+//         var sql3 = "SELECT * FROM checkout_deductions WHERE user_id=?";
+//         connection.query(sql3, [id], function (err, deduction_data) {
+//           if (err) {
+//             return res.status(201).json({
+//               statusCode: 201,
+//               message: "Unable to Get Deduction Details",
+//               reason: err.message,
+//             });
+//           }
+
+//           var sqlGet = `SELECT DISTINCT
+//     h.ID,
+//     h.Name,
+//     h.Phone,
+//     h.HostelName,
+//     h.joining_Date,
+//     h.req_date AS request_checkout_date,
+//     h.AdvanceAmount,
+//     h.RoomRent,
+//     h.CheckoutDate,
+//     f.floor_name,
+//      r.Room_Id as 'Room Name',
+//     b.bed_no as 'Bed Name'
+// FROM hostel h
+// LEFT JOIN Hostel_Floor f ON h.Floor = f.floor_id AND f.hostel_id=h.Hostel_Id
+// LEFT JOIN hostelrooms r ON h.Rooms = r.id
+//  LEFT JOIN bed_details b ON h.Bed = b.id
+// WHERE h.Hostel_Id = ? AND h.ID = ?;`;
+//           connection.query(sqlGet, [hostel_id, id], function (err, hostelData) {
+//             if (err) {
+//               // return res.status(201).json({
+//               //   statusCode: 201,
+//               //   message: "Unable to Get User Details",
+//               //   reason: err.message,
+//               // });
+//               console.log("err", err);
+//             }
+
+//             if (hostelData.length > 0) {
+//               const joinDate = new Date(hostelData[0].joining_Date);
+//               const checkoutDate = new Date(hostelData[0].CheckoutDate);
+
+//               // Days stayed
+//               const diffTime = checkoutDate - joinDate;
+//               const stayedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+//               // Days in the month of joining date
+//               const year = joinDate.getFullYear();
+//               const month = joinDate.getMonth() + 1; // JS months are 0-indexed
+//               const totalDaysInMonth = new Date(year, month, 0).getDate();
+//               console.log("stayedDays", stayedDays, totalDaysInMonth);
+//               const ratePerDay = hostelData[0].RoomRent / totalDaysInMonth;
+//               const stayDeduction = Math.round(ratePerDay * stayedDays);
+//               // const dueAmount = advancePaid - stayDeduction;
+// //  const remainingRentRefund = Math.round(unusedDays * ratePerDay);
+//   const unusedDays = totalDaysInMonth - stayedDays;
+
+//   const remainingRentRefund = Math.round(unusedDays * ratePerDay)
+//  const securityDepositRefund = bill_details
+//     .filter(item => item.action.toLowerCase() === "advance")
+//     .reduce((sum, item) => sum + Number(item.paidAmount || 0), 0);
+//               console.log("ratePerDay", ratePerDay, stayDeduction);
+
+//               var Deduction = {
+//                 stayedDays: stayedDays,
+//                 ratePerDay: ratePerDay.toFixed(2),
+//                 stayDeductionAmount: stayDeduction,
+//                 DueAmount : totalDueAmount
+//               };
+//               var Refundable_details={
+                
+//               remainingRentRefund: remainingRentRefund,
+//               securityDepositRefund:securityDepositRefund,
+//               totalRefund: remainingRentRefund + securityDepositRefund
+//               }
+//             }
+
+//             return res.status(200).json({
+//               statusCode: 200,
+//               message: inv_data.length > 0 ? "Success" : "No Due Amounts",
+//               bill_details: bill_details,
+//               checkout_details: user_details,
+//               totalPaidAmount: totalPaidAmount,
+//               deduction_details: deduction_data || [],
+//               Deduction: Deduction,
+//               Refundable_details:Refundable_details,
+//               hostelData: hostelData.length > 0 ? hostelData[0] : {},
+//             });
+//           });
+//         });
+//       });
+    } else {
+      return res
+        .status(201)
+        .json({ statusCode: 201, message: "Invalid User Details" });
+    }
+  });
+}
 
 function checkout_list(req, res) {
   const created_by = req.user_details.id;
@@ -4548,6 +4755,7 @@ module.exports = {
   available_checkout_users,
   available_beds,
   get_confirm_checkout,
+  checkout_detail_view,
   getInvoiceIDNew,
   unAssignedUserList,
   reassign_checkIn,
