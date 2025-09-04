@@ -1139,6 +1139,10 @@ app.post("/get/confirm_checkout", (req, res) => {
   userQueries.get_confirm_checkout(req, res);
 });
 
+app.post("/checkout_detail_view", (req, res) => {
+  userQueries.checkout_detail_view(req, res);
+});
+
 app.post("/add/confirm_checkout", (req, res) => {
   newBookings.add_confirm_checkout(req, res);
 });

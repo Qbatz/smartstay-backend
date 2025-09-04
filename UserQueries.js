@@ -3868,15 +3868,15 @@ function user_check_out(req, res) {
           const checkOutDate = new Date(checkout_date);
           const requestDate = new Date(req_date);
 
-          if (checkOutDate <= joiningDate) {
-            return res.status(201).json({
-              statusCode: 201,
-              message:
-                "Check-out date must be after the joining date (" +
-                joiningDate.toISOString().split("T")[0] +
-                ")",
-            });
-          }
+          // if (checkOutDate <= joiningDate) {
+          //   return res.status(201).json({
+          //     statusCode: 201,
+          //     message:
+          //       "Check-out date must be after the joining date (" +
+          //       joiningDate.toISOString().split("T")[0] +
+          //       ")",
+          //   });
+          // }
 
           if (requestDate >= checkOutDate) {
             return res.status(201).json({
@@ -4136,6 +4136,82 @@ WHERE h.Hostel_Id = ? AND h.ID = ?;`;
           });
         });
       });
+    } else {
+      return res
+        .status(201)
+        .json({ statusCode: 201, message: "Invalid User Details" });
+    }
+  });
+}
+function checkout_detail_view(req, res) {
+  var { id, hostel_id } = req.body;
+
+  if (!id || !hostel_id) {
+    return res
+      .status(201)
+      .json({ statusCode: 201, message: "Missing Mandatory Fields" });
+  }
+
+  var sql1 = "SELECT * FROM hostel WHERE ID=? AND Hostel_Id=? AND isActive=0";
+  connection.query(sql1, [id, hostel_id], function (err, data) {
+    if (err) {
+      return res.status(201).json({
+        statusCode: 201,
+        message: "Unable to Get User Details",
+        reason: err.message,
+      });
+    } else if (data.length != 0) {
+
+      var sqlhsl =`SELECT DISTINCT
+    h.ID,
+    h.HostelName,
+    h.Name,
+    h.Phone,
+    h.Email,
+    f.floor_name,
+	r.Room_Id as 'Room Name',
+    b.bed_no as 'Bed Name',
+    h.joining_Date,
+    h.CheckoutDate,
+    h.booking_date,
+    h.AdvanceAmount,
+	h.RoomRent,
+    h.booking_amount,
+    h.return_advance as 'final settlement',
+h.Address,
+h.area,
+h.landmark,
+h.city,
+h.state,
+h.doc1,
+h.doc2
+FROM hostel h
+LEFT JOIN Hostel_Floor f ON h.Floor = f.floor_id AND f.hostel_id=h.Hostel_Id
+LEFT JOIN hostelrooms r ON h.Rooms = r.id
+ LEFT JOIN bed_details b ON h.Bed = b.id
+WHERE h.Hostel_Id = ? AND h.ID = ?;`
+      connection.query(sqlhsl, [hostel_id,id], function (err, hostelData) {
+         if (err) {
+          return res.status(201).json({
+            statusCode: 201,
+            message: "Unable to Get User Details",
+            reason: err.message,
+          });
+        }
+        else{
+           var sql3 = "SELECT * FROM checkout_deductions WHERE user_id=?";
+        connection.query(sql3, [id], function (err, deduction_data) {
+          
+ return res.status(200).json({
+              statusCode: 200,
+              message: "Success",
+              deduction_details: deduction_data || [],
+              hostelData: hostelData.length > 0 ? hostelData[0] : {},
+            });
+        })
+
+        }
+      })
     } else {
       return res
         .status(201)
@@ -4548,6 +4624,7 @@ module.exports = {
   available_checkout_users,
   available_beds,
   get_confirm_checkout,
+  checkout_detail_view,
   getInvoiceIDNew,
   unAssignedUserList,
   reassign_checkIn,
