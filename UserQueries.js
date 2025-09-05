@@ -4171,7 +4171,7 @@ function checkout_detail_view(req, res) {
     f.floor_name,
 	r.Room_Id as 'Room Name',
     b.bed_no as 'Bed Name',
-    h.joining_Date,
+        CASE WHEN h.joining_Date = '0000-00-00' THEN NULL ELSE h.joining_Date END AS joining_Date,
     h.CheckoutDate,
     h.booking_date,
     h.AdvanceAmount,
