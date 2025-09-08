@@ -1242,8 +1242,8 @@ function split_eb_amounts(atten, startMeterReading, end_Meter_Reading, last_cal_
         FROM hostel h
         LEFT JOIN reassign_userdetails r 
         ON h.id = r.user_id
-        WHERE h.Hostel_Id = ${atten.hostel_id}
-        AND h.joining_date <= '${last_cal_date}'
+        WHERE h.Hostel_Id = ${atten.hostel_id} AND h.isActive =1
+        AND h.joining_date <= '${atten.date}'
         AND (h.checkoutDate >= '${last_cal_date}' OR h.checkoutDate IS NULL)
         AND (h.Floor = ${atten.floor_id} OR r.old_floor = ${atten.floor_id} OR r.new_floor = ${atten.floor_id})
         AND (r.old_room = ${atten.room_id} OR r.new_room = ${atten.room_id} OR h.Rooms = ${atten.room_id});
