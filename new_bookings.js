@@ -473,10 +473,63 @@ function add_booking(req, res) {
                   booking_id= ?,
                   user_id= ?
                   WHERE id = ?;`;
-            connection.query(updateBed, [booking_id, customer_Id, bed_id], function (err, ins_data) {
+            connection.query(updateBed, [booking_id, customer_Id, bed_id], async function (err, ins_data) {
               if (err) {
                 console.log(err);
               }
+               const receipt_no = await generateUniqueReceiptNumber();
+              const insertReceiptSQL = `
+          INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date, created_by)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
+              const receiptParams = [
+                customer_Id,
+                "",
+                amount,
+                'Cash',
+                receipt_no,
+                booking_date,
+                created_by
+              ];
+              console.log("insertReceiptSQL", insertReceiptSQL, receipt_no, receiptParams)
+              connection.query(insertReceiptSQL, receiptParams, (err, receipt_data) => {
+                console.log("receipt_data", receipt_data)
+                if (err) {
+                  console.log("err", err)
+                }
+
+                else {
+
+                  const receipt_id = receipt_data.insertId;
+
+
+                  let sql4 = `INSERT INTO bank_transactions 
+                        (bank_id, date, amount, \`desc\`, type, status, createdby, edit_id, hostel_id)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+                  connection.query(
+                    sql4,
+                    [
+                      null,
+                      booking_date,
+                      amount,
+                      "Receipt",
+                      2,
+                      1,
+                      created_by,
+                      receipt_id,
+                      hostel_id,
+                    ],
+                    function (err) {
+                      if (err) {
+                        console.log("Insert Transactions Error", err);
+                      }
+                      else {
+                        console.log("Generated SUcessfully")
+                      }
+                    }
+                  );
+                }
+              })
               return res.status(200).json({
                 statusCode: 200,
                 message: "Booking Added Successfully!",

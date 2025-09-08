@@ -207,7 +207,7 @@ ORDER BY re.id DESC;
                 const enrichedReceipts = await Promise.all(receipts.map((receipt, index) => {
                     return new Promise((resolve, reject) => {
 
-                        receipt.type = receipt.invoice_number == 0 ? 'checkout' : (receipt.action || 'Invoice')
+                        receipt.type = receipt.invoice_number == 0 ? 'booking' : (receipt.action || 'Invoice')
                         if (receipt.invoice_number == 0) {
                             var sql2 = "SELECT * FROM checkout_deductions WHERE receipt_id=?";
                             connection.query(sql2, [receipt.id], (err, result) => {
