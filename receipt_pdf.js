@@ -6,8 +6,34 @@ exports.get_receipt_detailsbyid = async (req, res) => {
   var receipt_id = req.params.receipt_id;
 
   var sql1 =
-    "SELECT re.id,re.reference_id,re.payment_date,re.payment_mode,re.invoice_number,re.amount_received,hs.Name AS uname,hs.Phone AS uphone,hs.Email AS uemail,hs.Address AS uaddress,hs.AdvanceAmount,hs.return_advance,hs.area AS uarea,hs.landmark AS ulandmark,hs.pincode AS upin_code,hs.city AS ucity,hs.state AS ustate,hos.Name AS hname,hos.Address AS haddress,hos.area AS harea,hos.id AS hostel_id,hos.landmark AS hlandmark,hos.pin_code AS hpincode,hos.city AS hcity,hos.state AS hstate,hos.email_id,hostel_PhoneNo,hr.Room_Id,bd.bed_no,ban.type FROM receipts AS re JOIN hostel AS hs ON hs.ID=re.user_id JOIN hosteldetails AS hos ON hos.id=hs.Hostel_Id JOIN hostelrooms AS hr ON hr.id=hs.Rooms JOIN bed_details AS bd ON bd.id=hs.Bed LEFT JOIN bankings AS ban ON ban.id=re.payment_mode WHERE re.id=?";
+    `SELECT re.id,
+    re.reference_id,
+    re.payment_date,
+    re.payment_mode,
+    re.invoice_number,
+    re.amount_received,
+    hs.Name AS uname,
+    hs.Phone AS uphone,
+    hs.Email AS uemail,
+    hs.Address AS uaddress,
+    hs.AdvanceAmount,
+    hs.return_advance,
+    hs.area AS uarea,
+    hs.landmark AS ulandmark,
+    hs.pincode AS upin_code,
+    hs.city AS ucity,hs.state AS ustate,
+    hos.Name AS hname,hos.Address AS haddress,hos.area AS harea,
+    hos.id AS hostel_id,hos.landmark AS hlandmark,hos.pin_code AS hpincode,
+    hos.city AS hcity,hos.state AS hstate,hos.email_id,hostel_PhoneNo,
+    hr.Room_Id,bd.bed_no,ban.type FROM receipts AS re 
+    JOIN hostel AS hs ON hs.ID=re.user_id 
+    JOIN hosteldetails AS hos ON hos.id=hs.Hostel_Id 
+    LEFT JOIN bookings b ON b.customer_Id = hs.ID AND b.status =1
+    JOIN hostelrooms AS hr ON hr.id=COALESCE(b.room_id,hs.Rooms)
+    JOIN bed_details AS bd ON bd.id=COALESCE(b.bed_id,hs.Bed)
+    LEFT JOIN bankings AS ban ON ban.id=re.payment_mode WHERE re.id=?`;
   connection.query(sql1, receipt_id, function (err, data) {
+    console.log("data",data.length)
     if (err) {
       return res.status(201).json({
         statusCode: 201,
