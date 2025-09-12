@@ -44,7 +44,7 @@ exports.get_receipt_detailsbyid = async (req, res) => {
       var invoice_number = data[0].invoice_number;
       var hostel_id = data[0].hostel_id;
 
-      console.log(invoice_number, "invoice_number");
+      console.log(invoice_number, "invoice_number",invoice_number == 0);
 
       if (invoice_number == 0) {
         var sql2 = "SELECT * FROM checkout_deductions WHERE receipt_id=?";
@@ -110,7 +110,7 @@ exports.get_receipt_detailsbyid = async (req, res) => {
                   ),
                   payment_mode: data[0].payment_mode,
                   invoice_number: data[0].invoice_number,
-                  invoice_type: "checkout",
+                  invoice_type: "booking",
                   total_advance_amount: data[0].AdvanceAmount,
                   advance_return: data[0].return_advance,
                   total_amount: total_amount || "",

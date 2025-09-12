@@ -352,6 +352,7 @@ function createUser(connection, request, response) {
                   `SELECT * FROM hostel WHERE Email='${atten.Email}' AND Email !='N/A' AND Hostel_Id='${atten.hostel_Id}' AND isActive = 1 AND ID !='${atten.ID}'`,
                   async function (error, data) {
                     if (error) {
+                      console.log("error",error)
                       return response.status(201).json({
                         message: "Unable to Get Hostel Details",
                         statusCode: 201,
@@ -709,7 +710,21 @@ function createUser(connection, request, response) {
                                                 joiningDate_cal
                                               ).isSame(moment(), "month");
                                               if (isThisMonth) {
-                                                const joiningDateStr =
+                                                var sqlhodDetails = `Select * from hosteldetails where id=${hostel_id}`;
+                                                 connection.query(
+                                          sqlhodDetails,
+                                          async function (err, insdatas) {
+                                            if (err) {
+                                              console.log(err);
+                                            } else if(insdatas.length>0) {
+                                              let bill_date =insdatas[0].bill_date;
+
+                                               let start = moment().date(bill_date);
+                                                let end = moment(start).add(1, "month").subtract(1, "day");
+                                                 let monthendDate =end.format("YYYY-MM-DD");
+                                                 console.log("monthendDate",monthendDate)
+
+  const joiningDateStr =
                                                   atten.joining_date; // from DB in YYYY-MM-DD format
                                                 console.log(
                                                   "joiningDateStr",
@@ -727,26 +742,28 @@ function createUser(connection, request, response) {
                                                 );
                                                 // Get last day of the month
                                                 const lastDayOfMonth = new Date(
-                                                  joiningDate.getFullYear(),
-                                                  joiningDate.getMonth() + 1,
-                                                  0
+                                                  monthendDate
                                                 );
+console.log("lastDayOfMonth",lastDayOfMonth)
+const diffTime = lastDayOfMonth - joiningDate; // in ms
+const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
+console.log(diffDays,"diffDays");
                                                 // Calculate remaining days including joining date
-                                                const remainingDays =
-                                                  lastDayOfMonth.getDate() -
-                                                  joiningDate.getDate() +
-                                                  1;
+                                                // const remainingDays =
+                                                //    joiningDate.getDate() -
+                                                //   lastDayOfMonth.getDate() +
+                                                //   1;
                                                 const dailyRent =
                                                   roomRent /
-                                                  lastDayOfMonth.getDate();
+                                                  moment().daysInMonth();
                                                 // Remaining rent
                                                 const remainingRent =
-                                                  dailyRent * remainingDays;
+                                                  dailyRent * diffDays;
 
-                                                console.log(
-                                                  `Remaining Days: ${remainingDays}`
-                                                );
+                                                // console.log(
+                                                //   `Remaining Days: ${remainingDays}`
+                                                // );
                                                 console.log(
                                                   `Daily Rent: ${dailyRent}`
                                                 );
@@ -868,6 +885,8 @@ function createUser(connection, request, response) {
                                                     }
                                                   }
                                                 );
+                                            }})
+                                              
                                               }
 
                                               // var sql2 =
