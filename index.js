@@ -1345,6 +1345,9 @@ app.post(
   }
 );
 
+app.post("/users/updateKycDocs", (req, res) => {
+  newBookings.updateKycDocs(req, res);
+});
 app.post("/users/edit_reading", (req, res) => {
   newBookings.edit_customer_reading(req, res);
 });
