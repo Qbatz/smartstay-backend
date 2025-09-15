@@ -693,7 +693,8 @@ function createUser(connection, request, response) {
                                               const isThisMonth = moment(
                                                 joiningDate_cal
                                               ).isSame(moment(), "month");
-                                              if (isThisMonth) {
+                                              
+                                              // if (isThisMonth) {
                                                 var sqlhodDetails = `Select * from hosteldetails where id=${hostel_id}`;
                                                 connection.query(
                                                   sqlhodDetails,
@@ -708,6 +709,9 @@ function createUser(connection, request, response) {
                                                       let monthendDate = end.format("YYYY-MM-DD");
                                                       console.log("monthendDate", monthendDate)
 
+                                                      const isWithinRange = joiningDate_cal >= moment(start).format('YYYY-MM-DD') && joiningDate_cal <= monthendDate
+console.log("isWithinRange",isWithinRange ,start,joiningDate_cal)
+if(isWithinRange){
                                                       const joiningDateStr =
                                                         atten.joining_date; // from DB in YYYY-MM-DD format
                                                       console.log(
@@ -730,7 +734,7 @@ function createUser(connection, request, response) {
                                                       );
                                                       console.log("lastDayOfMonth", lastDayOfMonth)
                                                       const diffTime = lastDayOfMonth - joiningDate; // in ms
-                                                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                                      const diffDays =Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
                                                       console.log(diffDays, "diffDays");
                                                       // Calculate remaining days including joining date
@@ -870,9 +874,10 @@ function createUser(connection, request, response) {
                                                         }
                                                       );
                                                     }
+                                                    }
                                                   })
 
-                                              }
+                                              // }
 
                                               // var sql2 =
                                               //   "SELECT * FROM customer_reasons WHERE user_id=?";
@@ -3987,6 +3992,208 @@ function user_check_out(req, res) {
 //   });
 // }
 
+async function generate_checkout_invoice(req, res) {
+  console.log("generate_checkout_invoice")
+  const {user_id,hostel_id} =req.body;
+  const invoice_number =
+    await new Promise(
+      (resolve, reject) => {
+        const options = {
+          url:
+            process.env.BASEURL +
+            "/get_invoice_id",
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            user_id: user_id,
+            template_type:
+              "Rental Invoice",
+          }),
+        };
+
+        requests(
+          options,
+          (
+            error,
+            response,
+            body
+          ) => {
+            if (error) {
+              return reject(
+                error
+              );
+            } else {
+              const result =
+                JSON.parse(body);
+              console.log(result);
+
+              if (
+                result.statusCode ==
+                200
+              ) {
+                resolve(
+                  result.invoice_number
+                );
+              } else {
+                resolve([]);
+              }
+            }
+          }
+        );
+      }
+    );
+console.log("invoice Number",invoice_number)
+var select_query = "SELECT * FROM hostel WHERE ID='" + user_id + "';";
+      connection.query(select_query, async function (sel_err, sel_res) {
+        if (sel_err) {
+          response
+            .status(201)
+            .json({ message: "Internal Server Error", statusCode: 201 });
+        } else if (sel_res.length != 0) {
+          var user_details = sel_res[0];
+          console.log("user_details",user_details)
+  var invoice_query =
+    "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id) VALUES (?)";
+  // var params = [
+  //   user_details.Name,
+  //   user_details.Phone,
+  //   user_details.Email,
+  //   user_details.HostelName,
+  //   user_details.Hostel_Id,
+  //   user_details.Floor,
+  //   user_details.Rooms,
+  //   remainingRent.toFixed(2),
+  //   user_details.Address,
+  //   due_date,
+  //   moment(user_details.joining_Date).format('YYYY-MM-DD'),
+  //   invoice_number,
+  //   "Pending",
+  //   user_details.User_Id,
+  //   user_details.Bed,
+  //   remainingRent.toFixed(2),
+  //   0,
+  //   "checkout",
+  //   1,
+  //   user_id,
+  // ];
+
+  // connection.query(
+  //   invoice_query,
+  //   [params],
+  //   async function (
+  //     err,
+  //     insdata
+  //   ) {
+  //     if (err) {
+  //       console.log(err);
+  //     } else {
+  //       var ManualQyery =
+  //         "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
+  //       connection.query(
+  //         ManualQyery,
+  //         [
+  //           "Room Rent",
+  //           user_id,
+  //           remainingRent.toFixed(
+  //             2
+  //           ),
+  //           insdata.insertId,
+  //         ],
+  //         async function (
+  //           err,
+  //           insdata
+  //         ) {
+  //           if (err) {
+  //             console.log(err);
+  //           }
+  //         }
+  //       );
+
+  //       console.log(
+  //         "Bill Invoie geberated sucessfully"
+  //       );
+  //     }
+  //   }
+  // );
+
+  // var sql2 =
+  //   "SELECT * FROM checkout_deductions WHERE user_id=?";
+  // connection.query(
+  //   sql2,
+  //   [user_id],
+  //   function (err, reasonDatas) {
+  //     if (err) {
+  //       console.log(err);
+  //     } else {
+  //       reasonDatas.push({
+  //         reason: "Advance",
+  //         user_id: atten.ID,
+  //         amount:
+  //           atten.AdvanceAmount,
+  //         inv_id: inv_id,
+  //       });
+  //       reasonDatas.forEach(
+  //         (item) => {
+  //           var sql2 =
+  //             "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
+  //           connection.query(
+  //             sql2,
+  //             [
+  //               item.reason,
+  //               item.user_id,
+  //               item.amount,
+  //               inv_id,
+  //             ],
+  //             async function (
+  //               err,
+  //               insdata
+  //             ) {
+  //               if (err) {
+  //                 console.log(err);
+  //               } else {
+  //                 // const sql =
+  //                 //   "UPDATE customer_reasons SET invoice_id = ? WHERE id = ?";
+  //                 // connection.query(
+  //                 //   sql,
+  //                 //   [
+  //                 //     inv_id,
+  //                 //     item.id,
+  //                 //   ],
+  //                 //   (
+  //                 //     err,
+  //                 //     result
+  //                 //   ) => {
+  //                 //     if (err) {
+  //                 //       console.error(
+  //                 //         `Error updating ID ${item.id}:`,
+  //                 //         err
+  //                 //       );
+  //                 //     } else {
+  //                 //       console.log(
+  //                 //         `Updated ID ${item.id} with invoice_id ${inv_id}`
+  //                 //       );
+  //                 //     }
+  //                 //   }
+  //                 // );
+  //                 console.log(
+  //                   "Advance Bill Details Generated"
+  //                 );
+  //               }
+  //             }
+  //           );
+  //         }
+  //       );
+  //     }
+  //   }
+  // );
+        }
+      }
+    );
+}
+
 function update_CheckoutDate(req, res) {
   var { id, hostel_id, checkoutDate } = req.body;
 
@@ -4698,6 +4905,7 @@ module.exports = {
   available_beds,
   get_confirm_checkout,
   update_CheckoutDate,
+  generate_checkout_invoice,
   checkout_detail_view,
   getInvoiceIDNew,
   unAssignedUserList,
