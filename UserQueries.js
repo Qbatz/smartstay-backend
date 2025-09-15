@@ -352,7 +352,7 @@ function createUser(connection, request, response) {
                   `SELECT * FROM hostel WHERE Email='${atten.Email}' AND Email !='N/A' AND Hostel_Id='${atten.hostel_Id}' AND isActive = 1 AND ID !='${atten.ID}'`,
                   async function (error, data) {
                     if (error) {
-                      console.log("error",error)
+                      console.log("error", error)
                       return response.status(201).json({
                         message: "Unable to Get Hostel Details",
                         statusCode: 201,
@@ -490,38 +490,22 @@ function createUser(connection, request, response) {
                         .check_bed_details(bed_details_obj)
                         .then((okda) => {
                           connection.query(
-                            `UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${
-                              atten.Phone
-                            }', Email='${atten.Email}', Address='${
-                              atten.Address || ""
-                            }', AadharNo='${atten.AadharNo}', PancardNo='${
-                              atten.PancardNo
-                            }',licence='${atten.licence}',HostelName='${
-                              atten.HostelName
-                            }',Hostel_Id='${atten.hostel_Id}', Floor='${
-                              atten.Floor
-                            }', Rooms='${atten.Rooms}', Bed='${
-                              atten.Bed
-                            }',profile='${profile_url}', AdvanceAmount='${
-                              atten.AdvanceAmount
-                            }', RoomRent='${atten.RoomRent}', BalanceDue='${
-                              atten.BalanceDue
-                            }', PaymentType='${
-                              atten.PaymentType
-                            }', Status='${Status}',paid_advance='${paid_advance}',pending_advance='${pending_advance}',country_code='${country_code}',joining_Date='${
-                              atten.joining_date
-                            }' ,area='${atten.area || ""}',landmark='${
-                              atten.landmark || ""
-                            }',pincode='${atten.pincode}',city='${
-                              atten.city
-                            }',state='${atten.state}',stay_type='${
-                              atten.stay_type
-                            }' , booking_Id ='${
-                              atten.booking_id
-                            }' , booking_date ='${
-                              atten.booking_date
-                            }' , booking_amount ='${
-                              atten.booking_amount
+                            `UPDATE hostel SET Circle='${Circle}', Name='${Name}',Phone='${atten.Phone
+                            }', Email='${atten.Email}', Address='${atten.Address || ""
+                            }', AadharNo='${atten.AadharNo}', PancardNo='${atten.PancardNo
+                            }',licence='${atten.licence}',HostelName='${atten.HostelName
+                            }',Hostel_Id='${atten.hostel_Id}', Floor='${atten.Floor
+                            }', Rooms='${atten.Rooms}', Bed='${atten.Bed
+                            }',profile='${profile_url}', AdvanceAmount='${atten.AdvanceAmount
+                            }', RoomRent='${atten.RoomRent}', BalanceDue='${atten.BalanceDue
+                            }', PaymentType='${atten.PaymentType
+                            }', Status='${Status}',paid_advance='${paid_advance}',pending_advance='${pending_advance}',country_code='${country_code}',joining_Date='${atten.joining_date
+                            }' ,area='${atten.area || ""}',landmark='${atten.landmark || ""
+                            }',pincode='${atten.pincode}',city='${atten.city
+                            }',state='${atten.state}',stay_type='${atten.stay_type
+                            }' , booking_Id ='${atten.booking_id
+                            }' , booking_date ='${atten.booking_date
+                            }' , booking_amount ='${atten.booking_amount
                             }' WHERE ID='${atten.ID}'`,
                             function (updateError, updateData) {
                               if (updateError) {
@@ -711,182 +695,183 @@ function createUser(connection, request, response) {
                                               ).isSame(moment(), "month");
                                               if (isThisMonth) {
                                                 var sqlhodDetails = `Select * from hosteldetails where id=${hostel_id}`;
-                                                 connection.query(
-                                          sqlhodDetails,
-                                          async function (err, insdatas) {
-                                            if (err) {
-                                              console.log(err);
-                                            } else if(insdatas.length>0) {
-                                              let bill_date =insdatas[0].bill_date;
-
-                                               let start = moment().date(bill_date);
-                                                let end = moment(start).add(1, "month").subtract(1, "day");
-                                                 let monthendDate =end.format("YYYY-MM-DD");
-                                                 console.log("monthendDate",monthendDate)
-
-  const joiningDateStr =
-                                                  atten.joining_date; // from DB in YYYY-MM-DD format
-                                                console.log(
-                                                  "joiningDateStr",
-                                                  joiningDateStr
-                                                );
-                                                const roomRent = atten.RoomRent;
-
-                                                // Parse joining date
-                                                const joiningDate = new Date(
-                                                  joiningDateStr
-                                                );
-                                                console.log(
-                                                  "joiningDate",
-                                                  joiningDate
-                                                );
-                                                // Get last day of the month
-                                                const lastDayOfMonth = new Date(
-                                                  monthendDate
-                                                );
-console.log("lastDayOfMonth",lastDayOfMonth)
-const diffTime = lastDayOfMonth - joiningDate; // in ms
-const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-console.log(diffDays,"diffDays");
-                                                // Calculate remaining days including joining date
-                                                // const remainingDays =
-                                                //    joiningDate.getDate() -
-                                                //   lastDayOfMonth.getDate() +
-                                                //   1;
-                                                const dailyRent =
-                                                  roomRent /
-                                                  moment().daysInMonth();
-                                                // Remaining rent
-                                                const remainingRent =
-                                                  dailyRent * diffDays;
-
-                                                // console.log(
-                                                //   `Remaining Days: ${remainingDays}`
-                                                // );
-                                                console.log(
-                                                  `Daily Rent: ${dailyRent}`
-                                                );
-                                                console.log(
-                                                  `Remaining Rent: ${remainingRent.toFixed(
-                                                    2
-                                                  )}`
-                                                );
-                                                const invoice_number =
-                                                  await new Promise(
-                                                    (resolve, reject) => {
-                                                      const options = {
-                                                        url:
-                                                          process.env.BASEURL +
-                                                          "/get_invoice_id",
-                                                        method: "POST",
-                                                        headers: {
-                                                          "Content-Type":
-                                                            "application/json",
-                                                        },
-                                                        body: JSON.stringify({
-                                                          user_id: user_id,
-                                                          template_type:
-                                                            "Rental Invoice",
-                                                        }),
-                                                      };
-
-                                                      requests(
-                                                        options,
-                                                        (
-                                                          error,
-                                                          response,
-                                                          body
-                                                        ) => {
-                                                          if (error) {
-                                                            return reject(
-                                                              error
-                                                            );
-                                                          } else {
-                                                            const result =
-                                                              JSON.parse(body);
-                                                            console.log(result);
-
-                                                            if (
-                                                              result.statusCode ==
-                                                              200
-                                                            ) {
-                                                              resolve(
-                                                                result.invoice_number
-                                                              );
-                                                            } else {
-                                                              resolve([]);
-                                                            }
-                                                          }
-                                                        }
-                                                      );
-                                                    }
-                                                  );
-                                                var invoice_query =
-                                                  "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id) VALUES (?)";
-                                                var params = [
-                                                  user_details.Name,
-                                                  user_details.Phone,
-                                                  user_details.Email,
-                                                  user_details.HostelName,
-                                                  user_details.Hostel_Id,
-                                                  atten.Floor,
-                                                  atten.Rooms,
-                                                  remainingRent.toFixed(2),
-                                                  user_details.Address,
-                                                  due_date,
-                                                  atten.joining_date,
-                                                  invoice_number,
-                                                  "Pending",
-                                                  user_details.User_Id,
-                                                  atten.Bed,
-                                                  remainingRent.toFixed(2),
-                                                  0,
-                                                  "checkIn",
-                                                  1,
-                                                  user_id,
-                                                ];
-
                                                 connection.query(
-                                                  invoice_query,
-                                                  [params],
-                                                  async function (
-                                                    err,
-                                                    insdata
-                                                  ) {
+                                                  sqlhodDetails,
+                                                  async function (err, insdatas) {
                                                     if (err) {
                                                       console.log(err);
-                                                    } else {
-                                                      var ManualQyery =
-                                                        "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
+                                                    } else if (insdatas.length > 0) {
+                                                      let bill_date = insdatas[0].bill_date;
+
+                                                      let start = moment().date(bill_date);
+                                                      let end = moment(start).add(1, "month").subtract(1, "day");
+                                                      let monthendDate = end.format("YYYY-MM-DD");
+                                                      console.log("monthendDate", monthendDate)
+
+                                                      const joiningDateStr =
+                                                        atten.joining_date; // from DB in YYYY-MM-DD format
+                                                      console.log(
+                                                        "joiningDateStr",
+                                                        joiningDateStr
+                                                      );
+                                                      const roomRent = atten.RoomRent;
+
+                                                      // Parse joining date
+                                                      const joiningDate = new Date(
+                                                        joiningDateStr
+                                                      );
+                                                      console.log(
+                                                        "joiningDate",
+                                                        joiningDate
+                                                      );
+                                                      // Get last day of the month
+                                                      const lastDayOfMonth = new Date(
+                                                        monthendDate
+                                                      );
+                                                      console.log("lastDayOfMonth", lastDayOfMonth)
+                                                      const diffTime = lastDayOfMonth - joiningDate; // in ms
+                                                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                                                      console.log(diffDays, "diffDays");
+                                                      // Calculate remaining days including joining date
+                                                      // const remainingDays =
+                                                      //    joiningDate.getDate() -
+                                                      //   lastDayOfMonth.getDate() +
+                                                      //   1;
+                                                      const dailyRent =
+                                                        roomRent /
+                                                        moment().daysInMonth();
+                                                      // Remaining rent
+                                                      const remainingRent =
+                                                        dailyRent * diffDays;
+
+                                                      // console.log(
+                                                      //   `Remaining Days: ${remainingDays}`
+                                                      // );
+                                                      console.log(
+                                                        `Daily Rent: ${dailyRent}`
+                                                      );
+                                                      console.log(
+                                                        `Remaining Rent: ${remainingRent.toFixed(
+                                                          2
+                                                        )}`
+                                                      );
+                                                      const invoice_number =
+                                                        await new Promise(
+                                                          (resolve, reject) => {
+                                                            const options = {
+                                                              url:
+                                                                process.env.BASEURL +
+                                                                "/get_invoice_id",
+                                                              method: "POST",
+                                                              headers: {
+                                                                "Content-Type":
+                                                                  "application/json",
+                                                              },
+                                                              body: JSON.stringify({
+                                                                user_id: user_id,
+                                                                template_type:
+                                                                  "Rental Invoice",
+                                                              }),
+                                                            };
+
+                                                            requests(
+                                                              options,
+                                                              (
+                                                                error,
+                                                                response,
+                                                                body
+                                                              ) => {
+                                                                if (error) {
+                                                                  return reject(
+                                                                    error
+                                                                  );
+                                                                } else {
+                                                                  const result =
+                                                                    JSON.parse(body);
+                                                                  console.log(result);
+
+                                                                  if (
+                                                                    result.statusCode ==
+                                                                    200
+                                                                  ) {
+                                                                    resolve(
+                                                                      result.invoice_number
+                                                                    );
+                                                                  } else {
+                                                                    resolve([]);
+                                                                  }
+                                                                }
+                                                              }
+                                                            );
+                                                          }
+                                                        );
+                                                      var invoice_query =
+                                                        "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id) VALUES (?)";
+                                                      var params = [
+                                                        user_details.Name,
+                                                        user_details.Phone,
+                                                        user_details.Email,
+                                                        user_details.HostelName,
+                                                        user_details.Hostel_Id,
+                                                        atten.Floor,
+                                                        atten.Rooms,
+                                                        remainingRent.toFixed(2),
+                                                        user_details.Address,
+                                                        due_date,
+                                                        atten.joining_date,
+                                                        invoice_number,
+                                                        "Pending",
+                                                        user_details.User_Id,
+                                                        atten.Bed,
+                                                        remainingRent.toFixed(2),
+                                                        0,
+                                                        "checkIn",
+                                                        1,
+                                                        user_id,
+                                                      ];
+
                                                       connection.query(
-                                                        ManualQyery,
-                                                        [
-                                                          "Room Rent",
-                                                          user_id,
-                                                          remainingRent.toFixed(
-                                                            2
-                                                          ),
-                                                          insdata.insertId,
-                                                        ],
+                                                        invoice_query,
+                                                        [params],
                                                         async function (
                                                           err,
                                                           insdata
                                                         ) {
                                                           if (err) {
                                                             console.log(err);
+                                                          } else {
+                                                            var ManualQyery =
+                                                              "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
+                                                            connection.query(
+                                                              ManualQyery,
+                                                              [
+                                                                "Room Rent",
+                                                                user_id,
+                                                                remainingRent.toFixed(
+                                                                  2
+                                                                ),
+                                                                insdata.insertId,
+                                                              ],
+                                                              async function (
+                                                                err,
+                                                                insdata
+                                                              ) {
+                                                                if (err) {
+                                                                  console.log(err);
+                                                                }
+                                                              }
+                                                            );
+
+                                                            console.log(
+                                                              "Bill Invoie geberated sucessfully"
+                                                            );
                                                           }
                                                         }
                                                       );
-
-                                                      console.log(
-                                                        "Bill Invoie geberated sucessfully"
-                                                      );
                                                     }
-                                                  }
-                                                );
-                                            }})
-                                              
+                                                  })
+
                                               }
 
                                               // var sql2 =
@@ -1176,24 +1161,15 @@ console.log(diffDays,"diffDays");
                           atten.AdvanceAmount - paid_advance;
 
                         connection.query(
-                          `INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance,created_by,country_code,joining_Date,area,landmark,pincode,city,state,stay_type) VALUES ('${Circle}', '${Name}', '${
-                            atten.Phone
-                          }', '${atten.Email}', '${atten.Address || ""}', '${
-                            atten.AadharNo
-                          }', '${atten.PancardNo}', '${atten.licence}','${
-                            atten.HostelName
-                          }' ,'${atten.hostel_Id}', '${atten.Floor}', '${
-                            atten.Rooms
-                          }', '${atten.Bed}', '${atten.AdvanceAmount}', '${
-                            atten.RoomRent
-                          }', '${atten.BalanceDue}', '${
-                            atten.PaymentType
-                          }', '${Status}','${paid_advance}','${pending_advance}','${created_by}','${country_code}','${
-                            atten.joining_date
-                          }','${area || ""}','${
-                            landmark || ""
-                          }','${pincode}','${city}','${state}','${
-                            atten.stay_type
+                          `INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance,created_by,country_code,joining_Date,area,landmark,pincode,city,state,stay_type) VALUES ('${Circle}', '${Name}', '${atten.Phone
+                          }', '${atten.Email}', '${atten.Address || ""}', '${atten.AadharNo
+                          }', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName
+                          }' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms
+                          }', '${atten.Bed}', '${atten.AdvanceAmount}', '${atten.RoomRent
+                          }', '${atten.BalanceDue}', '${atten.PaymentType
+                          }', '${Status}','${paid_advance}','${pending_advance}','${created_by}','${country_code}','${atten.joining_date
+                          }','${area || ""}','${landmark || ""
+                          }','${pincode}','${city}','${state}','${atten.stay_type
                           }')`,
                           async function (insertError, insertData) {
                             if (insertError) {
@@ -1221,9 +1197,9 @@ console.log(diffDays,"diffDays");
                                       bucketName,
                                       "users/",
                                       "profile" +
-                                        gen_user_id +
-                                        `${timestamp}` +
-                                        ".jpg",
+                                      gen_user_id +
+                                      `${timestamp}` +
+                                      ".jpg",
                                       profile
                                     );
                                 } catch (err) {
@@ -3479,7 +3455,7 @@ function get_bill_details(req, res) {
       }
 
       let completed = 0;
-console.log("invoices",invoices[0])
+      console.log("invoices", invoices[0])
       invoices.forEach((invoice, index) => {
         var sql2 = "SELECT * FROM manual_invoice_amenities WHERE invoice_id=?";
         connection.query(sql2, [invoice.id], function (err, amenities) {
@@ -4011,6 +3987,47 @@ function user_check_out(req, res) {
 //   });
 // }
 
+function update_CheckoutDate(req, res) {
+  var { id, hostel_id, checkoutDate } = req.body;
+
+  if (!id || !hostel_id) {
+    return res
+      .status(201)
+      .json({ statusCode: 201, message: "Missing Mandatory Fields" });
+  }
+
+  var sql1 = "SELECT * FROM hostel WHERE ID=? AND Hostel_Id=?";
+  connection.query(sql1, [id, hostel_id], function (err, data) {
+    if (err) {
+      return res.status(201).json({
+        statusCode: 201,
+        message: "Unable to Get User Details",
+        reason: err.message,
+      });
+    }
+    else {
+      connection.query(
+        "UPDATE hostel SET CheckoutDate =? WHERE ID = ? AND Hostel_Id = ?",
+        [checkoutDate, id, hostel_id],
+        function (err, result) {
+          if (err) {
+            console.log("Error updating CheckoutDate:", err);
+            return res.status(201).json({
+              statusCode: 201,
+              message: "Error updating CheckoutDate",
+              reason: err.message,
+            });
+          }
+          return res.status(200).json({
+            statusCode: 200,
+            message: "CheckoutDate updated successfully",
+          });
+        }
+      );
+    }
+  })
+}
+
 function get_confirm_checkout(req, res) {
   var { id, hostel_id } = req.body;
 
@@ -4048,18 +4065,18 @@ function get_confirm_checkout(req, res) {
         const bill_details =
           inv_data.length > 0
             ? inv_data.map((row) => ({
-                invoiceid: row.Invoices,
-                balance: row.BalanceDue,
-                paidAmount: row.PaidAmount,
-                action: row.action == "checkIn" ? "Rent" : row.action,
-              }))
+              invoiceid: row.Invoices,
+              balance: row.BalanceDue,
+              paidAmount: row.PaidAmount,
+              action: row.action == "checkIn" ? "Rent" : row.action,
+            }))
             : [];
         const totalPaidAmount = inv_data.reduce(
           (sum, row) => sum + Number(row.PaidAmount || 0),
           0
         );
 
-           const totalDueAmount = inv_data.reduce(
+        const totalDueAmount = inv_data.reduce(
           (sum, row) => sum + Number(row.BalanceDue || 0),
           0
         );
@@ -4103,55 +4120,92 @@ WHERE h.Hostel_Id = ? AND h.ID = ?;`;
             }
 
             if (hostelData.length > 0) {
-              const joinDate = new Date(hostelData[0].joining_Date);
-              const checkoutDate = new Date(hostelData[0].CheckoutDate);
+              var sqlhodDetails = `Select * from hosteldetails where id=${hostel_id}`;
+              connection.query(
+                sqlhodDetails,
+                async function (err, insdatas) {
+                  if (err) {
+                    console.log(err)
+                  }
+                  if (insdatas.length > 0) {
+                    let bill_date = insdatas[0].bill_date
+                    // const billingDate = parseInt(bill_date, 10) || 0;
+                    // console.log("billingDate", billingDate, bill_date)
+                    // let start = moment().date(billingDate);
+                    // console.log("start", start)
+                    // const currentday = moment();
+                    // console.log("currentday", currentday)
+                    // // if (currentday.isAfter(start, "day")) {
+                    // //           start.add(1, "month");
+                    // //         }
+                    // console.log("start", start)
+                    // // End = one day before next month's billing date
+                    // let end = moment(start).add(1, "month").subtract(1, "day");
+                    // let inv_startdate = start.format("YYYY-MM-DD");
+                    // console.log("end :", end, "inv_startdate:", inv_startdate) 
 
-              // Days stayed
-              const diffTime = checkoutDate - joinDate;
-              const stayedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    const joinDate = new Date(hostelData[0].joining_Date);
+                    const billingDate = moment().date(bill_date).format("YYYY-MM-DD");
+                    // const billing_date =new Date(bill_date)
+                    const checkoutDate = new Date(hostelData[0].CheckoutDate);
+                    // console.log("billing_date",billing_date,bill_date,billingDate, moment().date(bill_date).format("YYYY-MM-DD"))
+                    let updtaeDate;
+                    if (joinDate > billingDate) {
+                      console.log("Joining date is after billing date");
+                      updtaeDate = joinDate
 
-              // Days in the month of joining date
-              const year = joinDate.getFullYear();
-              const month = joinDate.getMonth() + 1; // JS months are 0-indexed
-              const totalDaysInMonth = new Date(year, month, 0).getDate();
-              console.log("stayedDays", stayedDays, totalDaysInMonth);
-              const ratePerDay = hostelData[0].RoomRent / totalDaysInMonth;
-              const stayDeduction = Math.round(ratePerDay * stayedDays);
-              // const dueAmount = advancePaid - stayDeduction;
-//  const remainingRentRefund = Math.round(unusedDays * ratePerDay);
-  const unusedDays = totalDaysInMonth - stayedDays;
+                    }
+                    else {
+                      updtaeDate = billingDate
+                    }
+                    console.log("checkoutDate", moment(checkoutDate).format("YYYY-MM-DD"), new Date(updtaeDate), hostelData[0].CheckoutDate)
+                    // Days stayed
+                    const diffTime = checkoutDate - new Date(updtaeDate);
+                    const stayedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  const remainingRentRefund = Math.round(unusedDays * ratePerDay)
- const securityDepositRefund = bill_details
-    .filter(item => item.action.toLowerCase() === "advance")
-    .reduce((sum, item) => sum + Number(item.paidAmount || 0), 0);
-              console.log("ratePerDay", ratePerDay, stayDeduction);
+                    // Days in the month of joining date
+                    const year = joinDate.getFullYear();
+                    const month = joinDate.getMonth() + 1; // JS months are 0-indexed
+                    const totalDaysInMonth = new Date(year, month, 0).getDate();
+                    console.log("stayedDays", stayedDays, totalDaysInMonth);
+                    const ratePerDay = hostelData[0].RoomRent / totalDaysInMonth;
+                    const stayDeduction = Math.round(ratePerDay * stayedDays);
+                    console.log("ratePerDay", ratePerDay)
+                    // const dueAmount = advancePaid - stayDeduction;
+                    //  const remainingRentRefund = Math.round(unusedDays * ratePerDay);
+                    const unusedDays = totalDaysInMonth - stayedDays;
+                    const remainingRentRefund = Math.round(unusedDays * ratePerDay)
+                    const securityDepositRefund = bill_details
+                      .filter(item => item.action.toLowerCase() === "advance")
+                      .reduce((sum, item) => sum + Number(item.paidAmount || 0), 0);
+                    console.log("ratePerDay", ratePerDay, stayDeduction);
 
-              var Deduction = {
-                stayedDays: stayedDays,
-                ratePerDay: ratePerDay.toFixed(2),
-                stayDeductionAmount: stayDeduction,
-                DueAmount : totalDueAmount
-              };
-              var Refundable_details={
-                
-              remainingRentRefund: remainingRentRefund,
-              securityDepositRefund:securityDepositRefund,
-              totalRefund: remainingRentRefund + securityDepositRefund
-              }
+                    var Deduction = {
+                      stayedDays: stayedDays,
+                      ratePerDay: ratePerDay.toFixed(2),
+                      stayDeductionAmount: stayDeduction,
+                      DueAmount: totalDueAmount
+                    };
+                    var Refundable_details = {
+
+                      remainingRentRefund: remainingRentRefund,
+                      securityDepositRefund: securityDepositRefund,
+                      totalRefund: remainingRentRefund + securityDepositRefund
+                    }
+                    return res.status(200).json({
+                      statusCode: 200,
+                      message: inv_data.length > 0 ? "Success" : "No Due Amounts",
+                      bill_details: bill_details,
+                      checkout_details: user_details,
+                      totalPaidAmount: totalPaidAmount,
+                      deduction_details: deduction_data || [],
+                      Deduction: Deduction,
+                      Refundable_details: Refundable_details,
+                      hostelData: hostelData.length > 0 ? hostelData[0] : {},
+                    });
+                  }
+                })
             }
-
-            return res.status(200).json({
-              statusCode: 200,
-              message: inv_data.length > 0 ? "Success" : "No Due Amounts",
-              bill_details: bill_details,
-              checkout_details: user_details,
-              totalPaidAmount: totalPaidAmount,
-              deduction_details: deduction_data || [],
-              Deduction: Deduction,
-              Refundable_details:Refundable_details,
-              hostelData: hostelData.length > 0 ? hostelData[0] : {},
-            });
           });
         });
       });
@@ -4181,7 +4235,7 @@ function checkout_detail_view(req, res) {
       });
     } else if (data.length != 0) {
 
-      var sqlhsl =`SELECT DISTINCT
+      var sqlhsl = `SELECT DISTINCT
     h.ID,
     h.HostelName,
     h.Name,
@@ -4209,25 +4263,25 @@ LEFT JOIN Hostel_Floor f ON h.Floor = f.floor_id AND f.hostel_id=h.Hostel_Id
 LEFT JOIN hostelrooms r ON h.Rooms = r.id
  LEFT JOIN bed_details b ON h.Bed = b.id
 WHERE h.Hostel_Id = ? AND h.ID = ?;`
-      connection.query(sqlhsl, [hostel_id,id], function (err, hostelData) {
-         if (err) {
+      connection.query(sqlhsl, [hostel_id, id], function (err, hostelData) {
+        if (err) {
           return res.status(201).json({
             statusCode: 201,
             message: "Unable to Get User Details",
             reason: err.message,
           });
         }
-        else{
-           var sql3 = "SELECT * FROM checkout_deductions WHERE user_id=?";
-        connection.query(sql3, [id], function (err, deduction_data) {
-          
- return res.status(200).json({
+        else {
+          var sql3 = "SELECT * FROM checkout_deductions WHERE user_id=?";
+          connection.query(sql3, [id], function (err, deduction_data) {
+
+            return res.status(200).json({
               statusCode: 200,
               message: "Success",
               deduction_details: deduction_data || [],
               hostelData: hostelData.length > 0 ? hostelData[0] : {},
             });
-        })
+          })
 
         }
       })
@@ -4643,6 +4697,7 @@ module.exports = {
   available_checkout_users,
   available_beds,
   get_confirm_checkout,
+  update_CheckoutDate,
   checkout_detail_view,
   getInvoiceIDNew,
   unAssignedUserList,
