@@ -413,13 +413,29 @@ WHERE t.invoice_id = ? AND t.user_id =?`;
                   (item) => (item.am_name || "").toLowerCase() === "advance"
                 );
 
+                //  const hasAdvance = amenities.some(
+                //   (item) => (item.am_name || "").toLowerCase() === "advance"
+                // );
+
                 let advance = 0;
                 let others = 0;
+console.log("amenities",amenities)
+                const nonRefundableTotal = amenities
+    .filter(a => a.am_name !== "Refundable Rent" && a.am_name !== "Refundable Advance")
+    .reduce((sum, a) => sum + a.amount, 0);
 
+  // Step 3: sum of refundable amenities
+  const refundableTotal = amenities
+    .filter(a => a.am_name === "Refundable Rent" || a.am_name === "Refundable Advance")
+    .reduce((sum, a) => sum + a.amount, 0);
+
+    console.log("----",nonRefundableTotal,refundableTotal)
                 // First pass: Calculate total_amount properly
                 amenities.forEach((item) => {
                   const amt = Number(item.amount) || 0;
                   const name = (item.am_name || "").toLowerCase();
+
+
 
                   if (hasAdvance) {
                     if (name === "advance") {
@@ -427,6 +443,8 @@ WHERE t.invoice_id = ? AND t.user_id =?`;
                     } else {
                       others += amt;
                     }
+                  } else if(Data[0].action =="checkout") {
+total_amount = nonRefundableTotal - refundableTotal
                   } else {
                     total_amount += amt;
                   }
@@ -499,8 +517,8 @@ WHERE t.invoice_id = ? AND t.user_id =?`;
                     invoice_number: Data[0].invoice_number,
                     invoice_type: Data[0].action,
                     total_amount: hasAdvance ? advance : total_amount,
-                    refundable_Amount: hasAdvance ? total_amount : 0,
-                    non_refundable_amount: hasAdvance ? others : 0,
+                    refundable_Amount: hasAdvance ? total_amount : Data[0].action =="checkout" ? refundableTotal :0,
+                    non_refundable_amount: hasAdvance ? others : Data[0].action =="checkout" ? nonRefundableTotal: 0,
                   },
                   user_details: {
                     name: Data[0].uname || "",
