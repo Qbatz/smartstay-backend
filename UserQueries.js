@@ -653,7 +653,7 @@ function createUser(connection, request, response) {
                                         // console.log(due_date);
 
                                         var invoice_query =
-                                          "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id) VALUES (?)";
+                                          "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id,bill_enable) VALUES (?)";
                                         var params = [
                                           user_details.Name,
                                           user_details.Phone,
@@ -675,6 +675,7 @@ function createUser(connection, request, response) {
                                           "advance",
                                           1,
                                           user_id,
+                                          1
                                         ];
 
                                         connection.query(
@@ -811,7 +812,7 @@ if(isWithinRange){
                                                           }
                                                         );
                                                       var invoice_query =
-                                                        "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id) VALUES (?)";
+                                                        "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id,bill_enable) VALUES (?)";
                                                       var params = [
                                                         user_details.Name,
                                                         user_details.Phone,
@@ -833,6 +834,7 @@ if(isWithinRange){
                                                         "checkIn",
                                                         1,
                                                         user_id,
+                                                        1
                                                       ];
 
                                                       connection.query(
