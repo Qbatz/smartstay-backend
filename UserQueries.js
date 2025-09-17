@@ -653,7 +653,7 @@ function createUser(connection, request, response) {
                                         // console.log(due_date);
 
                                         var invoice_query =
-                                          "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id) VALUES (?)";
+                                          "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id,bill_enable) VALUES (?)";
                                         var params = [
                                           user_details.Name,
                                           user_details.Phone,
@@ -675,6 +675,7 @@ function createUser(connection, request, response) {
                                           "advance",
                                           1,
                                           user_id,
+                                          1
                                         ];
 
                                         connection.query(
@@ -811,7 +812,7 @@ if(isWithinRange){
                                                           }
                                                         );
                                                       var invoice_query =
-                                                        "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id) VALUES (?)";
+                                                        "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id,bill_enable) VALUES (?)";
                                                       var params = [
                                                         user_details.Name,
                                                         user_details.Phone,
@@ -833,6 +834,7 @@ if(isWithinRange){
                                                         "checkIn",
                                                         1,
                                                         user_id,
+                                                        1
                                                       ];
 
                                                       connection.query(
@@ -3994,7 +3996,23 @@ function user_check_out(req, res) {
 
 async function generate_checkout_invoice(req, res) {
   console.log("generate_checkout_invoice")
-  const {user_id,hostel_id} =req.body;
+  const {user_id,hostel_id,amenities,reasonDatas} =req.body;
+
+  // const reasonTotal = reasonDatas.reduce((sum, item) => sum + item.amount, 0);
+
+  // Step 2: sum of amenities except Refundable Rent & Refundable Advance
+  const nonRefundableTotal = amenities
+    .filter(a => a.key !== "Refundable Rent" && a.key !== "Refundable Advance")
+    .reduce((sum, a) => sum + a.amount, 0);
+
+  // Step 3: sum of refundable amenities
+  const refundableTotal = amenities
+    .filter(a => a.key === "Refundable Rent" || a.key === "Refundable Advance")
+    .reduce((sum, a) => sum + a.amount, 0);
+
+  // Step 4: apply formula
+  const total = nonRefundableTotal - refundableTotal;
+  console.log("total",total)
   const invoice_number =
     await new Promise(
       (resolve, reject) => {
@@ -4057,139 +4075,76 @@ var select_query = "SELECT * FROM hostel WHERE ID='" + user_id + "';";
           console.log("user_details",user_details)
   var invoice_query =
     "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id) VALUES (?)";
-  // var params = [
-  //   user_details.Name,
-  //   user_details.Phone,
-  //   user_details.Email,
-  //   user_details.HostelName,
-  //   user_details.Hostel_Id,
-  //   user_details.Floor,
-  //   user_details.Rooms,
-  //   remainingRent.toFixed(2),
-  //   user_details.Address,
-  //   due_date,
-  //   moment(user_details.joining_Date).format('YYYY-MM-DD'),
-  //   invoice_number,
-  //   "Pending",
-  //   user_details.User_Id,
-  //   user_details.Bed,
-  //   remainingRent.toFixed(2),
-  //   0,
-  //   "checkout",
-  //   1,
-  //   user_id,
-  // ];
+  var params = [
+    user_details.Name,
+    user_details.Phone,
+    user_details.Email,
+    user_details.HostelName,
+    user_details.Hostel_Id,
+    user_details.Floor,
+    user_details.Rooms,
+    total,
+    user_details.Address,
+    user_details.CheckoutDate,
+    moment(user_details.joining_Date).format('YYYY-MM-DD'),
+    invoice_number,
+    "Pending",
+    user_details.User_Id,
+    user_details.Bed,
+    total,
+    0,
+    "checkout",
+    1,
+    user_id,
+  ];
 
-  // connection.query(
-  //   invoice_query,
-  //   [params],
-  //   async function (
-  //     err,
-  //     insdata
-  //   ) {
-  //     if (err) {
-  //       console.log(err);
-  //     } else {
-  //       var ManualQyery =
-  //         "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
-  //       connection.query(
-  //         ManualQyery,
-  //         [
-  //           "Room Rent",
-  //           user_id,
-  //           remainingRent.toFixed(
-  //             2
-  //           ),
-  //           insdata.insertId,
-  //         ],
-  //         async function (
-  //           err,
-  //           insdata
-  //         ) {
-  //           if (err) {
-  //             console.log(err);
-  //           }
-  //         }
-  //       );
+  connection.query(
+    invoice_query,
+    [params],
+    async function (
+      err,
+      insdata
+    ) {
+      if (err) {
+        console.log(err);
+      } else {
+        console.log("insdata",insdata)
+        var amenityValues = amenities.map((item) => [
+                    item.key,
+                    user_id,
+                    item.amount,
+                    insdata.insertId,
+                  ]);
+                  console.log("amenityValues",amenityValues)
+                  const placeholders = amenityValues.map(() => '(?,?,?,?)').join(', ');
+const sql = `INSERT INTO manual_invoice_amenities (am_name, user_id, amount, invoice_id) VALUES ${placeholders}`;
+const params = amenityValues.flat();
+        // var ManualQyery =
+        //   "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?)";
+        connection.query(
+          sql,
+          params,
+          async function (
+            err,
+            insdata
+          ) {
+            if (err) {
+              console.log(err);
+            }
+          }
+        );
 
-  //       console.log(
-  //         "Bill Invoie geberated sucessfully"
-  //       );
-  //     }
-  //   }
-  // );
+        console.log(
+          "Bill Invoie geberated sucessfully"
+        );
+        return res
+      .status(200)
+      .json({ statusCode: 200, message: "Checkout Invoie generated sucessfully" });
+      }
+    }
+  );
 
-  // var sql2 =
-  //   "SELECT * FROM checkout_deductions WHERE user_id=?";
-  // connection.query(
-  //   sql2,
-  //   [user_id],
-  //   function (err, reasonDatas) {
-  //     if (err) {
-  //       console.log(err);
-  //     } else {
-  //       reasonDatas.push({
-  //         reason: "Advance",
-  //         user_id: atten.ID,
-  //         amount:
-  //           atten.AdvanceAmount,
-  //         inv_id: inv_id,
-  //       });
-  //       reasonDatas.forEach(
-  //         (item) => {
-  //           var sql2 =
-  //             "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
-  //           connection.query(
-  //             sql2,
-  //             [
-  //               item.reason,
-  //               item.user_id,
-  //               item.amount,
-  //               inv_id,
-  //             ],
-  //             async function (
-  //               err,
-  //               insdata
-  //             ) {
-  //               if (err) {
-  //                 console.log(err);
-  //               } else {
-  //                 // const sql =
-  //                 //   "UPDATE customer_reasons SET invoice_id = ? WHERE id = ?";
-  //                 // connection.query(
-  //                 //   sql,
-  //                 //   [
-  //                 //     inv_id,
-  //                 //     item.id,
-  //                 //   ],
-  //                 //   (
-  //                 //     err,
-  //                 //     result
-  //                 //   ) => {
-  //                 //     if (err) {
-  //                 //       console.error(
-  //                 //         `Error updating ID ${item.id}:`,
-  //                 //         err
-  //                 //       );
-  //                 //     } else {
-  //                 //       console.log(
-  //                 //         `Updated ID ${item.id} with invoice_id ${inv_id}`
-  //                 //       );
-  //                 //     }
-  //                 //   }
-  //                 // );
-  //                 console.log(
-  //                   "Advance Bill Details Generated"
-  //                 );
-  //               }
-  //             }
-  //           );
-  //         }
-  //       );
-  //     }
-  //   }
-  // );
-        }
+ }
       }
     );
 }

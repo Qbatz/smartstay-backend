@@ -4669,7 +4669,7 @@ function all_recuring_bills_stay_type(req, res) {
     hf.floor_name,
     DATE_FORMAT(inv.Date, '%Y-%m-%d') AS invoice_date_previous,
     inv.Invoices AS invoice_value_previous,
-    inv.BalanceDue AS last_billing_amount,
+    inv.PaidAmount AS last_billing_amount,
     inv.id AS Inv_ID,
     COALESCE(inv.bill_enable, 0) AS Bill_Enable,
     CASE 
@@ -4704,13 +4704,25 @@ LEFT JOIN bed_details AS bd
 
 LEFT JOIN invoicedetails AS inv
     ON inv.id = (
-        SELECT id FROM invoicedetails
-        WHERE Hostel_Id = hstl.Hostel_Id 
-          AND Bed = bd.id 
-          AND action='recuring'
-        ORDER BY 
-          CASE WHEN Date <= CURRENT_DATE THEN 0 ELSE 1 END,
-          Date DESC
+        SELECT id
+        FROM (
+            SELECT id, Date, 1 AS priority
+            FROM invoicedetails
+            WHERE Hostel_Id = hstl.Hostel_Id
+              AND Bed = bd.id
+              AND action = 'recuring'
+            
+            UNION ALL
+            
+            SELECT id, Date, 2 AS priority
+            FROM invoicedetails
+            WHERE Hostel_Id = hstl.Hostel_Id
+              AND Bed = bd.id
+              AND action = 'checkIn'
+        ) sub
+        ORDER BY priority, 
+                 CASE WHEN Date <= CURRENT_DATE THEN 0 ELSE 1 END,
+                 Date DESC
         LIMIT 1
     )
 
