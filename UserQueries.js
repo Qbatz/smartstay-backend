@@ -4307,7 +4307,14 @@ WHERE h.Hostel_Id = ? AND h.ID = ?;`;
                     // console.log("end :", end, "inv_startdate:", inv_startdate) 
 
                     const joinDate = new Date(hostelData[0].joining_Date);
-                    const billingDate = moment().date(bill_date).format("YYYY-MM-DD");
+                    
+                    // const billingDate = moment().date(bill_date).format("YYYY-MM-DD");
+
+                    const date = Date(bill_date)
+const billingDate = moment(date).format("YYYY-MM-DD")
+                   
+ console.log("billingDate",billingDate)
+
                     // const billing_date =new Date(bill_date)
                     const checkoutDate = new Date(hostelData[0].CheckoutDate);
                     // console.log("billing_date",billing_date,bill_date,billingDate, moment().date(bill_date).format("YYYY-MM-DD"))
