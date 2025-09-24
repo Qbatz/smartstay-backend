@@ -2456,66 +2456,66 @@ async function update_confirm_checkout_due_amount(req, res) {
   const {
     id,
     hostel_id,
-    checkout_date,
-    advance_return,
-    due_amount,
-    comments,
-    reinburse,
-    reasons,
+    // checkout_date,
+    // advance_return,
+    // due_amount,
+    // comments,
+    // reinburse,
+    // reasons,
     formal_checkout,
     reason_note,
   } = req.body;
 
-  console.log("reasons", reasons);
-  const attachmentFile = req.files?.profile?.[0];
-  let attachmentUrl = "";
+  // console.log("reasons", reasons);
+  // const attachmentFile = req.files?.profile?.[0];
+  // let attachmentUrl = "";
 
-  if (attachmentFile && attachmentFile.originalname) {
-    try {
-      const timestamp = Date.now();
-      const safeFileName = attachmentFile.originalname.replace(/\s+/g, "_");
-      const fileName = `${timestamp}_${safeFileName}`;
-      const folderName = "confirm_checkout/";
+  // if (attachmentFile && attachmentFile.originalname) {
+  //   try {
+  //     const timestamp = Date.now();
+  //     const safeFileName = attachmentFile.originalname.replace(/\s+/g, "_");
+  //     const fileName = `${timestamp}_${safeFileName}`;
+  //     const folderName = "confirm_checkout/";
 
-      attachmentUrl = await uploadImage.uploadProfilePictureToS3Bucket(
-        process.env.AWS_BUCKET_NAME,
-        folderName,
-        fileName,
-        attachmentFile
-      );
+  //     attachmentUrl = await uploadImage.uploadProfilePictureToS3Bucket(
+  //       process.env.AWS_BUCKET_NAME,
+  //       folderName,
+  //       fileName,
+  //       attachmentFile
+  //     );
 
-      console.log("S3 upload success:", attachmentUrl);
-    } catch (err) {
-      console.log("Failed to upload attachment to S3:", err.message || err);
-      return res.status(500).json({
-        statusCode: 500,
-        message: "Attachment upload failed",
-        reason: err.message || "Unknown error",
-      });
-    }
-  }
+  //     console.log("S3 upload success:", attachmentUrl);
+  //   } catch (err) {
+  //     console.log("Failed to upload attachment to S3:", err.message || err);
+  //     return res.status(500).json({
+  //       statusCode: 500,
+  //       message: "Attachment upload failed",
+  //       reason: err.message || "Unknown error",
+  //     });
+  //   }
+  // }
 
-  const created_by = req.user_details.id;
+  // const created_by = req.user_details.id;
 
-  var payment_id = req.body.payment_id;
+  // var payment_id = req.body.payment_id;
 
   // Validate mandatory fields
-  if (!id || !hostel_id || !checkout_date) {
+  if (!id || !hostel_id) {
     return res
       .status(201)
       .json({ statusCode: 201, message: "Missing Mandatory Fields" });
   }
 
-  if (Array.isArray(reasons) && reasons.length > 0) {
-    for (let reason of reasons) {
-      if (!reason.reason_name || !reason.amount) {
-        return res.status(201).json({
-          statusCode: 201,
-          message: "Missing Required Fields in Reason Details",
-        });
-      }
-    }
-  }
+  // if (Array.isArray(reasons) && reasons.length > 0) {
+  //   for (let reason of reasons) {
+  //     if (!reason.reason_name || !reason.amount) {
+  //       return res.status(201).json({
+  //         statusCode: 201,
+  //         message: "Missing Required Fields in Reason Details",
+  //       });
+  //     }
+  //   }
+  // }
 
   const sql1 = `SELECT * FROM hostel WHERE ID = ? AND Hostel_Id = ? AND isActive = 1 AND CheckoutDate IS NOT NULL`;
   connection.query(sql1, [id, hostel_id], (err, hostelData) => {
@@ -2533,43 +2533,43 @@ async function update_confirm_checkout_due_amount(req, res) {
         .json({ statusCode: 201, message: "Invalid User Details" });
     }
 
-    var new_hosdetails = hostelData[0];
+    // var new_hosdetails = hostelData[0];
 
     const advance_amount = hostelData[0].AdvanceAmount;
 
     const bed_id = hostelData[0].Bed;
 
     // Handle non-reimbursement case
-    if (!reinburse || reinburse === 0) {
-      const sql2 = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
-      connection.query(sql2, [id], (err, invoiceData) => {
-        if (err) {
-          return res.status(201).json({
-            statusCode: 201,
-            message: "Unable to fetch invoice details",
-            reason: err.message,
-          });
-        }
+    // if (!reinburse || reinburse === 0) {
+    //   const sql2 = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
+    //   connection.query(sql2, [id], (err, invoiceData) => {
+    //     if (err) {
+    //       return res.status(201).json({
+    //         statusCode: 201,
+    //         message: "Unable to fetch invoice details",
+    //         reason: err.message,
+    //       });
+    //     }
 
-        if (invoiceData.length > 0) {
-          return res.status(201).json({
-            statusCode: 201,
-            message: "Kindly pay due amounts before checkout",
-          });
-        }
+    //     if (invoiceData.length > 0) {
+    //       return res.status(201).json({
+    //         statusCode: 201,
+    //         message: "Kindly pay due amounts before checkout",
+    //       });
+    //     }
 
-        finalizeCheckoutDueCustomer(
-          id,
-          bed_id,
-          advance_return,
-          comments,
-          formal_checkout,
-          reason_note,
-          attachmentUrl,
-          res
-        );
-      });
-    } else {
+    //     finalizeCheckoutDueCustomer(
+    //       id,
+    //       bed_id,
+    //       advance_return,
+    //       comments,
+    //       formal_checkout,
+    //       reason_note,
+    //       attachmentUrl,
+    //       res
+    //     );
+    //   });
+    // } else {
       // Handle reimbursement case
       const sql3 = `SELECT SUM(BalanceDue) AS totalBalanceDue,id FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
       connection.query(sql3, [id], (err, result) => {
@@ -2613,9 +2613,9 @@ async function update_confirm_checkout_due_amount(req, res) {
 
         console.log("advance_amount", advance_amount);
         console.log("totalBalanceDue", totalBalanceDue);
-        var check_amount =
-          Number(advance_amount) -
-          (Number(totalBalanceDue) + Number(reasonTotalAmount));
+        // var check_amount =
+        //   Number(advance_amount) -
+        //   (Number(totalBalanceDue) + Number(reasonTotalAmount));
         if (Number(advance_amount)) {
           // processInvoicesAndFinalizeCheckout(
           //   id,
@@ -2652,11 +2652,11 @@ async function update_confirm_checkout_due_amount(req, res) {
               finalizeCheckoutDueCustomer(
                 id,
                 bed_id,
-                advance_return,
-                comments,
+                // advance_return,
+                // comments,
                 formal_checkout,
                 reason_note,
-                attachmentUrl,
+                // attachmentUrl,
                 res
               );
               // }
@@ -2673,7 +2673,7 @@ async function update_confirm_checkout_due_amount(req, res) {
           //   });
         }
       });
-    }
+    // }
   });
 }
 
@@ -3130,21 +3130,15 @@ async function update_confirm_checkout_due_amount(req, res) {
 function finalizeCheckoutDueCustomer(
   id,
   bed_id,
-  advance_return,
-  comments,
   formal_checkout,
   reason_note,
-  attachmentUrl,
   res
 ) {
   const sql = `
     UPDATE hostel 
     SET isActive = 0, 
-        return_advance = ?, 
-        checkout_comment = ?, 
         formal_checkout = ?, 
         reson_note = ?, 
-        attachment = ? 
     WHERE ID = ?;
 
     UPDATE bed_details 
@@ -3155,11 +3149,8 @@ function finalizeCheckoutDueCustomer(
   connection.query(
     sql,
     [
-      advance_return,
-      comments,
       formal_checkout,
       reason_note,
-      attachmentUrl,
       id,
       bed_id,
     ],
