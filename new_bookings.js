@@ -781,16 +781,15 @@ function add_confirm_checkout(req, res) {
     due_amount,
     comments,
     reinburse,
-    reasons,
-    transaction_id
+    reasons
   } = req.body;
 
   const created_by = req.user_details.id;
 
-  var payment_id = req.body.payment_id;
+  // var payment_id = req.body.payment_id;
 
   // Validate mandatory fields
-  if (!id || !hostel_id || !checkout_date || (advance_return > 0 && !payment_id)) {
+  if (!id || !hostel_id || !checkout_date || (advance_return > 0)) {
     return res
       .status(201)
       .json({ statusCode: 201, message: "Missing Mandatory Fields" });
@@ -890,10 +889,8 @@ function add_confirm_checkout(req, res) {
             comments,
             reasons,
             new_hosdetails,
-            payment_id,
             hostel_id,
-            res,
-            transaction_id
+            res
           );
         }
       });
@@ -1409,10 +1406,8 @@ async function processInvoicesAndFinalizeCheckout(
   comments,
   reasons,
   new_hosdetails,
-  payment_id,
   hostel_id,
-  res,
-  transaction_id
+  res
 ) {
   const sql = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
   connection.query(sql, [id], async (err, invoices) => {
@@ -1428,25 +1423,25 @@ async function processInvoicesAndFinalizeCheckout(
       reasons?.reduce((acc, item) => acc + Number(item.amount || 0), 0) || 0;
     const finalInvoiceAmount = Number(totalBalanceDue || 0) + reasonTotalAmount;
 
-    var sql1 = "SELECT * FROM bankings WHERE id=? AND status=1";
-    connection.query(sql1, [payment_id], async function (err, bank_data) {
-      if (err) {
-        return res.status(201).json({
-          statusCode: 201,
-          message: "Error to Get Bank Details",
-          reason: err.message,
-        });
-      }
+    // var sql1 = "SELECT * FROM bankings WHERE id=? AND status=1";
+    // connection.query(sql1, [payment_id], async function (err, bank_data) {
+      // if (err) {
+      //   return res.status(201).json({
+      //     statusCode: 201,
+      //     message: "Error to Get Bank Details",
+      //     reason: err.message,
+      //   });
+      // }
 
-      if (advance_return > 0 && bank_data.length === 0) {
-        return res
-          .status(201)
-          .json({ statusCode: 201, message: "Invalid Bank Details" });
-      }
+      // if (advance_return > 0 && bank_data.length === 0) {
+      //   return res
+      //     .status(201)
+      //     .json({ statusCode: 201, message: "Invalid Bank Details" });
+      // }
 
-      var bankamount = isNaN(Number(bank_data?.[0]?.balance))
-        ? 0
-        : Number(bank_data?.[0]?.balance);
+      // var bankamount = isNaN(Number(bank_data?.[0]?.balance))
+      //   ? 0
+      //   : Number(bank_data?.[0]?.balance);
 
       var new_amount = bankamount - advance_return;
 
@@ -1456,18 +1451,17 @@ async function processInvoicesAndFinalizeCheckout(
           finalInvoiceAmount > 0 ? finalInvoiceAmount : advance_return;
 
         const insertReceiptSQL = `
-          INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date, created_by,transaction_id)
-          VALUES (?, ?, ?, ?, ?, ?, ?,?)
+          INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date, created_by)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
         const receiptParams = [
           id,
           "",
           receiptAmount,
-          payment_id || null,
+           null,
           receipt_no,
           checkout_date,
           created_by,
-          transaction_id
         ];
 
         connection.query(insertReceiptSQL, receiptParams, (err, receipt_data) => {
@@ -1481,41 +1475,41 @@ async function processInvoicesAndFinalizeCheckout(
 
           const receipt_id = receipt_data.insertId;
 
-          if (advance_return > 0) {
-            let sql4 = `INSERT INTO bank_transactions 
-                        (bank_id, date, amount, \`desc\`, type, status, createdby, edit_id, hostel_id)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-            connection.query(
-              sql4,
-              [
-                payment_id,
-                checkout_date,
-                advance_return,
-                "Receipt",
-                2,
-                1,
-                created_by,
-                receipt_id,
-                hostel_id,
-              ],
-              function (err) {
-                if (err) {
-                  console.log("Insert Transactions Error", err);
-                  return res.status(201).json({
-                    statusCode: 201,
-                    message: "Error processing bank transaction",
-                  });
-                }
+          // if (advance_return > 0) {
+          //   let sql4 = `INSERT INTO bank_transactions 
+          //               (bank_id, date, amount, \`desc\`, type, status, createdby, edit_id, hostel_id)
+          //               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+          //   connection.query(
+          //     sql4,
+          //     [
+          //       payment_id,
+          //       checkout_date,
+          //       advance_return,
+          //       "Receipt",
+          //       2,
+          //       1,
+          //       created_by,
+          //       receipt_id,
+          //       hostel_id,
+          //     ],
+          //     function (err) {
+          //       // if (err) {
+          //       //   console.log("Insert Transactions Error", err);
+          //       //   return res.status(201).json({
+          //       //     statusCode: 201,
+          //       //     message: "Error processing bank transaction",
+          //       //   });
+          //       // }
 
-                let sql5 = "UPDATE bankings SET balance=? WHERE id=?";
-                connection.query(sql5, [new_amount, payment_id], function (err) {
-                  if (err) {
-                    console.log("Update Amount Error", err);
-                  }
-                });
-              }
-            );
-          }
+          //       // let sql5 = "UPDATE bankings SET balance=? WHERE id=?";
+          //       // connection.query(sql5, [new_amount, payment_id], function (err) {
+          //       //   if (err) {
+          //       //     console.log("Update Amount Error", err);
+          //       //   }
+          //       // });
+          //     }
+          //   );
+          // }
 
           const insertValues = [];
 
@@ -1602,7 +1596,7 @@ async function processInvoicesAndFinalizeCheckout(
                 id,
                 invoiceId,
                 advance_return,
-                payment_id,
+                null,
                 receipt_no,
                 checkout_date,
                 created_by,
@@ -1642,7 +1636,7 @@ async function processInvoicesAndFinalizeCheckout(
               id,
               0,
               advance_return,
-              payment_id,
+              null,
               receipt_no,
               checkout_date,
               created_by,
@@ -1662,42 +1656,42 @@ async function processInvoicesAndFinalizeCheckout(
 
                 const receipt_id = receipt_data.insertId;
 
-                let sql4 =
-                  "INSERT INTO bank_transactions (bank_id, date, amount, `desc`, type, status, createdby, edit_id, hostel_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                connection.query(
-                  sql4,
-                  [
-                    payment_id,
-                    checkout_date,
-                    advance_return,
-                    "Receipt",
-                    2,
-                    1,
-                    created_by,
-                    receipt_id,
-                    hostel_id,
-                  ],
-                  function (err) {
-                    if (err) {
-                      console.log("Insert Transactions Error", err);
-                      return res.status(201).json({
-                        statusCode: 201,
-                        message: "Error processing bank transaction",
-                      });
-                    }
+                // let sql4 =
+                //   "INSERT INTO bank_transactions (bank_id, date, amount, `desc`, type, status, createdby, edit_id, hostel_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                // connection.query(
+                //   sql4,
+                //   [
+                //     payment_id,
+                //     checkout_date,
+                //     advance_return,
+                //     "Receipt",
+                //     2,
+                //     1,
+                //     created_by,
+                //     receipt_id,
+                //     hostel_id,
+                //   ],
+                //   function (err) {
+                //     if (err) {
+                //       console.log("Insert Transactions Error", err);
+                //       return res.status(201).json({
+                //         statusCode: 201,
+                //         message: "Error processing bank transaction",
+                //       });
+                //     }
 
-                    let sql5 = "UPDATE bankings SET balance=? WHERE id=?";
-                    connection.query(
-                      sql5,
-                      [new_amount, payment_id],
-                      function (err) {
-                        if (err) {
-                          console.log("Update Amount Error", err);
-                        }
-                      }
-                    );
-                  }
-                );
+                //     let sql5 = "UPDATE bankings SET balance=? WHERE id=?";
+                //     connection.query(
+                //       sql5,
+                //       [new_amount, payment_id],
+                //       function (err) {
+                //         if (err) {
+                //           console.log("Update Amount Error", err);
+                //         }
+                //       }
+                //     );
+                //   }
+                // );
 
                 const insertValues = [];
 
@@ -1798,7 +1792,7 @@ async function processInvoicesAndFinalizeCheckout(
             });
           });
       }
-    });
+    // });
   });
 }
 
