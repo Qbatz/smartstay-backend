@@ -3671,7 +3671,11 @@ function get_beduser_details(req, res) {
     WHEN bd.isNoticePeriod = 1 THEN 'NoticePeriod'
     WHEN bd.isNoticePeriod = 0 AND bd.isbooked = 0 THEN 'Occupied'
     ELSE 'Not Booking'
-  END AS user_status
+  END AS user_status,
+   CASE 
+    WHEN bk.amount IS NOT NULL THEN DATE_FORMAT(bk.booking_date, '%Y-%m-%d')
+  ELSE DATE_FORMAT(hs.joining_date, '%Y-%m-%d')                              
+  END AS Date
 FROM hostel AS hs
 LEFT JOIN bookings AS bk
   ON bk.customer_Id = hs.ID
