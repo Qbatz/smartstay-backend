@@ -490,8 +490,80 @@ WHERE ID = ?;`
   );
 }
 
-function ChangeBookingBed(req,res) {
-  
+function ChangeBookingBed(req, res) {
+  var { id, hostel_id, floor_id, room_id, bed_id, change_floor_id, change_room_id, change_bed_id, bookingDate } = req.body;
+
+  if (!id || !hostel_id || !floor_id || !room_id || !bed_id || !change_floor_id || !change_room_id || !change_bed_id || !bookingDate) {
+    return res.status(201).json({ statusCode: 201, message: "Missing Mandatory Fields" })
+  }
+
+  var sql = "SELECT * FROM bookings WHERE customer_Id =? AND status=1";
+  connection.query(sql, [id], function (err, datas) {
+    if (err) {
+      return res.status(201).json({ statusCode: 201, message: "Error Fetching User Details", reason: err.message })
+    }
+    else if (datas.length != 0) {
+      var up_booking = `UPDATE bookings
+SET 
+    booking_date = ?,
+    floor_id = ?,
+    room_id = ?,
+    bed_id = ?
+WHERE customer_Id = ?;`
+
+      connection.query(up_booking, [bookingDate, change_floor_id, change_room_id, change_bed_id, id], function (err, booking_data) {
+        if (err) {
+          console.log(err)
+          return res.status(201).json({ statusCode: 201, message: "Error changing bed", reason: err.message })
+        }
+        else {
+          var sql1 = `select * from bed_details where id=? AND user_id=?`
+          connection.query(sql1, [bed_id, id], function (err, data) {
+            if (err) {
+              return res.status(201).json({ statusCode: 201, message: "Error changing bed", reason: err.message })
+            }
+            else {
+              var up_Bd = `UPDATE bed_details
+SET 
+  booking_id = 0,
+  isbooked =0,
+  user_id=0
+WHERE id=?`
+              connection.query(up_Bd, [bed_id], function (err, data) {
+                console.log(err)
+                if (err) {
+                  return res.status(201).json({ statusCode: 201, message: "Error changing bed", reason: err.message })
+                }
+                else {
+                  var new_Bd_Up = `UPDATE bed_details
+SET booking_id=?,
+user_id=?,
+isbooked=?
+where id=?`;
+                  connection.query(new_Bd_Up, [datas[0].id, id, 1, change_bed_id], function (err, data) {
+                    if (err) {
+                      console.log(err)
+                      return res.status(201).json({ statusCode: 201, message: "Error changing bed", reason: err.message })
+                    }
+                    else {
+                      return res.status(200).json({ statusCode: 200, message: "Booking Bed Changed Sucessfully" })
+
+                    }
+                  })
+                }
+              })
+            }
+          })
+        }
+
+      })
+
+    }
+    else {
+      return res.status(201).json({ statusCode: 201, message: "Invalid User Details" })
+    }
+
+  })
 }
 
 function delete_booking(req, res) {

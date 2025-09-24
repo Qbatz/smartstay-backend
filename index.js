@@ -1099,8 +1099,9 @@ app.post("/Booking_Inactive", (req, res) => {
   bookings.Booking_Inactive(req, res);
 });
 
-app.post("/ChangeBookingBed", bookings.ChangeBookingBed);
-
+app.post("/ChangeBookingBed", (req, res) => {
+  bookings.ChangeBookingBed(req, res);
+});
 
 app.post("/all_bookings", (req, res) => {
   bookings.all_bookings(req, res);
