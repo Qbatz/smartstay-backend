@@ -772,7 +772,7 @@ function assign_booking(req, res) {
   });
 }
 
-function add_confirm_checkout(req, res) {
+async function add_confirm_checkout(req, res) {
   const {
     id,
     hostel_id,
@@ -794,6 +794,35 @@ function add_confirm_checkout(req, res) {
       .status(201)
       .json({ statusCode: 201, message: "Missing Mandatory Fields" });
   }
+
+  const attachmentFile = req.files?.attach?.[0];
+  let attachmentUrl = "";
+
+  if (attachmentFile && attachmentFile.originalname) {
+    try {
+      const timestamp = Date.now();
+      const safeFileName = attachmentFile.originalname.replace(/\s+/g, "_");
+      const fileName = `${timestamp}_${safeFileName}`;
+      const folderName = "confirm_checkout/";
+
+      attachmentUrl = await uploadImage.uploadProfilePictureToS3Bucket(
+        process.env.AWS_BUCKET_NAME,
+        folderName,
+        fileName,
+        attachmentFile
+      );
+
+      console.log("S3 upload success:", attachmentUrl);
+    } catch (err) {
+      console.log("Failed to upload attachment to S3:", err.message || err);
+      return res.status(500).json({
+        statusCode: 500,
+        message: "Attachment upload failed",
+        reason: err.message || "Unknown error",
+      });
+    }
+  }
+
   if (Array.isArray(reasons) && reasons.length > 0) {
     for (let reason of reasons) {
       console.log(!reason.amount,'===')
@@ -831,7 +860,7 @@ function add_confirm_checkout(req, res) {
 
     // Handle non-reimbursement case
     if (!reinburse || reinburse === 0) {
-      const sql2 = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
+      const sql2 = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1 And action !='checkout'`;
       connection.query(sql2, [id], (err, invoiceData) => {
         if (err) {
           return res.status(201).json({
@@ -848,7 +877,7 @@ function add_confirm_checkout(req, res) {
           });
         }
 
-        finalizeCheckout(id, bed_id, advance_return, comments, res);
+        finalizeCheckout(id, bed_id, advance_return, comments,attachmentUrl, res);
       });
     } else {
       // Handle reimbursement case
@@ -902,10 +931,10 @@ function add_confirm_checkout(req, res) {
 // Helper function to finalize checkout
 function finalizeCheckout(id, bed_id, advance_return, comments, res) {
   const sql = `
-        UPDATE hostel SET isActive = 0, return_advance = ?, checkout_comment = ? WHERE ID = ?;
+        UPDATE hostel SET isActive = 0, return_advance = ?, checkout_comment = ?,attachment=? WHERE ID = ?;
         UPDATE bed_details SET user_id = 0, isfilled = 0,isNoticePeriod=0 WHERE id = ?;
     `;
-  connection.query(sql, [advance_return, comments, id, bed_id], (err) => {
+  connection.query(sql, [advance_return, comments,attachmentUrl, id, bed_id], (err) => {
     if (err) {
       return res.status(201).json({
         statusCode: 201,
@@ -2584,33 +2613,33 @@ async function update_confirm_checkout_due_amount(req, res) {
 
         const totalBalanceDue = result[0]?.totalBalanceDue || 0;
 
-        let parsedReasons = [];
+        //let parsedReasons = [];
 
-        if (typeof reasons === "string") {
-          try {
-            parsedReasons = JSON.parse(reasons);
-          } catch (err) {
-            console.error("Invalid JSON for reasons:", reasons);
-            return res.status(400).json({
-              statusCode: 400,
-              message: "Invalid JSON format for reasons",
-            });
-          }
-        } else if (Array.isArray(reasons)) {
-          parsedReasons = reasons;
-        } else {
-          return res.status(400).json({
-            statusCode: 400,
-            message: "Invalid reasons format: Must be JSON string or array",
-          });
-        }
+        // if (typeof reasons === "string") {
+        //   try {
+        //     parsedReasons = JSON.parse(reasons);
+        //   } catch (err) {
+        //     console.error("Invalid JSON for reasons:", reasons);
+        //     return res.status(400).json({
+        //       statusCode: 400,
+        //       message: "Invalid JSON format for reasons",
+        //     });
+        //   }
+        // } else if (Array.isArray(reasons)) {
+        //   parsedReasons = reasons;
+        // } else {
+        //   return res.status(400).json({
+        //     statusCode: 400,
+        //     message: "Invalid reasons format: Must be JSON string or array",
+        //   });
+        // }
 
-        const reasonTotalAmount = parsedReasons.reduce(
-          (acc, item) => acc + Number(item.amount || 0),
-          0
-        );
+        // const reasonTotalAmount = parsedReasons.reduce(
+        //   (acc, item) => acc + Number(item.amount || 0),
+        //   0
+        // );
 
-        console.log("reasonTotalAmount", reasonTotalAmount);
+        // console.log("reasonTotalAmount", reasonTotalAmount);
 
         console.log("advance_amount", advance_amount);
         console.log("totalBalanceDue", totalBalanceDue);
@@ -3139,7 +3168,7 @@ function finalizeCheckoutDueCustomer(
     UPDATE hostel 
     SET isActive = 0, 
         formal_checkout = ?, 
-        reson_note = ?, 
+        reson_note = ?
     WHERE ID = ?;
 
     UPDATE bed_details 
@@ -3157,6 +3186,7 @@ function finalizeCheckoutDueCustomer(
     ],
     (err) => {
       if (err) {
+        console.log(err)
         return res.status(201).json({
           statusCode: 201,
           message: "Unable to finalize checkout",
