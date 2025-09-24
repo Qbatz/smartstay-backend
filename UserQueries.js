@@ -1976,6 +1976,241 @@ function transitionlist(request, response) {
   }
 }
 
+function Refundtransitionlist(request, response) {
+  var role_permissions = request.role_permissions;
+  var is_admin = request.is_admin;
+
+  if (
+    is_admin == 1 ||
+    (role_permissions[10] && role_permissions[10].per_edit == 1)
+  ) {
+    var {
+      id,
+      invoice_id,
+      amount,
+      balance_due,
+      payment_by,
+      payment_date,
+    } = request.body;
+
+    var userDetails = request.user_details;
+    var created_by = userDetails.id;
+
+    var reference_id = crypto.randomBytes(5).toString("hex").toUpperCase(); // 10 characters unique value
+    if (!amount && amount == undefined) {
+      response
+        .status(201)
+        .json({ statusCode: 201, message: "Missing Required Field" });
+    } else {
+      var sql1 = "SELECT * FROM invoicedetails WHERE id='" + id + "';";
+      connection.query(sql1, function (check_err, check_res) {
+        if (check_err) {
+          response
+            .status(201)
+            .json({ statusCode: 201, message: "Unable to Get User Details" });
+        } else if (check_res.length != 0) {
+          var new_user_id = check_res[0].User_Id;
+          var invoice_number = check_res[0].Invoices;
+
+          var hostel_id = check_res[0].Hostel_Id;
+
+          var sql3 = "SELECT * FROM hostel WHERE User_Id=?";
+          connection.query(sql3, new_user_id, function (sel1_err, sel1_res) {
+            if (sel1_err) {
+              response.status(201).json({
+                statusCode: 201,
+                message: "Unable to Get User Details",
+              });
+            } else if (sel1_res.length != 0) {
+              var sql1 = "SELECT * FROM bankings WHERE id=?";
+              connection.query(sql1, [payment_by], function (err, bankdata) {
+                if (err) {
+                  return response.status(201).json({
+                    statusCode: 201,
+                    message: "Unable to Get Bank Details",
+                  });
+                } else if (bankdata.length != 0) {
+                  var ID = sel1_res[0].ID;
+
+                  var bank_amount = bankdata[0].balance;
+
+                  var total_advance = sel1_res[0].AdvanceAmount;
+
+                  var total_amount = check_res[0].Amount;
+                  var paid_amount = check_res[0].PaidAmount;
+
+                  var new_amount = Number(paid_amount) + Number(amount);
+console.log("new_amount",new_amount,total_amount)
+let up_total_amount =  Math.abs(total_amount)
+                  if (new_amount > up_total_amount) {
+                    response.status(201).json({
+                      statusCode: 201,
+                      message: "Pay Amount More than Invoice Total Amount",
+                    });
+                  } else {
+                    if (new_amount == total_amount) {
+                      var Status = "Success";
+                    } else {
+                      var Status = "Pending";
+                    }
+
+                    var sql2 =
+                      "UPDATE invoicedetails SET BalanceDue=?,PaidAmount=?,Status=? WHERE id=?";
+                    connection.query(
+                      sql2,
+                      [balance_due, new_amount, Status, id],
+                      function (up_err, up_res) {
+                        if (up_err) {
+                          response.status(201).json({
+                            statusCode: 201,
+                            message: "Unable to Update User Details",
+                          });
+                        } else {
+                          var sql4 =
+                            "UPDATE hostel SET paid_advance=?,pending_advance=? WHERE ID=?";
+                          connection.query(
+                            sql4,
+                            [new_amount, balance_due, ID],
+                            function (up_err1, up_res1) {
+                              if (up_err) {
+                                response.status(201).json({
+                                  statusCode: 201,
+                                  message: "Unable to Update Payemnt Details",
+                                });
+                              } else {
+                                var sql3 =
+                                  "INSERT INTO transactions (user_id,invoice_id,amount,status,created_by,payment_type,payment_date,description,action) VALUES (?,?,?,1,?,?,?,'Invoice',1)";
+                                connection.query(
+                                  sql3,
+                                  [
+                                    ID,
+                                    invoice_id,
+                                    amount,
+                                    created_by,
+                                    payment_by,
+                                    payment_date,
+                                  ],
+                                  function (ins_err, ins_res) {
+                                    if (ins_err) {
+                                      response.status(201).json({
+                                        statusCode: 201,
+                                        message:
+                                          "Unable to Add Transactions Details",
+                                      });
+                                    } else {
+                                      var sql1 =
+                                        "INSERT INTO receipts (user_id,reference_id,invoice_number,amount_received,payment_date,payment_mode,created_by,trans_Id) VALUES (?)";
+                                      var params = [
+                                        ID,
+                                        reference_id,
+                                        invoice_number,
+                                        amount,
+                                        payment_date,
+                                        payment_by,
+                                        created_by,
+                                        ins_res.insertId,
+                                      ];
+                                      connection.query(
+                                        sql1,
+                                        [params],
+                                        function (err, ins_data) {
+                                          if (err) {
+                                            console.log(err);
+                                            console.log(
+                                              "Error to Add Receipt Details"
+                                            );
+                                            // return res.status(201).json({ statusCode: 201, message: "Error to Add Receipt Details", reason: err.message });
+                                          }
+                                        }
+                                      );
+
+                                      var balance_amount =
+                                        Number(bank_amount) - Number(amount);
+
+                                      let sql4 =
+                                        "INSERT INTO bank_transactions (bank_id, date, amount, `desc`, type, status, createdby, edit_id, hostel_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                                      connection.query(
+                                        sql4,
+                                        [
+                                          payment_by,
+                                          payment_date,
+                                          amount,
+                                          "Receipt",
+                                          2,
+                                          1,
+                                          created_by,
+                                          id,
+                                          hostel_id,
+                                        ],
+                                        function (err) {
+                                          if (err) {
+                                            console.log(
+                                              "Insert Transactions Error",
+                                              err
+                                            );
+                                            // return response.status(201).json({ statusCode: 201, message: "Error processing bank transaction" });
+                                          }
+                                          let sql5 =
+                                            "UPDATE bankings SET balance=? WHERE id=?";
+                                          connection.query(
+                                            sql5,
+                                            [balance_amount, payment_by],
+                                            function (err) {
+                                              if (err) {
+                                                console.log(
+                                                  "Update Amount Error",
+                                                  err
+                                                );
+                                              }
+                                              console.log("Bank amount added");
+                                            }
+                                          );
+                                        }
+                                      );
+
+                                      response.status(200).json({
+                                        statusCode: 200,
+                                        message: "Update Successfully",
+                                      });
+                                    }
+                                  }
+                                );
+                              }
+                            }
+                          );
+                        }
+                      }
+                    );
+                  }
+                } else {
+                  return response
+                    .status(201)
+                    .json({ statusCode: 201, message: "Invalid Bank Details" });
+                }
+              });
+            } else {
+              response
+                .status(201)
+                .json({ statusCode: 201, message: "Invalid User Id" });
+            }
+          });
+        } else {
+          response
+            .status(201)
+            .json({ statusCode: 201, message: "Invalid User Id" });
+        }
+      });
+    }
+    // }
+  } else {
+    response.status(208).json({
+      message:
+        "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208,
+    });
+  }
+}
+
 // Get Customer Details
 function customer_details(req, res) {
   var user_id = req.body.user_id;
@@ -4949,6 +5184,7 @@ module.exports = {
   getPaymentDetails,
   CheckOutUser,
   transitionlist,
+  Refundtransitionlist,
   customer_details,
   user_amenities_history,
   getAmnitiesName,
