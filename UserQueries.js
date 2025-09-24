@@ -32,86 +32,86 @@ function getUsers(connection, response, request) {
         .json({ statusCode: 201, message: "Missing Hostel Id" });
     }
 
-//     let query = `SELECT 
-//   hstl.*, 
-//   CASE 
-//     WHEN hstl.CheckoutDate IS NULL THEN 1 
-//     ELSE 0 
-//   END AS check_outed,
-//   bd.bed_no AS Bed,
-//   hstl.Bed AS hstl_Bed,
-//   hsroom.Room_Id AS Rooms,
-//   hstl.Rooms AS hstl_Rooms,
-//   hsroom.id AS room_id,
-//   hsroom.Room_Id,
-//   DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,
-//   hstl.Hostel_Id AS user_hostel,
-//   hf.floor_name,
+    //     let query = `SELECT 
+    //   hstl.*, 
+    //   CASE 
+    //     WHEN hstl.CheckoutDate IS NULL THEN 1 
+    //     ELSE 0 
+    //   END AS check_outed,
+    //   bd.bed_no AS Bed,
+    //   hstl.Bed AS hstl_Bed,
+    //   hsroom.Room_Id AS Rooms,
+    //   hstl.Rooms AS hstl_Rooms,
+    //   hsroom.id AS room_id,
+    //   hsroom.Room_Id,
+    //   DATE_FORMAT(hstl.joining_Date, '%Y-%m-%d') AS user_join_date,
+    //   hstl.Hostel_Id AS user_hostel,
+    //   hf.floor_name,
 
-//   CASE 
-//     WHEN bk.id IS NOT NULL THEN 'Booking'
-//     WHEN bd.id IS NULL THEN 'Un-Assigned'
-//     WHEN bd.isNoticePeriod = TRUE THEN 'Notice period'
-//     ELSE 'Check In'
-//   END AS bed_status,
+    //   CASE 
+    //     WHEN bk.id IS NOT NULL THEN 'Booking'
+    //     WHEN bd.id IS NULL THEN 'Un-Assigned'
+    //     WHEN bd.isNoticePeriod = TRUE THEN 'Notice period'
+    //     ELSE 'Check In'
+    //   END AS bed_status,
 
-//   bk.id AS booking_id,
-//   bk.amount AS booking_amount,
-//   bk.booking_date As booking_booking_date,
-//   bk.joining_date AS booking_joining_date,
-//   bk.room_id AS booking_room_id,
-//   bk.floor_id AS booking_floor_id,
-//   bk.bed_id AS booking_bed_id,
-//   bookinghsRoom.Room_Id AS Booking_Rooms,
-//   Bk_hr.floor_name AS Booking_FloorName,
-//   bd_booking.bed_no As Booking_Bed
+    //   bk.id AS booking_id,
+    //   bk.amount AS booking_amount,
+    //   bk.booking_date As booking_booking_date,
+    //   bk.joining_date AS booking_joining_date,
+    //   bk.room_id AS booking_room_id,
+    //   bk.floor_id AS booking_floor_id,
+    //   bk.bed_id AS booking_bed_id,
+    //   bookinghsRoom.Room_Id AS Booking_Rooms,
+    //   Bk_hr.floor_name AS Booking_FloorName,
+    //   bd_booking.bed_no As Booking_Bed
 
-// FROM hosteldetails AS hstlDetails 
+    // FROM hosteldetails AS hstlDetails 
 
-// INNER JOIN hostel AS hstl 
-//   ON hstl.Hostel_Id = hstlDetails.id 
-//   AND hstl.isActive = TRUE 
+    // INNER JOIN hostel AS hstl 
+    //   ON hstl.Hostel_Id = hstlDetails.id 
+    //   AND hstl.isActive = TRUE 
 
-// LEFT JOIN bookings AS bk 
-//   ON bk.hostel_id = hstl.Hostel_Id 
-//   AND bk.customer_id = hstl.ID  
-//   AND bk.status = 1
-  
-// -- ✅ Bed from booking
-// LEFT JOIN bed_details AS bd_booking 
-//   ON bd_booking.id = bk.bed_id 
+    // LEFT JOIN bookings AS bk 
+    //   ON bk.hostel_id = hstl.Hostel_Id 
+    //   AND bk.customer_id = hstl.ID  
+    //   AND bk.status = 1
 
-// LEFT JOIN country_list AS cl 
-//   ON hstl.country_code = cl.country_code 
+    // -- ✅ Bed from booking
+    // LEFT JOIN bed_details AS bd_booking 
+    //   ON bd_booking.id = bk.bed_id 
 
-// LEFT JOIN hostelrooms hsroom 
-//   ON hsroom.Hostel_Id = hstlDetails.id 
-//   AND hsroom.Floor_Id = hstl.Floor 
-//   AND hsroom.id = hstl.Rooms 
-  
-// LEFT JOIN hostelrooms bookinghsRoom 
-//   ON bookinghsRoom.Hostel_Id = bk.hostel_id 
-//   AND bookinghsRoom.Floor_Id = bk.floor_id 
-//   AND bookinghsRoom.id = bk.room_id 
+    // LEFT JOIN country_list AS cl 
+    //   ON hstl.country_code = cl.country_code 
 
-// LEFT JOIN Hostel_Floor AS Bk_hr 
-//   ON Bk_hr.floor_id = bk.floor_id 
-//   AND Bk_hr.hostel_id = bk.hostel_id 
+    // LEFT JOIN hostelrooms hsroom 
+    //   ON hsroom.Hostel_Id = hstlDetails.id 
+    //   AND hsroom.Floor_Id = hstl.Floor 
+    //   AND hsroom.id = hstl.Rooms 
 
-// LEFT JOIN Hostel_Floor AS hf 
-//   ON hf.floor_id = hstl.Floor 
-//   AND hf.hostel_id = hstl.Hostel_Id 
-  
-// LEFT JOIN bed_details AS bd 
-//   ON bd.id = hstl.Bed 
+    // LEFT JOIN hostelrooms bookinghsRoom 
+    //   ON bookinghsRoom.Hostel_Id = bk.hostel_id 
+    //   AND bookinghsRoom.Floor_Id = bk.floor_id 
+    //   AND bookinghsRoom.id = bk.room_id 
 
-// WHERE hstl.Hostel_Id = ? AND (
-//        bk.id IS NULL
-//        OR (bk.status = 1 AND bk.customer_inactive = FALSE)
-//   ) 
-// `;
+    // LEFT JOIN Hostel_Floor AS Bk_hr 
+    //   ON Bk_hr.floor_id = bk.floor_id 
+    //   AND Bk_hr.hostel_id = bk.hostel_id 
 
-let query =`SELECT 
+    // LEFT JOIN Hostel_Floor AS hf 
+    //   ON hf.floor_id = hstl.Floor 
+    //   AND hf.hostel_id = hstl.Hostel_Id 
+
+    // LEFT JOIN bed_details AS bd 
+    //   ON bd.id = hstl.Bed 
+
+    // WHERE hstl.Hostel_Id = ? AND (
+    //        bk.id IS NULL
+    //        OR (bk.status = 1 AND bk.customer_inactive = FALSE)
+    //   ) 
+    // `;
+
+    let query = `SELECT 
   hstl.*, 
   CASE 
     WHEN hstl.CheckoutDate IS NULL THEN 1 
@@ -714,25 +714,25 @@ function createUser(connection, request, response) {
                                               const isThisMonth = moment(
                                                 joiningDate_cal
                                               ).isSame(moment(), "month");
-                                              
+
                                               // if (isThisMonth) {
-                                                var sqlhodDetails = `Select * from hosteldetails where id=${hostel_id}`;
-                                                connection.query(
-                                                  sqlhodDetails,
-                                                  async function (err, insdatas) {
-                                                    if (err) {
-                                                      console.log(err);
-                                                    } else if (insdatas.length > 0) {
-                                                      let bill_date = insdatas[0].bill_date;
+                                              var sqlhodDetails = `Select * from hosteldetails where id=${hostel_id}`;
+                                              connection.query(
+                                                sqlhodDetails,
+                                                async function (err, insdatas) {
+                                                  if (err) {
+                                                    console.log(err);
+                                                  } else if (insdatas.length > 0) {
+                                                    let bill_date = insdatas[0].bill_date;
 
-                                                      let start = moment().date(bill_date);
-                                                      let end = moment(start).add(1, "month").subtract(1, "day");
-                                                      let monthendDate = end.format("YYYY-MM-DD");
-                                                      console.log("monthendDate", monthendDate)
+                                                    let start = moment().date(bill_date);
+                                                    let end = moment(start).add(1, "month").subtract(1, "day");
+                                                    let monthendDate = end.format("YYYY-MM-DD");
+                                                    console.log("monthendDate", monthendDate)
 
-                                                      const isWithinRange = joiningDate_cal >= moment(start).format('YYYY-MM-DD') && joiningDate_cal <= monthendDate
-console.log("isWithinRange",isWithinRange ,start,joiningDate_cal)
-if(isWithinRange){
+                                                    const isWithinRange = joiningDate_cal >= moment(start).format('YYYY-MM-DD') && joiningDate_cal <= monthendDate
+                                                    console.log("isWithinRange", isWithinRange, start, joiningDate_cal)
+                                                    if (isWithinRange) {
                                                       const joiningDateStr =
                                                         atten.joining_date; // from DB in YYYY-MM-DD format
                                                       console.log(
@@ -755,7 +755,7 @@ if(isWithinRange){
                                                       );
                                                       console.log("lastDayOfMonth", lastDayOfMonth)
                                                       const diffTime = lastDayOfMonth - joiningDate; // in ms
-                                                      const diffDays =Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                                                      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
                                                       console.log(diffDays, "diffDays");
                                                       // Calculate remaining days including joining date
@@ -896,8 +896,8 @@ if(isWithinRange){
                                                         }
                                                       );
                                                     }
-                                                    }
-                                                  })
+                                                  }
+                                                })
 
                                               // }
 
@@ -4016,7 +4016,7 @@ function user_check_out(req, res) {
 
 async function generate_checkout_invoice(req, res) {
   console.log("generate_checkout_invoice")
-  const {user_id,hostel_id,amenities,reasonDatas} =req.body;
+  const { user_id, hostel_id, amenities, reasonDatas } = req.body;
 
   // const reasonTotal = reasonDatas.reduce((sum, item) => sum + item.amount, 0);
 
@@ -4032,7 +4032,7 @@ async function generate_checkout_invoice(req, res) {
 
   // Step 4: apply formula
   const total = nonRefundableTotal - refundableTotal;
-  console.log("total",total)
+  console.log("total", total)
   const invoice_number =
     await new Promise(
       (resolve, reject) => {
@@ -4083,90 +4083,90 @@ async function generate_checkout_invoice(req, res) {
         );
       }
     );
-console.log("invoice Number",invoice_number)
-var select_query = "SELECT * FROM hostel WHERE ID='" + user_id + "';";
-      connection.query(select_query, async function (sel_err, sel_res) {
-        if (sel_err) {
-          response
-            .status(201)
-            .json({ message: "Internal Server Error", statusCode: 201 });
-        } else if (sel_res.length != 0) {
-          var user_details = sel_res[0];
-          console.log("user_details",user_details)
-  var invoice_query =
-    "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id) VALUES (?)";
-  var params = [
-    user_details.Name,
-    user_details.Phone,
-    user_details.Email,
-    user_details.HostelName,
-    user_details.Hostel_Id,
-    user_details.Floor,
-    user_details.Rooms,
-    total,
-    user_details.Address,
-    user_details.CheckoutDate,
-    moment(user_details.joining_Date).format('YYYY-MM-DD'),
-    invoice_number,
-    "Pending",
-    user_details.User_Id,
-    user_details.Bed,
-    total,
-    0,
-    "checkout",
-    1,
-    user_id,
-  ];
+  console.log("invoice Number", invoice_number)
+  var select_query = "SELECT * FROM hostel WHERE ID='" + user_id + "';";
+  connection.query(select_query, async function (sel_err, sel_res) {
+    if (sel_err) {
+      response
+        .status(201)
+        .json({ message: "Internal Server Error", statusCode: 201 });
+    } else if (sel_res.length != 0) {
+      var user_details = sel_res[0];
+      console.log("user_details", user_details)
+      var invoice_query =
+        "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id) VALUES (?)";
+      var params = [
+        user_details.Name,
+        user_details.Phone,
+        user_details.Email,
+        user_details.HostelName,
+        user_details.Hostel_Id,
+        user_details.Floor,
+        user_details.Rooms,
+        total,
+        user_details.Address,
+        user_details.CheckoutDate,
+        moment(user_details.joining_Date).format('YYYY-MM-DD'),
+        invoice_number,
+        "Pending",
+        user_details.User_Id,
+        user_details.Bed,
+        total,
+        0,
+        "checkout",
+        1,
+        user_id,
+      ];
 
-  connection.query(
-    invoice_query,
-    [params],
-    async function (
-      err,
-      insdata
-    ) {
-      if (err) {
-        console.log(err);
-      } else {
-        console.log("insdata",insdata)
-        var amenityValues = amenities.map((item) => [
-                    item.key,
-                    user_id,
-                    item.amount,
-                    insdata.insertId,
-                  ]);
-                  console.log("amenityValues",amenityValues)
-                  const placeholders = amenityValues.map(() => '(?,?,?,?)').join(', ');
-const sql = `INSERT INTO manual_invoice_amenities (am_name, user_id, amount, invoice_id) VALUES ${placeholders}`;
-const params = amenityValues.flat();
-        // var ManualQyery =
-        //   "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?)";
-        connection.query(
-          sql,
-          params,
-          async function (
-            err,
-            insdata
-          ) {
-            if (err) {
-              console.log(err);
-            }
+      connection.query(
+        invoice_query,
+        [params],
+        async function (
+          err,
+          insdata
+        ) {
+          if (err) {
+            console.log(err);
+          } else {
+            console.log("insdata", insdata)
+            var amenityValues = amenities.map((item) => [
+              item.key,
+              user_id,
+              item.amount,
+              insdata.insertId,
+            ]);
+            console.log("amenityValues", amenityValues)
+            const placeholders = amenityValues.map(() => '(?,?,?,?)').join(', ');
+            const sql = `INSERT INTO manual_invoice_amenities (am_name, user_id, amount, invoice_id) VALUES ${placeholders}`;
+            const params = amenityValues.flat();
+            // var ManualQyery =
+            //   "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?)";
+            connection.query(
+              sql,
+              params,
+              async function (
+                err,
+                insdata
+              ) {
+                if (err) {
+                  console.log(err);
+                }
+              }
+            );
+
+            console.log(
+              "Bill Invoie geberated sucessfully"
+            );
+            return res
+              .status(200)
+              .json({ statusCode: 200, message: "Checkout Invoie generated sucessfully" });
           }
-        );
+        }
+      );
 
-        console.log(
-          "Bill Invoie geberated sucessfully"
-        );
-        return res
-      .status(200)
-      .json({ statusCode: 200, message: "Checkout Invoie generated sucessfully" });
-      }
     }
+  }
   );
-
- }
-      }
-    );
 }
 
 function update_CheckoutDate(req, res) {
@@ -4250,9 +4250,12 @@ function get_confirm_checkout(req, res) {
               invoiceid: row.Invoices,
               balance: row.BalanceDue,
               paidAmount: row.PaidAmount,
-              action: row.action == "checkIn" ? "Rent" : row.action,
+              action: row.action == "checkIn" || row.action == "recuring" ? "Rent" : row.action,
             }))
             : [];
+
+        const lastRent = [...bill_details].reverse().find((row) => row.action === "Rent");
+        const lastRentPaidAmount = lastRent ? lastRent.paidAmount : 0;
         const totalPaidAmount = inv_data.reduce(
           (sum, row) => sum + Number(row.PaidAmount || 0),
           0
@@ -4310,92 +4313,141 @@ WHERE h.Hostel_Id = ? AND h.ID = ?;`;
                     console.log(err)
                   }
                   if (insdatas.length > 0) {
+
                     let bill_date = insdatas[0].bill_date
-                    // const billingDate = parseInt(bill_date, 10) || 0;
-                    // console.log("billingDate", billingDate, bill_date)
-                    // let start = moment().date(billingDate);
-                    // console.log("start", start)
-                    // const currentday = moment();
-                    // console.log("currentday", currentday)
-                    // // if (currentday.isAfter(start, "day")) {
-                    // //           start.add(1, "month");
-                    // //         }
-                    // console.log("start", start)
-                    // // End = one day before next month's billing date
-                    // let end = moment(start).add(1, "month").subtract(1, "day");
-                    // let inv_startdate = start.format("YYYY-MM-DD");
-                    // console.log("end :", end, "inv_startdate:", inv_startdate) 
+                    if (!!bill_date) {
+                      console.log("bill", bill_date)
+                      // const billingDate = parseInt(bill_date, 10) || 0;
+                      // console.log("billingDate", billingDate, bill_date)
+                      // let start = moment().date(billingDate);
+                      // console.log("start", start)
+                      // const currentday = moment();
+                      // console.log("currentday", currentday)
+                      // // if (currentday.isAfter(start, "day")) {
+                      // //           start.add(1, "month");
+                      // //         }
+                      // console.log("start", start)
+                      // // End = one day before next month's billing date
+                      // let end = moment(start).add(1, "month").subtract(1, "day");
+                      // let inv_startdate = start.format("YYYY-MM-DD");
+                      // console.log("end :", end, "inv_startdate:", inv_startdate) 
 
-                    const joinDate = new Date(hostelData[0].joining_Date);
-                    
-                    // const billingDate = moment().date(bill_date).format("YYYY-MM-DD");
+                      const joinDate = new Date(hostelData[0].joining_Date);
+                      console.log("joinDate", joinDate)
+                      const billingDate = moment().date(bill_date).format("YYYY-MM-DD");
 
-                    const date = Date(bill_date)
-const billingDate = moment(date).format("YYYY-MM-DD")
-                   
- console.log("billingDate",billingDate)
+                      console.log("billingDates", billingDate, joinDate)
 
-                    // const billing_date =new Date(bill_date)
-                    const checkoutDate = new Date(hostelData[0].CheckoutDate);
-                    // console.log("billing_date",billing_date,bill_date,billingDate, moment().date(bill_date).format("YYYY-MM-DD"))
-                    let updtaeDate;
-                    if (joinDate > billingDate) {
-                      console.log("Joining date is after billing date");
-                      updtaeDate = joinDate
+                      // const billing_date =new Date(bill_date)
+                      const checkoutDate = new Date(hostelData[0].CheckoutDate);
+                      // console.log("billing_date",billing_date,bill_date,billingDate, moment().date(bill_date).format("YYYY-MM-DD"))
+                      let updtaeDate;
+                      if (joinDate > new Date(billingDate)) {
+                        console.log("Joining date is after billing date");
+                        updtaeDate = joinDate
 
+                      }
+                      else {
+                        updtaeDate = billingDate
+                      }
+                      console.log("checkoutDate", hostelData[0].CheckoutDate, checkoutDate, updtaeDate, moment(checkoutDate).format("YYYY-MM-DD"), new Date(updtaeDate), hostelData[0].CheckoutDate)
+                      // Days stayed
+                      const diffTime = checkoutDate - new Date(updtaeDate);
+                      const stayedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                      // Days in the month of joining date
+                      const year = joinDate.getFullYear();
+                      const month = joinDate.getMonth() + 1; // JS months are 0-indexed
+                      const totalDaysInMonth = new Date(year, month, 0).getDate();
+                      console.log("stayedDays", stayedDays, totalDaysInMonth);
+                      const ratePerDay = hostelData[0].RoomRent / totalDaysInMonth;
+                      const stayDeduction = Math.round(ratePerDay * stayedDays);
+                      console.log("ratePerDay", ratePerDay)
+                      // const dueAmount = advancePaid - stayDeduction;
+                      //  const remainingRentRefund = Math.round(unusedDays * ratePerDay);
+                      const unusedDays = totalDaysInMonth - stayedDays;
+                      const remainingRentRefund = Math.round(unusedDays * ratePerDay)
+                      const securityDepositRefund = bill_details
+                        .filter(item => item.action.toLowerCase() === "advance")
+                        .reduce((sum, item) => sum + Number(item.paidAmount || 0), 0);
+                      console.log("ratePerDay", ratePerDay, stayDeduction);
+                      const amm = `
+                                    SELECT * FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id WHERE am.Status=1 AND am.Hostel_Id=?
+                                `;
+
+                      // Execute query
+                      connection.query(
+                        amm,
+                        [hostel_id],
+                        function (err, Amres) {
+                          if (err) {
+                            console.log("err", err)
+                          }
+
+                          const Reading = `SELECT rr.*
+FROM room_readings rr
+JOIN hostel h 
+  ON rr.floor_id = h.Floor 
+ AND rr.room_id = h.Rooms
+WHERE h.id = ? 
+  AND rr.hostel_id = ?
+ORDER BY rr.createdAt DESC 
+LIMIT 1;`
+                          connection.query(
+                            Reading,
+                            [id, hostel_id],
+                            function (err, reading) {
+                              if (err) {
+                                console.log("err", err)
+                              }
+                              let LastReading=0;
+                              if (reading.length > 0) {
+                                LastReading = reading[0].reading
+                              }
+                              console.log("LastReading", reading, LastReading)
+                              const totalAm_Amount = Amres.reduce(
+                                (sum, item) => Number(sum) + Number(item.Amount),
+                                0
+                              );
+                              var Deduction = {
+                                stayedDays: stayedDays,
+                                ratePerDay: ratePerDay.toFixed(2),
+                                stayDeductionAmount: stayDeduction,
+                                DueAmount: totalDueAmount
+                              };
+                              var Refundable_details = {
+                                remainingRentRefund: remainingRentRefund,
+                                securityDepositRefund: securityDepositRefund,
+                                totalRefund: (remainingRentRefund + securityDepositRefund) - totalAm_Amount
+                              }
+                              return res.status(200).json({
+                                statusCode: 200,
+                                message: inv_data.length > 0 ? "Success" : "No Due Amounts",
+                                bill_details: bill_details,
+                                LastReading: LastReading,
+                                lastRentPaidAmount: lastRentPaidAmount,
+                                checkout_details: user_details,
+                                totalPaidAmount: totalPaidAmount,
+                                deduction_details: deduction_data || [],
+                                Deduction: Deduction,
+                                Refundable_details: Refundable_details,
+                                hostelData: hostelData.length > 0 ? hostelData[0] : {},
+                                amenities_list: Amres
+                              });
+                            });
+                        }
+                      )
                     }
                     else {
-                      updtaeDate = billingDate
+                      return res
+                        .status(201)
+                        .json({ statusCode: 201, message: "Please set your Billing Rule" });
                     }
-                    console.log("checkoutDate", moment(checkoutDate).format("YYYY-MM-DD"), new Date(updtaeDate), hostelData[0].CheckoutDate)
-                    // Days stayed
-                    const diffTime = checkoutDate - new Date(updtaeDate);
-                    const stayedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                    // Days in the month of joining date
-                    const year = joinDate.getFullYear();
-                    const month = joinDate.getMonth() + 1; // JS months are 0-indexed
-                    const totalDaysInMonth = new Date(year, month, 0).getDate();
-                    console.log("stayedDays", stayedDays, totalDaysInMonth);
-                    const ratePerDay = hostelData[0].RoomRent / totalDaysInMonth;
-                    const stayDeduction = Math.round(ratePerDay * stayedDays);
-                    console.log("ratePerDay", ratePerDay)
-                    // const dueAmount = advancePaid - stayDeduction;
-                    //  const remainingRentRefund = Math.round(unusedDays * ratePerDay);
-                    const unusedDays = totalDaysInMonth - stayedDays;
-                    const remainingRentRefund = Math.round(unusedDays * ratePerDay)
-                    const securityDepositRefund = bill_details
-                      .filter(item => item.action.toLowerCase() === "advance")
-                      .reduce((sum, item) => sum + Number(item.paidAmount || 0), 0);
-                    console.log("ratePerDay", ratePerDay, stayDeduction);
-
-                    var Deduction = {
-                      stayedDays: stayedDays,
-                      ratePerDay: ratePerDay.toFixed(2),
-                      stayDeductionAmount: stayDeduction,
-                      DueAmount: totalDueAmount
-                    };
-                    var Refundable_details = {
-
-                      remainingRentRefund: remainingRentRefund,
-                      securityDepositRefund: securityDepositRefund,
-                      totalRefund: remainingRentRefund + securityDepositRefund
-                    }
-                    return res.status(200).json({
-                      statusCode: 200,
-                      message: inv_data.length > 0 ? "Success" : "No Due Amounts",
-                      bill_details: bill_details,
-                      checkout_details: user_details,
-                      totalPaidAmount: totalPaidAmount,
-                      deduction_details: deduction_data || [],
-                      Deduction: Deduction,
-                      Refundable_details: Refundable_details,
-                      hostelData: hostelData.length > 0 ? hostelData[0] : {},
-                    });
                   }
                 })
             }
           });
+          //  });
         });
       });
     } else {
