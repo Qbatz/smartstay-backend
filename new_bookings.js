@@ -2584,33 +2584,33 @@ async function update_confirm_checkout_due_amount(req, res) {
 
         const totalBalanceDue = result[0]?.totalBalanceDue || 0;
 
-        let parsedReasons = [];
+        //let parsedReasons = [];
 
-        if (typeof reasons === "string") {
-          try {
-            parsedReasons = JSON.parse(reasons);
-          } catch (err) {
-            console.error("Invalid JSON for reasons:", reasons);
-            return res.status(400).json({
-              statusCode: 400,
-              message: "Invalid JSON format for reasons",
-            });
-          }
-        } else if (Array.isArray(reasons)) {
-          parsedReasons = reasons;
-        } else {
-          return res.status(400).json({
-            statusCode: 400,
-            message: "Invalid reasons format: Must be JSON string or array",
-          });
-        }
+        // if (typeof reasons === "string") {
+        //   try {
+        //     parsedReasons = JSON.parse(reasons);
+        //   } catch (err) {
+        //     console.error("Invalid JSON for reasons:", reasons);
+        //     return res.status(400).json({
+        //       statusCode: 400,
+        //       message: "Invalid JSON format for reasons",
+        //     });
+        //   }
+        // } else if (Array.isArray(reasons)) {
+        //   parsedReasons = reasons;
+        // } else {
+        //   return res.status(400).json({
+        //     statusCode: 400,
+        //     message: "Invalid reasons format: Must be JSON string or array",
+        //   });
+        // }
 
-        const reasonTotalAmount = parsedReasons.reduce(
-          (acc, item) => acc + Number(item.amount || 0),
-          0
-        );
+        // const reasonTotalAmount = parsedReasons.reduce(
+        //   (acc, item) => acc + Number(item.amount || 0),
+        //   0
+        // );
 
-        console.log("reasonTotalAmount", reasonTotalAmount);
+        // console.log("reasonTotalAmount", reasonTotalAmount);
 
         console.log("advance_amount", advance_amount);
         console.log("totalBalanceDue", totalBalanceDue);
@@ -3139,7 +3139,7 @@ function finalizeCheckoutDueCustomer(
     UPDATE hostel 
     SET isActive = 0, 
         formal_checkout = ?, 
-        reson_note = ?, 
+        reson_note = ?
     WHERE ID = ?;
 
     UPDATE bed_details 
@@ -3157,6 +3157,7 @@ function finalizeCheckoutDueCustomer(
     ],
     (err) => {
       if (err) {
+        console.log(err)
         return res.status(201).json({
           statusCode: 201,
           message: "Unable to finalize checkout",
