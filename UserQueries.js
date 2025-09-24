@@ -4250,9 +4250,12 @@ function get_confirm_checkout(req, res) {
               invoiceid: row.Invoices,
               balance: row.BalanceDue,
               paidAmount: row.PaidAmount,
-              action: row.action == "checkIn" ? "Rent" : row.action,
+              action: row.action == "checkIn" || row.action == "recuring" ? "Rent" : row.action,
             }))
             : [];
+
+        const lastRent = [...bill_details].reverse().find((row) => row.action === "Rent");
+        const lastRentPaidAmount = lastRent ? lastRent.paidAmount : 0;
         const totalPaidAmount = inv_data.reduce(
           (sum, row) => sum + Number(row.PaidAmount || 0),
           0
@@ -4312,96 +4315,139 @@ WHERE h.Hostel_Id = ? AND h.ID = ?;`;
                   if (insdatas.length > 0) {
 
                     let bill_date = insdatas[0].bill_date
-                    if(!!bill_date){
-                    console.log("bill", bill_date)
-                    // const billingDate = parseInt(bill_date, 10) || 0;
-                    // console.log("billingDate", billingDate, bill_date)
-                    // let start = moment().date(billingDate);
-                    // console.log("start", start)
-                    // const currentday = moment();
-                    // console.log("currentday", currentday)
-                    // // if (currentday.isAfter(start, "day")) {
-                    // //           start.add(1, "month");
-                    // //         }
-                    // console.log("start", start)
-                    // // End = one day before next month's billing date
-                    // let end = moment(start).add(1, "month").subtract(1, "day");
-                    // let inv_startdate = start.format("YYYY-MM-DD");
-                    // console.log("end :", end, "inv_startdate:", inv_startdate) 
+                    if (!!bill_date) {
+                      console.log("bill", bill_date)
+                      // const billingDate = parseInt(bill_date, 10) || 0;
+                      // console.log("billingDate", billingDate, bill_date)
+                      // let start = moment().date(billingDate);
+                      // console.log("start", start)
+                      // const currentday = moment();
+                      // console.log("currentday", currentday)
+                      // // if (currentday.isAfter(start, "day")) {
+                      // //           start.add(1, "month");
+                      // //         }
+                      // console.log("start", start)
+                      // // End = one day before next month's billing date
+                      // let end = moment(start).add(1, "month").subtract(1, "day");
+                      // let inv_startdate = start.format("YYYY-MM-DD");
+                      // console.log("end :", end, "inv_startdate:", inv_startdate) 
 
-                    const joinDate = new Date(hostelData[0].joining_Date);
-                    console.log("joinDate", joinDate)
-                    const billingDate = moment().date(bill_date).format("YYYY-MM-DD");
+                      const joinDate = new Date(hostelData[0].joining_Date);
+                      console.log("joinDate", joinDate)
+                      const billingDate = moment().date(bill_date).format("YYYY-MM-DD");
 
-                    console.log("billingDates", billingDate, joinDate)
+                      console.log("billingDates", billingDate, joinDate)
 
-                    // const billing_date =new Date(bill_date)
-                    const checkoutDate = new Date(hostelData[0].CheckoutDate);
-                    // console.log("billing_date",billing_date,bill_date,billingDate, moment().date(bill_date).format("YYYY-MM-DD"))
-                    let updtaeDate;
-                    if (joinDate > new Date(billingDate)) {
-                      console.log("Joining date is after billing date");
-                      updtaeDate = joinDate
+                      // const billing_date =new Date(bill_date)
+                      const checkoutDate = new Date(hostelData[0].CheckoutDate);
+                      // console.log("billing_date",billing_date,bill_date,billingDate, moment().date(bill_date).format("YYYY-MM-DD"))
+                      let updtaeDate;
+                      if (joinDate > new Date(billingDate)) {
+                        console.log("Joining date is after billing date");
+                        updtaeDate = joinDate
 
+                      }
+                      else {
+                        updtaeDate = billingDate
+                      }
+                      console.log("checkoutDate", hostelData[0].CheckoutDate, checkoutDate, updtaeDate, moment(checkoutDate).format("YYYY-MM-DD"), new Date(updtaeDate), hostelData[0].CheckoutDate)
+                      // Days stayed
+                      const diffTime = checkoutDate - new Date(updtaeDate);
+                      const stayedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                      // Days in the month of joining date
+                      const year = joinDate.getFullYear();
+                      const month = joinDate.getMonth() + 1; // JS months are 0-indexed
+                      const totalDaysInMonth = new Date(year, month, 0).getDate();
+                      console.log("stayedDays", stayedDays, totalDaysInMonth);
+                      const ratePerDay = hostelData[0].RoomRent / totalDaysInMonth;
+                      const stayDeduction = Math.round(ratePerDay * stayedDays);
+                      console.log("ratePerDay", ratePerDay)
+                      // const dueAmount = advancePaid - stayDeduction;
+                      //  const remainingRentRefund = Math.round(unusedDays * ratePerDay);
+                      const unusedDays = totalDaysInMonth - stayedDays;
+                      const remainingRentRefund = Math.round(unusedDays * ratePerDay)
+                      const securityDepositRefund = bill_details
+                        .filter(item => item.action.toLowerCase() === "advance")
+                        .reduce((sum, item) => sum + Number(item.paidAmount || 0), 0);
+                      console.log("ratePerDay", ratePerDay, stayDeduction);
+                      const amm = `
+                                    SELECT * FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id WHERE am.Status=1 AND am.Hostel_Id=?
+                                `;
+
+                      // Execute query
+                      connection.query(
+                        amm,
+                        [hostel_id],
+                        function (err, Amres) {
+                          if (err) {
+                            console.log("err", err)
+                          }
+
+                          const Reading = `SELECT rr.*
+FROM room_readings rr
+JOIN hostel h 
+  ON rr.floor_id = h.Floor 
+ AND rr.room_id = h.Rooms
+WHERE h.id = ? 
+  AND rr.hostel_id = ?
+ORDER BY rr.createdAt DESC 
+LIMIT 1;`
+                          connection.query(
+                            Reading,
+                            [id, hostel_id],
+                            function (err, reading) {
+                              if (err) {
+                                console.log("err", err)
+                              }
+                              let LastReading=0;
+                              if (reading.length > 0) {
+                                LastReading = reading[0].reading
+                              }
+                              console.log("LastReading", reading, LastReading)
+                              const totalAm_Amount = Amres.reduce(
+                                (sum, item) => Number(sum) + Number(item.Amount),
+                                0
+                              );
+                              var Deduction = {
+                                stayedDays: stayedDays,
+                                ratePerDay: ratePerDay.toFixed(2),
+                                stayDeductionAmount: stayDeduction,
+                                DueAmount: totalDueAmount
+                              };
+                              var Refundable_details = {
+                                remainingRentRefund: remainingRentRefund,
+                                securityDepositRefund: securityDepositRefund,
+                                totalRefund: (remainingRentRefund + securityDepositRefund) - totalAm_Amount
+                              }
+                              return res.status(200).json({
+                                statusCode: 200,
+                                message: inv_data.length > 0 ? "Success" : "No Due Amounts",
+                                bill_details: bill_details,
+                                LastReading: LastReading,
+                                lastRentPaidAmount: lastRentPaidAmount,
+                                checkout_details: user_details,
+                                totalPaidAmount: totalPaidAmount,
+                                deduction_details: deduction_data || [],
+                                Deduction: Deduction,
+                                Refundable_details: Refundable_details,
+                                hostelData: hostelData.length > 0 ? hostelData[0] : {},
+                                amenities_list: Amres
+                              });
+                            });
+                        }
+                      )
                     }
                     else {
-                      updtaeDate = billingDate
+                      return res
+                        .status(201)
+                        .json({ statusCode: 201, message: "Please set your Billing Rule" });
                     }
-                    console.log("checkoutDate", hostelData[0].CheckoutDate, checkoutDate, updtaeDate, moment(checkoutDate).format("YYYY-MM-DD"), new Date(updtaeDate), hostelData[0].CheckoutDate)
-                    // Days stayed
-                    const diffTime = checkoutDate - new Date(updtaeDate);
-                    const stayedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                    // Days in the month of joining date
-                    const year = joinDate.getFullYear();
-                    const month = joinDate.getMonth() + 1; // JS months are 0-indexed
-                    const totalDaysInMonth = new Date(year, month, 0).getDate();
-                    console.log("stayedDays", stayedDays, totalDaysInMonth);
-                    const ratePerDay = hostelData[0].RoomRent / totalDaysInMonth;
-                    const stayDeduction = Math.round(ratePerDay * stayedDays);
-                    console.log("ratePerDay", ratePerDay)
-                    // const dueAmount = advancePaid - stayDeduction;
-                    //  const remainingRentRefund = Math.round(unusedDays * ratePerDay);
-                    const unusedDays = totalDaysInMonth - stayedDays;
-                    const remainingRentRefund = Math.round(unusedDays * ratePerDay)
-                    const securityDepositRefund = bill_details
-                      .filter(item => item.action.toLowerCase() === "advance")
-                      .reduce((sum, item) => sum + Number(item.paidAmount || 0), 0);
-                    console.log("ratePerDay", ratePerDay, stayDeduction);
-
-                    var Deduction = {
-                      stayedDays: stayedDays,
-                      ratePerDay: ratePerDay.toFixed(2),
-                      stayDeductionAmount: stayDeduction,
-                      DueAmount: totalDueAmount
-                    };
-                    var Refundable_details = {
-
-                      remainingRentRefund: remainingRentRefund,
-                      securityDepositRefund: securityDepositRefund,
-                      totalRefund: remainingRentRefund + securityDepositRefund
-                    }
-                    return res.status(200).json({
-                      statusCode: 200,
-                      message: inv_data.length > 0 ? "Success" : "No Due Amounts",
-                      bill_details: bill_details,
-                      checkout_details: user_details,
-                      totalPaidAmount: totalPaidAmount,
-                      deduction_details: deduction_data || [],
-                      Deduction: Deduction,
-                      Refundable_details: Refundable_details,
-                      hostelData: hostelData.length > 0 ? hostelData[0] : {},
-                    });
-                  }
-                  else{
-                    return res
-        .status(201)
-        .json({ statusCode: 201, message: "Please set your Billing Rule" });
-                  }
                   }
                 })
             }
           });
+          //  });
         });
       });
     } else {
