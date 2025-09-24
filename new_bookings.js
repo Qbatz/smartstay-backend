@@ -831,7 +831,7 @@ function add_confirm_checkout(req, res) {
 
     // Handle non-reimbursement case
     if (!reinburse || reinburse === 0) {
-      const sql2 = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
+      const sql2 = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1 And action !='checkout'`;
       connection.query(sql2, [id], (err, invoiceData) => {
         if (err) {
           return res.status(201).json({
