@@ -3402,26 +3402,56 @@ function get_beduser_details(req, res) {
 
     // var sql1 =
     //   "SELECT Name,Phone,RoomRent,createdAt,User_Id FROM hostel WHERE Hostel_Id=? AND Floor =? AND Rooms=? AND Bed=? AND isActive=1 AND created_by=?";
-    var sql1 = `SELECT 
+//     var sql1 = `SELECT 
+//   hs.Name,
+//   hs.Phone,
+//   hs.RoomRent,
+//   hs.createdAt,
+//   hs.User_Id,
+//   hs.id
+// FROM hostel AS hs
+// LEFT JOIN bookings AS bk
+//   ON bk.customer_Id = hs.ID
+//   AND bk.hostel_id = hs.Hostel_Id
+//   AND bk.status = 1
+// WHERE hs.Hostel_Id = ?
+//   AND COALESCE(NULLIF(hs.Floor, 'undefined'), bk.floor_id) = ?
+//   AND COALESCE(NULLIF(hs.Rooms, 'undefined'), bk.room_id) = ?
+//   AND COALESCE(NULLIF(hs.Bed, 'undefined'), bk.bed_id) = ?
+//   AND hs.isActive = 1;`;
+
+var sql1 =`SELECT 
   hs.Name,
   hs.Phone,
   hs.RoomRent,
   hs.createdAt,
   hs.User_Id,
-  hs.id
+  hs.id,
+  bk.amount AS Booking_Amount,
+  bd.isbooked,
+  bd.isfilled,
+  bd.isNoticePeriod,
+  CASE 
+   WHEN bd.isNoticePeriod = 1 AND bk.amount IS NOT NULL THEN 'Booking'
+    WHEN bd.isNoticePeriod = 1 THEN 'NoticePeriod'
+    WHEN bd.isNoticePeriod = 0 AND bd.isbooked = 0 THEN 'Occupied'
+    ELSE 'Not Booking'
+  END AS user_status
 FROM hostel AS hs
 LEFT JOIN bookings AS bk
   ON bk.customer_Id = hs.ID
   AND bk.hostel_id = hs.Hostel_Id
   AND bk.status = 1
+LEFT JOIN bed_details AS bd 
+  ON bd.id = ?
 WHERE hs.Hostel_Id = ?
   AND COALESCE(NULLIF(hs.Floor, 'undefined'), bk.floor_id) = ?
   AND COALESCE(NULLIF(hs.Rooms, 'undefined'), bk.room_id) = ?
   AND COALESCE(NULLIF(hs.Bed, 'undefined'), bk.bed_id) = ?
-  AND hs.isActive = 1;`;
+  AND hs.isActive = 1;`
     connection.query(
       sql1,
-      [hostel_id, floor_id, room_id, bed, created_by],
+      [bed,hostel_id, floor_id, room_id, bed, created_by],
       function (err, data) {
         if (err) {
           return res
