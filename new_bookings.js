@@ -772,7 +772,7 @@ function assign_booking(req, res) {
   });
 }
 
-function add_confirm_checkout(req, res) {
+async function add_confirm_checkout(req, res) {
   const {
     id,
     hostel_id,
@@ -794,6 +794,35 @@ function add_confirm_checkout(req, res) {
       .status(201)
       .json({ statusCode: 201, message: "Missing Mandatory Fields" });
   }
+
+  const attachmentFile = req.files?.attach?.[0];
+  let attachmentUrl = "";
+
+  if (attachmentFile && attachmentFile.originalname) {
+    try {
+      const timestamp = Date.now();
+      const safeFileName = attachmentFile.originalname.replace(/\s+/g, "_");
+      const fileName = `${timestamp}_${safeFileName}`;
+      const folderName = "confirm_checkout/";
+
+      attachmentUrl = await uploadImage.uploadProfilePictureToS3Bucket(
+        process.env.AWS_BUCKET_NAME,
+        folderName,
+        fileName,
+        attachmentFile
+      );
+
+      console.log("S3 upload success:", attachmentUrl);
+    } catch (err) {
+      console.log("Failed to upload attachment to S3:", err.message || err);
+      return res.status(500).json({
+        statusCode: 500,
+        message: "Attachment upload failed",
+        reason: err.message || "Unknown error",
+      });
+    }
+  }
+
   if (Array.isArray(reasons) && reasons.length > 0) {
     for (let reason of reasons) {
       console.log(!reason.amount,'===')
@@ -848,7 +877,7 @@ function add_confirm_checkout(req, res) {
           });
         }
 
-        finalizeCheckout(id, bed_id, advance_return, comments, res);
+        finalizeCheckout(id, bed_id, advance_return, comments,attachmentUrl, res);
       });
     } else {
       // Handle reimbursement case
@@ -902,10 +931,10 @@ function add_confirm_checkout(req, res) {
 // Helper function to finalize checkout
 function finalizeCheckout(id, bed_id, advance_return, comments, res) {
   const sql = `
-        UPDATE hostel SET isActive = 0, return_advance = ?, checkout_comment = ? WHERE ID = ?;
+        UPDATE hostel SET isActive = 0, return_advance = ?, checkout_comment = ?,attachment=? WHERE ID = ?;
         UPDATE bed_details SET user_id = 0, isfilled = 0,isNoticePeriod=0 WHERE id = ?;
     `;
-  connection.query(sql, [advance_return, comments, id, bed_id], (err) => {
+  connection.query(sql, [advance_return, comments,attachmentUrl, id, bed_id], (err) => {
     if (err) {
       return res.status(201).json({
         statusCode: 201,
