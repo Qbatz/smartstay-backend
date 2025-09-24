@@ -490,6 +490,10 @@ WHERE ID = ?;`
   );
 }
 
+function ChangeBookingBed(req,res) {
+  
+}
+
 function delete_booking(req, res) {
   var id = req.body.id;
 
@@ -654,4 +658,5 @@ module.exports = {
   delete_booking,
   assign_booking,
   Booking_Inactive,
+  ChangeBookingBed
 };

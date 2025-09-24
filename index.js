@@ -1094,9 +1094,12 @@ app.post(
     newBookings.add_booking(req, res);
   }
 );
+
 app.post("/Booking_Inactive", (req, res) => {
   bookings.Booking_Inactive(req, res);
 });
+
+app.post("/ChangeBookingBed", bookings.ChangeBookingBed);
 
 
 app.post("/all_bookings", (req, res) => {
@@ -1432,6 +1435,7 @@ app.post("/contacts/add_contact", contacts_router.add_contact);
 app.post("/contacts/delete_contact", contacts_router.delete_contact);
 
 app.post("/users/reassign_bed", contacts_router.reassign_bed);
+
 
 app.post("/users/all_contacts", contacts_router.all_contacts);
 

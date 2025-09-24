@@ -796,7 +796,8 @@ function add_confirm_checkout(req, res) {
   }
   if (Array.isArray(reasons) && reasons.length > 0) {
     for (let reason of reasons) {
-      if (!reason.reason_name || !reason.amount) {
+      console.log(!reason.amount,'===')
+      if (!reason.reason_name ) {
         return res.status(201).json({
           statusCode: 201,
           message: "Missing Required Fields in Reason Details",

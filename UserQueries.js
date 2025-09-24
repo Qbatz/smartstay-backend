@@ -2040,8 +2040,8 @@ function Refundtransitionlist(request, response) {
                   var paid_amount = check_res[0].PaidAmount;
 
                   var new_amount = Number(paid_amount) + Number(amount);
-console.log("new_amount",new_amount,total_amount)
-let up_total_amount =  Math.abs(total_amount)
+                  console.log("new_amount", new_amount, total_amount)
+                  let up_total_amount = Math.abs(total_amount)
                   if (new_amount > up_total_amount) {
                     response.status(201).json({
                       statusCode: 201,
@@ -3637,25 +3637,25 @@ function get_beduser_details(req, res) {
 
     // var sql1 =
     //   "SELECT Name,Phone,RoomRent,createdAt,User_Id FROM hostel WHERE Hostel_Id=? AND Floor =? AND Rooms=? AND Bed=? AND isActive=1 AND created_by=?";
-//     var sql1 = `SELECT 
-//   hs.Name,
-//   hs.Phone,
-//   hs.RoomRent,
-//   hs.createdAt,
-//   hs.User_Id,
-//   hs.id
-// FROM hostel AS hs
-// LEFT JOIN bookings AS bk
-//   ON bk.customer_Id = hs.ID
-//   AND bk.hostel_id = hs.Hostel_Id
-//   AND bk.status = 1
-// WHERE hs.Hostel_Id = ?
-//   AND COALESCE(NULLIF(hs.Floor, 'undefined'), bk.floor_id) = ?
-//   AND COALESCE(NULLIF(hs.Rooms, 'undefined'), bk.room_id) = ?
-//   AND COALESCE(NULLIF(hs.Bed, 'undefined'), bk.bed_id) = ?
-//   AND hs.isActive = 1;`;
+    //     var sql1 = `SELECT 
+    //   hs.Name,
+    //   hs.Phone,
+    //   hs.RoomRent,
+    //   hs.createdAt,
+    //   hs.User_Id,
+    //   hs.id
+    // FROM hostel AS hs
+    // LEFT JOIN bookings AS bk
+    //   ON bk.customer_Id = hs.ID
+    //   AND bk.hostel_id = hs.Hostel_Id
+    //   AND bk.status = 1
+    // WHERE hs.Hostel_Id = ?
+    //   AND COALESCE(NULLIF(hs.Floor, 'undefined'), bk.floor_id) = ?
+    //   AND COALESCE(NULLIF(hs.Rooms, 'undefined'), bk.room_id) = ?
+    //   AND COALESCE(NULLIF(hs.Bed, 'undefined'), bk.bed_id) = ?
+    //   AND hs.isActive = 1;`;
 
-var sql1 =`SELECT 
+    var sql1 = `SELECT 
   hs.Name,
   hs.Phone,
   hs.RoomRent,
@@ -3671,7 +3671,11 @@ var sql1 =`SELECT
     WHEN bd.isNoticePeriod = 1 THEN 'NoticePeriod'
     WHEN bd.isNoticePeriod = 0 AND bd.isbooked = 0 THEN 'Occupied'
     ELSE 'Not Booking'
-  END AS user_status
+  END AS user_status,
+   CASE 
+    WHEN bk.amount IS NOT NULL THEN DATE_FORMAT(bk.booking_date, '%Y-%m-%d')
+  ELSE DATE_FORMAT(hs.joining_date, '%Y-%m-%d')                              
+  END AS Date
 FROM hostel AS hs
 LEFT JOIN bookings AS bk
   ON bk.customer_Id = hs.ID
@@ -3686,7 +3690,7 @@ WHERE hs.Hostel_Id = ?
   AND hs.isActive = 1;`
     connection.query(
       sql1,
-      [bed,hostel_id, floor_id, room_id, bed, created_by],
+      [bed, hostel_id, floor_id, room_id, bed, created_by],
       function (err, data) {
         if (err) {
           return res
@@ -4561,11 +4565,6 @@ LEFT JOIN hostelrooms r ON h.Rooms = r.id
 WHERE h.Hostel_Id = ? AND h.ID = ?;`;
           connection.query(sqlGet, [hostel_id, id], function (err, hostelData) {
             if (err) {
-              // return res.status(201).json({
-              //   statusCode: 201,
-              //   message: "Unable to Get User Details",
-              //   reason: err.message,
-              // });
               console.log("err", err);
             }
 
@@ -4618,6 +4617,7 @@ WHERE h.Hostel_Id = ? AND h.ID = ?;`;
                       console.log("checkoutDate", hostelData[0].CheckoutDate, checkoutDate, updtaeDate, moment(checkoutDate).format("YYYY-MM-DD"), new Date(updtaeDate), hostelData[0].CheckoutDate)
                       // Days stayed
                       const diffTime = checkoutDate - new Date(updtaeDate);
+                      console.log("diffTime",diffTime)
                       const stayedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
                       // Days in the month of joining date
@@ -4665,7 +4665,8 @@ LIMIT 1;`
                               if (err) {
                                 console.log("err", err)
                               }
-                              let LastReading=0;
+                              
+                              let LastReading = 0;
                               if (reading.length > 0) {
                                 LastReading = reading[0].reading
                               }
@@ -4674,7 +4675,28 @@ LIMIT 1;`
                                 (sum, item) => Number(sum) + Number(item.Amount),
                                 0
                               );
-                              var Deduction = {
+
+                              
+let EbData =[]
+                               var sql1 = `SELECT COALESCE(SUM(amount), 0) AS eb_amount FROM customer_eb_amount WHERE user_id = ? AND status = 1 AND date BETWEEN ? AND ?;`;
+            connection.query(
+              sql1,
+              [id, moment(updtaeDate).format("YYYY-MM-DD"), moment(checkoutDate).format("YYYY-MM-DD")],
+              function (err, eb_data) {
+                if (err) {
+                  console.log("err",err)
+                }
+                EbData=eb_data
+                   
+              }
+            );
+            
+             const totalEB_Amount = EbData.reduce(
+                                (sum, item) => Number(sum) + Number(item.eb_amount),
+                                0
+                              );
+                              console.log("totalEB_Amount",totalEB_Amount)
+            var Deduction = {
                                 stayedDays: stayedDays,
                                 ratePerDay: ratePerDay.toFixed(2),
                                 stayDeductionAmount: stayDeduction,
@@ -4683,8 +4705,9 @@ LIMIT 1;`
                               var Refundable_details = {
                                 remainingRentRefund: remainingRentRefund,
                                 securityDepositRefund: securityDepositRefund,
-                                totalRefund: (remainingRentRefund + securityDepositRefund) - totalAm_Amount
+                                totalRefund: (remainingRentRefund + securityDepositRefund) - (totalAm_Amount + totalEB_Amount)
                               }
+                              console.log("Refundable_details",Refundable_details)
                               return res.status(200).json({
                                 statusCode: 200,
                                 message: inv_data.length > 0 ? "Success" : "No Due Amounts",
@@ -4697,7 +4720,8 @@ LIMIT 1;`
                                 Deduction: Deduction,
                                 Refundable_details: Refundable_details,
                                 hostelData: hostelData.length > 0 ? hostelData[0] : {},
-                                amenities_list: Amres
+                                amenities_list: Amres,
+                                EbData:EbData
                               });
                             });
                         }
