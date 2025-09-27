@@ -4614,11 +4614,11 @@ WHERE h.Hostel_Id = ? AND h.ID = ?;`;
                       else {
                         updtaeDate = billingDate
                       }
-                      console.log("checkoutDate", hostelData[0].CheckoutDate, checkoutDate, updtaeDate, moment(checkoutDate).format("YYYY-MM-DD"), new Date(updtaeDate), hostelData[0].CheckoutDate)
+                      console.log("checkoutDate", hostelData[0].CheckoutDate, checkoutDate, updtaeDate, moment.utc(checkoutDate).format("YYYY-MM-DD"), new Date(updtaeDate), hostelData[0].CheckoutDate)
                       // Days stayed
                       const diffTime = checkoutDate - new Date(updtaeDate);
                       console.log("diffTime",diffTime)
-                      const stayedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      const stayedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))+ 1;
 
                       // Days in the month of joining date
                       const year = joinDate.getFullYear();
@@ -4631,7 +4631,9 @@ WHERE h.Hostel_Id = ? AND h.ID = ?;`;
                       // const dueAmount = advancePaid - stayDeduction;
                       //  const remainingRentRefund = Math.round(unusedDays * ratePerDay);
                       const unusedDays = totalDaysInMonth - stayedDays;
-                      const remainingRentRefund = Math.round(unusedDays * ratePerDay)
+                      console.log("unusedDays----",unusedDays)
+                      const remainingRentRefund = Math.round(stayedDays * ratePerDay)
+                      console.log("remainingRentRefund",remainingRentRefund)
                       const securityDepositRefund = bill_details
                         .filter(item => item.action.toLowerCase() === "advance")
                         .reduce((sum, item) => sum + Number(item.paidAmount || 0), 0);
@@ -4681,7 +4683,7 @@ let EbData =[]
                                var sql1 = `SELECT COALESCE(SUM(amount), 0) AS eb_amount FROM customer_eb_amount WHERE user_id = ? AND status = 1 AND date BETWEEN ? AND ?;`;
             connection.query(
               sql1,
-              [id, moment(updtaeDate).format("YYYY-MM-DD"), moment(checkoutDate).format("YYYY-MM-DD")],
+              [id, moment(updtaeDate).format("YYYY-MM-DD"), moment.utc(checkoutDate).format("YYYY-MM-DD")],
               function (err, eb_data) {
                 if (err) {
                   console.log("err",err)
