@@ -892,9 +892,9 @@ async function add_confirm_checkout(req, res) {
         }
 
         const totalBalanceDue = result[0]?.totalBalanceDue || 0;
-
+console.log("reasons",reasons,JSON.parse(reasons))
         const reasonTotalAmount =
-          reasons?.reduce((acc, item) => acc + Number(item.amount || 0), 0) ||
+          reasons&&JSON.parse(reasons).reduce((acc, item) => acc + Number(item.amount || 0), 0) ||
           0;
 
         console.log("totalBalanceDue", totalBalanceDue);
