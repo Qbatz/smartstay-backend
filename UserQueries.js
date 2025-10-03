@@ -4549,6 +4549,7 @@ function get_confirm_checkout(req, res) {
     h.ID,
     h.Name,
     h.Phone,
+    h.user_id,
     h.HostelName,
     h.joining_Date,
     h.req_date AS request_checkout_date,
@@ -4567,7 +4568,6 @@ WHERE h.Hostel_Id = ? AND h.ID = ?;`;
             if (err) {
               console.log("err", err);
             }
-
             if (hostelData.length > 0) {
               var sqlhodDetails = `Select * from hosteldetails where id=${hostel_id}`;
               connection.query(
@@ -4617,8 +4617,8 @@ WHERE h.Hostel_Id = ? AND h.ID = ?;`;
                       console.log("checkoutDate", hostelData[0].CheckoutDate, checkoutDate, updtaeDate, moment.utc(checkoutDate).format("YYYY-MM-DD"), new Date(updtaeDate), hostelData[0].CheckoutDate)
                       // Days stayed
                       const diffTime = checkoutDate - new Date(updtaeDate);
-                      console.log("diffTime",diffTime)
-                      const stayedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))+ 1;
+                      console.log("diffTime", diffTime)
+                      const stayedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
                       // Days in the month of joining date
                       const year = joinDate.getFullYear();
@@ -4631,22 +4631,29 @@ WHERE h.Hostel_Id = ? AND h.ID = ?;`;
                       // const dueAmount = advancePaid - stayDeduction;
                       //  const remainingRentRefund = Math.round(unusedDays * ratePerDay);
                       const unusedDays = totalDaysInMonth - stayedDays;
-                      console.log("unusedDays----",unusedDays)
+                      console.log("unusedDays----", unusedDays)
                       const remainingRentRefund = Math.round(stayedDays * ratePerDay)
-                      console.log("remainingRentRefund",remainingRentRefund)
+                      console.log("remainingRentRefund", remainingRentRefund)
                       const securityDepositRefund = bill_details
                         .filter(item => item.action.toLowerCase() === "advance")
                         .reduce((sum, item) => sum + Number(item.paidAmount || 0), 0);
                       console.log("ratePerDay", ratePerDay, stayDeduction);
                       const amm = `
-                                    SELECT * FROM Amenities AS am JOIN AmnitiesName AS amname ON amname.id=am.Amnities_Id WHERE am.Status=1 AND am.Hostel_Id=?
+                                   SELECT am.Amount, amname.Amnities_Name 
+                                    FROM Amenities AS am 
+                                    JOIN AmnitiesName AS amname ON amname.id = am.Amnities_Id 
+                                    JOIN AmenitiesHistory AS ahis ON ahis.amenity_Id = am.id 
+                                    WHERE ahis.user_Id = ?
+                                    AND ahis.status = 1 
+                                    AND am.Status = 1
                                 `;
 
                       // Execute query
                       connection.query(
                         amm,
-                        [hostel_id],
+                        [hostelData[0].user_id],
                         function (err, Amres) {
+                          console.log("---", amm, hostelData[0])
                           if (err) {
                             console.log("err", err)
                           }
@@ -4667,7 +4674,8 @@ LIMIT 1;`
                               if (err) {
                                 console.log("err", err)
                               }
-                              
+                              console.log("Resijb", reading[0])
+
                               let LastReading = 0;
                               if (reading.length > 0) {
                                 LastReading = reading[0].reading
@@ -4678,54 +4686,58 @@ LIMIT 1;`
                                 0
                               );
 
-                              
-let EbData =[]
-                               var sql1 = `SELECT COALESCE(SUM(amount), 0) AS eb_amount FROM customer_eb_amount WHERE user_id = ? AND status = 1 AND date BETWEEN ? AND ?;`;
-            connection.query(
-              sql1,
-              [id, moment(updtaeDate).format("YYYY-MM-DD"), moment.utc(checkoutDate).format("YYYY-MM-DD")],
-              function (err, eb_data) {
-                if (err) {
-                  console.log("err",err)
-                }
-                EbData=eb_data
-                   
-              }
-            );
-            
-             const totalEB_Amount = EbData.reduce(
-                                (sum, item) => Number(sum) + Number(item.eb_amount),
-                                0
-                              );
-                              console.log("totalEB_Amount",totalEB_Amount)
-            var Deduction = {
-                                stayedDays: stayedDays,
-                                ratePerDay: ratePerDay.toFixed(2),
-                                stayDeductionAmount: stayDeduction,
-                                DueAmount: totalDueAmount
-                              };
-                              var Refundable_details = {
-                                remainingRentRefund: remainingRentRefund,
-                                securityDepositRefund: securityDepositRefund,
-                                totalRefund: (remainingRentRefund + securityDepositRefund) - (totalAm_Amount + totalEB_Amount)
-                              }
-                              console.log("Refundable_details",Refundable_details)
-                              return res.status(200).json({
-                                statusCode: 200,
-                                message: inv_data.length > 0 ? "Success" : "No Due Amounts",
-                                bill_details: bill_details,
-                                LastReading: LastReading,
-                                lastRentPaidAmount: lastRentPaidAmount,
-                                checkout_details: user_details,
-                                totalPaidAmount: totalPaidAmount,
-                                deduction_details: deduction_data || [],
-                                Deduction: Deduction,
-                                Refundable_details: Refundable_details,
-                                hostelData: hostelData.length > 0 ? hostelData[0] : {},
-                                amenities_list: Amres,
-                                EbData:EbData
-                              });
-                            });
+
+                              let EbData = []
+                              var totalEB_Amount = 0
+                              var sql1 = `SELECT COALESCE(SUM(amount), 0) AS eb_amount FROM customer_eb_amount WHERE user_id = ${id} AND status = 1 AND date BETWEEN '${moment.utc(updtaeDate).format("YYYY-MM-DD")}' AND '${moment.utc(checkoutDate).format("YYYY-MM-DD")}';`;
+                              connection.query(
+                                sql1,
+                                function (err, eb_data) {
+                                  console.log("eb_data", eb_data)
+                                  if (err) {
+                                    console.log("err", err)
+                                  }
+                                  EbData = eb_data;
+                                  totalEB_Amount = eb_data.reduce(
+                                    (sum, item) => Number(sum) + Number(item.eb_amount),
+                                    0
+                                  );
+
+
+                                  console.log("totalEB_Amount", totalEB_Amount)
+                                  console.log("-----", EbData, sql1, id, moment(updtaeDate).format("YYYY-MM-DD"), moment.utc(checkoutDate).format("YYYY-MM-DD"))
+
+                                  var Deduction = {
+                                    stayedDays: stayedDays,
+                                    ratePerDay: ratePerDay.toFixed(2),
+                                    stayDeductionAmount: stayDeduction,
+                                    DueAmount: totalDueAmount
+                                  };
+                                  var Refundable_details = {
+                                    remainingRentRefund: remainingRentRefund,
+                                    securityDepositRefund: securityDepositRefund,
+                                    totalRefund: (remainingRentRefund + securityDepositRefund) - (totalAm_Amount + totalEB_Amount)
+                                  }
+                                  console.log("Refundable_details", Refundable_details)
+                                  return res.status(200).json({
+                                    statusCode: 200,
+                                    message: inv_data.length > 0 ? "Success" : "No Due Amounts",
+                                    bill_details: bill_details,
+                                    LastReading: LastReading,
+                                    LastReadingDate:reading[0].createdat,
+                                    lastRentPaidAmount: lastRentPaidAmount,
+                                    checkout_details: user_details,
+                                    totalPaidAmount: totalPaidAmount,
+                                    deduction_details: deduction_data || [],
+                                    Deduction: Deduction,
+                                    Refundable_details: Refundable_details,
+                                    hostelData: hostelData.length > 0 ? hostelData[0] : {},
+                                    amenities_list: Amres,
+                                    EbData: EbData
+                                  });
+                                });
+                            }
+                          );
                         }
                       )
                     }
