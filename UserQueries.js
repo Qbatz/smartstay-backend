@@ -4814,7 +4814,7 @@ LIMIT 1;`
                                     message: inv_data.length > 0 ? "Success" : "No Due Amounts",
                                     bill_details: bill_details,
                                     LastReading: LastReading,
-                                    LastReadingDate: reading[0].createdat,
+                                    LastReadingDate: reading.length>0&&reading[0].createdat || null,
                                     lastRentPaidAmount: lastRentPaidAmount,
                                     checkout_details: user_details,
                                     totalPaidAmount: totalPaidAmount,
