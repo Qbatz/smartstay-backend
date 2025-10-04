@@ -282,6 +282,7 @@ exports.get_bill_detailsbyid = async (req, res) => {
 
   try {
     var sql1 = `SELECT
+    hs.id as userId,
    inv.id AS invoice_id,
    inv.Invoices,
    inv.Date,
@@ -382,16 +383,22 @@ WHERE
               reason: err.message,
             });
           }
-          var sql2 = `SELECT 
+
+          if(Data[0].action =="advance"){
+var sql2 = `select * from receipts where user_id=${Data[0].userId};`
+          }
+          else{
+             var sql2 = `SELECT 
     t.*,
     r.reference_id
 FROM transactions t
 LEFT JOIN receipts r 
     ON t.invoice_id = r.invoice_number AND t.id = r.trans_Id
-WHERE t.invoice_id = ? AND t.user_id =?`;
+WHERE t.invoice_id = ${Data[0].Invoices} AND t.user_id =${amenities[0].user_id}`;
+          }
+         
           connection.query(
             sql2,
-            [Data[0].Invoices, amenities[0].user_id],
             function (err, Transaction) {
               if (err) {
                 return res.status(201).json({
@@ -403,7 +410,7 @@ WHERE t.invoice_id = ? AND t.user_id =?`;
                 let paymentMode = 0;
                 if (Transaction.length > 0) {
                   Transaction.forEach((item) => {
-                    paymentMode += item.amount;
+                    paymentMode += item.amount || item.amount_received;
                   });
                 }
                 let total_amount = 0;
