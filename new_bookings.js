@@ -908,20 +908,21 @@ console.log("reasons",reasons,JSON.parse(reasons))
           });
         }
         else {
-          processInvoicesAndFinalizeCheckout(
-            id,
-            totalBalanceDue,
-            advance_return,
-            created_by,
-            checkout_date,
-            bed_id,
-            advance_return,
-            comments,
-            reasons,
-            new_hosdetails,
-            hostel_id,
-            res
-          );
+          // processInvoicesAndFinalizeCheckout(
+          //   id,
+          //   totalBalanceDue,
+          //   advance_return,
+          //   created_by,
+          //   checkout_date,
+          //   bed_id,
+          //   advance_return,
+          //   comments,
+          //   reasons,
+          //   new_hosdetails,
+          //   hostel_id,
+          //   res
+          // );
+       finalizeCheckout(id, bed_id, comments,attachmentUrl, res);
         }
       });
     }
@@ -929,12 +930,12 @@ console.log("reasons",reasons,JSON.parse(reasons))
 }
 
 // Helper function to finalize checkout
-function finalizeCheckout(id, bed_id, advance_return, comments, res) {
+function finalizeCheckout(id, bed_id, comments, attachmentUrl,res) {
   const sql = `
-        UPDATE hostel SET isActive = 0, return_advance = ?, checkout_comment = ?,attachment=? WHERE ID = ?;
+        UPDATE hostel SET isActive = 0, return_advance = 0, checkout_comment = ?,attachment=? WHERE ID = ?;
         UPDATE bed_details SET user_id = 0, isfilled = 0,isNoticePeriod=0 WHERE id = ?;
     `;
-  connection.query(sql, [advance_return, comments,attachmentUrl, id, bed_id], (err) => {
+  connection.query(sql, [ comments,attachmentUrl, id, bed_id], (err) => {
     if (err) {
       return res.status(201).json({
         statusCode: 201,
@@ -1448,10 +1449,12 @@ async function processInvoicesAndFinalizeCheckout(
         reason: err.message,
       });
     }
+    
 
     const reasonTotalAmount =
-      reasons?.reduce((acc, item) => acc + Number(item.amount || 0), 0) || 0;
-    const finalInvoiceAmount = Number(totalBalanceDue || 0) + reasonTotalAmount;
+      reasons&&JSON.parse(reasons)?.reduce((acc, item) => acc + Number(item.amount || 0), 0) || 0;
+    const finalInvoiceAmount = Number(totalBalanceDue || 0) + Number(reasonTotalAmount);
+    console.log("totalBalanceDue",totalBalanceDue,reasonTotalAmount)
 
     // var sql1 = "SELECT * FROM bankings WHERE id=? AND status=1";
     // connection.query(sql1, [payment_id], async function (err, bank_data) {
@@ -1473,13 +1476,13 @@ async function processInvoicesAndFinalizeCheckout(
       //   ? 0
       //   : Number(bank_data?.[0]?.balance);
 
-      var new_amount = bankamount - advance_return;
+      // var new_amount = bankamount - advance_return;
 
       if (invoices.length === 0) {
         const receipt_no = await generateUniqueReceiptNumber();
         const receiptAmount =
-          finalInvoiceAmount > 0 ? finalInvoiceAmount : advance_return;
-
+          finalInvoiceAmount > 0 ? finalInvoiceAmount : 0;
+console.log("receiptAmount",receiptAmount,finalInvoiceAmount,0)
         const insertReceiptSQL = `
           INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date, created_by)
           VALUES (?, ?, ?, ?, ?, ?, ?)
