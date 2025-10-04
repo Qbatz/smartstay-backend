@@ -672,331 +672,346 @@ function createUser(connection, request, response) {
                                         // var due_date = moment(atten.joining_date).add(5, 'days').format('YYYY-MM-DD');
                                         // console.log(due_date);
 
-                                        var invoice_query =
-                                          "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id,bill_enable) VALUES (?)";
-                                        var params = [
-                                          user_details.Name,
-                                          user_details.Phone,
-                                          user_details.Email,
-                                          user_details.HostelName,
-                                          user_details.Hostel_Id,
-                                          atten.Floor,
-                                          atten.Rooms,
-                                          advance_amount,
-                                          user_details.Address,
-                                          due_date,
-                                          atten.joining_date,
-                                          invoice_number,
-                                          "Pending",
-                                          user_details.User_Id,
-                                          atten.Bed,
-                                          advance_amount,
-                                          0,
-                                          "advance",
-                                          1,
-                                          user_id,
-                                          1
-                                        ];
-
+                                        var ReptSql = `select * from receipts where user_id=?`;
                                         connection.query(
-                                          invoice_query,
-                                          [params],
-                                          async function (err, insdata) {
+                                          ReptSql,
+                                          [user_id],
+                                          async function (err, respdata) {
                                             if (err) {
                                               console.log(err);
                                             } else {
-                                              var inv_id = insdata.insertId;
-                                              console.log(
-                                                "Advance Bill Generated"
-                                              );
-                                              const joiningDate_cal =
-                                                atten.joining_date; // Example date (YYYY-MM-DD)
-                                              const isThisMonth = moment(
-                                                joiningDate_cal
-                                              ).isSame(moment(), "month");
+                                              let paidAmount = 0;
+                                              if (respdata.length > 0) {
+                                                paidAmount = respdata[0].amount_received;
+                                              }
+                                              console.log("paidAmount",paidAmount,respdata)
+                                              var invoice_query =
+                                                "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id,bill_enable) VALUES (?)";
+                                              var params = [
+                                                user_details.Name,
+                                                user_details.Phone,
+                                                user_details.Email,
+                                                user_details.HostelName,
+                                                user_details.Hostel_Id,
+                                                atten.Floor,
+                                                atten.Rooms,
+                                                advance_amount,
+                                                user_details.Address,
+                                                due_date,
+                                                atten.joining_date,
+                                                invoice_number,
+                                                "Pending",
+                                                user_details.User_Id,
+                                                atten.Bed,
+                                                Number(advance_amount) - Number(paidAmount),
+                                                paidAmount,
+                                                "advance",
+                                                1,
+                                                user_id,
+                                                1
+                                              ];
 
-                                              // if (isThisMonth) {
-                                              var sqlhodDetails = `Select * from hosteldetails where id=${hostel_id}`;
                                               connection.query(
-                                                sqlhodDetails,
-                                                async function (err, insdatas) {
+                                                invoice_query,
+                                                [params],
+                                                async function (err, insdata) {
                                                   if (err) {
                                                     console.log(err);
-                                                  } else if (insdatas.length > 0) {
-                                                    let bill_date = insdatas[0].bill_date;
+                                                  } else {
+                                                    var inv_id = insdata.insertId;
+                                                    console.log(
+                                                      "Advance Bill Generated"
+                                                    );
+                                                    const joiningDate_cal =
+                                                      atten.joining_date; // Example date (YYYY-MM-DD)
+                                                    const isThisMonth = moment(
+                                                      joiningDate_cal
+                                                    ).isSame(moment(), "month");
 
-                                                    let start = moment().date(bill_date);
-                                                    let end = moment(start).add(1, "month").subtract(1, "day");
-                                                    let monthendDate = end.format("YYYY-MM-DD");
-                                                    console.log("monthendDate", monthendDate)
+                                                    // if (isThisMonth) {
+                                                    var sqlhodDetails = `Select * from hosteldetails where id=${hostel_id}`;
+                                                    connection.query(
+                                                      sqlhodDetails,
+                                                      async function (err, insdatas) {
+                                                        if (err) {
+                                                          console.log(err);
+                                                        } else if (insdatas.length > 0) {
+                                                          let bill_date = insdatas[0].bill_date;
 
-                                                    const isWithinRange = joiningDate_cal >= moment(start).format('YYYY-MM-DD') && joiningDate_cal <= monthendDate
-                                                    console.log("isWithinRange", isWithinRange, start, joiningDate_cal)
-                                                    if (isWithinRange) {
-                                                      const joiningDateStr =
-                                                        atten.joining_date; // from DB in YYYY-MM-DD format
-                                                      console.log(
-                                                        "joiningDateStr",
-                                                        joiningDateStr
-                                                      );
-                                                      const roomRent = atten.RoomRent;
+                                                          let start = moment().date(bill_date);
+                                                          let end = moment(start).add(1, "month").subtract(1, "day");
+                                                          let monthendDate = end.format("YYYY-MM-DD");
+                                                          console.log("monthendDate", monthendDate)
 
-                                                      // Parse joining date
-                                                      const joiningDate = new Date(
-                                                        joiningDateStr
-                                                      );
-                                                      console.log(
-                                                        "joiningDate",
-                                                        joiningDate
-                                                      );
-                                                      // Get last day of the month
-                                                      const lastDayOfMonth = new Date(
-                                                        monthendDate
-                                                      );
-                                                      console.log("lastDayOfMonth", lastDayOfMonth)
-                                                      const diffTime = lastDayOfMonth - joiningDate; // in ms
-                                                      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
-                                                      console.log(diffDays, "diffDays");
-                                                      // Calculate remaining days including joining date
-                                                      // const remainingDays =
-                                                      //    joiningDate.getDate() -
-                                                      //   lastDayOfMonth.getDate() +
-                                                      //   1;
-                                                      const dailyRent =
-                                                        roomRent /
-                                                        moment().daysInMonth();
-                                                      // Remaining rent
-                                                      const remainingRent =
-                                                        dailyRent * diffDays;
-
-                                                      // console.log(
-                                                      //   `Remaining Days: ${remainingDays}`
-                                                      // );
-                                                      console.log(
-                                                        `Daily Rent: ${dailyRent}`
-                                                      );
-                                                      console.log(
-                                                        `Remaining Rent: ${remainingRent.toFixed(
-                                                          2
-                                                        )}`
-                                                      );
-                                                      const invoice_number =
-                                                        await new Promise(
-                                                          (resolve, reject) => {
-                                                            const options = {
-                                                              url:
-                                                                process.env.BASEURL +
-                                                                "/get_invoice_id",
-                                                              method: "POST",
-                                                              headers: {
-                                                                "Content-Type":
-                                                                  "application/json",
-                                                              },
-                                                              body: JSON.stringify({
-                                                                user_id: user_id,
-                                                                template_type:
-                                                                  "Rental Invoice",
-                                                              }),
-                                                            };
-
-                                                            requests(
-                                                              options,
-                                                              (
-                                                                error,
-                                                                response,
-                                                                body
-                                                              ) => {
-                                                                if (error) {
-                                                                  return reject(
-                                                                    error
-                                                                  );
-                                                                } else {
-                                                                  const result =
-                                                                    JSON.parse(body);
-                                                                  console.log(result);
-
-                                                                  if (
-                                                                    result.statusCode ==
-                                                                    200
-                                                                  ) {
-                                                                    resolve(
-                                                                      result.invoice_number
-                                                                    );
-                                                                  } else {
-                                                                    resolve([]);
-                                                                  }
-                                                                }
-                                                              }
+                                                          const isWithinRange = joiningDate_cal >= moment(start).format('YYYY-MM-DD') && joiningDate_cal <= monthendDate
+                                                          console.log("isWithinRange", isWithinRange, start, joiningDate_cal)
+                                                          if (isWithinRange) {
+                                                            const joiningDateStr =
+                                                              atten.joining_date; // from DB in YYYY-MM-DD format
+                                                            console.log(
+                                                              "joiningDateStr",
+                                                              joiningDateStr
                                                             );
-                                                          }
-                                                        );
-                                                      var invoice_query =
-                                                        "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id,bill_enable) VALUES (?)";
-                                                      var params = [
-                                                        user_details.Name,
-                                                        user_details.Phone,
-                                                        user_details.Email,
-                                                        user_details.HostelName,
-                                                        user_details.Hostel_Id,
-                                                        atten.Floor,
-                                                        atten.Rooms,
-                                                        remainingRent.toFixed(2),
-                                                        user_details.Address,
-                                                        due_date,
-                                                        atten.joining_date,
-                                                        invoice_number,
-                                                        "Pending",
-                                                        user_details.User_Id,
-                                                        atten.Bed,
-                                                        remainingRent.toFixed(2),
-                                                        0,
-                                                        "checkIn",
-                                                        1,
-                                                        user_id,
-                                                        1
-                                                      ];
+                                                            const roomRent = atten.RoomRent;
 
-                                                      connection.query(
-                                                        invoice_query,
-                                                        [params],
-                                                        async function (
-                                                          err,
-                                                          insdata
-                                                        ) {
-                                                          if (err) {
-                                                            console.log(err);
-                                                          } else {
-                                                            var ManualQyery =
-                                                              "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
+                                                            // Parse joining date
+                                                            const joiningDate = new Date(
+                                                              joiningDateStr
+                                                            );
+                                                            console.log(
+                                                              "joiningDate",
+                                                              joiningDate
+                                                            );
+                                                            // Get last day of the month
+                                                            const lastDayOfMonth = new Date(
+                                                              monthendDate
+                                                            );
+                                                            console.log("lastDayOfMonth", lastDayOfMonth)
+                                                            const diffTime = lastDayOfMonth - joiningDate; // in ms
+                                                            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+                                                            console.log(diffDays, "diffDays");
+                                                            // Calculate remaining days including joining date
+                                                            // const remainingDays =
+                                                            //    joiningDate.getDate() -
+                                                            //   lastDayOfMonth.getDate() +
+                                                            //   1;
+                                                            const dailyRent =
+                                                              roomRent /
+                                                              moment().daysInMonth();
+                                                            // Remaining rent
+                                                            const remainingRent =
+                                                              dailyRent * diffDays;
+
+                                                            // console.log(
+                                                            //   `Remaining Days: ${remainingDays}`
+                                                            // );
+                                                            console.log(
+                                                              `Daily Rent: ${dailyRent}`
+                                                            );
+                                                            console.log(
+                                                              `Remaining Rent: ${remainingRent.toFixed(
+                                                                2
+                                                              )}`
+                                                            );
+                                                            const invoice_number =
+                                                              await new Promise(
+                                                                (resolve, reject) => {
+                                                                  const options = {
+                                                                    url:
+                                                                      process.env.BASEURL +
+                                                                      "/get_invoice_id",
+                                                                    method: "POST",
+                                                                    headers: {
+                                                                      "Content-Type":
+                                                                        "application/json",
+                                                                    },
+                                                                    body: JSON.stringify({
+                                                                      user_id: user_id,
+                                                                      template_type:
+                                                                        "Rental Invoice",
+                                                                    }),
+                                                                  };
+
+                                                                  requests(
+                                                                    options,
+                                                                    (
+                                                                      error,
+                                                                      response,
+                                                                      body
+                                                                    ) => {
+                                                                      if (error) {
+                                                                        return reject(
+                                                                          error
+                                                                        );
+                                                                      } else {
+                                                                        const result =
+                                                                          JSON.parse(body);
+                                                                        console.log(result);
+
+                                                                        if (
+                                                                          result.statusCode ==
+                                                                          200
+                                                                        ) {
+                                                                          resolve(
+                                                                            result.invoice_number
+                                                                          );
+                                                                        } else {
+                                                                          resolve([]);
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  );
+                                                                }
+                                                              );
+                                                            var invoice_query =
+                                                              "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id,bill_enable) VALUES (?)";
+                                                            var params = [
+                                                              user_details.Name,
+                                                              user_details.Phone,
+                                                              user_details.Email,
+                                                              user_details.HostelName,
+                                                              user_details.Hostel_Id,
+                                                              atten.Floor,
+                                                              atten.Rooms,
+                                                              remainingRent.toFixed(2),
+                                                              user_details.Address,
+                                                              due_date,
+                                                              atten.joining_date,
+                                                              invoice_number,
+                                                              "Pending",
+                                                              user_details.User_Id,
+                                                              atten.Bed,
+                                                              remainingRent.toFixed(2),
+                                                              0,
+                                                              "checkIn",
+                                                              1,
+                                                              user_id,
+                                                              1
+                                                            ];
+
                                                             connection.query(
-                                                              ManualQyery,
-                                                              [
-                                                                "Room Rent",
-                                                                user_id,
-                                                                remainingRent.toFixed(
-                                                                  2
-                                                                ),
-                                                                insdata.insertId,
-                                                              ],
+                                                              invoice_query,
+                                                              [params],
                                                               async function (
                                                                 err,
                                                                 insdata
                                                               ) {
                                                                 if (err) {
                                                                   console.log(err);
+                                                                } else {
+                                                                  var ManualQyery =
+                                                                    "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
+                                                                  connection.query(
+                                                                    ManualQyery,
+                                                                    [
+                                                                      "Room Rent",
+                                                                      user_id,
+                                                                      remainingRent.toFixed(
+                                                                        2
+                                                                      ),
+                                                                      insdata.insertId,
+                                                                    ],
+                                                                    async function (
+                                                                      err,
+                                                                      insdata
+                                                                    ) {
+                                                                      if (err) {
+                                                                        console.log(err);
+                                                                      }
+                                                                    }
+                                                                  );
+
+                                                                  console.log(
+                                                                    "Bill Invoie geberated sucessfully"
+                                                                  );
                                                                 }
                                                               }
                                                             );
-
-                                                            console.log(
-                                                              "Bill Invoie geberated sucessfully"
-                                                            );
                                                           }
                                                         }
-                                                      );
-                                                    }
-                                                  }
-                                                })
+                                                      })
 
-                                              // }
+                                                    // }
 
-                                              // var sql2 =
-                                              //   "SELECT * FROM customer_reasons WHERE user_id=?";
-                                              var sql2 =
-                                                "SELECT * FROM checkout_deductions WHERE user_id=?";
-                                              connection.query(
-                                                sql2,
-                                                [user_id],
-                                                function (err, reasonDatas) {
-                                                  if (err) {
-                                                    console.log(err);
-                                                  } else {
-                                                    reasonDatas.push({
-                                                      reason: "Advance",
-                                                      user_id: atten.ID,
-                                                      amount:
-                                                        atten.AdvanceAmount,
-                                                      inv_id: inv_id,
-                                                    });
-                                                    reasonDatas.forEach(
-                                                      (item) => {
-                                                        var sql2 =
-                                                          "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
-                                                        connection.query(
-                                                          sql2,
-                                                          [
-                                                            item.reason,
-                                                            item.user_id,
-                                                            item.amount,
-                                                            inv_id,
-                                                          ],
-                                                          async function (
-                                                            err,
-                                                            insdata
-                                                          ) {
-                                                            if (err) {
-                                                              console.log(err);
-                                                            } else {
-                                                              // const sql =
-                                                              //   "UPDATE customer_reasons SET invoice_id = ? WHERE id = ?";
-                                                              // connection.query(
-                                                              //   sql,
-                                                              //   [
-                                                              //     inv_id,
-                                                              //     item.id,
-                                                              //   ],
-                                                              //   (
-                                                              //     err,
-                                                              //     result
-                                                              //   ) => {
-                                                              //     if (err) {
-                                                              //       console.error(
-                                                              //         `Error updating ID ${item.id}:`,
-                                                              //         err
-                                                              //       );
-                                                              //     } else {
-                                                              //       console.log(
-                                                              //         `Updated ID ${item.id} with invoice_id ${inv_id}`
-                                                              //       );
-                                                              //     }
-                                                              //   }
-                                                              // );
-                                                              console.log(
-                                                                "Advance Bill Details Generated"
+                                                    // var sql2 =
+                                                    //   "SELECT * FROM customer_reasons WHERE user_id=?";
+                                                    var sql2 =
+                                                      "SELECT * FROM checkout_deductions WHERE user_id=?";
+                                                    connection.query(
+                                                      sql2,
+                                                      [user_id],
+                                                      function (err, reasonDatas) {
+                                                        if (err) {
+                                                          console.log(err);
+                                                        } else {
+                                                          reasonDatas.push({
+                                                            reason: "Advance",
+                                                            user_id: atten.ID,
+                                                            amount:
+                                                              atten.AdvanceAmount,
+                                                            inv_id: inv_id,
+                                                          });
+                                                          reasonDatas.forEach(
+                                                            (item) => {
+                                                              var sql2 =
+                                                                "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
+                                                              connection.query(
+                                                                sql2,
+                                                                [
+                                                                  item.reason,
+                                                                  item.user_id,
+                                                                  item.amount,
+                                                                  inv_id,
+                                                                ],
+                                                                async function (
+                                                                  err,
+                                                                  insdata
+                                                                ) {
+                                                                  if (err) {
+                                                                    console.log(err);
+                                                                  } else {
+                                                                    // const sql =
+                                                                    //   "UPDATE customer_reasons SET invoice_id = ? WHERE id = ?";
+                                                                    // connection.query(
+                                                                    //   sql,
+                                                                    //   [
+                                                                    //     inv_id,
+                                                                    //     item.id,
+                                                                    //   ],
+                                                                    //   (
+                                                                    //     err,
+                                                                    //     result
+                                                                    //   ) => {
+                                                                    //     if (err) {
+                                                                    //       console.error(
+                                                                    //         `Error updating ID ${item.id}:`,
+                                                                    //         err
+                                                                    //       );
+                                                                    //     } else {
+                                                                    //       console.log(
+                                                                    //         `Updated ID ${item.id} with invoice_id ${inv_id}`
+                                                                    //       );
+                                                                    //     }
+                                                                    //   }
+                                                                    // );
+                                                                    console.log(
+                                                                      "Advance Bill Details Generated"
+                                                                    );
+                                                                  }
+                                                                }
                                                               );
                                                             }
-                                                          }
-                                                        );
+                                                          );
+                                                        }
                                                       }
                                                     );
+
+                                                    // var sql2 =
+                                                    //   "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
+                                                    // connection.query(
+                                                    //   sql2,
+                                                    //   [
+                                                    //     "Advance",
+                                                    //     user_id,
+                                                    //     advance_amount,
+                                                    //     inv_id,
+                                                    //   ],
+                                                    //   async function (err, insdata) {
+                                                    //     if (err) {
+                                                    //       console.log(err);
+                                                    //     } else {
+                                                    //       console.log(
+                                                    //         "Advance Bill Details Generated"
+                                                    //       );
+                                                    //     }
+                                                    //   }
+                                                    // );
                                                   }
                                                 }
                                               );
-
-                                              // var sql2 =
-                                              //   "INSERT INTO manual_invoice_amenities (am_name,user_id,amount,invoice_id) VALUES (?,?,?,?)";
-                                              // connection.query(
-                                              //   sql2,
-                                              //   [
-                                              //     "Advance",
-                                              //     user_id,
-                                              //     advance_amount,
-                                              //     inv_id,
-                                              //   ],
-                                              //   async function (err, insdata) {
-                                              //     if (err) {
-                                              //       console.log(err);
-                                              //     } else {
-                                              //       console.log(
-                                              //         "Advance Bill Details Generated"
-                                              //       );
-                                              //     }
-                                              //   }
-                                              // );
                                             }
-                                          }
-                                        );
+                                          });
                                       }
                                     }
                                   );
@@ -4724,7 +4739,7 @@ LIMIT 1;`
                                     message: inv_data.length > 0 ? "Success" : "No Due Amounts",
                                     bill_details: bill_details,
                                     LastReading: LastReading,
-                                    LastReadingDate:reading[0].createdat,
+                                    LastReadingDate: reading[0].createdat,
                                     lastRentPaidAmount: lastRentPaidAmount,
                                     checkout_details: user_details,
                                     totalPaidAmount: totalPaidAmount,
