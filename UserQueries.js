@@ -684,7 +684,7 @@ function createUser(connection, request, response) {
                                               if (respdata.length > 0) {
                                                 paidAmount = respdata[0].amount_received;
                                               }
-                                              console.log("paidAmount",paidAmount,respdata)
+                                              console.log("paidAmount", paidAmount, respdata)
                                               var invoice_query =
                                                 "INSERT INTO invoicedetails (Name,phoneNo,EmailID,Hostel_Name,Hostel_Id,Floor_Id,Room_No,Amount,UserAddress,DueDate,Date,Invoices,Status,User_Id,Bed,BalanceDue,PaidAmount,action,invoice_type,hos_user_id,bill_enable) VALUES (?)";
                                               var params = [
@@ -3749,7 +3749,16 @@ function get_bill_details(req, res) {
     }
 
     var sql1 =
-      "SELECT inv.*,hostel.Address AS user_address,ca.Address AS admin_address,eb.start_date AS eb_start_date,eb.end_date AS eb_end_date,eb.amount AS eb_unit_amount,hostel.ID AS ID,CASE WHEN inv.BalanceDue > 0 OR inv.BalanceDue IS NULL THEN 'Unpaid' ELSE 'Paid' END AS status FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id LEFT JOIN hostel ON hostel.id=inv.hos_user_id LEFT JOIN createaccount AS ca ON ca.id=hostel.created_by LEFT JOIN eb_settings AS eb ON inv.Hostel_Id=eb.hostel_id AND eb.status=1 WHERE inv.Hostel_Id=? AND inv.invoice_status=1 ORDER BY inv.id DESC;";
+      `SELECT inv.*,hostel.Address AS user_address,ca.Address AS admin_address,
+      eb.start_date AS eb_start_date,eb.end_date AS eb_end_date,eb.amount AS eb_unit_amount,
+      hostel.ID AS ID, 
+      CASE 
+    WHEN inv.Status = 'Success' THEN 'Paid'
+    WHEN inv.Status = 'Write-Off' THEN 'Write-off'
+    WHEN inv.Status = 'Pending' THEN 'Unpaid'
+    ELSE 'Pending'
+END AS status
+      FROM invoicedetails AS inv JOIN hosteldetails AS hs ON hs.id=inv.Hostel_Id LEFT JOIN hostel ON hostel.id=inv.hos_user_id LEFT JOIN createaccount AS ca ON ca.id=hostel.created_by LEFT JOIN eb_settings AS eb ON inv.Hostel_Id=eb.hostel_id AND eb.status=1 WHERE inv.Hostel_Id=? AND inv.invoice_status=1 ORDER BY inv.id DESC;`;
     connection.query(sql1, [hostel_id], function (err, invoices) {
       if (err) {
         return res
@@ -3787,6 +3796,72 @@ function get_bill_details(req, res) {
           }
         });
       });
+    });
+  } else {
+    res.status(208).json({
+      message:
+        "Permission Denied. Please contact your administrator for access.",
+      statusCode: 208,
+    });
+  }
+}
+
+function add_write_Off(req, res) {
+  var role_permissions = req.role_permissions;
+  var is_admin = req.is_admin;
+  var bill_Id = req.body.bill_Id;
+  var reason =req.body.reason;
+
+  if (
+    is_admin == 1 ||
+    (role_permissions[10] && role_permissions[10].per_view == 1)
+  ) {
+    if (!bill_Id) {
+      return res
+        .status(201)
+        .json({ message: "Missing bill_Id Details", statusCode: 201 });
+    }
+
+    var sql1 =
+      "select * from invoicedetails where id=?";
+    connection.query(sql1, [bill_Id], function (err, invoices) {
+      if (err) {
+        return res
+          .status(201)
+          .json({ message: "Unable to Get Bill Details", statusCode: 201 });
+      }
+
+      if (invoices.length === 0) {
+        return res.status(201).json({
+          message: "No Bill Details Found",
+          statusCode: 201,
+        });
+      }
+      else {
+        var up_bill = `UPDATE invoicedetails
+SET 
+    BalanceDue = 0,
+    PaidAmount = 0,
+    Status = 'Write-Off',
+    reason = '${reason}'
+WHERE id = ${bill_Id}`;
+        connection.query(up_bill, function (err, invoices) {
+          if (err) {
+            return res
+              .status(201)
+              .json({ message: "Unable to update Bill Details", statusCode: 201 });
+          }
+         
+          else {
+            return res.status(200).json({
+              message: "Bill status  changed sucessfully",
+              statusCode: 200,
+            });
+          }
+        })
+      }
+
+
     });
   } else {
     res.status(208).json({
@@ -4739,7 +4814,7 @@ LIMIT 1;`
                                     message: inv_data.length > 0 ? "Success" : "No Due Amounts",
                                     bill_details: bill_details,
                                     LastReading: LastReading,
-                                    LastReadingDate: reading[0].createdat,
+                                    LastReadingDate: reading.length>0&&reading[0].createdat || null,
                                     lastRentPaidAmount: lastRentPaidAmount,
                                     checkout_details: user_details,
                                     totalPaidAmount: totalPaidAmount,
@@ -5248,6 +5323,7 @@ module.exports = {
   get_user_amounts,
   get_beduser_details,
   get_bill_details,
+  add_write_Off,
   add_walk_in_customer,
   get_walk_in_customer_list,
   delete_walk_in_customer,

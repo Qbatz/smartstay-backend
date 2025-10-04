@@ -1087,6 +1087,10 @@ app.post("/get_bill_details", (req, res) => {
   userQueries.get_bill_details(req, res);
 });
 
+app.post("/add_write_Off", (req, res) => {
+  userQueries.add_write_Off(req, res);
+});
+
 app.post(
   "/add_booking",
   upload.fields([{ name: "profile", maxCount: 1 }]),
