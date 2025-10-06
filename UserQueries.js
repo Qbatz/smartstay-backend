@@ -2063,7 +2063,13 @@ function Refundtransitionlist(request, response) {
                       message: "Pay Amount More than Invoice Total Amount",
                     });
                   } else {
-                    if (new_amount == total_amount) {
+                    // if (new_amount == total_amount) {
+                    //   var Status = "Success";
+                    // } else {
+                    //   var Status = "Pending";
+                    // }
+
+                    if (Math.abs(new_amount) === Math.abs(total_amount)) {
                       var Status = "Success";
                     } else {
                       var Status = "Pending";
@@ -3810,7 +3816,7 @@ function add_write_Off(req, res) {
   var role_permissions = req.role_permissions;
   var is_admin = req.is_admin;
   var bill_Id = req.body.bill_Id;
-  var reason =req.body.reason;
+  var reason = req.body.reason;
 
   if (
     is_admin == 1 ||
@@ -3851,7 +3857,7 @@ WHERE id = ${bill_Id}`;
               .status(201)
               .json({ message: "Unable to update Bill Details", statusCode: 201 });
           }
-         
+
           else {
             return res.status(200).json({
               message: "Bill status  changed sucessfully",
@@ -4814,7 +4820,7 @@ LIMIT 1;`
                                     message: inv_data.length > 0 ? "Success" : "No Due Amounts",
                                     bill_details: bill_details,
                                     LastReading: LastReading,
-                                    LastReadingDate: reading.length>0&&reading[0].createdat || null,
+                                    LastReadingDate: reading.length > 0 && reading[0].createdat || null,
                                     lastRentPaidAmount: lastRentPaidAmount,
                                     checkout_details: user_details,
                                     totalPaidAmount: totalPaidAmount,

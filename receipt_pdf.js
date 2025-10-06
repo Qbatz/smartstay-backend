@@ -373,7 +373,7 @@ WHERE
 
       if (Data.length != 0) {
         var invoice_id = Data[0].invoice_id;
-
+console.log("Data",Data[0].userId)
         var sql2 = "SELECT * FROM manual_invoice_amenities WHERE invoice_id=?";
         connection.query(sql2, [invoice_id], function (err, amenities) {
           if (err) {
@@ -383,24 +383,23 @@ WHERE
               reason: err.message,
             });
           }
-
           if(Data[0].action =="advance"){
-var sql2 = `select * from receipts where user_id=${Data[0].userId};`
+var sql3 = `select * from receipts where user_id=${Data[0].userId};`
           }
           else{
-             var sql2 = `SELECT 
+             var sql3 = `SELECT 
     t.*,
     r.reference_id
 FROM transactions t
 LEFT JOIN receipts r 
     ON t.invoice_id = r.invoice_number AND t.id = r.trans_Id
-WHERE t.invoice_id = ${Data[0].Invoices} AND t.user_id =${amenities[0].user_id}`;
+WHERE t.invoice_id = '${Data[0].Invoices}' AND t.user_id =${Data[0].userId}`;
           }
-         
           connection.query(
-            sql2,
+            sql3,
             function (err, Transaction) {
               if (err) {
+                console.log(err)
                 return res.status(201).json({
                   statusCode: 201,
                   message: "Error to transaction Bill Details",
