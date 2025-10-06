@@ -2029,6 +2029,83 @@ function updateKycDocs(req, res) {
   }
 }
 
+function updateManualDocs(req, res) {
+  const { userId, newDocs } = req.body;
+  console.log("---", userId, newDocs);
+
+  try {
+    connection.query(
+      "SELECT manual_docs FROM hostel WHERE ID = ?",
+      [userId],
+      function (err, rows) {
+        if (err) {
+          console.error("DB Error:", err);
+          return res.status(500).json({
+            statusCode: 500,
+            message: "Database error",
+          });
+        }
+
+        let currentDocs = [];
+        console.log("row",rows[0])
+        if (rows.length && rows[0].manual_docs) {
+          try {
+            currentDocs = rows[0].manual_docs;
+          } catch (e) {
+            console.error("⚠️ Error parsing existing manual_docs:", e);
+            currentDocs = [];
+          }
+        }
+
+        console.log("currentDocs before update:", currentDocs);
+
+        // ✅ Always handle as array
+        const docsToAdd = Array.isArray(newDocs) ? newDocs : [newDocs];
+
+        docsToAdd.forEach((doc) => {
+          const existingIndex = currentDocs.findIndex((d) => d.type === doc.type);
+
+          if (existingIndex !== -1) {
+            // Update existing by type
+            currentDocs[existingIndex] = { ...currentDocs[existingIndex], ...doc };
+          } else {
+            // Push new object if type not found
+            currentDocs.push(doc);
+          }
+        });
+
+        console.log("currentDocs after update:", currentDocs);
+
+        connection.query(
+          "UPDATE hostel SET manual_docs = ? WHERE ID = ?",
+          [JSON.stringify(currentDocs), userId],
+          function (err2) {
+            if (err2) {
+              console.error("Update error:", err2);
+              return res.status(500).json({
+                statusCode: 500,
+                message: "Failed to update KYC docs",
+              });
+            }
+
+            return res.status(200).json({
+              statusCode: 200,
+              message: "KYC docs updated successfully",
+              data: currentDocs,
+            });
+          }
+        );
+      }
+    );
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Error updating KYC docs",
+    });
+  }
+}
+
 
 function delete_user(req, res) {
   var user_id = req.body.id;
@@ -3215,5 +3292,6 @@ module.exports = {
   recuring_bill_users,
   edit_confirm_checkout,
 updateKycDocs,
+updateManualDocs,
   update_confirm_checkout_due_amount,
 };
