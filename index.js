@@ -644,6 +644,11 @@ app.post("/transaction/list", (request, response) => {
   userQueries.transitionlist(request, response);
 });
 
+app.post("/Refundtransitionlist", (request, response) => {
+  response.set("Access-Control-Allow-Origin", "*");
+  userQueries.Refundtransitionlist(request, response);
+});
+
 // Forgot Password Otp Response
 app.post("/forgot_otp_response", (request, response) => {
   response.set("Access-Control-Allow-Origin", "*");
@@ -1082,6 +1087,10 @@ app.post("/get_bill_details", (req, res) => {
   userQueries.get_bill_details(req, res);
 });
 
+app.post("/add_write_Off", (req, res) => {
+  userQueries.add_write_Off(req, res);
+});
+
 app.post(
   "/add_booking",
   upload.fields([{ name: "profile", maxCount: 1 }]),
@@ -1089,10 +1098,14 @@ app.post(
     newBookings.add_booking(req, res);
   }
 );
+
 app.post("/Booking_Inactive", (req, res) => {
   bookings.Booking_Inactive(req, res);
 });
 
+app.post("/ChangeBookingBed", (req, res) => {
+  bookings.ChangeBookingBed(req, res);
+});
 
 app.post("/all_bookings", (req, res) => {
   bookings.all_bookings(req, res);
@@ -1139,14 +1152,28 @@ app.post("/get/confirm_checkout", (req, res) => {
   userQueries.get_confirm_checkout(req, res);
 });
 
+app.post("/update_CheckoutDate",(req,res) =>{
+  userQueries.update_CheckoutDate(req, res);
+})
+
+app.post("/generate_checkout_invoice",(req,res) =>{
+    userQueries.generate_checkout_invoice(req, res);
+})
+
 app.post("/checkout_detail_view", (req, res) => {
   userQueries.checkout_detail_view(req, res);
 });
 
-app.post("/add/confirm_checkout", (req, res) => {
-  newBookings.add_confirm_checkout(req, res);
-});
-
+// app.post("/add/confirm_checkout", (req, res) => {
+//   newBookings.add_confirm_checkout(req, res);
+// });
+app.post(
+  "/add/confirm_checkout",
+  upload.fields([{ name: "attach", maxCount: 1 }]),
+  (req, res) => {
+     newBookings.add_confirm_checkout(req, res);
+  }
+);
 app.post(
   "/update/confirm_checkout_due_customer",
   upload.fields([{ name: "profile", maxCount: 1 }]),
@@ -1345,6 +1372,14 @@ app.post(
   }
 );
 
+app.post("/users/updateKycDocs", (req, res) => {
+  newBookings.updateKycDocs(req, res);
+});
+
+app.post("/users/updateManualDocs", (req, res) => {
+  newBookings.updateManualDocs(req, res);
+});
+
 app.post("/users/edit_reading", (req, res) => {
   newBookings.edit_customer_reading(req, res);
 });
@@ -1416,6 +1451,7 @@ app.post("/contacts/add_contact", contacts_router.add_contact);
 app.post("/contacts/delete_contact", contacts_router.delete_contact);
 
 app.post("/users/reassign_bed", contacts_router.reassign_bed);
+
 
 app.post("/users/all_contacts", contacts_router.all_contacts);
 

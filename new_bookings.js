@@ -772,7 +772,7 @@ function assign_booking(req, res) {
   });
 }
 
-function add_confirm_checkout(req, res) {
+async function add_confirm_checkout(req, res) {
   const {
     id,
     hostel_id,
@@ -781,23 +781,52 @@ function add_confirm_checkout(req, res) {
     due_amount,
     comments,
     reinburse,
-    reasons,
-    transaction_id
+    reasons
   } = req.body;
 
   const created_by = req.user_details.id;
 
-  var payment_id = req.body.payment_id;
+  // var payment_id = req.body.payment_id;
 
   // Validate mandatory fields
-  if (!id || !hostel_id || !checkout_date || (advance_return > 0 && !payment_id)) {
+  if (!id || !hostel_id || !checkout_date || (advance_return > 0)) {
     return res
       .status(201)
       .json({ statusCode: 201, message: "Missing Mandatory Fields" });
   }
+
+  const attachmentFile = req.files?.attach?.[0];
+  let attachmentUrl = "";
+
+  if (attachmentFile && attachmentFile.originalname) {
+    try {
+      const timestamp = Date.now();
+      const safeFileName = attachmentFile.originalname.replace(/\s+/g, "_");
+      const fileName = `${timestamp}_${safeFileName}`;
+      const folderName = "confirm_checkout/";
+
+      attachmentUrl = await uploadImage.uploadProfilePictureToS3Bucket(
+        process.env.AWS_BUCKET_NAME,
+        folderName,
+        fileName,
+        attachmentFile
+      );
+
+      console.log("S3 upload success:", attachmentUrl);
+    } catch (err) {
+      console.log("Failed to upload attachment to S3:", err.message || err);
+      return res.status(500).json({
+        statusCode: 500,
+        message: "Attachment upload failed",
+        reason: err.message || "Unknown error",
+      });
+    }
+  }
+
   if (Array.isArray(reasons) && reasons.length > 0) {
     for (let reason of reasons) {
-      if (!reason.reason_name || !reason.amount) {
+      console.log(!reason.amount,'===')
+      if (!reason.reason_name ) {
         return res.status(201).json({
           statusCode: 201,
           message: "Missing Required Fields in Reason Details",
@@ -831,7 +860,7 @@ function add_confirm_checkout(req, res) {
 
     // Handle non-reimbursement case
     if (!reinburse || reinburse === 0) {
-      const sql2 = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
+      const sql2 = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1 And action !='checkout'`;
       connection.query(sql2, [id], (err, invoiceData) => {
         if (err) {
           return res.status(201).json({
@@ -848,7 +877,7 @@ function add_confirm_checkout(req, res) {
           });
         }
 
-        finalizeCheckout(id, bed_id, advance_return, comments, res);
+        finalizeCheckout(id, bed_id, advance_return, comments,attachmentUrl, res);
       });
     } else {
       // Handle reimbursement case
@@ -863,9 +892,9 @@ function add_confirm_checkout(req, res) {
         }
 
         const totalBalanceDue = result[0]?.totalBalanceDue || 0;
-
+console.log("reasons",reasons,JSON.parse(reasons))
         const reasonTotalAmount =
-          reasons?.reduce((acc, item) => acc + Number(item.amount || 0), 0) ||
+          reasons&&JSON.parse(reasons).reduce((acc, item) => acc + Number(item.amount || 0), 0) ||
           0;
 
         console.log("totalBalanceDue", totalBalanceDue);
@@ -879,22 +908,21 @@ function add_confirm_checkout(req, res) {
           });
         }
         else {
-          processInvoicesAndFinalizeCheckout(
-            id,
-            totalBalanceDue,
-            advance_return,
-            created_by,
-            checkout_date,
-            bed_id,
-            advance_return,
-            comments,
-            reasons,
-            new_hosdetails,
-            payment_id,
-            hostel_id,
-            res,
-            transaction_id
-          );
+          // processInvoicesAndFinalizeCheckout(
+          //   id,
+          //   totalBalanceDue,
+          //   advance_return,
+          //   created_by,
+          //   checkout_date,
+          //   bed_id,
+          //   advance_return,
+          //   comments,
+          //   reasons,
+          //   new_hosdetails,
+          //   hostel_id,
+          //   res
+          // );
+       finalizeCheckout(id, bed_id, comments,attachmentUrl, res);
         }
       });
     }
@@ -902,12 +930,12 @@ function add_confirm_checkout(req, res) {
 }
 
 // Helper function to finalize checkout
-function finalizeCheckout(id, bed_id, advance_return, comments, res) {
+function finalizeCheckout(id, bed_id, comments, attachmentUrl,res) {
   const sql = `
-        UPDATE hostel SET isActive = 0, return_advance = ?, checkout_comment = ? WHERE ID = ?;
+        UPDATE hostel SET isActive = 0, return_advance = 0, checkout_comment = ?,attachment=? WHERE ID = ?;
         UPDATE bed_details SET user_id = 0, isfilled = 0,isNoticePeriod=0 WHERE id = ?;
     `;
-  connection.query(sql, [advance_return, comments, id, bed_id], (err) => {
+  connection.query(sql, [ comments,attachmentUrl, id, bed_id], (err) => {
     if (err) {
       return res.status(201).json({
         statusCode: 201,
@@ -1409,10 +1437,8 @@ async function processInvoicesAndFinalizeCheckout(
   comments,
   reasons,
   new_hosdetails,
-  payment_id,
   hostel_id,
-  res,
-  transaction_id
+  res
 ) {
   const sql = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
   connection.query(sql, [id], async (err, invoices) => {
@@ -1423,51 +1449,52 @@ async function processInvoicesAndFinalizeCheckout(
         reason: err.message,
       });
     }
+    
 
     const reasonTotalAmount =
-      reasons?.reduce((acc, item) => acc + Number(item.amount || 0), 0) || 0;
-    const finalInvoiceAmount = Number(totalBalanceDue || 0) + reasonTotalAmount;
+      reasons&&JSON.parse(reasons)?.reduce((acc, item) => acc + Number(item.amount || 0), 0) || 0;
+    const finalInvoiceAmount = Number(totalBalanceDue || 0) + Number(reasonTotalAmount);
+    console.log("totalBalanceDue",totalBalanceDue,reasonTotalAmount)
 
-    var sql1 = "SELECT * FROM bankings WHERE id=? AND status=1";
-    connection.query(sql1, [payment_id], async function (err, bank_data) {
-      if (err) {
-        return res.status(201).json({
-          statusCode: 201,
-          message: "Error to Get Bank Details",
-          reason: err.message,
-        });
-      }
+    // var sql1 = "SELECT * FROM bankings WHERE id=? AND status=1";
+    // connection.query(sql1, [payment_id], async function (err, bank_data) {
+      // if (err) {
+      //   return res.status(201).json({
+      //     statusCode: 201,
+      //     message: "Error to Get Bank Details",
+      //     reason: err.message,
+      //   });
+      // }
 
-      if (advance_return > 0 && bank_data.length === 0) {
-        return res
-          .status(201)
-          .json({ statusCode: 201, message: "Invalid Bank Details" });
-      }
+      // if (advance_return > 0 && bank_data.length === 0) {
+      //   return res
+      //     .status(201)
+      //     .json({ statusCode: 201, message: "Invalid Bank Details" });
+      // }
 
-      var bankamount = isNaN(Number(bank_data?.[0]?.balance))
-        ? 0
-        : Number(bank_data?.[0]?.balance);
+      // var bankamount = isNaN(Number(bank_data?.[0]?.balance))
+      //   ? 0
+      //   : Number(bank_data?.[0]?.balance);
 
-      var new_amount = bankamount - advance_return;
+      // var new_amount = bankamount - advance_return;
 
       if (invoices.length === 0) {
         const receipt_no = await generateUniqueReceiptNumber();
         const receiptAmount =
-          finalInvoiceAmount > 0 ? finalInvoiceAmount : advance_return;
-
+          finalInvoiceAmount > 0 ? finalInvoiceAmount : 0;
+console.log("receiptAmount",receiptAmount,finalInvoiceAmount,0)
         const insertReceiptSQL = `
-          INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date, created_by,transaction_id)
-          VALUES (?, ?, ?, ?, ?, ?, ?,?)
+          INSERT INTO receipts (user_id, invoice_number, amount_received, payment_mode, reference_id, payment_date, created_by)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
         const receiptParams = [
           id,
           "",
           receiptAmount,
-          payment_id || null,
+           null,
           receipt_no,
           checkout_date,
           created_by,
-          transaction_id
         ];
 
         connection.query(insertReceiptSQL, receiptParams, (err, receipt_data) => {
@@ -1481,41 +1508,41 @@ async function processInvoicesAndFinalizeCheckout(
 
           const receipt_id = receipt_data.insertId;
 
-          if (advance_return > 0) {
-            let sql4 = `INSERT INTO bank_transactions 
-                        (bank_id, date, amount, \`desc\`, type, status, createdby, edit_id, hostel_id)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-            connection.query(
-              sql4,
-              [
-                payment_id,
-                checkout_date,
-                advance_return,
-                "Receipt",
-                2,
-                1,
-                created_by,
-                receipt_id,
-                hostel_id,
-              ],
-              function (err) {
-                if (err) {
-                  console.log("Insert Transactions Error", err);
-                  return res.status(201).json({
-                    statusCode: 201,
-                    message: "Error processing bank transaction",
-                  });
-                }
+          // if (advance_return > 0) {
+          //   let sql4 = `INSERT INTO bank_transactions 
+          //               (bank_id, date, amount, \`desc\`, type, status, createdby, edit_id, hostel_id)
+          //               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+          //   connection.query(
+          //     sql4,
+          //     [
+          //       payment_id,
+          //       checkout_date,
+          //       advance_return,
+          //       "Receipt",
+          //       2,
+          //       1,
+          //       created_by,
+          //       receipt_id,
+          //       hostel_id,
+          //     ],
+          //     function (err) {
+          //       // if (err) {
+          //       //   console.log("Insert Transactions Error", err);
+          //       //   return res.status(201).json({
+          //       //     statusCode: 201,
+          //       //     message: "Error processing bank transaction",
+          //       //   });
+          //       // }
 
-                let sql5 = "UPDATE bankings SET balance=? WHERE id=?";
-                connection.query(sql5, [new_amount, payment_id], function (err) {
-                  if (err) {
-                    console.log("Update Amount Error", err);
-                  }
-                });
-              }
-            );
-          }
+          //       // let sql5 = "UPDATE bankings SET balance=? WHERE id=?";
+          //       // connection.query(sql5, [new_amount, payment_id], function (err) {
+          //       //   if (err) {
+          //       //     console.log("Update Amount Error", err);
+          //       //   }
+          //       // });
+          //     }
+          //   );
+          // }
 
           const insertValues = [];
 
@@ -1602,7 +1629,7 @@ async function processInvoicesAndFinalizeCheckout(
                 id,
                 invoiceId,
                 advance_return,
-                payment_id,
+                null,
                 receipt_no,
                 checkout_date,
                 created_by,
@@ -1642,7 +1669,7 @@ async function processInvoicesAndFinalizeCheckout(
               id,
               0,
               advance_return,
-              payment_id,
+              null,
               receipt_no,
               checkout_date,
               created_by,
@@ -1662,42 +1689,42 @@ async function processInvoicesAndFinalizeCheckout(
 
                 const receipt_id = receipt_data.insertId;
 
-                let sql4 =
-                  "INSERT INTO bank_transactions (bank_id, date, amount, `desc`, type, status, createdby, edit_id, hostel_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                connection.query(
-                  sql4,
-                  [
-                    payment_id,
-                    checkout_date,
-                    advance_return,
-                    "Receipt",
-                    2,
-                    1,
-                    created_by,
-                    receipt_id,
-                    hostel_id,
-                  ],
-                  function (err) {
-                    if (err) {
-                      console.log("Insert Transactions Error", err);
-                      return res.status(201).json({
-                        statusCode: 201,
-                        message: "Error processing bank transaction",
-                      });
-                    }
+                // let sql4 =
+                //   "INSERT INTO bank_transactions (bank_id, date, amount, `desc`, type, status, createdby, edit_id, hostel_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                // connection.query(
+                //   sql4,
+                //   [
+                //     payment_id,
+                //     checkout_date,
+                //     advance_return,
+                //     "Receipt",
+                //     2,
+                //     1,
+                //     created_by,
+                //     receipt_id,
+                //     hostel_id,
+                //   ],
+                //   function (err) {
+                //     if (err) {
+                //       console.log("Insert Transactions Error", err);
+                //       return res.status(201).json({
+                //         statusCode: 201,
+                //         message: "Error processing bank transaction",
+                //       });
+                //     }
 
-                    let sql5 = "UPDATE bankings SET balance=? WHERE id=?";
-                    connection.query(
-                      sql5,
-                      [new_amount, payment_id],
-                      function (err) {
-                        if (err) {
-                          console.log("Update Amount Error", err);
-                        }
-                      }
-                    );
-                  }
-                );
+                //     let sql5 = "UPDATE bankings SET balance=? WHERE id=?";
+                //     connection.query(
+                //       sql5,
+                //       [new_amount, payment_id],
+                //       function (err) {
+                //         if (err) {
+                //           console.log("Update Amount Error", err);
+                //         }
+                //       }
+                //     );
+                //   }
+                // );
 
                 const insertValues = [];
 
@@ -1798,7 +1825,7 @@ async function processInvoicesAndFinalizeCheckout(
             });
           });
       }
-    });
+    // });
   });
 }
 
@@ -1924,6 +1951,161 @@ function upload_doc(req, res) {
     }
   });
 }
+
+function updateKycDocs(req, res) {
+  const { userId, newDocs } = req.body;
+  console.log("---", userId, newDocs);
+
+  try {
+    connection.query(
+      "SELECT kyc_docs FROM hostel WHERE ID = ?",
+      [userId],
+      function (err, rows) {
+        if (err) {
+          console.error("DB Error:", err);
+          return res.status(500).json({
+            statusCode: 500,
+            message: "Database error",
+          });
+        }
+
+        let currentDocs = [];
+        console.log("row",rows[0])
+        if (rows.length && rows[0].kyc_docs) {
+          try {
+            currentDocs = rows[0].kyc_docs;
+          } catch (e) {
+            console.error("⚠️ Error parsing existing kyc_docs:", e);
+            currentDocs = [];
+          }
+        }
+
+        console.log("currentDocs before update:", currentDocs);
+
+        // ✅ Always handle as array
+        const docsToAdd = Array.isArray(newDocs) ? newDocs : [newDocs];
+
+        docsToAdd.forEach((doc) => {
+          const existingIndex = currentDocs.findIndex((d) => d.type === doc.type);
+
+          if (existingIndex !== -1) {
+            // Update existing by type
+            currentDocs[existingIndex] = { ...currentDocs[existingIndex], ...doc };
+          } else {
+            // Push new object if type not found
+            currentDocs.push(doc);
+          }
+        });
+
+        console.log("currentDocs after update:", currentDocs);
+
+        connection.query(
+          "UPDATE hostel SET kyc_docs = ? WHERE ID = ?",
+          [JSON.stringify(currentDocs), userId],
+          function (err2) {
+            if (err2) {
+              console.error("Update error:", err2);
+              return res.status(500).json({
+                statusCode: 500,
+                message: "Failed to update KYC docs",
+              });
+            }
+
+            return res.status(200).json({
+              statusCode: 200,
+              message: "KYC docs updated successfully",
+              data: currentDocs,
+            });
+          }
+        );
+      }
+    );
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Error updating KYC docs",
+    });
+  }
+}
+
+function updateManualDocs(req, res) {
+  const { userId, newDocs } = req.body;
+  console.log("---", userId, newDocs);
+
+  try {
+    connection.query(
+      "SELECT manual_docs FROM hostel WHERE ID = ?",
+      [userId],
+      function (err, rows) {
+        if (err) {
+          console.error("DB Error:", err);
+          return res.status(500).json({
+            statusCode: 500,
+            message: "Database error",
+          });
+        }
+
+        let currentDocs = [];
+        console.log("row",rows[0])
+        if (rows.length && rows[0].manual_docs) {
+          try {
+            currentDocs = rows[0].manual_docs;
+          } catch (e) {
+            console.error("⚠️ Error parsing existing manual_docs:", e);
+            currentDocs = [];
+          }
+        }
+
+        console.log("currentDocs before update:", currentDocs);
+
+        // ✅ Always handle as array
+        const docsToAdd = Array.isArray(newDocs) ? newDocs : [newDocs];
+
+        docsToAdd.forEach((doc) => {
+          const existingIndex = currentDocs.findIndex((d) => d.type === doc.type);
+
+          if (existingIndex !== -1) {
+            // Update existing by type
+            currentDocs[existingIndex] = { ...currentDocs[existingIndex], ...doc };
+          } else {
+            // Push new object if type not found
+            currentDocs.push(doc);
+          }
+        });
+
+        console.log("currentDocs after update:", currentDocs);
+
+        connection.query(
+          "UPDATE hostel SET manual_docs = ? WHERE ID = ?",
+          [JSON.stringify(currentDocs), userId],
+          function (err2) {
+            if (err2) {
+              console.error("Update error:", err2);
+              return res.status(500).json({
+                statusCode: 500,
+                message: "Failed to update KYC docs",
+              });
+            }
+
+            return res.status(200).json({
+              statusCode: 200,
+              message: "KYC docs updated successfully",
+              data: currentDocs,
+            });
+          }
+        );
+      }
+    );
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Error updating KYC docs",
+    });
+  }
+}
+
 
 function delete_user(req, res) {
   var user_id = req.body.id;
@@ -2384,66 +2566,66 @@ async function update_confirm_checkout_due_amount(req, res) {
   const {
     id,
     hostel_id,
-    checkout_date,
-    advance_return,
-    due_amount,
-    comments,
-    reinburse,
-    reasons,
+    // checkout_date,
+    // advance_return,
+    // due_amount,
+    // comments,
+    // reinburse,
+    // reasons,
     formal_checkout,
     reason_note,
   } = req.body;
 
-  console.log("reasons", reasons);
-  const attachmentFile = req.files?.profile?.[0];
-  let attachmentUrl = "";
+  // console.log("reasons", reasons);
+  // const attachmentFile = req.files?.profile?.[0];
+  // let attachmentUrl = "";
 
-  if (attachmentFile && attachmentFile.originalname) {
-    try {
-      const timestamp = Date.now();
-      const safeFileName = attachmentFile.originalname.replace(/\s+/g, "_");
-      const fileName = `${timestamp}_${safeFileName}`;
-      const folderName = "confirm_checkout/";
+  // if (attachmentFile && attachmentFile.originalname) {
+  //   try {
+  //     const timestamp = Date.now();
+  //     const safeFileName = attachmentFile.originalname.replace(/\s+/g, "_");
+  //     const fileName = `${timestamp}_${safeFileName}`;
+  //     const folderName = "confirm_checkout/";
 
-      attachmentUrl = await uploadImage.uploadProfilePictureToS3Bucket(
-        process.env.AWS_BUCKET_NAME,
-        folderName,
-        fileName,
-        attachmentFile
-      );
+  //     attachmentUrl = await uploadImage.uploadProfilePictureToS3Bucket(
+  //       process.env.AWS_BUCKET_NAME,
+  //       folderName,
+  //       fileName,
+  //       attachmentFile
+  //     );
 
-      console.log("S3 upload success:", attachmentUrl);
-    } catch (err) {
-      console.log("Failed to upload attachment to S3:", err.message || err);
-      return res.status(500).json({
-        statusCode: 500,
-        message: "Attachment upload failed",
-        reason: err.message || "Unknown error",
-      });
-    }
-  }
+  //     console.log("S3 upload success:", attachmentUrl);
+  //   } catch (err) {
+  //     console.log("Failed to upload attachment to S3:", err.message || err);
+  //     return res.status(500).json({
+  //       statusCode: 500,
+  //       message: "Attachment upload failed",
+  //       reason: err.message || "Unknown error",
+  //     });
+  //   }
+  // }
 
-  const created_by = req.user_details.id;
+  // const created_by = req.user_details.id;
 
-  var payment_id = req.body.payment_id;
+  // var payment_id = req.body.payment_id;
 
   // Validate mandatory fields
-  if (!id || !hostel_id || !checkout_date) {
+  if (!id || !hostel_id) {
     return res
       .status(201)
       .json({ statusCode: 201, message: "Missing Mandatory Fields" });
   }
 
-  if (Array.isArray(reasons) && reasons.length > 0) {
-    for (let reason of reasons) {
-      if (!reason.reason_name || !reason.amount) {
-        return res.status(201).json({
-          statusCode: 201,
-          message: "Missing Required Fields in Reason Details",
-        });
-      }
-    }
-  }
+  // if (Array.isArray(reasons) && reasons.length > 0) {
+  //   for (let reason of reasons) {
+  //     if (!reason.reason_name || !reason.amount) {
+  //       return res.status(201).json({
+  //         statusCode: 201,
+  //         message: "Missing Required Fields in Reason Details",
+  //       });
+  //     }
+  //   }
+  // }
 
   const sql1 = `SELECT * FROM hostel WHERE ID = ? AND Hostel_Id = ? AND isActive = 1 AND CheckoutDate IS NOT NULL`;
   connection.query(sql1, [id, hostel_id], (err, hostelData) => {
@@ -2461,43 +2643,43 @@ async function update_confirm_checkout_due_amount(req, res) {
         .json({ statusCode: 201, message: "Invalid User Details" });
     }
 
-    var new_hosdetails = hostelData[0];
+    // var new_hosdetails = hostelData[0];
 
     const advance_amount = hostelData[0].AdvanceAmount;
 
     const bed_id = hostelData[0].Bed;
 
     // Handle non-reimbursement case
-    if (!reinburse || reinburse === 0) {
-      const sql2 = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
-      connection.query(sql2, [id], (err, invoiceData) => {
-        if (err) {
-          return res.status(201).json({
-            statusCode: 201,
-            message: "Unable to fetch invoice details",
-            reason: err.message,
-          });
-        }
+    // if (!reinburse || reinburse === 0) {
+    //   const sql2 = `SELECT * FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
+    //   connection.query(sql2, [id], (err, invoiceData) => {
+    //     if (err) {
+    //       return res.status(201).json({
+    //         statusCode: 201,
+    //         message: "Unable to fetch invoice details",
+    //         reason: err.message,
+    //       });
+    //     }
 
-        if (invoiceData.length > 0) {
-          return res.status(201).json({
-            statusCode: 201,
-            message: "Kindly pay due amounts before checkout",
-          });
-        }
+    //     if (invoiceData.length > 0) {
+    //       return res.status(201).json({
+    //         statusCode: 201,
+    //         message: "Kindly pay due amounts before checkout",
+    //       });
+    //     }
 
-        finalizeCheckoutDueCustomer(
-          id,
-          bed_id,
-          advance_return,
-          comments,
-          formal_checkout,
-          reason_note,
-          attachmentUrl,
-          res
-        );
-      });
-    } else {
+    //     finalizeCheckoutDueCustomer(
+    //       id,
+    //       bed_id,
+    //       advance_return,
+    //       comments,
+    //       formal_checkout,
+    //       reason_note,
+    //       attachmentUrl,
+    //       res
+    //     );
+    //   });
+    // } else {
       // Handle reimbursement case
       const sql3 = `SELECT SUM(BalanceDue) AS totalBalanceDue,id FROM invoicedetails WHERE hos_user_id = ? AND BalanceDue != 0 AND invoice_status = 1`;
       connection.query(sql3, [id], (err, result) => {
@@ -2511,39 +2693,39 @@ async function update_confirm_checkout_due_amount(req, res) {
 
         const totalBalanceDue = result[0]?.totalBalanceDue || 0;
 
-        let parsedReasons = [];
+        //let parsedReasons = [];
 
-        if (typeof reasons === "string") {
-          try {
-            parsedReasons = JSON.parse(reasons);
-          } catch (err) {
-            console.error("Invalid JSON for reasons:", reasons);
-            return res.status(400).json({
-              statusCode: 400,
-              message: "Invalid JSON format for reasons",
-            });
-          }
-        } else if (Array.isArray(reasons)) {
-          parsedReasons = reasons;
-        } else {
-          return res.status(400).json({
-            statusCode: 400,
-            message: "Invalid reasons format: Must be JSON string or array",
-          });
-        }
+        // if (typeof reasons === "string") {
+        //   try {
+        //     parsedReasons = JSON.parse(reasons);
+        //   } catch (err) {
+        //     console.error("Invalid JSON for reasons:", reasons);
+        //     return res.status(400).json({
+        //       statusCode: 400,
+        //       message: "Invalid JSON format for reasons",
+        //     });
+        //   }
+        // } else if (Array.isArray(reasons)) {
+        //   parsedReasons = reasons;
+        // } else {
+        //   return res.status(400).json({
+        //     statusCode: 400,
+        //     message: "Invalid reasons format: Must be JSON string or array",
+        //   });
+        // }
 
-        const reasonTotalAmount = parsedReasons.reduce(
-          (acc, item) => acc + Number(item.amount || 0),
-          0
-        );
+        // const reasonTotalAmount = parsedReasons.reduce(
+        //   (acc, item) => acc + Number(item.amount || 0),
+        //   0
+        // );
 
-        console.log("reasonTotalAmount", reasonTotalAmount);
+        // console.log("reasonTotalAmount", reasonTotalAmount);
 
         console.log("advance_amount", advance_amount);
         console.log("totalBalanceDue", totalBalanceDue);
-        var check_amount =
-          Number(advance_amount) -
-          (Number(totalBalanceDue) + Number(reasonTotalAmount));
+        // var check_amount =
+        //   Number(advance_amount) -
+        //   (Number(totalBalanceDue) + Number(reasonTotalAmount));
         if (Number(advance_amount)) {
           // processInvoicesAndFinalizeCheckout(
           //   id,
@@ -2580,11 +2762,11 @@ async function update_confirm_checkout_due_amount(req, res) {
               finalizeCheckoutDueCustomer(
                 id,
                 bed_id,
-                advance_return,
-                comments,
+                // advance_return,
+                // comments,
                 formal_checkout,
                 reason_note,
-                attachmentUrl,
+                // attachmentUrl,
                 res
               );
               // }
@@ -2601,7 +2783,7 @@ async function update_confirm_checkout_due_amount(req, res) {
           //   });
         }
       });
-    }
+    // }
   });
 }
 
@@ -3058,21 +3240,15 @@ async function update_confirm_checkout_due_amount(req, res) {
 function finalizeCheckoutDueCustomer(
   id,
   bed_id,
-  advance_return,
-  comments,
   formal_checkout,
   reason_note,
-  attachmentUrl,
   res
 ) {
   const sql = `
     UPDATE hostel 
     SET isActive = 0, 
-        return_advance = ?, 
-        checkout_comment = ?, 
         formal_checkout = ?, 
-        reson_note = ?, 
-        attachment = ? 
+        reson_note = ?
     WHERE ID = ?;
 
     UPDATE bed_details 
@@ -3083,16 +3259,14 @@ function finalizeCheckoutDueCustomer(
   connection.query(
     sql,
     [
-      advance_return,
-      comments,
       formal_checkout,
       reason_note,
-      attachmentUrl,
       id,
       bed_id,
     ],
     (err) => {
       if (err) {
+        console.log(err)
         return res.status(201).json({
           statusCode: 201,
           message: "Unable to finalize checkout",
@@ -3117,6 +3291,7 @@ module.exports = {
   delete_reading,
   recuring_bill_users,
   edit_confirm_checkout,
-
+updateKycDocs,
+updateManualDocs,
   update_confirm_checkout_due_amount,
 };

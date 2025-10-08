@@ -282,6 +282,7 @@ exports.get_bill_detailsbyid = async (req, res) => {
 
   try {
     var sql1 = `SELECT
+    hs.id as userId,
    inv.id AS invoice_id,
    inv.Invoices,
    inv.Date,
@@ -372,7 +373,7 @@ WHERE
 
       if (Data.length != 0) {
         var invoice_id = Data[0].invoice_id;
-
+console.log("Data",Data[0].userId)
         var sql2 = "SELECT * FROM manual_invoice_amenities WHERE invoice_id=?";
         connection.query(sql2, [invoice_id], function (err, amenities) {
           if (err) {
@@ -382,18 +383,23 @@ WHERE
               reason: err.message,
             });
           }
-          var sql2 = `SELECT 
+          if(Data[0].action =="advance"){
+var sql3 = `select * from receipts where user_id=${Data[0].userId};`
+          }
+          else{
+             var sql3 = `SELECT 
     t.*,
     r.reference_id
 FROM transactions t
 LEFT JOIN receipts r 
     ON t.invoice_id = r.invoice_number AND t.id = r.trans_Id
-WHERE t.invoice_id = ? AND t.user_id =?`;
+WHERE t.invoice_id = '${Data[0].Invoices}' AND t.user_id =${Data[0].userId}`;
+          }
           connection.query(
-            sql2,
-            [Data[0].Invoices, amenities[0].user_id],
+            sql3,
             function (err, Transaction) {
               if (err) {
+                console.log(err)
                 return res.status(201).json({
                   statusCode: 201,
                   message: "Error to transaction Bill Details",
@@ -403,7 +409,7 @@ WHERE t.invoice_id = ? AND t.user_id =?`;
                 let paymentMode = 0;
                 if (Transaction.length > 0) {
                   Transaction.forEach((item) => {
-                    paymentMode += item.amount;
+                    paymentMode += item.amount || item.amount_received;
                   });
                 }
                 let total_amount = 0;
@@ -413,13 +419,29 @@ WHERE t.invoice_id = ? AND t.user_id =?`;
                   (item) => (item.am_name || "").toLowerCase() === "advance"
                 );
 
+                //  const hasAdvance = amenities.some(
+                //   (item) => (item.am_name || "").toLowerCase() === "advance"
+                // );
+
                 let advance = 0;
                 let others = 0;
+console.log("amenities",amenities)
+                const nonRefundableTotal = amenities
+    .filter(a => a.am_name !== "Refundable Rent" && a.am_name !== "Refundable Advance")
+    .reduce((sum, a) => sum + a.amount, 0);
 
+  // Step 3: sum of refundable amenities
+  const refundableTotal = amenities
+    .filter(a => a.am_name === "Refundable Rent" || a.am_name === "Refundable Advance")
+    .reduce((sum, a) => sum + a.amount, 0);
+
+    console.log("----",nonRefundableTotal,refundableTotal)
                 // First pass: Calculate total_amount properly
                 amenities.forEach((item) => {
                   const amt = Number(item.amount) || 0;
                   const name = (item.am_name || "").toLowerCase();
+
+
 
                   if (hasAdvance) {
                     if (name === "advance") {
@@ -427,6 +449,8 @@ WHERE t.invoice_id = ? AND t.user_id =?`;
                     } else {
                       others += amt;
                     }
+                  } else if(Data[0].action =="checkout") {
+total_amount = nonRefundableTotal - refundableTotal
                   } else {
                     total_amount += amt;
                   }
@@ -499,8 +523,8 @@ WHERE t.invoice_id = ? AND t.user_id =?`;
                     invoice_number: Data[0].invoice_number,
                     invoice_type: Data[0].action,
                     total_amount: hasAdvance ? advance : total_amount,
-                    refundable_Amount: hasAdvance ? total_amount : 0,
-                    non_refundable_amount: hasAdvance ? others : 0,
+                    refundable_Amount: hasAdvance ? total_amount : Data[0].action =="checkout" ? refundableTotal :0,
+                    non_refundable_amount: hasAdvance ? others : Data[0].action =="checkout" ? nonRefundableTotal: 0,
                   },
                   user_details: {
                     name: Data[0].uname || "",
