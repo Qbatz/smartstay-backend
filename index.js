@@ -1372,6 +1372,14 @@ app.post(
   }
 );
 
+app.post(
+  "/users/upload_Manualdoc",
+  upload.fields([{ name: "file1", maxCount: 1 }]),
+  (req, res) => {
+    newBookings.upload_Manualdoc(req, res);
+  }
+);
+
 app.post("/users/updateKycDocs", (req, res) => {
   newBookings.updateKycDocs(req, res);
 });
