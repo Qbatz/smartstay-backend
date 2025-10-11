@@ -132,7 +132,7 @@ function getUsers(connection, response, request) {
     WHEN bd.id IS NULL THEN 'Un-Assigned'
     WHEN INV.action = 'checkout' THEN 'Generated'
     WHEN bd.isNoticePeriod = TRUE THEN 'Notice period'
-    ELSE 'Check In'
+    ELSE 'Check-In'
   END AS bed_status,
 
   bk.id AS booking_id,
@@ -362,7 +362,7 @@ function createUser(connection, request, response) {
               if (data.length > 0) {
                 if (data[0].Phone == atten.Phone) {
                   response.status(202).json({
-                    message: "Phone Number Already Exists",
+                    message: "Mobile Number Already Exists",
                     statusCode: 202,
                   });
                 }
@@ -1061,7 +1061,7 @@ function createUser(connection, request, response) {
         function (error, data) {
           if (data.length > 0) {
             response.status(202).json({
-              message: "Phone Number Already Exists",
+              message: "Mobile Number Already Exists",
               statusCode: 202,
             });
           } else {
@@ -1203,7 +1203,7 @@ function createUser(connection, request, response) {
                           atten.AdvanceAmount - paid_advance;
 
                         connection.query(
-                          `INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance,created_by,country_code,joining_Date,area,landmark,pincode,city,state,stay_type) VALUES ('${Circle}', '${Name}', '${atten.Phone
+                          `INSERT INTO hostel (Circle, Name, Phone, Email, Address, AadharNo, PancardNo, licence,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent, BalanceDue, PaymentType, Status,paid_advance,pending_advance,created_by,country_code,joining_Date,area,landmark,pincode,city,state,stay_type,FirstName,LastName) VALUES ('${Circle}', '${Name}', '${atten.Phone
                           }', '${atten.Email}', '${atten.Address || ""}', '${atten.AadharNo
                           }', '${atten.PancardNo}', '${atten.licence}','${atten.HostelName
                           }' ,'${atten.hostel_Id}', '${atten.Floor}', '${atten.Rooms
@@ -1212,6 +1212,8 @@ function createUser(connection, request, response) {
                           }', '${Status}','${paid_advance}','${pending_advance}','${created_by}','${country_code}','${atten.joining_date
                           }','${area || ""}','${landmark || ""
                           }','${pincode}','${city}','${state}','${atten.stay_type
+                          }','${atten.firstName
+                          }','${atten.lastname
                           }')`,
                           async function (insertError, insertData) {
                             if (insertError) {
@@ -4265,7 +4267,7 @@ function user_check_out(req, res) {
           //   });
           // }
 
-          if (requestDate >= checkOutDate) {
+          if (requestDate > checkOutDate) {
             return res.status(201).json({
               statusCode: 201,
               message: "Requested date must be earlier than the check-out date",

@@ -154,7 +154,7 @@ function add_booking1(req, res) {
         } else {
           return res
             .status(203)
-            .json({ statusCode: 203, message: "Phone Number Already Exists" });
+            .json({ statusCode: 203, message: "Mobile Number Already Exists" });
         }
       });
     } else {
@@ -264,7 +264,7 @@ function add_booking1(req, res) {
         } else {
           return res
             .status(203)
-            .json({ statusCode: 203, message: "Phone Number Already Exists" });
+            .json({ statusCode: 203, message: "Mobile Number Already Exists" });
         }
       });
     } else {
@@ -540,7 +540,7 @@ function add_booking(req, res) {
       } else {
         return res
           .status(203)
-          .json({ statusCode: 203, message: "Phone Number Already Exists" });
+          .json({ statusCode: 203, message: "Mobile Number Already Exists" });
       }
     });
   } else {
@@ -669,7 +669,7 @@ function assign_booking(req, res) {
             var hostel_name = booking_details.hostel_name;
             var profile = booking_details.profile || 0;
             var sql4 =
-              "INSERT INTO hostel (Circle, Name, Phone, Email, Address,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent,paid_advance,pending_advance,created_by,joining_Date,profile,area,landmark,pincode,city,state) VALUES (?)";
+              "INSERT INTO hostel (Circle, Name, Phone, Email, Address,HostelName, Hostel_Id, Floor, Rooms, Bed, AdvanceAmount, RoomRent,paid_advance,pending_advance,created_by,joining_Date,profile,area,landmark,pincode,city,state,FirstName,LastName) VALUES (?)";
             var params = [
               circle,
               name,
@@ -693,6 +693,8 @@ function assign_booking(req, res) {
               pincode,
               city,
               state,
+              f_name,
+              l_name
             ];
             connection.query(sql4, [params], function (err, ins_data) {
               if (err) {

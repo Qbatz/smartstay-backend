@@ -1230,7 +1230,7 @@ function CreateRoom(connection, request, response) {
         if (existingRoom.length > 0) {
           return response
             .status(201)
-            .json({ message: "Room Already exists", statusCode: 201 });
+            .json({ message: "Room Name Already exists", statusCode: 201 });
         } else {
           const insertQuery = `INSERT INTO hostelrooms (Hostel_Id, Floor_Id, Room_Id, Created_By) VALUES ('${reqsData.hostel_id}', '${reqsData.floorId}', '${reqsData.roomId}',  '${created_by}');`;
 
@@ -2523,7 +2523,7 @@ function createBed(req, res) {
                 } else if (bed_res.length != 0) {
                   return res.status(201).json({
                     statusCode: 201,
-                    message: "Bed Number Already Exists",
+                    message: "Bed Name Already Exists",
                   });
                 } else {
                   var sql5 =
@@ -2749,7 +2749,7 @@ function delete_hostel_image(req, res) {
 
 function hosteldetails(req, res) {
   var created_by = req.user_details.id;
-
+console.log("created_by",created_by)
   var show_ids = req.show_ids;
 
   var user_type = req.user_type;
@@ -2811,7 +2811,7 @@ function hosteldetails(req, res) {
     });
   } else {
     var sql1 =
-      "SELECT id,Name,image1,image2,image3,image4,email_id,hostel_PhoneNo AS phone,Address,area,landmark,pin_code,city,state ,profile FROM hosteldetails WHERE isActive=1 AND created_By IN (?)";
+      "SELECT id,Name,image1,image2,image3,image4,email_id,hostel_PhoneNo AS phone,Address,area,landmark,pin_code,city,state ,profile FROM hosteldetails WHERE isActive=1 AND created_By IN (?) ORDER BY Name ASC";
     connection.query(sql1, [show_ids], function (err, data) {
       if (err) {
         return res

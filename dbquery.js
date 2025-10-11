@@ -4,7 +4,8 @@ const connection = require("./config/connection");
 const queries = ['ALTER TABLE receipts ADD COLUMN transaction_id VARCHAR(100)',
   'ALTER TABLE hostel ADD COLUMN kyc_docs JSON NULL;',
   'ALTER TABLE invoicedetails ADD COLUMN reason VARCHAR(255);',
-  'ALTER TABLE hostel ADD COLUMN manual_docs JSON NULL;'
+  'ALTER TABLE hostel ADD COLUMN manual_docs JSON NULL;',
+  'ALTER TABLE hostel ADD COLUMN FirstName VARCHAR(255) ,ADD COLUMN LastName VARCHAR(255);'
 ];
 
 queries.forEach(executeQuery);

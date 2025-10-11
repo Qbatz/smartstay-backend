@@ -245,7 +245,7 @@ function add_booking(req, res) {
             if (phoneExists) {
               return res.status(203).json({
                 statusCode: 203,
-                message: "Phone Number Already Exists!",
+                message: "Mobile Number Already Exists!",
               });
             }
 
@@ -662,7 +662,7 @@ function assign_booking(req, res) {
           return res.status(201).send("Server error");
         } else {
           const query2 =
-            "INSERT INTO hostel (Circle, Name, Phone, Email, Address, HostelName, Hostel_Id, Floor, Rooms, Bed, created_by,country_code,area,landmark,pincode,city,state) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "INSERT INTO hostel (Circle, Name, Phone, Email, Address, HostelName, Hostel_Id, Floor, Rooms, Bed, created_by,country_code,area,landmark,pincode,city,state,FirstName,LastName) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
           connection.query(
             query2,
@@ -679,6 +679,8 @@ function assign_booking(req, res) {
               0,
               created_by,
               reqbody.country_code,
+              reqbody.firstName,
+              reqbody.last_name
             ],
             (error, results) => {
               if (error) {
